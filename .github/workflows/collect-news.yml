@@ -1,0 +1,40 @@
+name: Collect news
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths: [ 'scripts/collect-news.mjs', '.github/workflows/collect-news.yml' ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-news
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Collect
+        run: node scripts/collect-news.mjs
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Commit updated feed
+        run: |
+          git config user.name  "kbgis-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git diff --quiet news.json; then
+            git add news.json
+            git commit -m "chore: refresh news feed [skip ci]"
+            git push
+          else
+            echo "No changes."
+          fi

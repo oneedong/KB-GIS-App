@@ -33,15 +33,10 @@ const ALLOC_API = './allocations.json';
 const INSIGHTS_API = './insights.json';
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
-// Merge incoming articles into the stored set WITHOUT dropping old ones,
-// so the archive accumulates over time and stays fully searchable.
-function mergeArticles(existing, incoming) {
-    const map = {};
-    (existing || []).forEach(a => { if (a && a.id)
-        map[a.id] = a; });
-    (incoming || []).forEach(a => { if (a && a.id)
-        map[a.id] = { ...map[a.id], ...a }; });
-    return Object.values(map);
+// 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
+// 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
+function isRealArticle(a) {
+    return !!(a && a.url && /^https?:\/\//i.test(a.url) && !/(^|\/\/)kbgis\.app/i.test(a.url));
 }
 // Newest first, by date ('MM.DD') then time ('HH:MM').
 function sortArticles(list) {
@@ -123,10 +118,8 @@ function grp(t) {
         return 'Global GP';
     return '기타';
 }
-// 시드 데모 데이터는 제거되었습니다. 과거에는 사실과 다른 가상의 기사(국민연금 $500M
-// 메자닌 등)가 시드로 노출되어 "없는 기사"·"죽은 링크"의 원인이 되었습니다. 앱은 이제
-// 수집기가 채우는 news.json 의 실제 기사만 사용합니다.
-const BASE = [];
+// 시드 데모 데이터는 제거되었습니다. 앱은 수집기가 채우는 news.json 의 실제
+// 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 // ─── Navbar ───────────────────────────────────────────────
 function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAlloc, onSearch, onBookmarks }) {
     if (isDesktop)
@@ -301,7 +294,8 @@ function App() {
     const [query, setQuery] = useState('');
     const [bm, setBm] = useState(() => store.get('bookmarks', {}));
     const [read, setRead] = useState(() => store.get('read', {}));
-    const [articles, setArticles] = useState(() => sortArticles(mergeArticles(store.get('articles', []), BASE)));
+    // 저장된 기사는 유효(실제 링크)한 것만 불러온다 — 옛 시드/가짜 기사 즉시 제거.
+    const [articles, setArticles] = useState(() => sortArticles((store.get('articles', []) || []).filter(isRealArticle)));
     const [selectedId, setSelectedId] = useState(null);
     const [showShare, setShowShare] = useState(false);
     const [expandedGroup, setExpandedGroup] = useState(null);
@@ -335,7 +329,9 @@ function App() {
     }, [articles, seen]);
     const markSeen = (ids) => setSeen(s => { const n = { ...(s || {}) }; ids.forEach(id => { n[id] = true; }); return n; });
     // Pull fresh news from the backend and merge into the archive — new items
-    // appear, existing ones are kept. Called on launch and via the refresh button.
+    // 라이브 피드(news.json)를 권위 있는 소스로 삼아 그대로 반영한다. 합집합
+    // 누적을 하지 않으므로, 수집기 피드에서 빠진(삭제된·가짜) 기사는 화면에서도
+    // 사라진다. 단 빈 응답으로 화면을 비우지는 않는다(오프라인/일시 오류 대비).
     const refreshNews = (showToast) => {
         if (!NEWS_API)
             return;
@@ -343,7 +339,7 @@ function App() {
             .then(r => r.json())
             .then(incoming => {
             if (Array.isArray(incoming) && incoming.length) {
-                setArticles(prev => sortArticles(mergeArticles(prev, incoming)));
+                setArticles(sortArticles(incoming.filter(isRealArticle)));
             }
             if (showToast)
                 flash('최신 뉴스를 불러왔어요');

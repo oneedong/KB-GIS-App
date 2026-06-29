@@ -511,8 +511,15 @@ async function main() {
   let prev = [];
   try { prev = JSON.parse(await readFile(new URL('../news.json', import.meta.url), 'utf8')); } catch {}
   // 보관된 과거 기사도 강화된 관련성 기준으로 다시 거릅니다(상장주식·국내 잡음 제거).
+  // 단, (1) 수동 고정(pinned) 기사와 (2) 추적 대상 기관의 조직/인사 변경 뉴스는
+  // 펀드 키워드가 없어도 보존합니다(예: 국민연금 '기금운용과' 신설).
   const before = prev.length;
-  prev = prev.filter(p => isRelevant({ title: p.ko || '', desc: p.body || '' }));
+  prev = prev.filter(p => {
+    const txt = `${p.ko || ''} ${p.body || ''}`;
+    if (p.pinned) return true;
+    if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
+    return isRelevant({ title: p.ko || '', desc: p.body || '' });
+  });
   if (before !== prev.length) console.log(`archive re-filtered: ${before} -> ${prev.length}`);
   const prevById = new Map(prev.map(p => [p.id, p]));
 
@@ -559,7 +566,12 @@ async function main() {
   // 통째로 봇차단(403)되어 단 한 건도 본문을 확보하지 못하는 환경에서는 피드를
   // 통째로 비우지 않고(과거엔 news.json 이 []로 초기화되는 버그가 있었음) 관련성
   // 필터를 통과한 RSS 기사라도 유지해 앱이 빈 화면이 되지 않게 합니다.
-  const deduped = dedupe([...all, ...prev]);
+  // 최근 2개월(63일) 기사만 노출합니다. RSS 검색이 간혹 수년 전 기사를 섞어
+  // 반환하므로 날짜 창으로 오래된 잡음을 걸러냅니다. (pinned 기사는 예외 보존)
+  const WINDOW_MS = 63 * 24 * 3600 * 1000;
+  const cutoff = Date.now() - WINDOW_MS;
+  const inWindow = (a) => { if (a.pinned) return true; const t = Date.parse(a.ts); return !isNaN(t) && t >= cutoff; };
+  const deduped = dedupe([...all, ...prev]).filter(inWindow);
   const fetchedOnly = deduped.filter(a => a.fetched);
   const merged = (fetchedOnly.length >= 10 ? fetchedOnly : deduped)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))

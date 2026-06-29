@@ -72,7 +72,7 @@ const ASSET = {
   AV: { label: 'Aviation',       code: '항공기금융',       color: 'oklch(0.62 0.14 25)'  },
 };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
-const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': 'CIO·인사 이동' };
+const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동' };
 // 국내 LP 업권 그룹
 const GROUPS = ['연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권'];
 // Global GP — 카테고리에서 운용사별로 바로 필터
@@ -104,103 +104,10 @@ function grp(t) {
   return '기타';
 }
 
-const BASE = [
-  { id:'n1',  cat:'LP',  inst:'국민연금',       instType:'연기금',   asset:'RE', region:'US', date:'06.26', time:'08:12', source:'Mandate Wire',        lang:'en',
-    ko:'국민연금, 미국 멀티패밀리 메자닌 대출에 5억 달러 추가 배정',
-    en:'NPS allocates an additional $500M to U.S. multifamily mezzanine debt',
-    metric:'+$500M', metricLabel:'추가 배정액',
-    ai:['국민연금이 미국 멀티패밀리 메자닌 대출에 5억 달러를 추가 배정했다.','고금리 환경에서 안정적 인컴 확보를 노린 행보로 풀이된다.','대체투자 내 사모대출 목표 배분율은 12%로 상향됐다.'],
-    body:'국민연금공단이 미국 멀티패밀리(다세대 임대주택) 메자닌 대출에 5억 달러를 추가로 배정했다. 최근 고금리 환경에서 선순위 대비 높은 금리를 받으면서도 담보가치 하단이 두꺼운 메자닌 구조의 매력이 부각된 결과다. 국민연금은 올해 대체투자 포트폴리오에서 사모대출 비중을 단계적으로 확대하고 있다.',
-    enBody:'The National Pension Service has committed an additional $500 million to U.S. multifamily mezzanine debt, citing attractive risk-adjusted yields in a higher-for-longer rate environment. The allocation is part of a broader push to grow private credit within its alternatives book toward a 12% target.' },
-
-  { id:'n2',  cat:'LP',  inst:'교직원공제회',    instType:'공제회',   asset:'PE', region:'EU', date:'06.26', time:'07:48', source:'한국경제',             lang:'ko',
-    ko:'한국교직원공제회, 유럽 바이아웃 코인베스트에 2,000억 원 약정',
-    en:'The-K commits ₩200bn to European buyout co-investments',
-    metric:'₩2,000억', metricLabel:'신규 약정액',
-    ai:['교직원공제회가 유럽 바이아웃 코인베스트 프로그램에 2,000억 원을 약정했다.','검증된 GP와의 공동투자로 수수료를 낮추는 전략이다.','유럽 중견기업(미드캡) 딜에 집중 배정될 예정이다.'],
-    body:'한국교직원공제회가 유럽 바이아웃 펀드 운용사들과의 코인베스트(공동투자) 프로그램에 2,000억 원을 신규 약정했다. 블라인드 펀드 출자에 더해 직접 딜에 함께 참여해 운용보수와 성과보수를 절감하려는 의도다. 주로 유럽 미드캡 기업 인수 건에 자금이 배정될 전망이다.',
-    enBody:null },
-
-  { id:'n3',  cat:'LP',  inst:'행정공제회',      instType:'공제회',   asset:'IN', region:'GL', date:'06.26', time:'07:30', source:'IPE Real Assets',      lang:'en',
-    ko:'행정공제회(POBA), 글로벌 인프라 블라인드펀드에 3억 달러 출자',
-    en:'POBA commits $300M to a global infrastructure blind-pool fund',
-    metric:'+$300M', metricLabel:'출자액',
-    ai:['행정공제회가 글로벌 코어플러스 인프라 펀드에 3억 달러를 출자했다.','에너지 전환·디지털 인프라 자산에 분산 투자된다.','물가 연동 현금흐름으로 인플레 헤지를 노린다.'],
-    body:'행정공제회(POBA)가 글로벌 운용사의 코어플러스 인프라 블라인드펀드에 3억 달러를 출자했다. 전력·재생에너지, 디지털 인프라(데이터센터·통신탑) 등 물가에 연동되는 현금흐름 자산이 주요 투자 대상이다. 인플레이션 헤지와 장기 안정 수익을 동시에 겨냥한 배분이다.',
-    enBody:"The Public Officials Benefit Association (POBA) has committed $300 million to a global core-plus infrastructure fund. The mandate targets energy transition and digital infrastructure assets with inflation-linked cash flows, supporting POBA's goal of stable long-duration returns." },
-
-  { id:'n4',  cat:'LP',  inst:'미래에셋자산운용', instType:'자산운용사', asset:'RE', region:'US', date:'06.26', time:'07:05', source:'더벨',              lang:'ko',
-    ko:'미래에셋운용, 미국 데이터센터 개발에 7억 달러 규모 투자 추진',
-    en:'Mirae Asset to invest $700M in U.S. data-center development',
-    metric:'$700M', metricLabel:'투자 추진 규모',
-    ai:['미래에셋자산운용이 미국 데이터센터 개발 사업에 7억 달러 투자를 추진한다.','AI 수요로 급증한 데이터센터 임대 수요를 겨냥했다.','국내 기관 자금을 모아 공동 출자 구조로 진행한다.'],
-    body:'미래에셋자산운용이 미국 주요 거점의 하이퍼스케일 데이터센터 개발 사업에 약 7억 달러 규모 투자를 추진한다. 생성형 AI 확산으로 컴퓨팅 수요가 폭증하면서 데이터센터 임대 시장이 구조적 성장 국면에 진입했다는 판단이다. 국내 연기금·공제회 자금을 모아 공동 출자하는 구조로 설계 중이다.',
-    enBody:null },
-
-  { id:'n5',  cat:'LP',  inst:'삼성생명',        instType:'보험사',   asset:'PC', region:'EU', date:'06.25', time:'19:40', source:'Private Debt Investor', lang:'en',
-    ko:'삼성생명, 유럽 사모대출 펀드에 4억 유로 출자',
-    en:'Samsung Life commits €400M to a European private credit fund',
-    metric:'€400M', metricLabel:'출자액',
-    ai:['삼성생명이 유럽 다이렉트 렌딩 펀드에 4억 유로를 출자했다.','보험 부채에 맞춘 장기·안정 인컴 자산 확보가 목적이다.','유럽 미드마켓 기업 대출이 핵심 투자 대상이다.'],
-    body:'삼성생명이 유럽 미드마켓 기업을 대상으로 한 다이렉트 렌딩(직접대출) 펀드에 4억 유로를 출자했다. 장기 보험 부채에 대응하기 위한 안정적 인컴 자산 확보 차원으로, 변동금리 기반 사모대출의 인컴 매력이 부각됐다.',
-    enBody:'Samsung Life has committed €400 million to a European direct lending fund focused on mid-market corporates. The insurer is seeking stable, long-duration income to match its liabilities, with floating-rate private credit offering attractive yields.' },
-
-  { id:'n6',  cat:'LP',  inst:'KIC',            instType:'연기금',   asset:'IN', region:'AP', date:'06.25', time:'18:20', source:'IPE Real Assets',      lang:'en',
-    ko:'한국투자공사(KIC), 아시아 신재생 인프라에 3억 달러 공동투자',
-    en:'KIC co-invests $300M in Asian renewable infrastructure',
-    metric:'+$300M', metricLabel:'공동투자액',
-    ai:['KIC가 아시아 신재생에너지 인프라에 3억 달러를 공동투자했다.','태양광·풍력 발전 자산 포트폴리오가 대상이다.','에너지 전환 테마의 장기 성장에 베팅했다.'],
-    body:'한국투자공사(KIC)가 글로벌 인프라 운용사와 함께 아시아 지역 신재생에너지 인프라에 3억 달러를 공동투자했다. 태양광·풍력 발전 자산과 관련 송배전 인프라가 주요 대상이다. 에너지 전환이라는 구조적 테마의 장기 성장성에 주목한 투자다.',
-    enBody:"The Korea Investment Corporation has co-invested $300 million in Asian renewable energy infrastructure alongside a global manager. The portfolio spans solar and wind generation assets, reflecting KIC's conviction in the long-term energy transition theme." },
-
-  { id:'n7',  cat:'LP',  inst:'군인공제회',      instType:'공제회',   asset:'PE', region:'US', date:'06.25', time:'16:10', source:'서울경제',             lang:'ko',
-    ko:'군인공제회, 북미 PE 세컨더리 펀드에 1,500억 원 신규 출자',
-    en:'MMAA commits ₩150bn to a North American PE secondaries fund',
-    metric:'₩1,500억', metricLabel:'신규 출자액',
-    ai:['군인공제회가 북미 PE 세컨더리 펀드에 1,500억 원을 출자했다.','할인 매입으로 J커브를 완화하는 전략이다.','분배 지연 환경에서 유동성 확보 수단으로 주목된다.'],
-    body:'군인공제회가 북미 사모펀드(PE) 세컨더리 전문 펀드에 1,500억 원을 신규 출자했다. 기존 LP 지분을 할인된 가격에 매입해 초기 손실 구간(J커브)을 완화하고 빠른 분배를 기대할 수 있다는 점이 매력으로 꼽힌다. 분배가 지연되는 시장 환경에서 세컨더리가 유동성 대안으로 부각되고 있다.',
-    enBody:null },
-
-  { id:'n8',  cat:'LP',  inst:'미래에셋증권',    instType:'증권사',   asset:'RE', region:'EU', date:'06.25', time:'14:25', source:'매일경제',             lang:'ko',
-    ko:'미래에셋증권, 런던 오피스 빌딩 인수금융 5,000억 원 주선',
-    en:'Mirae Asset Securities arranges ₩500bn financing for a London office tower',
-    metric:'₩5,000억', metricLabel:'인수금융 주선',
-    ai:['미래에셋증권이 런던 핵심 오피스 빌딩 인수금융 5,000억 원을 주선했다.','금리 안정 기대에 유럽 오피스 거래가 재개되는 신호다.','셀다운을 통해 국내 기관에 재매각할 계획이다.'],
-    body:'미래에셋증권이 런던 시티 권역 프라임 오피스 빌딩 인수를 위한 5,000억 원 규모 인수금융을 주선했다. 가격 조정이 마무리되고 금리 안정 기대가 커지면서 유럽 오피스 시장의 거래가 점진적으로 재개되는 분위기다. 미래에셋증권은 주선 물량 일부를 국내 기관 투자자에 셀다운(재매각)할 계획이다.',
-    enBody:null },
-
-  { id:'n9',  cat:'GP',  inst:'Blackstone',     instType:'해외 GP',  asset:'PE', region:'EU', date:'06.25', time:'13:00', source:'PERE',                lang:'en',
-    ko:'블랙스톤, 유럽 물류 플랫폼 인수 위해 80억 유로 펀드 클로징',
-    en:'Blackstone closes €8B fund for a European logistics platform',
-    metric:'€8.0B', metricLabel:'최종 클로징',
-    ai:['블랙스톤이 유럽 물류 부동산 펀드를 80억 유로에 최종 클로징했다.','이커머스 성장에 따른 라스트마일 물류 수요가 배경이다.','유럽 핵심 물류 거점 인수에 자금을 집행한다.'],
-    body:'블랙스톤이 유럽 물류 부동산에 투자하는 펀드를 80억 유로 규모로 최종 클로징했다. 이커머스 침투율 상승과 공급망 재편으로 라스트마일 물류센터 수요가 견조하다는 판단이다. 펀드는 유럽 핵심 물류 거점의 자산 인수와 개발에 집행될 예정이다.',
-    enBody:'Blackstone has held a final close on an €8 billion fund targeting European logistics real estate. The firm points to resilient last-mile demand driven by e-commerce penetration and supply-chain reshoring, with capital earmarked for acquisitions and development across key European hubs.' },
-
-  { id:'n10', cat:'GP',  inst:'Ares',           instType:'해외 GP',  asset:'PC', region:'US', date:'06.25', time:'11:30', source:'Private Debt Investor', lang:'en',
-    ko:'에어리스, 북미 다이렉트 렌딩 펀드로 90억 달러 모집 마감',
-    en:'Ares wraps up a $9B North American direct lending fund',
-    metric:'$9.0B', metricLabel:'펀드 결성액',
-    ai:['에어리스가 북미 다이렉트 렌딩 펀드로 90억 달러 모집을 마감했다.','은행 대출 공백을 사모대출이 빠르게 메우고 있다.','중견기업 대상 변동금리 대출이 핵심이다.'],
-    body:'에어리스 매니지먼트가 북미 중견기업을 대상으로 한 다이렉트 렌딩 펀드 모집을 90억 달러 규모로 마감했다. 은행권 대출이 위축된 공백을 사모대출이 메우면서 자금 모집이 순조롭게 진행됐다. 변동금리 구조로 고금리 환경의 인컴 매력이 부각된다.',
-    enBody:'Ares Management has wrapped up a $9 billion North American direct lending fund focused on middle-market borrowers. Private credit continues to fill the gap left by retreating bank lenders, with floating-rate structures offering compelling income in a higher-rate environment.' },
-
-  { id:'n11', cat:'인사', inst:'APG',            instType:'해외 GP',  asset:'PC', region:'GL', date:'06.25', time:'21:30', source:'Private Debt Investor', lang:'en',
-    ko:'APG, 신임 사모대출 부문 CIO에 마르틴 산체스 선임',
-    en:'APG names Martin Sanchez as new CIO of private credit',
-    metric:'신규 선임', metricLabel:'인사',
-    ai:['네덜란드 연기금 운용사 APG가 사모대출 CIO를 새로 선임했다.','마르틴 산체스가 글로벌 사모대출 배분을 총괄한다.','사모대출 비중 확대 기조가 이어질 전망이다.'],
-    body:'네덜란드 최대 연기금 운용사 APG가 사모대출 부문 최고투자책임자(CIO)에 마르틴 산체스를 선임했다. 신임 CIO는 글로벌 사모대출 포트폴리오의 배분과 운용을 총괄하게 된다. 시장에서는 APG의 사모대출 비중 확대 기조가 한층 강화될 것으로 본다.',
-    enBody:"APG, the Netherlands' largest pension investor, has named Martin Sanchez as Chief Investment Officer for private credit. Sanchez will oversee allocation and management of the firm's global private debt portfolio, reinforcing APG's push to grow the asset class." },
-
-  { id:'n12', cat:'인사', inst:'CalPERS',        instType:'해외 GP',  asset:'PE', region:'US', date:'06.25', time:'16:00', source:'Buyouts',              lang:'en',
-    ko:'CalPERS 사모투자 총괄, 12월 말 퇴임 예정',
-    en:'CalPERS head of private equity to step down in December',
-    metric:'12월 퇴임', metricLabel:'인사',
-    ai:['미국 최대 연기금 CalPERS의 사모투자 총괄이 연말 퇴임한다.','후임 인선 전까지 사모투자 전략에 관심이 쏠린다.','CalPERS는 사모투자 비중 확대 기조를 유지해왔다.'],
-    body:'미국 최대 공적 연기금 CalPERS의 사모투자(PE) 총괄 책임자가 12월 말 퇴임할 예정이다. 최근 사모투자 비중을 적극 확대해온 만큼 후임 인선과 전략 방향에 시장의 관심이 집중되고 있다.',
-    enBody:'The head of private equity at CalPERS, the largest U.S. public pension fund, is set to step down at the end of December. With the fund having actively ramped up its private equity allocation, attention now turns to succession and the future direction of its program.' },
-];
+// 시드 데모 데이터는 제거되었습니다. 과거에는 사실과 다른 가상의 기사(국민연금 $500M
+// 메자닌 등)가 시드로 노출되어 "없는 기사"·"죽은 링크"의 원인이 되었습니다. 앱은 이제
+// 수집기가 채우는 news.json 의 실제 기사만 사용합니다.
+const BASE = [];
 
 // ─── Navbar ───────────────────────────────────────────────
 function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAlloc, onSearch, onBookmarks }) {
@@ -367,6 +274,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     </div>
   );
   const { y, m, d } = kstYMD(itemMs(sel));
+  // "기사 전문 보기" 는 실제 외부 원문 링크가 있을 때만 노출한다. 시드/내부
+  // 플레이스홀더(kbgis.app)나 링크가 없는 항목은 버튼을 숨겨 죽은 버튼을 막는다.
+  const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
       <div style={{flexShrink:0, height:54, boxSizing:'content-box', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'env(safe-area-inset-top) 16px 0 12px', borderBottom:'1px solid #efece4'}}>
@@ -413,10 +323,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
           </div>
 
           <div style={{display:'flex', gap:8, marginTop:22}}>
-            <div onClick={onShare} style={{flex:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
-            <a href={sel.url} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>
+            <div onClick={onShare} style={{flex:realUrl?1:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
+            {realUrl && <a href={realUrl} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
           </div>
-          <div style={{font:'500 11px Pretendard', color:'#b6b8bc', textAlign:'center', marginTop:10}}>요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요</div>
+          <div style={{font:'500 11px Pretendard', color:'#b6b8bc', textAlign:'center', marginTop:10}}>{realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다'}</div>
         </div>
       </div>
     </div>
@@ -597,12 +507,13 @@ function App() {
   }
 
   let feedFilterLabel = filter;
-  if (filter === '인사')    feedFilterLabel = 'CIO·인사 이동';
+  if (filter === '인사')    feedFilterLabel = '조직·인사 이동';
   else if (isAsset)         feedFilterLabel = ASSET[filter].label;
   else if (isRegion)        feedFilterLabel = REGION[filter];
 
+  const CHIP_LABEL = { '인사': '조직·인사' };
   const chips = ['전체','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사'].map(k => ({
-    label: k, active: filter === k,
+    label: CHIP_LABEL[k] || k, active: filter === k,
     bg: filter === k ? '#FFCC00' : '#2a2c30',
     color: filter === k ? '#1c1d1f' : '#cdced0',
   }));
@@ -869,7 +780,9 @@ function App() {
                     <span style={{font:'600 10.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'2px 8px', borderRadius:5}}>{allocSelData.group}</span>
                     {allocSelData.auto
                       ? <span style={{font:'700 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>● {allocSelData.autoKind === 'news' ? '기사 기반' : '자동 갱신'}</span>
-                      : <span style={{font:'700 9.5px Pretendard', color:'#9a7d12', background:'#fffaeb', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>공시 추정치</span>}
+                      : allocSelData.verified
+                        ? <span style={{font:'700 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>● 공시 확정</span>
+                        : <span style={{font:'700 9.5px Pretendard', color:'#9a7d12', background:'#fffaeb', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>공시 추정치</span>}
                   </div>
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:16}}>
                     <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
@@ -891,7 +804,10 @@ function App() {
                   </div>
                   <div style={{font:'700 10.5px Pretendard', color:'#a6a8ac', letterSpacing:'.05em', marginBottom:6}}>대체투자 비중 추이</div>
                   <TrendChart trend={allocSelData.trend} />
-                  <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:8}}>출처 · {allocSelData.source}{allocSelData.auto && allocSelData.updatedAt ? ` · ${allocSelData.updatedAt} 자동 갱신` : ''}</div>
+                  {allocSelData.sourceNote && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#9a9ca0', marginTop:10, background:'#f8f7f3', borderRadius:9, padding:'9px 11px'}}>{allocSelData.sourceNote}</div>}
+                  <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:8}}>출처 · {allocSelData.sourceUrl
+                    ? <a href={allocSelData.sourceUrl} target="_blank" rel="noopener noreferrer" style={{color:'#7a8190', textDecoration:'underline'}}>{allocSelData.source} ↗</a>
+                    : allocSelData.source}{allocSelData.auto && allocSelData.updatedAt ? ` · ${allocSelData.updatedAt} 자동 갱신` : ''}</div>
                 </div>
 
                 {/* 표 */}

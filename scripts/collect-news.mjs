@@ -304,7 +304,9 @@ const REGIONS = [
   ['EU', /유럽|europe|영국|\bUK\b|런던|london|독일|german|프랑스|france|\bEU\b/i],
   ['AP', /아시아|asia|일본|japan|중국|china|인도|india|싱가포르|singapore|호주|australia/i],
 ];
-const PEOPLE_RE = /인사|\bCIO\b|선임|영입|퇴임|사임|appoint|\bnames?\b|hire|steps? down/i;
+const PEOPLE_RE = /인사|\bCIO\b|선임|영입|퇴임|사임|승진|내정|appoint|\bnames?\b|hire|steps? down/i;
+// 조직 개편·신설 등 "조직 변경" 신호 (인사 카테고리로 함께 분류)
+const ORG_RE = /조직\s?개편|조직\s?변경|직제\s?개편|조직\s?재편|본부\s?신설|실\s?신설|과\s?신설|팀\s?신설|기금운용과|운용역\s?증원|reorganiz|restructur/i;
 
 // ── 관련성 필터 (placement agent · 해외 대체투자 펀드 중심) ──
 // 통과 조건: (1) 대체투자 자산군 신호 ALT_RE  (2) 펀드·출자 맥락 FUND_RE
@@ -459,7 +461,7 @@ export function enrich(raw) {
   const asset = pick(ASSETS, text, 'PE');
   const region = pick(REGIONS, text, 'GL');
   let cat = instType === '해외 GP' ? 'GP' : 'LP';
-  if (PEOPLE_RE.test(text)) cat = '인사';
+  if (PEOPLE_RE.test(text) || ORG_RE.test(text)) cat = '인사';   // 조직/인사 변경
   const { date, time, iso } = kstParts(raw.pub);
   const sentences = extractiveSummary(raw.desc || raw.title);
   return {
@@ -553,9 +555,13 @@ async function main() {
   }
   console.log(`article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
 
-  // 원문 본문을 확보하지 못한 기사(유료화·봇차단 등)는 노출하지 않습니다.
-  const merged = dedupe([...all, ...prev])
-    .filter(a => a.fetched)
+  // 원문 본문을 확보한 기사를 우선 노출합니다. 다만 Google 뉴스 RSS·기사 사이트가
+  // 통째로 봇차단(403)되어 단 한 건도 본문을 확보하지 못하는 환경에서는 피드를
+  // 통째로 비우지 않고(과거엔 news.json 이 []로 초기화되는 버그가 있었음) 관련성
+  // 필터를 통과한 RSS 기사라도 유지해 앱이 빈 화면이 되지 않게 합니다.
+  const deduped = dedupe([...all, ...prev]);
+  const fetchedOnly = deduped.filter(a => a.fetched);
+  const merged = (fetchedOnly.length >= 10 ? fetchedOnly : deduped)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
     .slice(0, 500);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));

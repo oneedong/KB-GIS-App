@@ -1,40 +1,46 @@
 {
-  "asOf": "2024",
+  "asOf": "2024년 말",
   "unit": "조원",
-  "note": "각 기관 연차보고서·기금운용 공시 기준 공개 추정치입니다. 정확한 수치·산정기준은 기관별 공시를 확인하세요. (KIC 등 외화 운용기관은 원화 환산)",
+  "note": "국민연금·한국투자공사(KIC)는 각 기관의 2024년 말 공시(기금운용본부 운용현황·KIC 2024 연차보고서) 기준 확정치입니다. 그 외 기관은 경영공시 기반 공개 추정치이며, 정확한 수치·산정기준은 기관별 공시를 확인하세요. (KIC 등 외화 운용기관은 원화 환산)",
   "institutions": [
     {
       "name": "국민연금",
       "group": "연기금",
-      "aum": 1150,
-      "altAmount": 184,
-      "altPct": 16.0,
-      "overseasAltPct": 82,
-      "source": "국민연금 기금운용본부 운용현황",
+      "aum": 1208,
+      "altAmount": 207,
+      "altPct": 17.1,
+      "overseasAltPct": 88,
+      "verified": true,
+      "source": "국민연금 기금운용본부 운용현황(2024년 말)",
+      "sourceUrl": "https://fund.nps.or.kr/jsppage/fund/mcs/mcs_04_07_03.jsp",
+      "sourceNote": "2024년 말 사모투자 90.6조원(대체 43.8%)·부동산 58.2조원(대체 28.2%) 공시 기준 — 대체투자 약 207조원, 전체의 17.1%",
       "trend": [
         { "year": 2019, "altPct": 11.4, "altAmount": 84 },
         { "year": 2020, "altPct": 10.7, "altAmount": 91 },
         { "year": 2021, "altPct": 12.0, "altAmount": 114 },
         { "year": 2022, "altPct": 16.4, "altAmount": 146 },
         { "year": 2023, "altPct": 15.9, "altAmount": 159 },
-        { "year": 2024, "altPct": 16.0, "altAmount": 184 }
+        { "year": 2024, "altPct": 17.1, "altAmount": 207 }
       ]
     },
     {
       "name": "한국투자공사",
       "group": "연기금",
-      "aum": 250,
-      "altAmount": 55,
-      "altPct": 22.0,
+      "aum": 304,
+      "altAmount": 67,
+      "altPct": 21.9,
       "overseasAltPct": 100,
-      "source": "KIC 연차보고서 (전액 해외운용, 원화 환산)",
+      "verified": true,
+      "source": "KIC 2024 연차보고서 (전액 해외운용, 원화 환산)",
+      "sourceUrl": "https://kic-annualreport.kr/2024/kor/",
+      "sourceNote": "2024년 말 운용자산 2,065억 달러(약 304조원), 대체자산 비중 21.9%(약 67조원) — 사모주식·부동산·인프라·헤지펀드·사모채권",
       "trend": [
         { "year": 2019, "altPct": 15.5, "altAmount": 24 },
         { "year": 2020, "altPct": 16.4, "altAmount": 28 },
         { "year": 2021, "altPct": 17.8, "altAmount": 38 },
         { "year": 2022, "altPct": 20.0, "altAmount": 44 },
         { "year": 2023, "altPct": 21.0, "altAmount": 50 },
-        { "year": 2024, "altPct": 22.0, "altAmount": 55 }
+        { "year": 2024, "altPct": 21.9, "altAmount": 67 }
       ]
     },
     {

@@ -610,7 +610,7 @@ function App() {
     : { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 };
 
   return (
-    <div className="app-frame" style={{color:'#1c1d1f', ...(isDesktop ? { flexDirection:'row', width:'min(1180px, 96vw)', height:'min(900px, 94vh)' } : {})}}>
+    <div className="app-frame" style={{color:'#1c1d1f', ...(isDesktop ? { flexDirection:'row', width:'100vw', height:'100dvh', maxWidth:'none', borderRadius:0, border:'none', boxShadow:'none' } : {})}}>
 
       {isDesktop && <Sidebar active={screen === 'detail' ? prevScreen : screen} homeNew={newCount} go={goTab} onRefresh={() => refreshNews(true)} />}
 

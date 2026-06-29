@@ -571,7 +571,7 @@ function App() {
     const paneStyle = desktopMaster
         ? { width: 404, flexShrink: 0, minWidth: 0, borderRight: '1px solid #ece9e2', display: 'flex', flexDirection: 'column', minHeight: 0 }
         : { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 };
-    return (React.createElement("div", { className: "app-frame", style: { color: '#1c1d1f', ...(isDesktop ? { flexDirection: 'row', width: 'min(1180px, 96vw)', height: 'min(900px, 94vh)' } : {}) } },
+    return (React.createElement("div", { className: "app-frame", style: { color: '#1c1d1f', ...(isDesktop ? { flexDirection: 'row', width: '100vw', height: '100dvh', maxWidth: 'none', borderRadius: 0, border: 'none', boxShadow: 'none' } : {}) } },
         isDesktop && React.createElement(Sidebar, { active: screen === 'detail' ? prevScreen : screen, homeNew: newCount, go: goTab, onRefresh: () => refreshNews(true) }),
         React.createElement("div", { style: paneStyle },
             screen === 'home' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },

@@ -21,6 +21,8 @@ const store = {
 const NEWS_API = './news.json';
 // LP 기관별 대체투자 배분 데이터 (공개 공시 기반). 수동으로 갱신 가능한 JSON.
 const ALLOC_API = './allocations.json';
+// CIO·자산군 수익률 인사이트 (수집기가 뉴스에서 자동 추출·갱신 — insights.json)
+const INSIGHTS_API = './insights.json';
 
 // Merge incoming articles into the stored set WITHOUT dropping old ones,
 // so the archive accumulates over time and stays fully searchable.
@@ -347,6 +349,7 @@ function App() {
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [alloc, setAlloc]          = useState(null);
   const [allocSel, setAllocSel]    = useState(null);
+  const [insights, setInsights]    = useState(null);
   const [seen, setSeen]            = useState(() => store.get('seen', null));
   const [isDesktop, setIsDesktop]  = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
   useEffect(() => {
@@ -399,6 +402,14 @@ function App() {
           setAllocSel(s => s || (d.institutions[0] && d.institutions[0].name));
         }
       })
+      .catch(() => {});
+  }, []);
+
+  // Load CIO·자산군 수익률 인사이트 (뉴스 자동 추출 결과).
+  useEffect(() => {
+    fetch(INSIGHTS_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && (Array.isArray(d.cios) || Array.isArray(d.assetReturns))) setInsights(d); })
       .catch(() => {});
   }, []);
 
@@ -826,6 +837,50 @@ function App() {
                   ))}
                 </div>
                 {alloc && alloc.note && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:14}}>※ {alloc.note}</div>}
+
+                {/* CIO·인사 현황 (뉴스 자동 추출) */}
+                <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'30px 0 10px'}}>
+                  <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>주요 LP CIO·인사 현황</div>
+                  <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출{insights && insights.updatedAt ? ` · ${insights.updatedAt}` : ''}</span>
+                </div>
+                {insights && insights.cios && insights.cios.length ? (
+                  <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                    {insights.cios.map((c, i) => (
+                      <a key={c.inst+i} href={c.url && /^https?:\/\//.test(c.url) ? c.url : undefined} target="_blank" rel="noopener noreferrer"
+                         style={{display:'block', textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:c.url?'pointer':'default'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                          <span style={{font:'700 12.5px Pretendard', color:'#1c1d1f'}}>{c.inst}</span>
+                          <span style={{font:'700 9px Pretendard', color:c.status==='선임'?'#1a5fa4':'#9a7d12', background:c.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{c.status}</span>
+                        </div>
+                        <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{c.note}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{c.date} · {c.source}{c.url ? ' · 기사 보기 ↗' : ''}</div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 추출된 CIO·인사 정보가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                )}
+
+                {/* 자산군별 수익률 (뉴스 자동 추출) */}
+                <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
+                  <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>자산군별 수익률</div>
+                  <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 최근 기사 기준</span>
+                </div>
+                {insights && insights.assetReturns && insights.assetReturns.length ? (
+                  <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                    {insights.assetReturns.map((r, i) => (
+                      <a key={r.asset+i} href={r.url && /^https?:\/\//.test(r.url) ? r.url : undefined} target="_blank" rel="noopener noreferrer"
+                         style={{display:'flex', alignItems:'center', gap:10, textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                        <span style={{width:7, height:7, borderRadius:2, background:(ASSET[r.asset]&&ASSET[r.asset].color)||'#c4a93a', display:'inline-block', flexShrink:0}}></span>
+                        <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1}}>{r.label}{r.inst?` · ${r.inst}`:''}</span>
+                        <span style={{font:'800 14px Pretendard', color:r.value<0?'#c0392b':'#1a7a4a'}}>{r.value>0?'+':''}{r.value}%</span>
+                        <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc'}}>{r.date}↗</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 확인된 자산군별 수익률이 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                )}
               </>
             )}
           </div>

@@ -41,6 +41,13 @@ const QUERIES = [
   '연기금 공제회 해외 사모펀드 출자',
   '보험사 해외 (사모대출 OR 대체투자)',
   '한국 LP 해외 사모펀드 OR PEF 출자',
+  // (4) CIO·조직/인사 (기관별 운용 사령탑) — insights.json 자동 갱신용
+  '국민연금 (기금이사 OR CIO OR 기금운용본부장) (선임 OR 공모 OR 내정)',
+  '(교직원공제회 OR 행정공제회 OR 군인공제회 OR 사학연금) CIO (선임 OR 내정 OR 공모)',
+  '연기금 OR 공제회 CIO (선임 OR 인선 OR 영입)',
+  // (5) 자산군별 수익률 — insights.json 자동 갱신용
+  '국민연금 (대체투자 OR 사모투자 OR 부동산 OR 인프라) 수익률',
+  '연기금 공제회 대체투자 수익률',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
@@ -341,6 +348,83 @@ function hasHangul(s = '') { return /[가-힣]/.test(s); }
 function hashId(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return 'g' + (h >>> 0).toString(36); }
 function pick(pairs, text, def) { for (const [key, re] of pairs) if (re.test(text)) return key; return def; }
 function pickInst(text) { for (const [re, name, type] of INSTS) if (re.test(text)) return { inst: name, instType: type }; return null; }
+// 텍스트에서 마지막으로 등장하는 국내 LP 기관(직함 바로 앞 기관)을 찾습니다.
+function pickKoreanLpLast(text) {
+  let best = null, bestIdx = -1;
+  for (const [re, name, type] of KOREAN_LPS) {
+    const m = text.match(re);
+    if (m && m.index >= bestIdx) { bestIdx = m.index; best = { inst: name, instType: type }; }
+  }
+  return best;
+}
+
+// ── CIO·인사 / 자산군별 수익률 자동 추출 (insights.json) ──────
+const CIO_TITLE = /기금이사|\bCIO\b|최고투자책임자|투자운용본부장|운용본부장|자금운용본부장/;
+const CIO_APPOINT = /선임|임명|내정|취임|영입|발탁/;
+const CIO_RECRUIT = /공모|모집|후보|압축|인선|공석|선정/;
+const NAME_BLOCK = /국민|연금|공제|기금|운용|투자|대체|사모|신임|차기|올해|내년|최고|책임|본부|이사|대표|부문|해외|국내|글로벌|수익|자산|증원|복지|행정|교직|군인|과학|우정|연기|수협|중앙/;
+// CIO/운용 사령탑 인사 추출 → { inst, status, person, background } | null
+export function extractCio(text) {
+  if (!CIO_TITLE.test(text)) return null;
+  const tIdx = text.search(CIO_TITLE);
+  const target = pickKoreanLpLast(text.slice(0, tIdx + 8)) || pickKoreanLpLast(text);
+  let person = '';
+  // 고정밀: "…CIO/기금이사 …에 OOO" (직함 뒤 이름)
+  let m = text.match(/(?:기금이사|CIO|최고투자책임자|투자운용본부장|운용본부장)\s*(?:신임\s*)?(?:에|로|으로)\s*([가-힣]{2,4})/);
+  if (m && !NAME_BLOCK.test(m[1])) person = m[1];
+  if (!person) {                       // "OOO 신임 기금이사/CIO" (이름 먼저) — 선임 동반 시에만
+    let m2 = text.match(/([가-힣]{2,4})\s*(?:신임)\s*(?:기금이사|CIO|최고투자책임자|운용본부장)/);
+    if (m2 && !NAME_BLOCK.test(m2[1]) && CIO_APPOINT.test(text)) person = m2[1];
+  }
+  const status = person ? '선임' : (CIO_RECRUIT.test(text) ? '공모·인선 진행' : null);
+  if (!person && !status) return null;
+  let background = (text.match(/([가-힣A-Za-z·]{2,18})\s*출신/) || [])[1] || '';
+  if (background && NAME_BLOCK.test(background) && background.length <= 3) background = '';
+  return { inst: target ? target.inst : '', instType: target ? target.instType : '', status, person, background };
+}
+// 자산군별 수익률 추출 → { asset, value } | null  (수익률 맥락 + 자산군 + 합리적 %)
+export function extractReturn(text) {
+  if (!/수익률|운용수익|평가익|벌어들/.test(text)) return null;
+  const pm = text.match(/(-?\d{1,2}(?:\.\d{1,2})?)\s*%/);
+  if (!pm) return null;
+  const v = parseFloat(pm[1]);
+  if (v < -50 || v > 60) return null;
+  for (const [code, re] of ASSETS) if (re.test(text)) return { asset: code, value: v };
+  if (/대체투자/.test(text)) return { asset: 'ALT', value: v };
+  return null;
+}
+// 수집 기사에서 insights(CIO·수익률) 빌드 — 기관별 최신 1건 유지.
+export function buildInsights(articles) {
+  const ASSET_LABEL = { AV: '항공기금융', IN: '인프라', PC: 'Private Credit', RE: '부동산', PE: 'Private Equity', ALT: '대체투자 전체' };
+  const cioByInst = new Map();
+  const retByAsset = new Map();
+  const sorted = articles.slice().sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0)); // 최신 우선
+  for (const a of sorted) {
+    const text = `${a.ko || ''} ${a.body || ''}`;
+    const c = extractCio(text);
+    if (c && c.inst && c.instType !== '해외 GP') {
+      if (!cioByInst.has(c.inst)) {
+        const note = c.status === '선임'
+          ? `신임 CIO ${c.person}${c.background ? ` (${c.background} 출신)` : ''}`
+          : 'CIO 공모·인선 진행 중';
+        cioByInst.set(c.inst, { inst: c.inst, group: grpName(c.instType), status: c.status, person: c.person, background: c.background, note, source: a.source, url: a.url, date: a.date, ts: a.ts });
+      }
+    }
+    const r = extractReturn(text);
+    if (r && !retByAsset.has(r.asset)) {
+      retByAsset.set(r.asset, { asset: r.asset, label: ASSET_LABEL[r.asset] || r.asset, value: r.value, inst: a.instType !== '해외 GP' ? a.inst : '', source: a.source, url: a.url, date: a.date, ts: a.ts });
+    }
+  }
+  const { date } = kstParts();
+  return { updatedAt: date, cios: [...cioByInst.values()], assetReturns: [...retByAsset.values()] };
+}
+// instType → 업권 그룹(앱 표시용)
+function grpName(t) {
+  if (['연기금', '공제회', '중앙회', '은행'].includes(t)) return t;
+  if (['자산운용사', '증권사'].includes(t)) return '운용·증권';
+  if (['보험사', '캐피탈'].includes(t)) return '보험·캐피탈';
+  return '기타';
+}
 
 function extractMetric(text) {
   const pats = [
@@ -578,6 +662,24 @@ async function main() {
     .slice(0, 500);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
   console.log(`collected ${all.length} relevant, archive now ${merged.length} articles`);
+
+  // CIO·자산군 수익률 인사이트 자동 갱신(insights.json). 기존 값은 새 추출이
+  // 있을 때만 갱신해, 일시적으로 기사가 없어도 최근 정보가 사라지지 않게 합니다.
+  let prevIns = { cios: [], assetReturns: [] };
+  try { prevIns = JSON.parse(await readFile(new URL('../insights.json', import.meta.url), 'utf8')); } catch {}
+  const fresh = buildInsights(merged);
+  const mergeBy = (key, prevArr, newArr) => {
+    const map = new Map((prevArr || []).map(x => [x[key], x]));
+    for (const n of newArr) { const old = map.get(n[key]); if (!old || (n.ts || '') >= (old.ts || '')) map.set(n[key], n); }
+    return [...map.values()].sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  };
+  const insights = {
+    updatedAt: fresh.updatedAt,
+    cios: mergeBy('inst', prevIns.cios, fresh.cios),
+    assetReturns: mergeBy('asset', prevIns.assetReturns, fresh.assetReturns),
+  };
+  await writeFile(new URL('../insights.json', import.meta.url), JSON.stringify(insights, null, 0));
+  console.log(`insights: ${insights.cios.length} CIO, ${insights.assetReturns.length} asset-returns`);
 }
 
 function selftest() {
@@ -608,8 +710,17 @@ function selftest() {
     && !/[<>]/.test(a1.body) && !/&nbsp;|&lt;/.test(a1.body)    // HTML/엔티티 완전 제거
     && a2.inst === 'Blackstone' && a2.cat === 'GP' && a2.instType === '해외 GP'  // 글로벌 GP는 지역어 없어도 통과
     && a3.inst === '군인공제회' && a3.asset === 'AV' && a3.instType === '공제회';
-  console.log(ok ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
-  if (!ok) process.exit(1);
+
+  // CIO·수익률 추출 자가 테스트
+  const cio1 = extractCio('국민연금 기금이사에 홍길동 한국은행 출신 선임');   // 직함 앞 기관=국민연금, 이름=홍길동
+  const cio2 = extractCio('국민연금, 차기 CIO 공개 모집…25일까지 후보 접수'); // 공모 진행
+  const ret1 = extractReturn('국민연금 대체투자 수익률 12.3% 기록');          // 대체투자 12.3%
+  const ok2 = cio1 && cio1.inst === '국민연금' && cio1.person === '홍길동' && cio1.background === '한국은행' && cio1.status === '선임'
+    && cio2 && cio2.status === '공모·인선 진행'
+    && ret1 && ret1.asset === 'ALT' && ret1.value === 12.3;
+  console.log(`extract: cio1=${JSON.stringify(cio1)} cio2.status=${cio2 && cio2.status} ret1=${JSON.stringify(ret1)}`);
+  console.log((ok && ok2) ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
+  if (!(ok && ok2)) process.exit(1);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('collect-news.mjs')) {

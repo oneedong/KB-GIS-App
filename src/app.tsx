@@ -73,7 +73,7 @@ const ASSET = {
   AV: { label: 'Aviation',       code: '항공기금융',       color: 'oklch(0.62 0.14 25)'  },
 };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
-const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동' };
+const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동', '마켓': '마켓 뉴스' };
 // 국내 LP 업권 그룹
 const GROUPS = ['연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권'];
 // Global GP — 카테고리에서 운용사별로 바로 필터
@@ -519,6 +519,7 @@ function App() {
   let feedItems = items;
   if (filter !== '전체') {
     if (filter === '인사')        feedItems = items.filter(i => i.cat === '인사');
+    else if (filter === '마켓')   feedItems = items.filter(i => i.cat === '마켓');
     else if (filter === 'Global GP') feedItems = items.filter(i => i.instGroup === 'Global GP' && i.cat !== '인사');
     else if (isGroup)            feedItems = items.filter(i => i.instGroup === filter && i.cat !== '인사');
     else if (isAsset)            feedItems = items.filter(i => i.asset === filter);
@@ -528,11 +529,12 @@ function App() {
 
   let feedFilterLabel = filter;
   if (filter === '인사')    feedFilterLabel = '조직·인사 이동';
+  else if (filter === '마켓') feedFilterLabel = '마켓 뉴스';
   else if (isAsset)         feedFilterLabel = ASSET[filter].label;
   else if (isRegion)        feedFilterLabel = REGION[filter];
 
-  const CHIP_LABEL = { '인사': '조직·인사' };
-  const chips = ['전체','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사'].map(k => ({
+  const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스' };
+  const chips = ['전체','마켓','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사'].map(k => ({
     label: CHIP_LABEL[k] || k, active: filter === k,
     bg: filter === k ? '#FFCC00' : '#2a2c30',
     color: filter === k ? '#1c1d1f' : '#cdced0',
@@ -541,9 +543,11 @@ function App() {
   // Category data
   const ICON   = { '연기금':'연금','공제회':'공제','중앙회':'중앙','은행':'은행','운용·증권':'운용','보험·캐피탈':'보험','해외 GP':'GP' };
   const SAMPLE = { '연기금':'국민연금 · KIC · 사학연금','공제회':'교직원 · 행정 · 군인공제회','중앙회':'농협 · 수협 · 새마을금고','은행':'산업 · 기업 · 수출입은행','운용·증권':'미래에셋 · 삼성 · KB','보험·캐피탈':'삼성생명 · 한화 · 현대해상','해외 GP':'Blackstone · Ares · KKR' };
-  // 그룹별 기사 수
+  // 기관과 무관한 대체투자 마켓 뉴스 수
+  const marketCount = items.filter(i => i.cat === '마켓').length;
+  // 그룹별 기사 수 (인사·마켓 제외)
   const instsByGroup = {};
-  items.forEach(i => { if (i.cat !== '인사') { const g = i.instGroup; (instsByGroup[g] = instsByGroup[g] || {}); instsByGroup[g][i.inst] = (instsByGroup[g][i.inst] || 0) + 1; } });
+  items.forEach(i => { if (i.cat !== '인사' && i.cat !== '마켓') { const g = i.instGroup; (instsByGroup[g] = instsByGroup[g] || {}); instsByGroup[g][i.inst] = (instsByGroup[g][i.inst] || 0) + 1; } });
   // 업권별 전체 LP 로스터(institutions.json) — 기사가 없어도 전 기관을 노출.
   const rosterByGroup = {};
   (roster || []).forEach(r => { (rosterByGroup[r.group] = rosterByGroup[r.group] || []).push(r.name); });
@@ -717,6 +721,16 @@ function App() {
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18}}>
+            {/* 마켓 뉴스 — 기관과 무관한 대체투자 시장·딜·동향 뉴스 */}
+            <div onClick={() => applyFilter('마켓')} style={{display:'flex', alignItems:'center', gap:13, border:'1px solid #ece9e2', borderRadius:14, padding:'14px 15px', marginBottom:18, cursor:'pointer', background:'linear-gradient(90deg,#fffaeb,#fff)'}}>
+              <span style={{width:38, height:38, borderRadius:10, background:'#FFCC00', display:'flex', alignItems:'center', justifyContent:'center', font:'800 15px Pretendard', color:'#1c1d1f', flexShrink:0}}>📈</span>
+              <div style={{flex:1}}>
+                <div style={{font:'700 14px Pretendard'}}>마켓 뉴스</div>
+                <div style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginTop:2}}>기관과 무관한 해외 대체투자 시장·딜·전망</div>
+              </div>
+              <span style={{font:'700 12px Pretendard', color:'#9a7d12', background:'#fff7d6', padding:'3px 10px', borderRadius:999}}>{marketCount}</span>
+              <span style={{color:'#cfccc4'}}>›</span>
+            </div>
             <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:10}}>국내 LP · 업권별 <span style={{fontWeight:500, letterSpacing:0}}>· 기관을 눌러 해당 기관 뉴스 보기{roster ? ` (전체 ${roster.length}개 기관)` : ''}</span></div>
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
               {catGroups.map(g => {

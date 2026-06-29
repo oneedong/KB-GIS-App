@@ -561,7 +561,8 @@ export function enrich(raw) {
   const instType = instHit ? instHit.instType : '기타';
   const asset = pick(ASSETS, text, 'PE');
   const region = pick(REGIONS, text, 'GL');
-  let cat = instType === '해외 GP' ? 'GP' : 'LP';
+  // 기관(국내 LP·해외 GP) 미식별 = 기관과 무관한 일반 대체투자 '마켓 뉴스'.
+  let cat = instHit ? (instType === '해외 GP' ? 'GP' : 'LP') : '마켓';
   if (PEOPLE_RE.test(text) || ORG_RE.test(text)) cat = '인사';   // 조직/인사 변경
   const { date, time, iso } = kstParts(raw.pub);
   const sentences = extractiveSummary(raw.desc || raw.title);
@@ -667,9 +668,9 @@ async function main() {
   // 통째로 봇차단(403)되어 단 한 건도 본문을 확보하지 못하는 환경에서는 피드를
   // 통째로 비우지 않고(과거엔 news.json 이 []로 초기화되는 버그가 있었음) 관련성
   // 필터를 통과한 RSS 기사라도 유지해 앱이 빈 화면이 되지 않게 합니다.
-  // 최근 2개월(63일) 기사만 노출합니다. RSS 검색이 간혹 수년 전 기사를 섞어
+  // 최근 3개월(92일) 기사만 노출합니다. RSS 검색이 간혹 수년 전 기사를 섞어
   // 반환하므로 날짜 창으로 오래된 잡음을 걸러냅니다. (pinned 기사는 예외 보존)
-  const WINDOW_MS = 63 * 24 * 3600 * 1000;
+  const WINDOW_MS = 92 * 24 * 3600 * 1000;
   const cutoff = Date.now() - WINDOW_MS;
   const inWindow = (a) => { if (a.pinned) return true; const t = Date.parse(a.ts); return !isNaN(t) && t >= cutoff; };
   const deduped = dedupe([...all, ...prev]).filter(inWindow);
@@ -743,9 +744,15 @@ function selftest() {
   const noise2 = isRelevant({ title: '서울 아파트 분양 청약 시작', desc: '부동산 청약' });        // 국내 분양 잡음 → 배제
   const ok3 = mkt === true && gpDeal === true && noise1 === false && noise2 === false;
   console.log(`relevance: market=${mkt} gpDeal=${gpDeal} noise1=${noise1} noise2=${noise2}`);
+
+  // 마켓 뉴스 분류: 기관 미식별 대체투자 뉴스 → cat '마켓'
+  const mktArt = enrich({ title: '글로벌 사모대출 시장, 사상 최대 규모로 성장', desc: 'private credit 시장이 확대되고 있다', link: 'http://x/1', pub: '', source: 'Bloomberg' });
+  const lpArt = enrich({ title: '국민연금, 해외 인프라 펀드에 출자', desc: '국민연금 출자', link: 'http://x/2', pub: '', source: '더벨' });
+  const ok4 = mktArt.cat === '마켓' && lpArt.cat === 'LP';
+  console.log(`classify: market=${mktArt.cat} lp=${lpArt.cat}`);
   console.log(`extract: cio1=${JSON.stringify(cio1)} cio2.status=${cio2 && cio2.status} ret1=${JSON.stringify(ret1)}`);
-  console.log((ok && ok2 && ok3) ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
-  if (!(ok && ok2 && ok3)) process.exit(1);
+  console.log((ok && ok2 && ok3 && ok4) ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
+  if (!(ok && ok2 && ok3 && ok4)) process.exit(1);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('collect-news.mjs')) {

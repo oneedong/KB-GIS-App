@@ -48,6 +48,12 @@ const QUERIES = [
   // (5) 자산군별 수익률 — insights.json 자동 갱신용
   '국민연금 (대체투자 OR 사모투자 OR 부동산 OR 인프라) 수익률',
   '연기금 공제회 대체투자 수익률',
+  // (6) 최신성 강화 — Google 뉴스 when: 연산자로 최근 3일 기사 우선 수집.
+  // (RSS 기본 검색은 날짜순이 아니어서 오늘 기사가 묻히는 문제를 보완)
+  'private equity OR private credit OR infrastructure fund (close OR raise) billion when:3d',
+  '(국민연금 OR 교직원공제회 OR 행정공제회 OR 군인공제회 OR 사학연금) (대체투자 OR 사모 OR 인프라 OR 부동산 OR 출자) when:3d',
+  '연기금 OR 공제회 (해외 대체투자 OR 사모펀드 OR 사모대출 OR 출자) when:3d',
+  '(Blackstone OR KKR OR Apollo OR Ares OR Carlyle OR Brookfield) fund (close OR raise) when:3d',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────

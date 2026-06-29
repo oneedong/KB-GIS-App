@@ -31,6 +31,8 @@ const NEWS_API = './news.json';
 const ALLOC_API = './allocations.json';
 // CIO·자산군 수익률 인사이트 (수집기가 뉴스에서 자동 추출·갱신 — insights.json)
 const INSIGHTS_API = './insights.json';
+// 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
+const INSTITUTIONS_API = './institutions.json';
 // Merge incoming articles into the stored set WITHOUT dropping old ones,
 // so the archive accumulates over time and stays fully searchable.
 function mergeArticles(existing, incoming) {
@@ -306,6 +308,7 @@ function App() {
     const [alloc, setAlloc] = useState(null);
     const [allocSel, setAllocSel] = useState(null);
     const [insights, setInsights] = useState(null);
+    const [roster, setRoster] = useState(null); // 국내 LP 전체 로스터
     const [seen, setSeen] = useState(() => store.get('seen', null));
     const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
     useEffect(() => {
@@ -368,6 +371,14 @@ function App() {
             .then(r => r.json())
             .then(d => { if (d && (Array.isArray(d.cios) || Array.isArray(d.assetReturns)))
             setInsights(d); })
+            .catch(() => { });
+    }, []);
+    // Load 국내 LP 전체 로스터 (업권별 기관 목록).
+    useEffect(() => {
+        fetch(INSTITUTIONS_API + '?t=' + Date.now())
+            .then(r => r.json())
+            .then(d => { if (d && Array.isArray(d.institutions))
+            setRoster(d.institutions); })
             .catch(() => { });
     }, []);
     const flash = (msg) => {
@@ -499,15 +510,33 @@ function App() {
     // Category data
     const ICON = { '연기금': '연금', '공제회': '공제', '중앙회': '중앙', '은행': '은행', '운용·증권': '운용', '보험·캐피탈': '보험', '해외 GP': 'GP' };
     const SAMPLE = { '연기금': '국민연금 · KIC · 사학연금', '공제회': '교직원 · 행정 · 군인공제회', '중앙회': '농협 · 수협 · 새마을금고', '은행': '산업 · 기업 · 수출입은행', '운용·증권': '미래에셋 · 삼성 · KB', '보험·캐피탈': '삼성생명 · 한화 · 현대해상', '해외 GP': 'Blackstone · Ares · KKR' };
-    const catGroups = GROUPS.map(g => ({ name: g, count: items.filter(i => i.instGroup === g && i.cat !== '인사').length, icon: ICON[g], sample: SAMPLE[g] }));
-    // 업권 그룹별 개별 기관 목록 (기사 많은 순) — 그룹을 펼쳐 기관별로 필터링
+    // 그룹별 기사 수
     const instsByGroup = {};
     items.forEach(i => { if (i.cat !== '인사') {
         const g = i.instGroup;
         (instsByGroup[g] = instsByGroup[g] || {});
         instsByGroup[g][i.inst] = (instsByGroup[g][i.inst] || 0) + 1;
     } });
-    const groupInsts = (g) => Object.entries(instsByGroup[g] || {}).sort((a, b) => b[1] - a[1]);
+    // 업권별 전체 LP 로스터(institutions.json) — 기사가 없어도 전 기관을 노출.
+    const rosterByGroup = {};
+    (roster || []).forEach(r => { (rosterByGroup[r.group] = rosterByGroup[r.group] || []).push(r.name); });
+    // 그룹 헤더 카운트: 로스터가 있으면 전체 기관 수, 없으면 기사 보유 기관 수.
+    const catGroups = GROUPS.map(g => ({
+        name: g,
+        count: items.filter(i => i.instGroup === g && i.cat !== '인사').length,
+        instCount: (rosterByGroup[g] || []).length,
+        icon: ICON[g], sample: SAMPLE[g],
+    }));
+    // 그룹을 펼치면 전체 LP 목록(+각 기관 기사 수)을 기사 많은 순으로 보여줍니다.
+    const groupInsts = (g) => {
+        const counts = instsByGroup[g] || {};
+        const names = (rosterByGroup[g] && rosterByGroup[g].length)
+            ? rosterByGroup[g]
+            : Object.keys(counts);
+        return names
+            .map(name => [name, counts[name] || 0])
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    };
     const assetCats = ['RE', 'PC', 'PE', 'IN', 'AV'].map(k => ({ key: k, label: ASSET[k].label, code: ASSET[k].code, color: ASSET[k].color, count: items.filter(i => i.asset === k).length }));
     const regionCats = ['US', 'EU', 'AP', 'GL'].map(k => ({ key: k, label: REGION[k], count: items.filter(i => i.region === k).length }));
     // Global GP data
@@ -574,6 +603,12 @@ function App() {
                                 feedItems.length,
                                 "\uAC74")),
                         React.createElement("span", { onClick: () => setFilter('전체'), style: { font: '600 12px Pretendard', color: '#9a7d12', cursor: 'pointer' } }, "\uD574\uC81C \u2715"))),
+                    feedItems.length === 0 && filter !== '전체' && (React.createElement("div", { style: { padding: '48px 24px', textAlign: 'center', color: '#b0b2b6' } },
+                        React.createElement("div", { style: { fontSize: 30 } }, "\u25A2"),
+                        React.createElement("div", { style: { font: '600 13px Pretendard', marginTop: 10 } },
+                            feedFilterLabel,
+                            " \uAD00\uB828 \uCD5C\uADFC \uAE30\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4"),
+                        React.createElement("div", { style: { font: '500 11px Pretendard', color: '#c2c4c8', marginTop: 6 } }, "\uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9\uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4"))),
                     (() => {
                         const out = [];
                         let last = null;
@@ -616,7 +651,9 @@ function App() {
                 React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } },
                     React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 10 } },
                         "\uAD6D\uB0B4 LP \u00B7 \uC5C5\uAD8C\uBCC4 ",
-                        React.createElement("span", { style: { fontWeight: 500, letterSpacing: 0 } }, "\u00B7 \uB20C\uB7EC\uC11C \uAE30\uAD00 \uC120\uD0DD")),
+                        React.createElement("span", { style: { fontWeight: 500, letterSpacing: 0 } },
+                            "\u00B7 \uAE30\uAD00\uC744 \uB20C\uB7EC \uD574\uB2F9 \uAE30\uAD00 \uB274\uC2A4 \uBCF4\uAE30",
+                            roster ? ` (전체 ${roster.length}개 기관)` : '')),
                     React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, catGroups.map(g => {
                         const open = expandedGroup === g.name;
                         const insts = open ? groupInsts(g.name) : [];
@@ -628,19 +665,21 @@ function App() {
                                         React.createElement("div", { style: { font: '700 14px Pretendard' } }, g.name),
                                         React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, g.sample))),
                                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9 } },
+                                    g.instCount > 0 && React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#9a9ca0' } },
+                                        "\uAE30\uAD00 ",
+                                        g.instCount),
                                     React.createElement("span", { style: { font: '700 12px Pretendard', color: '#1c1d1f', background: '#f4f2ec', padding: '3px 9px', borderRadius: 999 } }, g.count),
                                     React.createElement("span", { style: { color: '#cfccc4', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' } }, "\u203A"))),
                             open && (React.createElement("div", { style: { padding: '2px 13px 14px', display: 'flex', flexWrap: 'wrap', gap: 7 } },
                                 React.createElement("div", { onClick: () => applyFilter(g.name), style: { font: '600 12px Pretendard', color: '#1c1d1f', background: '#FFCC00', padding: '8px 12px', borderRadius: 999, cursor: 'pointer' } },
                                     g.name,
-                                    " \uC804\uCCB4 ",
+                                    " \uC804\uCCB4 \uAE30\uC0AC ",
                                     g.count),
                                 insts.length === 0
-                                    ? React.createElement("span", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', alignSelf: 'center' } }, "\uC544\uC9C1 \uC218\uC9D1\uB41C \uB274\uC2A4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4")
-                                    : insts.map(([name, c]) => (React.createElement("div", { key: name, onClick: () => applyFilter(name), style: { font: '600 12px Pretendard', color: '#3d3e42', background: '#f2f0ea', padding: '8px 12px', borderRadius: 999, cursor: 'pointer' } },
+                                    ? React.createElement("span", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', alignSelf: 'center' } }, "\uAE30\uAD00 \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026")
+                                    : insts.map(([name, c]) => (React.createElement("div", { key: name, onClick: () => applyFilter(name), style: { font: '600 12px Pretendard', color: c ? '#3d3e42' : '#a6a8ac', background: c ? '#f2f0ea' : '#f8f7f3', padding: '8px 12px', borderRadius: 999, cursor: 'pointer' } },
                                         name,
-                                        " ",
-                                        React.createElement("span", { style: { color: '#a6a8ac' } }, c))))))));
+                                        c ? React.createElement("span", { style: { color: '#9a7d12', marginLeft: 4 } }, c) : null)))))));
                     })),
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '22px 0 10px' } },
                         React.createElement("span", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "Global GP \u00B7 \uD574\uC678 \uC6B4\uC6A9\uC0AC"),

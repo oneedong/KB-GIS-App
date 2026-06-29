@@ -27,12 +27,14 @@ jobs:
         run: node scripts/collect-news.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Rebuild LP roster
+        run: node scripts/gen-institutions.mjs
       - name: Commit updated feed
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          if ! git diff --quiet news.json insights.json; then
-            git add news.json insights.json
+          if ! git diff --quiet news.json insights.json institutions.json; then
+            git add news.json insights.json institutions.json
             git commit -m "chore: refresh news feed [skip ci]"
             git push
           else

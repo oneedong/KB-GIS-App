@@ -23,6 +23,8 @@ const NEWS_API = './news.json';
 const ALLOC_API = './allocations.json';
 // CIO·자산군 수익률 인사이트 (수집기가 뉴스에서 자동 추출·갱신 — insights.json)
 const INSIGHTS_API = './insights.json';
+// 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
+const INSTITUTIONS_API = './institutions.json';
 
 // Merge incoming articles into the stored set WITHOUT dropping old ones,
 // so the archive accumulates over time and stays fully searchable.
@@ -350,6 +352,7 @@ function App() {
   const [alloc, setAlloc]          = useState(null);
   const [allocSel, setAllocSel]    = useState(null);
   const [insights, setInsights]    = useState(null);
+  const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
   const [seen, setSeen]            = useState(() => store.get('seen', null));
   const [isDesktop, setIsDesktop]  = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
   useEffect(() => {
@@ -410,6 +413,14 @@ function App() {
     fetch(INSIGHTS_API + '?t=' + Date.now())
       .then(r => r.json())
       .then(d => { if (d && (Array.isArray(d.cios) || Array.isArray(d.assetReturns))) setInsights(d); })
+      .catch(() => {});
+  }, []);
+
+  // Load 국내 LP 전체 로스터 (업권별 기관 목록).
+  useEffect(() => {
+    fetch(INSTITUTIONS_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && Array.isArray(d.institutions)) setRoster(d.institutions); })
       .catch(() => {});
   }, []);
 
@@ -532,11 +543,29 @@ function App() {
   // Category data
   const ICON   = { '연기금':'연금','공제회':'공제','중앙회':'중앙','은행':'은행','운용·증권':'운용','보험·캐피탈':'보험','해외 GP':'GP' };
   const SAMPLE = { '연기금':'국민연금 · KIC · 사학연금','공제회':'교직원 · 행정 · 군인공제회','중앙회':'농협 · 수협 · 새마을금고','은행':'산업 · 기업 · 수출입은행','운용·증권':'미래에셋 · 삼성 · KB','보험·캐피탈':'삼성생명 · 한화 · 현대해상','해외 GP':'Blackstone · Ares · KKR' };
-  const catGroups = GROUPS.map(g => ({ name:g, count:items.filter(i=>i.instGroup===g&&i.cat!=='인사').length, icon:ICON[g], sample:SAMPLE[g] }));
-  // 업권 그룹별 개별 기관 목록 (기사 많은 순) — 그룹을 펼쳐 기관별로 필터링
+  // 그룹별 기사 수
   const instsByGroup = {};
   items.forEach(i => { if (i.cat !== '인사') { const g = i.instGroup; (instsByGroup[g] = instsByGroup[g] || {}); instsByGroup[g][i.inst] = (instsByGroup[g][i.inst] || 0) + 1; } });
-  const groupInsts = (g) => Object.entries(instsByGroup[g] || {}).sort((a, b) => b[1] - a[1]);
+  // 업권별 전체 LP 로스터(institutions.json) — 기사가 없어도 전 기관을 노출.
+  const rosterByGroup = {};
+  (roster || []).forEach(r => { (rosterByGroup[r.group] = rosterByGroup[r.group] || []).push(r.name); });
+  // 그룹 헤더 카운트: 로스터가 있으면 전체 기관 수, 없으면 기사 보유 기관 수.
+  const catGroups = GROUPS.map(g => ({
+    name:g,
+    count:items.filter(i=>i.instGroup===g&&i.cat!=='인사').length,
+    instCount:(rosterByGroup[g] || []).length,
+    icon:ICON[g], sample:SAMPLE[g],
+  }));
+  // 그룹을 펼치면 전체 LP 목록(+각 기관 기사 수)을 기사 많은 순으로 보여줍니다.
+  const groupInsts = (g) => {
+    const counts = instsByGroup[g] || {};
+    const names = (rosterByGroup[g] && rosterByGroup[g].length)
+      ? rosterByGroup[g]
+      : Object.keys(counts);
+    return names
+      .map(name => [name, counts[name] || 0])
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  };
   const assetCats = ['RE','PC','PE','IN','AV'].map(k => ({ key:k, label:ASSET[k].label, code:ASSET[k].code, color:ASSET[k].color, count:items.filter(i=>i.asset===k).length }));
   const regionCats = ['US','EU','AP','GL'].map(k => ({ key:k, label:REGION[k], count:items.filter(i=>i.region===k).length }));
   // Global GP data
@@ -628,6 +657,13 @@ function App() {
                 <span onClick={() => setFilter('전체')} style={{font:'600 12px Pretendard', color:'#9a7d12', cursor:'pointer'}}>해제 ✕</span>
               </div>
             )}
+            {feedItems.length === 0 && filter !== '전체' && (
+              <div style={{padding:'48px 24px', textAlign:'center', color:'#b0b2b6'}}>
+                <div style={{fontSize:30}}>▢</div>
+                <div style={{font:'600 13px Pretendard', marginTop:10}}>{feedFilterLabel} 관련 최근 기사가 없습니다</div>
+                <div style={{font:'500 11px Pretendard', color:'#c2c4c8', marginTop:6}}>새 기사가 수집되면 자동으로 표시됩니다</div>
+              </div>
+            )}
             {(() => {
               const out = []; let last = null;
               feedItems.forEach(item => {
@@ -683,7 +719,7 @@ function App() {
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18}}>
-            <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:10}}>국내 LP · 업권별 <span style={{fontWeight:500, letterSpacing:0}}>· 눌러서 기관 선택</span></div>
+            <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:10}}>국내 LP · 업권별 <span style={{fontWeight:500, letterSpacing:0}}>· 기관을 눌러 해당 기관 뉴스 보기{roster ? ` (전체 ${roster.length}개 기관)` : ''}</span></div>
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
               {catGroups.map(g => {
                 const open = expandedGroup === g.name;
@@ -699,17 +735,18 @@ function App() {
                       </div>
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:9}}>
+                      {g.instCount > 0 && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>기관 {g.instCount}</span>}
                       <span style={{font:'700 12px Pretendard', color:'#1c1d1f', background:'#f4f2ec', padding:'3px 9px', borderRadius:999}}>{g.count}</span>
                       <span style={{color:'#cfccc4', transform:open?'rotate(90deg)':'none', transition:'transform .15s'}}>›</span>
                     </div>
                   </div>
                   {open && (
                     <div style={{padding:'2px 13px 14px', display:'flex', flexWrap:'wrap', gap:7}}>
-                      <div onClick={() => applyFilter(g.name)} style={{font:'600 12px Pretendard', color:'#1c1d1f', background:'#FFCC00', padding:'8px 12px', borderRadius:999, cursor:'pointer'}}>{g.name} 전체 {g.count}</div>
+                      <div onClick={() => applyFilter(g.name)} style={{font:'600 12px Pretendard', color:'#1c1d1f', background:'#FFCC00', padding:'8px 12px', borderRadius:999, cursor:'pointer'}}>{g.name} 전체 기사 {g.count}</div>
                       {insts.length === 0
-                        ? <span style={{font:'500 11.5px Pretendard', color:'#a6a8ac', alignSelf:'center'}}>아직 수집된 뉴스가 없습니다</span>
+                        ? <span style={{font:'500 11.5px Pretendard', color:'#a6a8ac', alignSelf:'center'}}>기관 목록을 불러오는 중…</span>
                         : insts.map(([name, c]) => (
-                          <div key={name} onClick={() => applyFilter(name)} style={{font:'600 12px Pretendard', color:'#3d3e42', background:'#f2f0ea', padding:'8px 12px', borderRadius:999, cursor:'pointer'}}>{name} <span style={{color:'#a6a8ac'}}>{c}</span></div>
+                          <div key={name} onClick={() => applyFilter(name)} style={{font:'600 12px Pretendard', color:c?'#3d3e42':'#a6a8ac', background:c?'#f2f0ea':'#f8f7f3', padding:'8px 12px', borderRadius:999, cursor:'pointer'}}>{name}{c ? <span style={{color:'#9a7d12', marginLeft:4}}>{c}</span> : null}</div>
                         ))}
                     </div>
                   )}

@@ -31,8 +31,8 @@ jobs:
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          if ! git diff --quiet news.json; then
-            git add news.json
+          if ! git diff --quiet news.json insights.json; then
+            git add news.json insights.json
             git commit -m "chore: refresh news feed [skip ci]"
             git push
           else

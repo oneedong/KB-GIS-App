@@ -1,545 +1,466 @@
-"use strict";
-// @ts-nocheck
 /*
- * KB GIS — 해외대체투자 시장뉴스 앱
- * Authored in JSX, transpiled to plain JS by tsc (--jsx react).
- * React / ReactDOM are loaded globally from CDN in index.html.
+ * KB GIS — 무료 뉴스 자동 수집기 (zero-dependency)
+ *
+ * Google 뉴스 RSS(무료, API키 불필요)에서 해외대체투자 관련 기사를 모아
+ * 앱이 읽는 news.json 으로 저장합니다. GitHub Actions 스케줄러가 주기적으로
+ * 실행합니다 (.github/workflows/collect-news.yml).
+ *
+ *   node scripts/collect-news.mjs            # 수집 후 news.json 갱신
+ *   node scripts/collect-news.mjs --selftest # 네트워크 없이 파서/분류 테스트
  */
-const { useState, useRef, useEffect } = React;
-// ─── Persistence (localStorage) ───────────────────────────
-// Bookmarks (관심), read history, and the article archive all persist locally
-// so nothing disappears between sessions and the archive keeps accumulating.
-const LS_PREFIX = 'kbgis.';
-const store = {
-    get(key, def) { try {
-        const v = localStorage.getItem(LS_PREFIX + key);
-        return v == null ? def : JSON.parse(v);
-    }
-    catch (e) {
-        return def;
-    } },
-    set(key, val) { try {
-        localStorage.setItem(LS_PREFIX + key, JSON.stringify(val));
-    }
-    catch (e) { } },
-};
-// News feed: a JSON archive refreshed by the scheduled collector
-// (scripts/collect-news.mjs via GitHub Actions). Fetched on launch and merged
-// into the local archive. Set to '' to run on bundled seed data only.
-const NEWS_API = './news.json';
-// Merge incoming articles into the stored set WITHOUT dropping old ones,
-// so the archive accumulates over time and stays fully searchable.
-function mergeArticles(existing, incoming) {
-    const map = {};
-    (existing || []).forEach(a => { if (a && a.id)
-        map[a.id] = a; });
-    (incoming || []).forEach(a => { if (a && a.id)
-        map[a.id] = { ...map[a.id], ...a }; });
-    return Object.values(map);
-}
-// Newest first, by date ('MM.DD') then time ('HH:MM').
-function sortArticles(list) {
-    return list.slice().sort((a, b) => {
-        const ka = (a.date || '') + ' ' + (a.time || '');
-        const kb = (b.date || '') + ' ' + (b.time || '');
-        return ka < kb ? 1 : ka > kb ? -1 : 0;
-    });
-}
-// Canonical share URL for an article.
-function articleUrl(it) {
-    if (!it)
-        return 'https://kbgis.app';
-    return it.url || ('https://kbgis.app/news/' + it.id);
-}
-const ASSET = {
-    RE: { label: '부동산', code: 'Real Estate', color: 'oklch(0.62 0.13 55)' },
-    PC: { label: '사모대출', code: 'Private Credit', color: 'oklch(0.6 0.12 210)' },
-    PE: { label: '사모펀드', code: 'Private Equity', color: 'oklch(0.58 0.13 290)' },
-    IN: { label: '인프라', code: 'Infrastructure', color: 'oklch(0.58 0.12 155)' },
-};
-const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
-const CAT_LABEL = { LP: '한국 LP 동향', GP: '해외 GP 동향', '인사': 'CIO·인사 이동' };
-const GROUPS = ['연기금', '공제회', '운용·증권', '보험·캐피탈', '해외 GP'];
-function grp(t) {
-    if (t === '연기금')
-        return '연기금';
-    if (t === '공제회')
-        return '공제회';
-    if (t === '자산운용사' || t === '증권사')
-        return '운용·증권';
-    if (t === '보험사' || t === '캐피탈')
-        return '보험·캐피탈';
-    if (t === '해외 GP')
-        return '해외 GP';
-    return '기타';
-}
-const BASE = [
-    { id: 'n1', cat: 'LP', inst: '국민연금', instType: '연기금', asset: 'RE', region: 'US', date: '06.26', time: '08:12', source: 'Mandate Wire', lang: 'en',
-        ko: '국민연금, 미국 멀티패밀리 메자닌 대출에 5억 달러 추가 배정',
-        en: 'NPS allocates an additional $500M to U.S. multifamily mezzanine debt',
-        metric: '+$500M', metricLabel: '추가 배정액',
-        ai: ['국민연금이 미국 멀티패밀리 메자닌 대출에 5억 달러를 추가 배정했다.', '고금리 환경에서 안정적 인컴 확보를 노린 행보로 풀이된다.', '대체투자 내 사모대출 목표 배분율은 12%로 상향됐다.'],
-        body: '국민연금공단이 미국 멀티패밀리(다세대 임대주택) 메자닌 대출에 5억 달러를 추가로 배정했다. 최근 고금리 환경에서 선순위 대비 높은 금리를 받으면서도 담보가치 하단이 두꺼운 메자닌 구조의 매력이 부각된 결과다. 국민연금은 올해 대체투자 포트폴리오에서 사모대출 비중을 단계적으로 확대하고 있다.',
-        enBody: 'The National Pension Service has committed an additional $500 million to U.S. multifamily mezzanine debt, citing attractive risk-adjusted yields in a higher-for-longer rate environment. The allocation is part of a broader push to grow private credit within its alternatives book toward a 12% target.' },
-    { id: 'n2', cat: 'LP', inst: '교직원공제회', instType: '공제회', asset: 'PE', region: 'EU', date: '06.26', time: '07:48', source: '한국경제', lang: 'ko',
-        ko: '한국교직원공제회, 유럽 바이아웃 코인베스트에 2,000억 원 약정',
-        en: 'The-K commits ₩200bn to European buyout co-investments',
-        metric: '₩2,000억', metricLabel: '신규 약정액',
-        ai: ['교직원공제회가 유럽 바이아웃 코인베스트 프로그램에 2,000억 원을 약정했다.', '검증된 GP와의 공동투자로 수수료를 낮추는 전략이다.', '유럽 중견기업(미드캡) 딜에 집중 배정될 예정이다.'],
-        body: '한국교직원공제회가 유럽 바이아웃 펀드 운용사들과의 코인베스트(공동투자) 프로그램에 2,000억 원을 신규 약정했다. 블라인드 펀드 출자에 더해 직접 딜에 함께 참여해 운용보수와 성과보수를 절감하려는 의도다. 주로 유럽 미드캡 기업 인수 건에 자금이 배정될 전망이다.',
-        enBody: null },
-    { id: 'n3', cat: 'LP', inst: '행정공제회', instType: '공제회', asset: 'IN', region: 'GL', date: '06.26', time: '07:30', source: 'IPE Real Assets', lang: 'en',
-        ko: '행정공제회(POBA), 글로벌 인프라 블라인드펀드에 3억 달러 출자',
-        en: 'POBA commits $300M to a global infrastructure blind-pool fund',
-        metric: '+$300M', metricLabel: '출자액',
-        ai: ['행정공제회가 글로벌 코어플러스 인프라 펀드에 3억 달러를 출자했다.', '에너지 전환·디지털 인프라 자산에 분산 투자된다.', '물가 연동 현금흐름으로 인플레 헤지를 노린다.'],
-        body: '행정공제회(POBA)가 글로벌 운용사의 코어플러스 인프라 블라인드펀드에 3억 달러를 출자했다. 전력·재생에너지, 디지털 인프라(데이터센터·통신탑) 등 물가에 연동되는 현금흐름 자산이 주요 투자 대상이다. 인플레이션 헤지와 장기 안정 수익을 동시에 겨냥한 배분이다.',
-        enBody: "The Public Officials Benefit Association (POBA) has committed $300 million to a global core-plus infrastructure fund. The mandate targets energy transition and digital infrastructure assets with inflation-linked cash flows, supporting POBA's goal of stable long-duration returns." },
-    { id: 'n4', cat: 'LP', inst: '미래에셋자산운용', instType: '자산운용사', asset: 'RE', region: 'US', date: '06.26', time: '07:05', source: '더벨', lang: 'ko',
-        ko: '미래에셋운용, 미국 데이터센터 개발에 7억 달러 규모 투자 추진',
-        en: 'Mirae Asset to invest $700M in U.S. data-center development',
-        metric: '$700M', metricLabel: '투자 추진 규모',
-        ai: ['미래에셋자산운용이 미국 데이터센터 개발 사업에 7억 달러 투자를 추진한다.', 'AI 수요로 급증한 데이터센터 임대 수요를 겨냥했다.', '국내 기관 자금을 모아 공동 출자 구조로 진행한다.'],
-        body: '미래에셋자산운용이 미국 주요 거점의 하이퍼스케일 데이터센터 개발 사업에 약 7억 달러 규모 투자를 추진한다. 생성형 AI 확산으로 컴퓨팅 수요가 폭증하면서 데이터센터 임대 시장이 구조적 성장 국면에 진입했다는 판단이다. 국내 연기금·공제회 자금을 모아 공동 출자하는 구조로 설계 중이다.',
-        enBody: null },
-    { id: 'n5', cat: 'LP', inst: '삼성생명', instType: '보험사', asset: 'PC', region: 'EU', date: '06.25', time: '19:40', source: 'Private Debt Investor', lang: 'en',
-        ko: '삼성생명, 유럽 사모대출 펀드에 4억 유로 출자',
-        en: 'Samsung Life commits €400M to a European private credit fund',
-        metric: '€400M', metricLabel: '출자액',
-        ai: ['삼성생명이 유럽 다이렉트 렌딩 펀드에 4억 유로를 출자했다.', '보험 부채에 맞춘 장기·안정 인컴 자산 확보가 목적이다.', '유럽 미드마켓 기업 대출이 핵심 투자 대상이다.'],
-        body: '삼성생명이 유럽 미드마켓 기업을 대상으로 한 다이렉트 렌딩(직접대출) 펀드에 4억 유로를 출자했다. 장기 보험 부채에 대응하기 위한 안정적 인컴 자산 확보 차원으로, 변동금리 기반 사모대출의 인컴 매력이 부각됐다.',
-        enBody: 'Samsung Life has committed €400 million to a European direct lending fund focused on mid-market corporates. The insurer is seeking stable, long-duration income to match its liabilities, with floating-rate private credit offering attractive yields.' },
-    { id: 'n6', cat: 'LP', inst: 'KIC', instType: '연기금', asset: 'IN', region: 'AP', date: '06.25', time: '18:20', source: 'IPE Real Assets', lang: 'en',
-        ko: '한국투자공사(KIC), 아시아 신재생 인프라에 3억 달러 공동투자',
-        en: 'KIC co-invests $300M in Asian renewable infrastructure',
-        metric: '+$300M', metricLabel: '공동투자액',
-        ai: ['KIC가 아시아 신재생에너지 인프라에 3억 달러를 공동투자했다.', '태양광·풍력 발전 자산 포트폴리오가 대상이다.', '에너지 전환 테마의 장기 성장에 베팅했다.'],
-        body: '한국투자공사(KIC)가 글로벌 인프라 운용사와 함께 아시아 지역 신재생에너지 인프라에 3억 달러를 공동투자했다. 태양광·풍력 발전 자산과 관련 송배전 인프라가 주요 대상이다. 에너지 전환이라는 구조적 테마의 장기 성장성에 주목한 투자다.',
-        enBody: "The Korea Investment Corporation has co-invested $300 million in Asian renewable energy infrastructure alongside a global manager. The portfolio spans solar and wind generation assets, reflecting KIC's conviction in the long-term energy transition theme." },
-    { id: 'n7', cat: 'LP', inst: '군인공제회', instType: '공제회', asset: 'PE', region: 'US', date: '06.25', time: '16:10', source: '서울경제', lang: 'ko',
-        ko: '군인공제회, 북미 PE 세컨더리 펀드에 1,500억 원 신규 출자',
-        en: 'MMAA commits ₩150bn to a North American PE secondaries fund',
-        metric: '₩1,500억', metricLabel: '신규 출자액',
-        ai: ['군인공제회가 북미 PE 세컨더리 펀드에 1,500억 원을 출자했다.', '할인 매입으로 J커브를 완화하는 전략이다.', '분배 지연 환경에서 유동성 확보 수단으로 주목된다.'],
-        body: '군인공제회가 북미 사모펀드(PE) 세컨더리 전문 펀드에 1,500억 원을 신규 출자했다. 기존 LP 지분을 할인된 가격에 매입해 초기 손실 구간(J커브)을 완화하고 빠른 분배를 기대할 수 있다는 점이 매력으로 꼽힌다. 분배가 지연되는 시장 환경에서 세컨더리가 유동성 대안으로 부각되고 있다.',
-        enBody: null },
-    { id: 'n8', cat: 'LP', inst: '미래에셋증권', instType: '증권사', asset: 'RE', region: 'EU', date: '06.25', time: '14:25', source: '매일경제', lang: 'ko',
-        ko: '미래에셋증권, 런던 오피스 빌딩 인수금융 5,000억 원 주선',
-        en: 'Mirae Asset Securities arranges ₩500bn financing for a London office tower',
-        metric: '₩5,000억', metricLabel: '인수금융 주선',
-        ai: ['미래에셋증권이 런던 핵심 오피스 빌딩 인수금융 5,000억 원을 주선했다.', '금리 안정 기대에 유럽 오피스 거래가 재개되는 신호다.', '셀다운을 통해 국내 기관에 재매각할 계획이다.'],
-        body: '미래에셋증권이 런던 시티 권역 프라임 오피스 빌딩 인수를 위한 5,000억 원 규모 인수금융을 주선했다. 가격 조정이 마무리되고 금리 안정 기대가 커지면서 유럽 오피스 시장의 거래가 점진적으로 재개되는 분위기다. 미래에셋증권은 주선 물량 일부를 국내 기관 투자자에 셀다운(재매각)할 계획이다.',
-        enBody: null },
-    { id: 'n9', cat: 'GP', inst: 'Blackstone', instType: '해외 GP', asset: 'PE', region: 'EU', date: '06.25', time: '13:00', source: 'PERE', lang: 'en',
-        ko: '블랙스톤, 유럽 물류 플랫폼 인수 위해 80억 유로 펀드 클로징',
-        en: 'Blackstone closes €8B fund for a European logistics platform',
-        metric: '€8.0B', metricLabel: '최종 클로징',
-        ai: ['블랙스톤이 유럽 물류 부동산 펀드를 80억 유로에 최종 클로징했다.', '이커머스 성장에 따른 라스트마일 물류 수요가 배경이다.', '유럽 핵심 물류 거점 인수에 자금을 집행한다.'],
-        body: '블랙스톤이 유럽 물류 부동산에 투자하는 펀드를 80억 유로 규모로 최종 클로징했다. 이커머스 침투율 상승과 공급망 재편으로 라스트마일 물류센터 수요가 견조하다는 판단이다. 펀드는 유럽 핵심 물류 거점의 자산 인수와 개발에 집행될 예정이다.',
-        enBody: 'Blackstone has held a final close on an €8 billion fund targeting European logistics real estate. The firm points to resilient last-mile demand driven by e-commerce penetration and supply-chain reshoring, with capital earmarked for acquisitions and development across key European hubs.' },
-    { id: 'n10', cat: 'GP', inst: 'Ares', instType: '해외 GP', asset: 'PC', region: 'US', date: '06.25', time: '11:30', source: 'Private Debt Investor', lang: 'en',
-        ko: '에어리스, 북미 다이렉트 렌딩 펀드로 90억 달러 모집 마감',
-        en: 'Ares wraps up a $9B North American direct lending fund',
-        metric: '$9.0B', metricLabel: '펀드 결성액',
-        ai: ['에어리스가 북미 다이렉트 렌딩 펀드로 90억 달러 모집을 마감했다.', '은행 대출 공백을 사모대출이 빠르게 메우고 있다.', '중견기업 대상 변동금리 대출이 핵심이다.'],
-        body: '에어리스 매니지먼트가 북미 중견기업을 대상으로 한 다이렉트 렌딩 펀드 모집을 90억 달러 규모로 마감했다. 은행권 대출이 위축된 공백을 사모대출이 메우면서 자금 모집이 순조롭게 진행됐다. 변동금리 구조로 고금리 환경의 인컴 매력이 부각된다.',
-        enBody: 'Ares Management has wrapped up a $9 billion North American direct lending fund focused on middle-market borrowers. Private credit continues to fill the gap left by retreating bank lenders, with floating-rate structures offering compelling income in a higher-rate environment.' },
-    { id: 'n11', cat: '인사', inst: 'APG', instType: '해외 GP', asset: 'PC', region: 'GL', date: '06.25', time: '21:30', source: 'Private Debt Investor', lang: 'en',
-        ko: 'APG, 신임 사모대출 부문 CIO에 마르틴 산체스 선임',
-        en: 'APG names Martin Sanchez as new CIO of private credit',
-        metric: '신규 선임', metricLabel: '인사',
-        ai: ['네덜란드 연기금 운용사 APG가 사모대출 CIO를 새로 선임했다.', '마르틴 산체스가 글로벌 사모대출 배분을 총괄한다.', '사모대출 비중 확대 기조가 이어질 전망이다.'],
-        body: '네덜란드 최대 연기금 운용사 APG가 사모대출 부문 최고투자책임자(CIO)에 마르틴 산체스를 선임했다. 신임 CIO는 글로벌 사모대출 포트폴리오의 배분과 운용을 총괄하게 된다. 시장에서는 APG의 사모대출 비중 확대 기조가 한층 강화될 것으로 본다.',
-        enBody: "APG, the Netherlands' largest pension investor, has named Martin Sanchez as Chief Investment Officer for private credit. Sanchez will oversee allocation and management of the firm's global private debt portfolio, reinforcing APG's push to grow the asset class." },
-    { id: 'n12', cat: '인사', inst: 'CalPERS', instType: '해외 GP', asset: 'PE', region: 'US', date: '06.25', time: '16:00', source: 'Buyouts', lang: 'en',
-        ko: 'CalPERS 사모투자 총괄, 12월 말 퇴임 예정',
-        en: 'CalPERS head of private equity to step down in December',
-        metric: '12월 퇴임', metricLabel: '인사',
-        ai: ['미국 최대 연기금 CalPERS의 사모투자 총괄이 연말 퇴임한다.', '후임 인선 전까지 사모투자 전략에 관심이 쏠린다.', 'CalPERS는 사모투자 비중 확대 기조를 유지해왔다.'],
-        body: '미국 최대 공적 연기금 CalPERS의 사모투자(PE) 총괄 책임자가 12월 말 퇴임할 예정이다. 최근 사모투자 비중을 적극 확대해온 만큼 후임 인선과 전략 방향에 시장의 관심이 집중되고 있다.',
-        enBody: 'The head of private equity at CalPERS, the largest U.S. public pension fund, is set to step down at the end of December. With the fund having actively ramped up its private equity allocation, attention now turns to succession and the future direction of its program.' },
+import { readFile, writeFile } from 'fs/promises';
+
+// 검색어: placement agent 관점의 해외 alternative investment fund 중심.
+// (1) 글로벌 펀드레이징/자산군  (2) 글로벌 GP  (3) 국내 LP의 해외 출자.
+const QUERIES = [
+  // (1) 글로벌 펀드레이징 · 자산군 (영어)
+  'private equity fund final close billion',
+  'private credit fund close billion',
+  'infrastructure fund final close billion',
+  'real estate fund close billion',
+  'aviation OR aircraft leasing fund close',
+  'secondaries fund final close',
+  'alternative investment fund launch',
+  'private fund fundraising final close',
+  'placement agent private capital',
+  // (2) 글로벌 GP (OR 그룹)
+  'Blackstone OR Apollo OR KKR OR Carlyle OR Ares fund',
+  'BlackRock OR Brookfield OR EQT OR CVC OR TPG fund',
+  '"Bain Capital" OR Advent OR Permira OR "Warburg Pincus" fund',
+  'Oaktree OR "Blue Owl" OR HPS OR "Sixth Street" credit fund',
+  '"Partners Group" OR Ardian OR "Hamilton Lane" OR StepStone',
+  '"Global Infrastructure Partners" OR Stonepeak OR "I Squared" OR Macquarie infrastructure',
+  // (3) 국내 LP 의 해외 대체투자 (한국어 · 해외 맥락)
+  '국민연금 해외 (사모 OR 인프라 OR 부동산 OR 사모대출)',
+  '한국투자공사 해외 (사모 OR 인프라 OR 부동산)',
+  '교직원공제회 해외 (대체투자 OR 사모 OR 출자)',
+  '행정공제회 해외 (대체투자 OR 인프라 OR 부동산)',
+  '군인공제회 해외 (대체투자 OR 사모 OR 출자)',
+  '과학기술인공제회 해외 (대체투자 OR 출자)',
+  '국내 기관 해외 대체투자 출자 약정',
+  '연기금 공제회 해외 사모펀드 출자',
+  '보험사 해외 (사모대출 OR 대체투자)',
+  '한국 LP 해외 사모펀드 OR PEF 출자',
 ];
-// ─── Navbar ───────────────────────────────────────────────
-function Navbar({ active, onHome, onCategory, onSearch, onBookmarks }) {
-    const on = '#1c1d1f', off = '#b0b2b6';
-    const tab = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flex: 1 };
-    return (React.createElement("div", { style: { flexShrink: 0, height: 64, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', borderTop: '1px solid #ece9e2', display: 'flex', alignItems: 'center', justifyContent: 'space-around', paddingBottom: 'max(env(safe-area-inset-bottom), 6px)', boxSizing: 'content-box' } },
-        React.createElement("div", { onClick: onHome, style: tab },
-            React.createElement("span", { style: { fontSize: 17, lineHeight: 1, color: active === 'home' ? on : off } }, "\u2302"),
-            React.createElement("span", { style: { font: '600 10.5px Pretendard', color: active === 'home' ? on : off } }, "\uD648")),
-        React.createElement("div", { onClick: onCategory, style: tab },
-            React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'category' ? on : off } }, "\u25A6"),
-            React.createElement("span", { style: { font: '600 10.5px Pretendard', color: active === 'category' ? on : off } }, "\uCE74\uD14C\uACE0\uB9AC")),
-        React.createElement("div", { onClick: onSearch, style: tab },
-            React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'search' ? on : off } }, "\u2315"),
-            React.createElement("span", { style: { font: '600 10.5px Pretendard', color: active === 'search' ? on : off } }, "\uAC80\uC0C9")),
-        React.createElement("div", { onClick: onBookmarks, style: tab },
-            React.createElement("span", { style: { fontSize: 15, lineHeight: 1, color: active === 'bookmarks' ? on : off } }, "\u25A2"),
-            React.createElement("span", { style: { font: '600 10.5px Pretendard', color: active === 'bookmarks' ? on : off } }, "\uBD81\uB9C8\uD06C"))));
+
+// ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = 'gemini-1.5-flash';
+const LLM_BUDGET = 40;
+
+async function llmSummarize(title, body) {
+  if (!GEMINI_API_KEY) return null;
+  const prompt = `다음 해외 대체투자 뉴스를 한국어 3줄로 요약해줘. 각 줄은 핵심만 담은 완결된 한 문장으로, 불릿/번호 없이 줄바꿈으로만 구분해줘.\n\n제목: ${title}\n내용: ${body}`;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3, maxOutputTokens: 220 } }) }
+    );
+    if (!res.ok) return null;
+    const j = await res.json();
+    const text = (((j.candidates || [])[0] || {}).content || {}).parts?.[0]?.text || '';
+    const lines = text.split('\n').map(s => s.replace(/^[\s\-*\d.)]+/, '').trim()).filter(Boolean).slice(0, 3);
+    return lines.length ? lines : null;
+  } catch (e) { return null; }
 }
-// ─── FeedItem ─────────────────────────────────────────────
-function FeedItem({ item, onOpen, onBookmark }) {
-    return (React.createElement("div", { onClick: onOpen, style: { display: 'flex', gap: 11, padding: '14px 18px', borderBottom: '1px solid #f3f1ea', cursor: 'pointer' } },
-        React.createElement("div", { style: { width: 3, borderRadius: 2, background: item.assetColor, flexShrink: 0 } }),
-        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' } },
-                React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1c1d1f', background: '#f0eee7', padding: '2px 7px', borderRadius: 5 } }, item.inst),
-                React.createElement("span", { style: { font: '600 10.5px Pretendard', color: item.assetColor } }, item.assetLabel),
-                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0' } }, item.regionLabel),
-                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#bcbec2' } }, item.time),
-                item.unread && React.createElement("span", { style: { width: 6, height: 6, borderRadius: '50%', background: '#FFCC00', display: 'inline-block' } })),
-            React.createElement("div", { style: { font: '650 14px/1.42 Pretendard', letterSpacing: '-.01em' } }, item.ko),
-            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginTop: 8 } },
-                React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#1c1d1f', background: '#f2f0ea', padding: '3px 8px', borderRadius: 5 } }, item.metric),
-                item.lang === 'en' && React.createElement("span", { style: { font: '700 9px Pretendard', color: '#56585c', border: '1px solid #ddd9cf', padding: '2px 5px', borderRadius: 4, letterSpacing: '.04em' } }, "EN \uC6D0\uBB38"),
-                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#b6b8bc', marginLeft: 'auto' } }, item.source))),
-        React.createElement("div", { onClick: onBookmark, style: { flexShrink: 0, alignSelf: 'flex-start', fontSize: 15, cursor: 'pointer', color: '#cfccc4', padding: 2 } }, item.bookmarked ? React.createElement("span", { style: { color: '#1c1d1f' } }, "\u25A3") : React.createElement("span", null, "\u25A2"))));
+
+// ── 분류 사전 ────────────────────────────────────────────
+// 국내 LP 기관 (업권별) — 첨부 엑셀 기반 자동 생성. 긴 이름이 먼저 매칭됩니다.
+const KOREAN_LPS = [
+  [/사립학교교직원연금공단|사학연금|Korea Teachers Pension/i, '사립학교교직원연금공단', '연기금'],
+  [/수산업협동조합중앙회|National Federation of Fisheries Cooperatives/i, '수산업협동조합중앙회', '중앙회'],
+  [/파인스트리트자산운용|Pine Street Asset Management/i, '파인스트리트자산운용', '자산운용사'],
+  [/하나대체투자자산운용|Hana Alternative Asset Management/i, '하나대체투자자산운용', '자산운용사'],
+  [/기계설비건설공제조합|Korea Mechanical Construction Financial Cooperative/i, '기계설비건설공제조합', '기타'],
+  [/한국성장금융투자운용|Korea Growth Investment Corp\./i, '한국성장금융투자운용', '기타'],
+  [/대한지방행정공제회|행정공제회|POBA|Public Officials Benefit Association/i, '대한지방행정공제회', '공제회'],
+  [/엔지니어링공제조합|Korea Engineering Financial Cooperative/i, '엔지니어링공제조합', '공제회'],
+  [/한국지방재정공제회|Korea Local Finance Association/i, '한국지방재정공제회', '공제회'],
+  [/iM라이프생명보험|iM라이프생명|iM Life Insurance/i, 'iM라이프생명보험', '보험사'],
+  [/신한라이프생명보험|신한라이프생명|Shinhan Life Insurance/i, '신한라이프생명보험', '보험사'],
+  [/메리츠화재해상보험|메리츠화재해상|Meritz Fire & Marine Insurance/i, '메리츠화재해상보험', '보험사'],
+  [/KB라이프생명보험|KB라이프생명|KB Life Insurance/i, 'KB라이프생명보험', '보험사'],
+  [/메트라이프생명보험|메트라이프생명|MetLife Insurance/i, '메트라이프생명보험', '보험사'],
+  [/처브라이프생명보험|처브라이프생명|Chubb Life Insurance/i, '처브라이프생명보험', '보험사'],
+  [/농업협동조합중앙회|National Agricultural Cooperative Federation/i, '농업협동조합중앙회', '중앙회'],
+  [/신용협동조합중앙회|National Credit Union Federation of Korea/i, '신용협동조합중앙회', '중앙회'],
+  [/삼성SRA자산운용|Samsung SRA Asset Management/i, '삼성SRA자산운용', '자산운용사'],
+  [/NH아문디자산운용|NH-Amundi Asset Management/i, 'NH아문디자산운용', '자산운용사'],
+  [/Company H/i, 'Company H', '기타'],
+  [/한국교직원공제회|교직원공제회|Korea Teachers' Credit Union/i, '한국교직원공제회', '공제회'],
+  [/전문건설공제조합|Korea Specialty Contractors Financial Cooperative/i, '전문건설공제조합', '공제회'],
+  [/건설근로자공제회|Construction Workers Mutual Aid Association/i, '건설근로자공제회', '공제회'],
+  [/과학기술인공제회|Korea Scientists and Engineers Mutual-aid Association/i, '과학기술인공제회', '공제회'],
+  [/전기공사공제조합|Korea Electrical Contractors Financial Cooperative/i, '전기공사공제조합', '공제회'],
+  [/NH농협생명보험|NH농협생명|NH Life Insurance/i, 'NH농협생명보험', '보험사'],
+  [/미래에셋생명보험|미래에셋생명|Mirae Asset Life Insurance/i, '미래에셋생명보험', '보험사'],
+  [/푸본현대생명보험|푸본현대생명|Fubon Hyundai Life Insurance/i, '푸본현대생명보험', '보험사'],
+  [/NH농협손해보험|NH농협손해/i, 'NH농협손해보험', '보험사'],
+  [/삼성화재해상보험|삼성화재해상|Samsung Fire & Marine Insurance/i, '삼성화재해상보험', '보험사'],
+  [/흥국화재해상보험|흥국화재해상|Heungkuk Fire & Marine Insurance/i, '흥국화재해상보험', '보험사'],
+  [/현대해상화재보험|현대해상화재|Hyundai Marine & Fire Insurance/i, '현대해상화재보험', '보험사'],
+  [/새마을금고중앙회|Korean Federation of Community Credit Cooperatives/i, '새마을금고중앙회', '중앙회'],
+  [/미래에셋자산운용|Mirae Asset Global Investments/i, '미래에셋자산운용', '자산운용사'],
+  [/키움투자자산운용|Kiwoom Asset Management/i, '키움투자자산운용', '자산운용사'],
+  [/새마을금고복지회|MG Welfare Foundation/i, '새마을금고복지회', '기타'],
+  [/공무원연금공단|공무원연금|Government Employees Pension Service/i, '공무원연금공단', '연기금'],
+  [/대한소방공제회|Korea Fire Officials Mutual Aid Association/i, '대한소방공제회', '공제회'],
+  [/SGI서울보증|Seoul Guarantee Insurance Company/i, 'SGI서울보증', '보험사'],
+  [/라이나생명보험|라이나생명|Lina Life Insurance/i, '라이나생명보험', '보험사'],
+  [/KDB생명보험|KDB생명|KDB Life Insurance/i, 'KDB생명보험', '보험사'],
+  [/코리안리재보험|코리안리재|Korean Reinsurance Company/i, '코리안리재보험', '보험사'],
+  [/AIA생명보험|AIA생명|AIA Life Insurance/i, 'AIA생명보험', '보험사'],
+  [/ABL생명보험|ABL생명|ABL Life Insurance/i, 'ABL생명보험', '보험사'],
+  [/중소기업중앙회|Korea Federation of SMEs/i, '중소기업중앙회', '중앙회'],
+  [/산림조합중앙회|National Forestry Cooperative Federation/i, '산림조합중앙회', '중앙회'],
+  [/저축은행중앙회|Korea Federation of Savings Banks/i, '저축은행중앙회', '중앙회'],
+  [/MG새마을금고|KFCC/i, 'MG새마을금고', '은행'],
+  [/한국수출입은행|수출입은행|The Export-Import Bank of Korea/i, '한국수출입은행', '은행'],
+  [/IBK투자증권|IBK Investment & Securities/i, 'IBK투자증권', '증권사'],
+  [/이지스자산운용|IGIS Asset Management/i, '이지스자산운용', '자산운용사'],
+  [/마스턴투자운용|Mastern Investment Management/i, '마스턴투자운용', '자산운용사'],
+  [/코람코자산신탁|KORAMCO/i, '코람코자산신탁', '자산운용사'],
+  [/제이알투자운용|JR Investment Management/i, '제이알투자운용', '자산운용사'],
+  [/NH농협캐피탈|NH Capital/i, 'NH농협캐피탈', '캐피탈'],
+  [/우리금융캐피탈|Woori Financial Capital/i, '우리금융캐피탈', '캐피탈'],
+  [/한국투자공사|KIC|Korea Investment Corporation/i, '한국투자공사', '연기금'],
+  [/우정사업본부|Korea Post/i, '우정사업본부', '연기금'],
+  [/건설공제조합|Construction Guarantee/i, '건설공제조합', '공제회'],
+  [/교보생명보험|교보생명|Kyobo Life Insurance/i, '교보생명보험', '보험사'],
+  [/하나생명보험|하나생명|Hana Life Insurance/i, '하나생명보험', '보험사'],
+  [/DB생명보험|DB생명|DB Life Insurance/i, 'DB생명보험', '보험사'],
+  [/한화생명보험|한화생명|Hanwha Life Insurance/i, '한화생명보험', '보험사'],
+  [/삼성생명보험|삼성생명|Samsung Life Insurance/i, '삼성생명보험', '보험사'],
+  [/동양생명보험|동양생명|Tongyang Life Insurance/i, '동양생명보험', '보험사'],
+  [/흥국생명보험|흥국생명|Heungkuk Life Insurance/i, '흥국생명보험', '보험사'],
+  [/한화손해보험|한화손해|Hanwha General Insurance/i, '한화손해보험', '보험사'],
+  [/MG손해보험|MG손해|MG Non-Life Insurance/i, 'MG손해보험', '보험사'],
+  [/DB손해보험|DB손해|DB Insurance/i, 'DB손해보험', '보험사'],
+  [/농협손해보험|농협손해/i, '농협손해보험', '보험사'],
+  [/롯데손해보험|롯데손해|Lotte Non-Life Insurance/i, '롯데손해보험', '보험사'],
+  [/KB손해보험|KB손해|KB Insurance/i, 'KB손해보험', '보험사'],
+  [/하나손해보험|하나손해|Hana Non-Life Insurance/i, '하나손해보험', '보험사'],
+  [/중소기업은행|기업은행|IBK기업은행|Industrial Bank of Korea/i, '중소기업은행', '은행'],
+  [/KB국민은행|Kookmin Bank/i, 'KB국민은행', '은행'],
+  [/NH농협은행|NongHyup Bank/i, 'NH농협은행', '은행'],
+  [/한국산업은행|산업은행|KDB산업은행|Korea Development Bank/i, '한국산업은행', '은행'],
+  [/SC제일은행|Standard Chartered Bank Korea/i, 'SC제일은행', '은행'],
+  [/한국씨티은행|Citibank Korea/i, '한국씨티은행', '은행'],
+  [/NH투자증권|NH Investment & Securities/i, 'NH투자증권', '증권사'],
+  [/신한투자증권|Shinhan Securities/i, '신한투자증권', '증권사'],
+  [/미래에셋증권|Mirae Asset Securities/i, '미래에셋증권', '증권사'],
+  [/한국투자증권|Korea Investment & Securities/i, '한국투자증권', '증권사'],
+  [/한화투자증권|Hanwha Investment & Securities/i, '한화투자증권', '증권사'],
+  [/DB금융투자|DB Financial Investment/i, 'DB금융투자', '증권사'],
+  [/다올투자증권|DAOL Investment & Securities/i, '다올투자증권', '증권사'],
+  [/유진투자증권|Eugene Investment & Securities/i, '유진투자증권', '증권사'],
+  [/삼성자산운용|Samsung Asset Management/i, '삼성자산운용', '자산운용사'],
+  [/신한자산운용|Shinhan Asset Management/i, '신한자산운용', '자산운용사'],
+  [/KB자산운용|KB Asset Management/i, 'KB자산운용', '자산운용사'],
+  [/DB자산운용|DB Asset Management/i, 'DB자산운용', '자산운용사'],
+  [/현대자산운용|Hyundai Asset Management/i, '현대자산운용', '자산운용사'],
+  [/한화자산운용|Hanwha Asset Management/i, '한화자산운용', '자산운용사'],
+  [/IBK캐피탈|IBK Capital/i, 'IBK캐피탈', '캐피탈'],
+  [/메리츠캐피탈|Meritz Capital/i, '메리츠캐피탈', '캐피탈'],
+  [/BNK캐피탈|BNK Capital/i, 'BNK캐피탈', '캐피탈'],
+  [/한국벤처투자|Korea Venture Investment Corp\./i, '한국벤처투자', '기타'],
+  [/포스텍 재단|POSTECH Foundation/i, '포스텍 재단', '기타'],
+  [/교원인베스트|Kyowon Invest/i, '교원인베스트', '기타'],
+  [/근로복지공단|Korea Workers' Compensation & Welfare Service/i, '근로복지공단', '기타'],
+  [/경찰공제회|Korea Police Mutual Aid Association/i, '경찰공제회', '공제회'],
+  [/군인공제회|Military Mutual Aid Association/i, '군인공제회', '공제회'],
+  [/메리츠증권|Meritz Securities/i, '메리츠증권', '증권사'],
+  [/현대차증권|Hyundai Motor Securities/i, '현대차증권', '증권사'],
+  [/신한캐피탈|Shinhan Capital/i, '신한캐피탈', '캐피탈'],
+  [/현대커머셜|Hyundai Commercial/i, '현대커머셜', '캐피탈'],
+  [/KB캐피탈|KB Capital/i, 'KB캐피탈', '캐피탈'],
+  [/하나캐피탈|Hana Capital/i, '하나캐피탈', '캐피탈'],
+  [/국민연금|NPS|국민연금공단|National Pension Service/i, '국민연금', '연기금'],
+  [/우리은행|Woori Bank/i, '우리은행', '은행'],
+  [/하나은행|Hana Bank/i, '하나은행', '은행'],
+  [/신한은행|Shinhan Bank/i, '신한은행', '은행'],
+  [/iM뱅크|iM Bank/i, 'iM뱅크', '은행'],
+  [/수협은행|Suhyup Bank/i, '수협은행', '은행'],
+  [/부산은행|Busan Bank/i, '부산은행', '은행'],
+  [/경남은행|Kyongnam Bank/i, '경남은행', '은행'],
+  [/광주은행|Kwangju Bank/i, '광주은행', '은행'],
+  [/전북은행|Jeonbuk Bank/i, '전북은행', '은행'],
+  [/삼성증권|Samsung Securities/i, '삼성증권', '증권사'],
+  [/하나증권|Hana Securities/i, '하나증권', '증권사'],
+  [/KB증권|KB Securities/i, 'KB증권', '증권사'],
+  [/키움증권|Kiwoom Securities/i, '키움증권', '증권사'],
+  [/대신증권|Daishin Securities/i, '대신증권', '증권사'],
+  [/교보증권|Kyobo Securities/i, '교보증권', '증권사'],
+  [/신영증권|Shinyoung Securities/i, '신영증권', '증권사'],
+  [/M캐피탈|M Capital/i, 'M캐피탈', '캐피탈'],
+  [/성담개발|Sungdam Development/i, '성담개발', '기타'],
+  [/KT&G|KT&G Corporation/i, 'KT&G', '기타'],
+  [/TCK/i, 'TCK', '기타'],
+];
+// 해외 GP (운용사)
+// 해외 글로벌 운용사(Global GP). 약칭 충돌을 피하려고 짧은 이름엔 \b 경계 사용.
+const FOREIGN_GPS = [
+  [/blackstone|블랙스톤/i, 'Blackstone', '해외 GP'],
+  [/\bKKR\b/i, 'KKR', '해외 GP'],
+  [/apollo (?:global|management)|아폴로/i, 'Apollo', '해외 GP'],
+  [/carlyle|칼라일/i, 'Carlyle', '해외 GP'],
+  [/\bares\b|ares management|에어리스/i, 'Ares', '해외 GP'],
+  [/brookfield|브룩필드/i, 'Brookfield', '해외 GP'],
+  [/blackrock|블랙록/i, 'BlackRock', '해외 GP'],
+  [/bain capital|베인캐피탈|베인 캐피탈/i, 'Bain Capital', '해외 GP'],
+  [/\bTPG\b/i, 'TPG', '해외 GP'],
+  [/\bCVC\b|cvc capital/i, 'CVC', '해외 GP'],
+  [/\bEQT\b/i, 'EQT', '해외 GP'],
+  [/advent international|어드벤트/i, 'Advent', '해외 GP'],
+  [/permira|퍼미라/i, 'Permira', '해외 GP'],
+  [/warburg pincus|워버그 ?핀커스/i, 'Warburg Pincus', '해외 GP'],
+  [/vista equity|비스타 ?에쿼티/i, 'Vista Equity', '해외 GP'],
+  [/silver lake|실버레이크/i, 'Silver Lake', '해외 GP'],
+  [/thoma bravo|토마 ?브라보/i, 'Thoma Bravo', '해외 GP'],
+  [/general atlantic|제너럴 ?애틀랜틱/i, 'General Atlantic', '해외 GP'],
+  [/hellman ?& ?friedman|\bH&F\b/i, 'Hellman & Friedman', '해외 GP'],
+  [/cinven|신벤/i, 'Cinven', '해외 GP'],
+  [/CD&R|clayton.+dubilier/i, 'CD&R', '해외 GP'],
+  [/oaktree|오크트리/i, 'Oaktree', '해외 GP'],
+  [/\bHPS\b|hps investment/i, 'HPS', '해외 GP'],
+  [/sixth street|식스스트리트/i, 'Sixth Street', '해외 GP'],
+  [/blue owl|블루 ?아울/i, 'Blue Owl', '해외 GP'],
+  [/golub capital|골럽/i, 'Golub Capital', '해외 GP'],
+  [/intermediate capital|\bICG\b/i, 'ICG', '해외 GP'],
+  [/tikehau|티케하우/i, 'Tikehau', '해외 GP'],
+  [/pimco|핌코/i, 'PIMCO', '해외 GP'],
+  [/\bPGIM\b/i, 'PGIM', '해외 GP'],
+  [/global infrastructure partners|\bGIP\b/i, 'GIP', '해외 GP'],
+  [/stonepeak|스톤피크/i, 'Stonepeak', '해외 GP'],
+  [/i squared|isquared|\bISQ\b/i, 'I Squared', '해외 GP'],
+  [/digitalbridge|디지털브리지/i, 'DigitalBridge', '해외 GP'],
+  [/macquarie|맥쿼리/i, 'Macquarie', '해외 GP'],
+  [/\bactis\b|액티스/i, 'Actis', '해외 GP'],
+  [/starwood capital|스타우드/i, 'Starwood', '해외 GP'],
+  [/\bhines\b|하인즈/i, 'Hines', '해외 GP'],
+  [/greystar/i, 'Greystar', '해외 GP'],
+  [/patrizia/i, 'PATRIZIA', '해외 GP'],
+  [/nuveen|누빈/i, 'Nuveen', '해외 GP'],
+  [/ardian|아디안/i, 'Ardian', '해외 GP'],
+  [/partners group|파트너스 ?그룹/i, 'Partners Group', '해외 GP'],
+  [/hamilton lane|해밀턴 ?레인/i, 'Hamilton Lane', '해외 GP'],
+  [/stepstone|스텝스톤/i, 'StepStone', '해외 GP'],
+  [/coller capital|콜러/i, 'Coller Capital', '해외 GP'],
+  [/lexington partners/i, 'Lexington', '해외 GP'],
+  [/pantheon|판테온/i, 'Pantheon', '해외 GP'],
+  [/neuberger berman|뉴버거 ?버먼/i, 'Neuberger Berman', '해외 GP'],
+  [/fortress investment|포트리스/i, 'Fortress', '해외 GP'],
+  [/cerberus|서버러스/i, 'Cerberus', '해외 GP'],
+  [/centerbridge|센터브리지/i, 'Centerbridge', '해외 GP'],
+  [/lone star funds|론스타/i, 'Lone Star', '해외 GP'],
+  [/angelo gordon/i, 'Angelo Gordon', '해외 GP'],
+  [/davidson kempner/i, 'Davidson Kempner', '해외 GP'],
+];
+const INSTS = [...KOREAN_LPS, ...FOREIGN_GPS];
+
+const ASSETS = [
+  ['AV', /항공기|aircraft|aviation|항공\s?금융|aircraft leasing|항공기\s?리스|aircraft finance/i],
+  ['IN', /인프라|infrastructure|재생에너지|renewable|태양광|풍력|발전소|data\s?cent|데이터센터|통신탑|toll road|공항|항만/i],
+  ['PC', /사모대출|private credit|direct lending|다이렉트 렌딩|메자닌|mezzanine|private debt|사모채권|선순위 대출/i],
+  ['RE', /부동산|real estate|오피스|office|물류|logistics|호텔|hotel|리테일|retail|멀티패밀리|multifamily|임대주택|데이터센터 부동산/i],
+  ['PE', /사모펀드|private equity|바이아웃|buyout|세컨더리|secondaries|\bPE\b|growth equity|벤처/i],
+];
+const REGIONS = [
+  ['US', /미국|u\.?s\.?\b|뉴욕|new york|북미|north america/i],
+  ['EU', /유럽|europe|영국|\bUK\b|런던|london|독일|german|프랑스|france|\bEU\b/i],
+  ['AP', /아시아|asia|일본|japan|중국|china|인도|india|싱가포르|singapore|호주|australia/i],
+];
+const PEOPLE_RE = /인사|\bCIO\b|선임|영입|퇴임|사임|appoint|\bnames?\b|hire|steps? down/i;
+
+// ── 관련성 필터 (placement agent · 해외 대체투자 펀드 중심) ──
+// 대체투자 펀드 맥락 + 해외/글로벌 맥락(또는 글로벌 GP) 이면서, 국내 리테일·
+// 일반 시황 잡음이 아닌 기사만 남깁니다.
+const ALT_RE = /대체투자|사모펀드|사모대출|private equity|private credit|private debt|infrastructure|인프라|real estate|부동산 펀드|바이아웃|buyout|메자닌|mezzanine|세컨더리|secondar|코인베스트|co-?invest|direct lending|다이렉트 렌딩|항공기|aircraft|aviation|블라인드 ?펀드|펀드 결성|펀드 클로징|final close|fund close|capital raise|fundrais|펀드레이징|출자|약정|커밋|commitment|mandate|\bLP\b|\bGP\b|alternative (?:investment|asset)|사모/i;
+const GLOBAL_RE = /해외|글로벌|global|overseas|cross-?border|international|offshore|미국|u\.?s\.?\b|유럽|europe|영국|london|런던|뉴욕|new york|북미|north america|아시아|asia|중국|일본|인도|싱가포르|중동|독일|프랑스/i;
+// 국내 리테일·일반 금융/시황 잡음
+const EXCLUDE_RE = /분양|청약|아파트|재건축|재개발|전세|월세|입주|기준금리|코스피|코스닥|공모주|상장폐지|주가|시황|환율|예금|적금|카드론|주택담보|보험료|실손|자동차보험|채용|부고/i;
+
+// ── 유틸 ────────────────────────────────────────────────
+function decodeEntities(s = '') {
+  return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&nbsp;/g, ' ').replace(/&middot;/g, '·').replace(/&hellip;/g, '…')
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+    .replace(/&quot;|&ldquo;|&rdquo;/g, '"').replace(/&#39;|&apos;|&rsquo;|&lsquo;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+    .replace(/&amp;/g, '&');
 }
-// ─── App ──────────────────────────────────────────────────
-function App() {
-    const [screen, setScreen] = useState('home');
-    const [prevScreen, setPrevScreen] = useState('home');
-    const [filter, setFilter] = useState('전체');
-    const [query, setQuery] = useState('');
-    const [bm, setBm] = useState(() => store.get('bookmarks', {}));
-    const [read, setRead] = useState(() => store.get('read', {}));
-    const [articles, setArticles] = useState(() => sortArticles(mergeArticles(store.get('articles', []), BASE)));
-    const [selectedId, setSelectedId] = useState(null);
-    const [showShare, setShowShare] = useState(false);
-    const [showOriginal, setShowOriginal] = useState(false);
-    const [toast, setToast] = useState(null);
-    const toastTimer = useRef(null);
-    // Persist state changes.
-    useEffect(() => { store.set('bookmarks', bm); }, [bm]);
-    useEffect(() => { store.set('read', read); }, [read]);
-    useEffect(() => { store.set('articles', articles); }, [articles]);
-    // On launch, pull fresh news from the backend (if configured) and merge it
-    // into the archive — new items appear, existing ones are kept.
-    useEffect(() => {
-        if (!NEWS_API)
-            return;
-        fetch(NEWS_API)
-            .then(r => r.json())
-            .then(incoming => {
-            if (Array.isArray(incoming) && incoming.length) {
-                setArticles(prev => sortArticles(mergeArticles(prev, incoming)));
-            }
-        })
-            .catch(() => { });
-    }, []);
-    const flash = (msg) => {
-        setToast(msg);
-        clearTimeout(toastTimer.current);
-        toastTimer.current = setTimeout(() => setToast(null), 2200);
-    };
-    const openItem = (id) => {
-        if (screen !== 'detail')
-            setPrevScreen(screen);
-        setSelectedId(id);
-        setRead(r => ({ ...r, [id]: true }));
-        setShowOriginal(false);
-        setScreen('detail');
-    };
-    const toggleBm = (id, e) => {
-        if (e)
-            e.stopPropagation();
-        setBm(b => ({ ...b, [id]: !b[id] }));
-    };
-    const goTab = (name) => setScreen(name);
-    const applyFilter = (key) => {
-        setFilter(f => f === key ? '전체' : key);
-        setScreen('home');
-    };
-    // Real share: use the OS share sheet (includes 카카오톡, 메시지, 메일 등) when
-    // available; otherwise fall back to the in-app sheet with copy-link.
-    const onShare = async (it, e) => {
-        if (e && e.stopPropagation)
-            e.stopPropagation();
-        const data = { title: 'KB GIS · 해외대체투자 뉴스', text: it ? it.ko : '', url: articleUrl(it) };
-        if (navigator.share) {
-            try {
-                await navigator.share(data);
-                return;
-            }
-            catch (err) {
-                if (err && err.name === 'AbortError')
-                    return;
-            }
-        }
-        setShowShare(true);
-    };
-    const copyLink = (label) => {
-        const url = articleUrl(sel);
-        try {
-            navigator.clipboard && navigator.clipboard.writeText(url);
-        }
-        catch (e) { }
-        setShowShare(false);
-        flash(label === '링크' ? '링크가 복사되었습니다' : label + ' 공유용 링크를 복사했어요');
-    };
-    // Enrich items
-    const items = articles.map(it => ({
-        ...it,
-        assetLabel: ASSET[it.asset].label,
-        assetColor: ASSET[it.asset].color,
-        regionLabel: REGION[it.region],
-        catLabel: CAT_LABEL[it.cat],
-        instGroup: grp(it.instType),
-        bookmarked: !!bm[it.id],
-        unread: !read[it.id],
-    }));
-    // Filter
-    const isGroup = GROUPS.includes(filter);
-    const isAsset = !!ASSET[filter];
-    const isRegion = !!REGION[filter];
-    let feedItems = items;
-    if (filter !== '전체') {
-        if (filter === '인사')
-            feedItems = items.filter(i => i.cat === '인사');
-        else if (isGroup)
-            feedItems = items.filter(i => i.instGroup === filter && i.cat !== '인사');
-        else if (isAsset)
-            feedItems = items.filter(i => i.asset === filter);
-        else if (isRegion)
-            feedItems = items.filter(i => i.region === filter);
+function stripTags(s = '') {
+  let t = decodeEntities(s);        // 인코딩된 태그(&lt;a&gt;)를 실제 태그로
+  t = t.replace(/<[^>]+>/g, ' ');   // 태그 제거
+  t = decodeEntities(t);            // 태그 제거 후 남은 엔티티 정리 (이중 인코딩 대응)
+  return t.replace(/\s+/g, ' ').trim();
+}
+function tag(block, name) { const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, 'i')); return m ? m[1].trim() : ''; }
+function hasHangul(s = '') { return /[가-힣]/.test(s); }
+function hashId(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return 'g' + (h >>> 0).toString(36); }
+function pick(pairs, text, def) { for (const [key, re] of pairs) if (re.test(text)) return key; return def; }
+function pickInst(text) { for (const [re, name, type] of INSTS) if (re.test(text)) return { inst: name, instType: type }; return null; }
+
+function extractMetric(text) {
+  const pats = [
+    /[+\-]?\$[\d.,]+\s?(?:billion|million|bn|m|B|M)?/i,
+    /€[\d.,]+\s?(?:billion|million|bn|m|B|M)?/i,
+    /£[\d.,]+\s?(?:billion|million|bn|m|B|M)?/i,
+    /₩?[\d,]+\s?(?:조|억)\s?원?/,
+  ];
+  for (const p of pats) { const m = text.match(p); if (m) return m[0].replace(/\s+/g, ' ').trim(); }
+  return '';
+}
+function kstParts(dateStr) {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const k = new Date(d.getTime() + 9 * 3600 * 1000);
+  const p = (n) => String(n).padStart(2, '0');
+  return { date: `${p(k.getUTCMonth() + 1)}.${p(k.getUTCDate())}`, time: `${p(k.getUTCHours())}:${p(k.getUTCMinutes())}`, iso: d.toISOString() };
+}
+
+// ── RSS 파싱 + 기사 객체화 ───────────────────────────────
+export function parseFeed(xml) {
+  const items = [];
+  const blocks = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
+  for (const b of blocks) {
+    let title = stripTags(tag(b, 'title'));
+    const link = stripTags(tag(b, 'link'));
+    const pub = stripTags(tag(b, 'pubDate'));
+    const desc = stripTags(tag(b, 'description'));
+    const srcM = b.match(/<source[^>]*>([\s\S]*?)<\/source>/i);
+    let source = srcM ? stripTags(srcM[1]) : '';
+    const dash = title.lastIndexOf(' - ');
+    if (dash > 0 && !source) source = title.slice(dash + 3).trim();
+    if (dash > 0) title = title.slice(0, dash).trim();
+    if (!title || !link) continue;
+    items.push({ title, link, pub, desc, source: source || '출처 미상' });
+  }
+  return items;
+}
+
+const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
+export function isRelevant(raw) {
+  const text = `${raw.title} ${raw.desc}`;
+  if (EXCLUDE_RE.test(text)) return false;
+  if (!ALT_RE.test(text)) return false;
+  return GLOBAL_RE.test(text) || isForeignGP(text);
+}
+
+export function enrich(raw) {
+  const text = `${raw.title} ${raw.desc}`;
+  const lang = hasHangul(raw.title) ? 'ko' : 'en';
+  const instHit = pickInst(text);
+  const inst = instHit ? instHit.inst : raw.source;
+  const instType = instHit ? instHit.instType : '기타';
+  const asset = pick(ASSETS, text, 'PE');
+  const region = pick(REGIONS, text, 'GL');
+  let cat = instType === '해외 GP' ? 'GP' : 'LP';
+  if (PEOPLE_RE.test(text)) cat = '인사';
+  const { date, time, iso } = kstParts(raw.pub);
+  const sentences = (raw.desc || raw.title)
+    .split(/(?<=[.!?。])\s+|(?<=다\.)\s*/)
+    .map(s => s.trim()).filter(s => s.length > 1).slice(0, 3);
+  return {
+    id: hashId(raw.link),
+    cat, inst, instType, asset, region,
+    date, time, ts: iso, source: raw.source, lang,
+    ko: raw.title,
+    en: lang === 'en' ? raw.title : '',
+    metric: extractMetric(text) || '뉴스',
+    metricLabel: '핵심 지표',
+    ai: sentences.length ? sentences : [raw.title],
+    body: raw.desc || raw.title,
+    enBody: lang === 'en' ? (raw.desc || '') : null,
+    url: raw.link,
+  };
+}
+
+function dedupe(list) {
+  const seen = new Set(), out = [];
+  for (const a of list) {
+    const key = a.ko.slice(0, 50);
+    if (seen.has(a.id) || seen.has(key)) continue;
+    seen.add(a.id); seen.add(key); out.push(a);
+  }
+  return out;
+}
+
+async function fetchQuery(q) {
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 KBGIS-collector' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseFeed(await res.text());
+}
+
+async function main() {
+  if (process.argv.includes('--selftest')) return selftest();
+
+  let all = [];
+  for (const q of QUERIES) {
+    try {
+      const items = (await fetchQuery(q)).filter(isRelevant).map(enrich);
+      all = all.concat(items);
+    } catch (e) { console.warn('skip:', q, '-', e.message); }
+  }
+  all = dedupe(all);
+
+  let prev = [];
+  try { prev = JSON.parse(await readFile(new URL('../news.json', import.meta.url), 'utf8')); } catch {}
+
+  if (GEMINI_API_KEY) {
+    const prevIds = new Set(prev.map(p => p.id));
+    let budget = LLM_BUDGET, done = 0;
+    for (const a of all) {
+      if (budget <= 0) break;
+      if (prevIds.has(a.id)) continue;
+      const s = await llmSummarize(a.ko, a.body);
+      if (s) { a.ai = s; a.aiSource = 'llm'; budget--; done++; }
     }
-    let feedFilterLabel = filter;
-    if (filter === '인사')
-        feedFilterLabel = 'CIO·인사 이동';
-    else if (isAsset)
-        feedFilterLabel = ASSET[filter].label;
-    else if (isRegion)
-        feedFilterLabel = REGION[filter];
-    const chips = ['전체', '연기금', '공제회', '운용·증권', '보험·캐피탈', '해외 GP', '인사'].map(k => ({
-        label: k, active: filter === k,
-        bg: filter === k ? '#FFCC00' : '#2a2c30',
-        color: filter === k ? '#1c1d1f' : '#cdced0',
-    }));
-    // Category data
-    const ICON = { '연기금': '연금', '공제회': '공제', '운용·증권': '운용', '보험·캐피탈': '보험', '해외 GP': 'GP' };
-    const SAMPLE = { '연기금': '국민연금 · KIC · 사학연금', '공제회': '교직원 · 행정 · 군인공제회', '운용·증권': '미래에셋운용 · 미래에셋증권', '보험·캐피탈': '삼성생명 · 한화 · 캐피탈', '해외 GP': 'Blackstone · Ares · KKR' };
-    const catGroups = GROUPS.map(g => ({ name: g, count: items.filter(i => i.instGroup === g && i.cat !== '인사').length, icon: ICON[g], sample: SAMPLE[g] }));
-    const assetCats = ['RE', 'PC', 'PE', 'IN'].map(k => ({ key: k, label: ASSET[k].label, code: ASSET[k].code, color: ASSET[k].color, count: items.filter(i => i.asset === k).length }));
-    const regionCats = ['US', 'EU', 'AP', 'GL'].map(k => ({ key: k, label: REGION[k], count: items.filter(i => i.region === k).length }));
-    // Search
-    const q = query.trim().toLowerCase();
-    const searchItems = q ? items.filter(i => (i.ko + ' ' + i.en + ' ' + i.inst + ' ' + i.instType + ' ' + i.source + ' ' + i.assetLabel).toLowerCase().includes(q)) : [];
-    const suggests = ['국민연금', '공제회', '블랙스톤', '데이터센터', '사모대출', '인프라'];
-    const recentItems = items.filter(i => read[i.id]).slice(0, 3);
-    // Bookmarks
-    const bmItems = items.filter(i => bm[i.id]);
-    // Detail
-    const sel = (selectedId && items.find(i => i.id === selectedId)) || items[0];
-    // Stats
-    const stats = { total: items.length, lp: items.filter(i => i.cat === 'LP').length, gp: items.filter(i => i.cat === 'GP').length, people: items.filter(i => i.cat === '인사').length };
-    const shareTargets = [
-        { label: '카카오톡', icon: 'K', bg: '#FFE812', fg: '#1c1d1f' },
-        { label: '이메일', icon: '✉', bg: '#f0eee7', fg: '#56585c' },
-        { label: '슬랙', icon: 'S', bg: '#f0eee7', fg: '#56585c' },
-        { label: '팀즈', icon: 'T', bg: '#f0eee7', fg: '#56585c' },
-    ];
-    const navProps = { onHome: () => goTab('home'), onCategory: () => goTab('category'), onSearch: () => goTab('search'), onBookmarks: () => goTab('bookmarks') };
-    return (React.createElement("div", { className: "app-frame", style: { color: '#1c1d1f' } },
-        screen === 'home' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
-            React.createElement("div", { style: { background: '#1c1d1f', color: '#fff', flexShrink: 0 } },
-                React.createElement("div", { style: { height: 'env(safe-area-inset-top)', flexShrink: 0 } }),
-                React.createElement("div", { style: { padding: '14px 20px 18px' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-                            React.createElement("div", { style: { width: 27, height: 27, borderRadius: 7, background: '#FFCC00', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px Pretendard', color: '#1c1d1f', letterSpacing: '-.02em' } }, "KB"),
-                            React.createElement("div", { style: { font: '800 16px Pretendard', color: '#FFCC00', letterSpacing: '.04em' } }, "KB GIS")),
-                        React.createElement("div", { style: { width: 31, height: 31, borderRadius: '50%', border: '1px solid #34363a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a4a5a8', fontSize: 13, position: 'relative' } },
-                            "\u2303",
-                            React.createElement("div", { style: { position: 'absolute', top: 6, right: 7, width: 6, height: 6, borderRadius: '50%', background: '#FFCC00', border: '1.5px solid #1c1d1f' } }))),
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' } },
-                        React.createElement("div", { style: { font: '800 19px Pretendard', letterSpacing: '-.02em' } }, "\uC624\uB298\uC758 \uBE0C\uB9AC\uD504"),
-                        React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9b9c9e' } }, "2026.06.26 \uAE08 \u00B7 08:00 \uC5C5\uB370\uC774\uD2B8")),
-                    React.createElement("div", { style: { display: 'flex', gap: 20, marginTop: 14 } },
-                        React.createElement("div", null,
-                            React.createElement("span", { style: { font: '800 22px Pretendard', color: '#FFCC00' } }, stats.total),
-                            React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9b9c9e', marginLeft: 5 } }, "\uC2E0\uADDC")),
-                        React.createElement("div", { style: { width: 1, background: '#34363a' } }),
-                        React.createElement("div", null,
-                            React.createElement("span", { style: { font: '800 18px Pretendard' } }, stats.lp),
-                            React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9b9c9e', marginLeft: 4 } }, "LP")),
-                        React.createElement("div", null,
-                            React.createElement("span", { style: { font: '800 18px Pretendard' } }, stats.gp),
-                            React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9b9c9e', marginLeft: 4 } }, "GP")),
-                        React.createElement("div", null,
-                            React.createElement("span", { style: { font: '800 18px Pretendard' } }, stats.people),
-                            React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9b9c9e', marginLeft: 4 } }, "\uC778\uC0AC")))),
-                React.createElement("div", { style: { display: 'flex', gap: 7, padding: '0 18px 14px', whiteSpace: 'nowrap', overflowX: 'auto' } }, chips.map(c => (React.createElement("div", { key: c.label, onClick: () => applyFilter(c.label), style: { padding: '7px 13px', borderRadius: 999, font: '600 12.5px Pretendard', flexShrink: 0, cursor: 'pointer', background: c.bg, color: c.color } }, c.label))))),
-            React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', background: '#fff' } },
-                filter !== '전체' && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', background: '#fffaeb', borderBottom: '1px solid #f3eccf' } },
-                    React.createElement("span", { style: { font: '600 12px Pretendard', color: '#9a7d12' } },
-                        "\uD544\uD130 \u00B7 ",
-                        feedFilterLabel,
-                        " ",
-                        React.createElement("span", { style: { color: '#c4a93a', fontWeight: 500 } },
-                            feedItems.length,
-                            "\uAC74")),
-                    React.createElement("span", { onClick: () => setFilter('전체'), style: { font: '600 12px Pretendard', color: '#9a7d12', cursor: 'pointer' } }, "\uD574\uC81C \u2715"))),
-                feedItems.map(item => React.createElement(FeedItem, { key: item.id, item: item, onOpen: () => openItem(item.id), onBookmark: e => toggleBm(item.id, e) })),
-                React.createElement("div", { style: { padding: 18, textAlign: 'center', font: '500 11px Pretendard', color: '#bcbec2' } }, "\uAC04\uBC24\uC758 \uD574\uC678 \uB300\uCCB4\uD22C\uC790 \uB274\uC2A4\uB97C AI\uAC00 \uC815\uB9AC\uD588\uC2B5\uB2C8\uB2E4")),
-            React.createElement(Navbar, { active: "home", ...navProps }))),
-        screen === 'category' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
-            React.createElement("div", { style: { flexShrink: 0 } },
-                React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
-                React.createElement("div", { style: { padding: '2px 20px 16px', borderBottom: '1px solid #efece4' } },
-                    React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uCE74\uD14C\uACE0\uB9AC"),
-                    React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, "\uAE30\uAD00\u00B7\uC790\uC0B0\uAD70\u00B7\uC9C0\uC5ED\uBCC4\uB85C \uBE60\uB974\uAC8C \uBAA8\uC544\uBCF4\uAE30"))),
-            React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } },
-                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 10 } }, "\uAE30\uAD00 \uC720\uD615"),
-                React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, catGroups.map(g => (React.createElement("div", { key: g.name, onClick: () => applyFilter(g.name), style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 15px', border: '1px solid #ece9e2', borderRadius: 13, cursor: 'pointer' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 11 } },
-                        React.createElement("span", { style: { width: 34, height: 34, borderRadius: 9, background: '#f2f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px Pretendard', color: '#56585c' } }, g.icon),
-                        React.createElement("div", null,
-                            React.createElement("div", { style: { font: '700 14px Pretendard' } }, g.name),
-                            React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, g.sample))),
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9 } },
-                        React.createElement("span", { style: { font: '700 12px Pretendard', color: '#1c1d1f', background: '#f4f2ec', padding: '3px 9px', borderRadius: 999 } }, g.count),
-                        React.createElement("span", { style: { color: '#cfccc4' } }, "\u203A")))))),
-                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', margin: '22px 0 10px' } }, "\uC790\uC0B0\uAD70"),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 } }, assetCats.map(a => (React.createElement("div", { key: a.key, onClick: () => applyFilter(a.key), style: { border: '1px solid #ece9e2', borderRadius: 13, padding: 14, cursor: 'pointer' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-                        React.createElement("span", { style: { width: 9, height: 9, borderRadius: 3, background: a.color, display: 'inline-block' } }),
-                        React.createElement("span", { style: { font: '700 12px Pretendard', color: '#1c1d1f' } }, a.count)),
-                    React.createElement("div", { style: { font: '700 14px Pretendard', marginTop: 9 } }, a.label),
-                    React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, a.code))))),
-                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', margin: '22px 0 10px' } }, "\uC9C0\uC5ED"),
-                React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, regionCats.map(r => (React.createElement("div", { key: r.key, onClick: () => applyFilter(r.key), style: { font: '600 13px Pretendard', color: '#3d3e42', background: '#f2f0ea', padding: '9px 15px', borderRadius: 999, cursor: 'pointer' } },
-                    r.label,
-                    " ",
-                    React.createElement("span", { style: { color: '#a6a8ac' } }, r.count)))))),
-            React.createElement(Navbar, { active: "category", ...navProps }))),
-        screen === 'search' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
-            React.createElement("div", { style: { flexShrink: 0 } },
-                React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
-                React.createElement("div", { style: { padding: '4px 18px 16px', borderBottom: '1px solid #efece4' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9, background: '#f4f2ec', borderRadius: 12, padding: '0 14px', height: 46 } },
-                        React.createElement("span", { style: { color: '#9a9ca0', fontSize: 16 } }, "\u2315"),
-                        React.createElement("input", { type: "text", value: query, onChange: e => setQuery(e.target.value), placeholder: "\uAE30\uAD00\u00B7GP\u00B7\uC790\uC0B0\uAD70 \uAC80\uC0C9 (\uC608: \uAD6D\uBBFC\uC5F0\uAE08, \uBE14\uB799\uC2A4\uD1A4)", style: { flex: 1, border: 'none', outline: 'none', background: 'transparent', font: '500 13.5px Pretendard', color: '#1c1d1f' } }),
-                        q && React.createElement("span", { onClick: () => setQuery(''), style: { color: '#9a9ca0', fontSize: 15, cursor: 'pointer' } }, "\u2715")))),
-            React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } }, q ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { style: { padding: '12px 18px 6px', font: '600 12px Pretendard', color: '#9a9ca0' } },
-                    "\uAC80\uC0C9 \uACB0\uACFC ",
-                    React.createElement("span", { style: { color: '#1c1d1f' } }, searchItems.length),
-                    "\uAC74"),
-                searchItems.map(item => (React.createElement("div", { key: item.id, onClick: () => openItem(item.id), style: { display: 'flex', gap: 11, padding: '13px 18px', borderBottom: '1px solid #f3f1ea', cursor: 'pointer' } },
-                    React.createElement("div", { style: { width: 3, borderRadius: 2, background: item.assetColor, flexShrink: 0 } }),
-                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 } },
-                            React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1c1d1f', background: '#f0eee7', padding: '2px 7px', borderRadius: 5 } }, item.inst),
-                            React.createElement("span", { style: { font: '600 10.5px Pretendard', color: item.assetColor } }, item.assetLabel),
-                            React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#bcbec2' } }, item.time)),
-                        React.createElement("div", { style: { font: '650 13.5px/1.4 Pretendard' } }, item.ko))))),
-                searchItems.length === 0 && React.createElement("div", { style: { padding: '60px 20px', textAlign: 'center', font: '500 13px Pretendard', color: '#a6a8ac' } }, "\uAC80\uC0C9 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4"))) : (React.createElement("div", { style: { padding: 18 } },
-                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 11 } }, "\uCD94\uCC9C \uAC80\uC0C9\uC5B4"),
-                React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, suggests.map(t => React.createElement("div", { key: t, onClick: () => setQuery(t), style: { font: '600 12.5px Pretendard', color: '#3d3e42', background: '#f2f0ea', padding: '9px 14px', borderRadius: 999, cursor: 'pointer' } }, t))),
-                recentItems.length > 0 && (React.createElement(React.Fragment, null,
-                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', margin: '24px 0 11px' } }, "\uCD5C\uADFC \uBCF8 \uB274\uC2A4"),
-                    recentItems.map(item => (React.createElement("div", { key: item.id, onClick: () => openItem(item.id), style: { display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '1px solid #f3f1ea', cursor: 'pointer' } },
-                        React.createElement("span", { style: { width: 3, height: 30, borderRadius: 2, background: item.assetColor, flexShrink: 0, display: 'inline-block' } }),
-                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                            React.createElement("div", { style: { font: '600 13px/1.35 Pretendard' } }, item.ko),
-                            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#a6a8ac', marginTop: 3 } },
-                                item.inst,
-                                " \u00B7 ",
-                                item.source)))))))))),
-            React.createElement(Navbar, { active: "search", ...navProps }))),
-        screen === 'bookmarks' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
-            React.createElement("div", { style: { flexShrink: 0 } },
-                React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
-                React.createElement("div", { style: { padding: '2px 20px 16px', borderBottom: '1px solid #efece4' } },
-                    React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uBD81\uB9C8\uD06C"),
-                    React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } },
-                        "\uC800\uC7A5\uD55C \uB274\uC2A4 ",
-                        bmItems.length,
-                        "\uAC74"))),
-            React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } }, bmItems.length === 0 ? (React.createElement("div", { style: { padding: '90px 30px', textAlign: 'center' } },
-                React.createElement("div", { style: { fontSize: 30, color: '#d8d5cd' } }, "\u25A2"),
-                React.createElement("div", { style: { font: '600 14px Pretendard', color: '#56585c', marginTop: 14 } }, "\uC800\uC7A5\uD55C \uB274\uC2A4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4"),
-                React.createElement("div", { style: { font: '500 12px Pretendard', color: '#a6a8ac', marginTop: 6, lineHeight: 1.5 } },
-                    "\uB274\uC2A4 \uCE74\uB4DC\uC758 \uBD81\uB9C8\uD06C \uC544\uC774\uCF58\uC744 \uB20C\uB7EC",
-                    React.createElement("br", null),
-                    "\uB098\uC911\uC5D0 \uBCFC \uAE30\uC0AC\uB97C \uC800\uC7A5\uD558\uC138\uC694"))) : bmItems.map(item => (React.createElement("div", { key: item.id, onClick: () => openItem(item.id), style: { display: 'flex', gap: 11, padding: '14px 18px', borderBottom: '1px solid #f3f1ea', cursor: 'pointer' } },
-                React.createElement("div", { style: { width: 3, borderRadius: 2, background: item.assetColor, flexShrink: 0 } }),
-                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 } },
-                        React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1c1d1f', background: '#f0eee7', padding: '2px 7px', borderRadius: 5 } }, item.inst),
-                        React.createElement("span", { style: { font: '600 10.5px Pretendard', color: item.assetColor } }, item.assetLabel),
-                        React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#bcbec2' } }, item.time)),
-                    React.createElement("div", { style: { font: '650 14px/1.4 Pretendard' } }, item.ko)),
-                React.createElement("div", { onClick: e => toggleBm(item.id, e), style: { flexShrink: 0, alignSelf: 'flex-start', fontSize: 15, cursor: 'pointer', color: '#1c1d1f', padding: 2 } }, "\u25A3"))))),
-            React.createElement(Navbar, { active: "bookmarks", ...navProps }))),
-        screen === 'detail' && sel && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
-            React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
-                React.createElement("div", { onClick: () => setScreen(prevScreen), style: { display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', font: '600 14px Pretendard', color: '#1c1d1f' } },
-                    React.createElement("span", { style: { fontSize: 20 } }, "\u2039"),
-                    " \uBE0C\uB9AC\uD504"),
-                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4 } },
-                    React.createElement("div", { onClick: e => toggleBm(sel.id, e), style: { width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16, color: '#56585c' } }, bm[sel.id] ? React.createElement("span", { style: { color: '#1c1d1f' } }, "\u25A3") : React.createElement("span", null, "\u25A2")),
-                    React.createElement("div", { onClick: e => onShare(sel, e), style: { width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16, color: '#56585c' } }, "\u2197"))),
-            React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
-                React.createElement("div", { style: { height: 152, background: 'repeating-linear-gradient(135deg,#ece9e1 0 12px,#f4f2eb 12px 24px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '14px 18px' } },
-                    React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#a9a69c', letterSpacing: '.06em' } }, sel.source),
-                    React.createElement("span", { style: { background: '#1c1d1f', color: '#fff', font: '600 10.5px Pretendard', padding: '5px 10px', borderRadius: 6 } }, sel.catLabel)),
-                React.createElement("div", { style: { padding: '18px 20px 26px' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 11 } },
-                        React.createElement("span", { style: { font: '700 11px Pretendard', color: '#1c1d1f', background: '#f0eee7', padding: '3px 9px', borderRadius: 6 } }, sel.inst),
-                        React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 5, font: '600 11px Pretendard' } },
-                            React.createElement("span", { style: { width: 7, height: 7, borderRadius: 2, background: sel.assetColor, display: 'inline-block' } }),
-                            sel.assetLabel),
-                        React.createElement("span", { style: { font: '500 11px Pretendard', color: '#7a7c80' } }, sel.regionLabel)),
-                    React.createElement("div", { style: { font: '700 21px/1.4 Pretendard', letterSpacing: '-.02em' } }, sel.ko),
-                    React.createElement("div", { style: { font: '400 13.5px/1.5 Pretendard', color: '#8a8c90', marginTop: 8 } }, sel.en),
-                    React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', marginTop: 11 } },
-                        sel.source,
-                        " \u00B7 ",
-                        sel.date,
-                        " ",
-                        sel.time),
-                    React.createElement("div", { style: { marginTop: 18, background: '#fffaeb', border: '1px solid #f6ecc8', borderRadius: 14, padding: '15px 16px' } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, font: '700 11.5px Pretendard', color: '#9a7d12', letterSpacing: '.03em', marginBottom: 10 } },
-                            React.createElement("span", { style: { width: 17, height: 17, borderRadius: 5, background: '#FFCC00', color: '#1c1d1f', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: '800 9px Pretendard' } }, "AI"),
-                            "3\uC904 \uC694\uC57D"),
-                        sel.ai.map((line, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 8, font: '500 13px/1.55 Pretendard', color: '#3d3e42', marginTop: 5 } },
-                            React.createElement("span", { style: { color: '#d9b400', flexShrink: 0 } }, "\u2014"),
-                            React.createElement("span", null, line))))),
-                    React.createElement("div", { style: { display: 'flex', gap: 9, marginTop: 16 } },
-                        React.createElement("div", { style: { flex: 1, background: '#f8f7f3', border: '1px solid #ece9e2', borderRadius: 12, padding: '13px 14px' } },
-                            React.createElement("div", { style: { font: '800 19px Pretendard', color: '#1c1d1f' } }, sel.metric),
-                            React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, sel.metricLabel)),
-                        React.createElement("div", { style: { flex: 1, background: '#f8f7f3', border: '1px solid #ece9e2', borderRadius: 12, padding: '13px 14px' } },
-                            React.createElement("div", { style: { font: '800 19px Pretendard', color: '#1c1d1f' } }, sel.assetLabel),
-                            React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 3 } },
-                                "\uC790\uC0B0\uAD70 \u00B7 ",
-                                sel.regionLabel))),
-                    React.createElement("div", { style: { font: '500 14px/1.7 Pretendard', color: '#34353a', marginTop: 20 } }, sel.body),
-                    sel.lang === 'en' && (React.createElement("div", { style: { marginTop: 20, border: '1px solid #ece9e2', borderRadius: 14, overflow: 'hidden' } },
-                        React.createElement("div", { onClick: () => setShowOriginal(s => !s), style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', cursor: 'pointer', background: '#f8f7f3' } },
-                            React.createElement("span", { style: { font: '700 12.5px Pretendard', color: '#1c1d1f' } }, "\uC6D0\uBB38 (English)"),
-                            React.createElement("span", { style: { font: '600 11.5px Pretendard', color: '#9a7d12' } }, showOriginal ? '접기 ▲' : '원문 보기 ▼')),
-                        showOriginal && (React.createElement("div", { style: { padding: '15px 16px', borderTop: '1px solid #ece9e2' } },
-                            React.createElement("div", { style: { font: '700 14px/1.45 Pretendard', color: '#1c1d1f' } }, sel.en),
-                            React.createElement("div", { style: { font: '400 13px/1.7 Pretendard', color: '#4a4b50', marginTop: 9 } }, sel.enBody),
-                            React.createElement("a", { href: sel.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 13, font: '600 12.5px Pretendard', color: '#1c1d1f', background: '#FFCC00', padding: '9px 14px', borderRadius: 9, textDecoration: 'none' } }, "\uAE30\uC0AC \uC6D0\uBB38\uC73C\uB85C \uC774\uB3D9 \u2197"))))),
-                    React.createElement("div", { style: { display: 'flex', gap: 9, marginTop: 20 } },
-                        React.createElement("div", { onClick: e => onShare(sel, e), style: { flex: 1, height: 46, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, font: '700 13.5px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720\uD558\uAE30"),
-                        React.createElement("a", { href: sel.url, target: "_blank", rel: "noopener noreferrer", style: { width: 46, height: 46, border: '1px solid #e6e3db', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#56585c', fontSize: 16, textDecoration: 'none' } }, "\u2398")))))),
-        showShare && (React.createElement("div", { onClick: () => setShowShare(false), style: { position: 'absolute', inset: 0, background: 'rgba(20,20,22,.42)', display: 'flex', alignItems: 'flex-end', zIndex: 30 } },
-            React.createElement("div", { onClick: e => e.stopPropagation(), style: { width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '10px 20px 26px' } },
-                React.createElement("div", { style: { width: 38, height: 4, borderRadius: 2, background: '#e2dfd6', margin: '0 auto 16px' } }),
-                React.createElement("div", { style: { font: '800 16px Pretendard', letterSpacing: '-.01em', marginBottom: 4 } }, "\uACF5\uC720\uD558\uAE30"),
-                React.createElement("div", { style: { font: '500 12px Pretendard', color: '#9a9ca0', marginBottom: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, sel && sel.ko),
-                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 18 } }, shareTargets.map(t => (React.createElement("div", { key: t.label, onClick: () => copyLink(t.label), style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 } },
-                    React.createElement("div", { style: { width: 50, height: 50, borderRadius: 15, background: t.bg, color: t.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 13px Pretendard' } }, t.icon),
-                    React.createElement("span", { style: { font: '500 11px Pretendard', color: '#56585c' } }, t.label))))),
-                React.createElement("div", { onClick: () => copyLink('링크'), style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f4f2ec', borderRadius: 12, padding: '13px 15px', cursor: 'pointer' } },
-                    React.createElement("span", { style: { font: '500 12px Pretendard', color: '#7a7c80', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-                        "https://kbgis.app/news/",
-                        sel && sel.id),
-                    React.createElement("span", { style: { font: '700 12.5px Pretendard', color: '#1c1d1f', background: '#FFCC00', padding: '6px 13px', borderRadius: 8, flexShrink: 0, marginLeft: 10 } }, "\uB9C1\uD06C \uBCF5\uC0AC"))))),
-        toast && (React.createElement("div", { style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 84, background: '#1c1d1f', color: '#fff', font: '600 12.5px Pretendard', padding: '11px 18px', borderRadius: 999, zIndex: 40, boxShadow: '0 8px 24px rgba(0,0,0,.25)', whiteSpace: 'nowrap' } }, toast))));
+    console.log(`LLM summaries added: ${done}`);
+  }
+
+  const merged = dedupe([...all, ...prev])
+    .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
+    .slice(0, 500);
+  await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
+  console.log(`collected ${all.length} relevant, archive now ${merged.length} articles`);
 }
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+
+function selftest() {
+  const sample = `<rss><channel>
+    <item><title>국민연금, 미국 멀티패밀리 메자닌 대출에 5억 달러($500M) 추가 배정 - 한국경제</title>
+      <link>https://example.com/a1</link><pubDate>Fri, 26 Jun 2026 08:12:00 GMT</pubDate>
+      <description>&lt;a href="https://news.google.com/x"&gt;국민연금, 메자닌 대출 5억 달러 배정&lt;/a&gt;&amp;nbsp;&amp;nbsp;&lt;font color="#6f6f6f"&gt;한국경제&lt;/font&gt;</description>
+      <source url="https://hankyung.com">한국경제</source></item>
+    <item><title>Blackstone closes $10B global private credit fund - Bloomberg</title>
+      <link>https://example.com/a2</link><pubDate>Thu, 25 Jun 2026 13:00:00 GMT</pubDate>
+      <description>Blackstone held a final close on a $10 billion private credit fund.</description><source>Bloomberg</source></item>
+    <item><title>군인공제회, 글로벌 항공기 리스 펀드에 2,000억 원 출자 - 더벨</title>
+      <link>https://example.com/a3</link><pubDate>Wed, 24 Jun 2026 09:00:00 GMT</pubDate>
+      <description>군인공제회가 글로벌 항공기 금융 펀드에 출자했다.</description><source>더벨</source></item>
+    <item><title>국내 데이터센터 분양 임박, 청약 시작 - IT조선</title>
+      <link>https://example.com/a4</link><pubDate>Wed, 24 Jun 2026 16:00:00 GMT</pubDate>
+      <description>국내 데이터센터 분양이 시작된다.</description><source>IT조선</source></item>
+  </channel></rss>`;
+  const parsed = parseFeed(sample);
+  const kept = parsed.filter(isRelevant).map(enrich);
+  for (const a of kept) {
+    console.log(`- [${a.cat}] ${a.inst}(${a.instType}) ${a.asset}/${a.region} metric="${a.metric}"`);
+    console.log(`    ko: ${a.ko}`);
+  }
+  const a1 = kept[0], a2 = kept[1], a3 = kept[2];
+  const ok = parsed.length === 4 && kept.length === 3          // 국내 데이터센터 분양 기사는 제외(해외 맥락X + 분양 잡음)
+    && a1.inst === '국민연금' && a1.asset === 'PC' && a1.region === 'US' && a1.metric === '$500M'
+    && !/[<>]/.test(a1.body) && !/&nbsp;|&lt;/.test(a1.body)    // HTML/엔티티 완전 제거
+    && a2.inst === 'Blackstone' && a2.cat === 'GP' && a2.instType === '해외 GP'  // 글로벌 GP는 지역어 없어도 통과
+    && a3.inst === '군인공제회' && a3.asset === 'AV' && a3.instType === '공제회';
+  console.log(ok ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
+  if (!ok) process.exit(1);
+}
+
+if (process.argv[1] && process.argv[1].endsWith('collect-news.mjs')) {
+  main().catch(e => { console.error(e); process.exit(1); });
+}

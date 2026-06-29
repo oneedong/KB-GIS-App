@@ -91,11 +91,23 @@
 
 <script>
   // Register the service worker so the app works offline and is installable.
+  // 새 버전 배포 시: 앱을 껐다 켜면(또는 새로고침) 새 서비스워커가 즉시 적용되고
+  // 페이지가 한 번 자동 새로고침되어 최신 화면으로 갱신됩니다.
   if ('serviceWorker' in navigator) {
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (refreshing) return;            // 새 SW가 제어권을 잡으면 한 번만 새로고침
+      refreshing = true;
+      window.location.reload();
+    });
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./sw.js').catch(function (e) {
-        console.warn('SW registration failed', e);
-      });
+      // updateViaCache:'none' → sw.js 를 항상 새로 받아 새 버전을 놓치지 않음
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        .then(function (reg) {
+          reg.update();                  // 매 실행마다 새 버전 확인
+          setInterval(function () { reg.update(); }, 60 * 60 * 1000);
+        })
+        .catch(function (e) { console.warn('SW registration failed', e); });
     });
   }
 </script>

@@ -1,0 +1,143 @@
+{
+  "asOf": "2024",
+  "unit": "조원",
+  "note": "각 기관 연차보고서·기금운용 공시 기준 공개 추정치입니다. 정확한 수치·산정기준은 기관별 공시를 확인하세요. (KIC 등 외화 운용기관은 원화 환산)",
+  "institutions": [
+    {
+      "name": "국민연금",
+      "group": "연기금",
+      "aum": 1150,
+      "altAmount": 184,
+      "altPct": 16.0,
+      "overseasAltPct": 82,
+      "source": "국민연금 기금운용본부 운용현황",
+      "trend": [
+        { "year": 2019, "altPct": 11.4, "altAmount": 84 },
+        { "year": 2020, "altPct": 10.7, "altAmount": 91 },
+        { "year": 2021, "altPct": 12.0, "altAmount": 114 },
+        { "year": 2022, "altPct": 16.4, "altAmount": 146 },
+        { "year": 2023, "altPct": 15.9, "altAmount": 159 },
+        { "year": 2024, "altPct": 16.0, "altAmount": 184 }
+      ]
+    },
+    {
+      "name": "한국투자공사",
+      "group": "연기금",
+      "aum": 250,
+      "altAmount": 55,
+      "altPct": 22.0,
+      "overseasAltPct": 100,
+      "source": "KIC 연차보고서 (전액 해외운용, 원화 환산)",
+      "trend": [
+        { "year": 2019, "altPct": 15.5, "altAmount": 24 },
+        { "year": 2020, "altPct": 16.4, "altAmount": 28 },
+        { "year": 2021, "altPct": 17.8, "altAmount": 38 },
+        { "year": 2022, "altPct": 20.0, "altAmount": 44 },
+        { "year": 2023, "altPct": 21.0, "altAmount": 50 },
+        { "year": 2024, "altPct": 22.0, "altAmount": 55 }
+      ]
+    },
+    {
+      "name": "한국교직원공제회",
+      "group": "공제회",
+      "aum": 50,
+      "altAmount": 30,
+      "altPct": 60.0,
+      "overseasAltPct": 55,
+      "source": "교직원공제회 경영공시",
+      "trend": [
+        { "year": 2019, "altPct": 50.0, "altAmount": 19 },
+        { "year": 2020, "altPct": 52.0, "altAmount": 21 },
+        { "year": 2021, "altPct": 55.0, "altAmount": 24 },
+        { "year": 2022, "altPct": 57.0, "altAmount": 27 },
+        { "year": 2023, "altPct": 59.0, "altAmount": 28 },
+        { "year": 2024, "altPct": 60.0, "altAmount": 30 }
+      ]
+    },
+    {
+      "name": "대한지방행정공제회",
+      "group": "공제회",
+      "aum": 25,
+      "altAmount": 15.5,
+      "altPct": 62.0,
+      "overseasAltPct": 50,
+      "source": "행정공제회(POBA) 경영공시",
+      "trend": [
+        { "year": 2019, "altPct": 52.0, "altAmount": 10 },
+        { "year": 2020, "altPct": 55.0, "altAmount": 11.5 },
+        { "year": 2021, "altPct": 57.0, "altAmount": 12.8 },
+        { "year": 2022, "altPct": 59.0, "altAmount": 13.9 },
+        { "year": 2023, "altPct": 61.0, "altAmount": 14.8 },
+        { "year": 2024, "altPct": 62.0, "altAmount": 15.5 }
+      ]
+    },
+    {
+      "name": "군인공제회",
+      "group": "공제회",
+      "aum": 16,
+      "altAmount": 8.8,
+      "altPct": 55.0,
+      "overseasAltPct": 45,
+      "source": "군인공제회 경영공시",
+      "trend": [
+        { "year": 2019, "altPct": 45.0, "altAmount": 6.3 },
+        { "year": 2020, "altPct": 47.0, "altAmount": 6.8 },
+        { "year": 2021, "altPct": 50.0, "altAmount": 7.5 },
+        { "year": 2022, "altPct": 52.0, "altAmount": 8.0 },
+        { "year": 2023, "altPct": 54.0, "altAmount": 8.5 },
+        { "year": 2024, "altPct": 55.0, "altAmount": 8.8 }
+      ]
+    },
+    {
+      "name": "사립학교교직원연금공단",
+      "group": "연기금",
+      "aum": 25,
+      "altAmount": 4.5,
+      "altPct": 18.0,
+      "overseasAltPct": 72,
+      "source": "사학연금 자산운용 공시",
+      "trend": [
+        { "year": 2019, "altPct": 12.0, "altAmount": 2.4 },
+        { "year": 2020, "altPct": 13.0, "altAmount": 2.7 },
+        { "year": 2021, "altPct": 14.5, "altAmount": 3.2 },
+        { "year": 2022, "altPct": 16.0, "altAmount": 3.8 },
+        { "year": 2023, "altPct": 17.0, "altAmount": 4.2 },
+        { "year": 2024, "altPct": 18.0, "altAmount": 4.5 }
+      ]
+    },
+    {
+      "name": "과학기술인공제회",
+      "group": "공제회",
+      "aum": 12,
+      "altAmount": 6.0,
+      "altPct": 50.0,
+      "overseasAltPct": 48,
+      "source": "과학기술인공제회 경영공시",
+      "trend": [
+        { "year": 2019, "altPct": 40.0, "altAmount": 3.2 },
+        { "year": 2020, "altPct": 43.0, "altAmount": 3.8 },
+        { "year": 2021, "altPct": 45.0, "altAmount": 4.5 },
+        { "year": 2022, "altPct": 47.0, "altAmount": 5.1 },
+        { "year": 2023, "altPct": 49.0, "altAmount": 5.6 },
+        { "year": 2024, "altPct": 50.0, "altAmount": 6.0 }
+      ]
+    },
+    {
+      "name": "우정사업본부",
+      "group": "연기금",
+      "aum": 150,
+      "altAmount": 22.5,
+      "altPct": 15.0,
+      "overseasAltPct": 60,
+      "source": "우정사업본부(예금+보험) 운용현황",
+      "trend": [
+        { "year": 2019, "altPct": 10.0, "altAmount": 13 },
+        { "year": 2020, "altPct": 11.0, "altAmount": 15 },
+        { "year": 2021, "altPct": 12.5, "altAmount": 17.5 },
+        { "year": 2022, "altPct": 13.5, "altAmount": 19.5 },
+        { "year": 2023, "altPct": 14.2, "altAmount": 21 },
+        { "year": 2024, "altPct": 15.0, "altAmount": 22.5 }
+      ]
+    }
+  ]
+}

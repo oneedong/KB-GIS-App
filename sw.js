@@ -1,11 +1,12 @@
 /* KB GIS service worker — offline app shell, auto-updating on new deploys */
-const CACHE = 'kbgis-v4';
+const CACHE = 'kbgis-v10';
 
 // Local app shell — precached on install so the app opens offline.
 const SHELL = [
   './',
   './index.html',
   './app.js',
+  './allocations.json',
   './vendor/react.production.min.js',
   './vendor/react-dom.production.min.js',
   './manifest.webmanifest',
@@ -34,11 +35,12 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const sameOrigin = new URL(req.url).origin === self.location.origin;
 
-  // App files + news (same origin): network-first so new deploys show up
-  // immediately without reinstalling; fall back to cache when offline.
+  // App files + news (same origin): network-first with cache:'no-store' so a
+  // new deploy is fetched fresh past the browser/CDN HTTP cache; fall back to
+  // the cache only when offline.
   if (sameOrigin) {
     event.respondWith(
-      fetch(req).then((res) => {
+      fetch(req, { cache: 'no-store' }).then((res) => {
         if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(req, copy));

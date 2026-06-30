@@ -475,23 +475,42 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
             </div>
           )}
 
-          {/* CIO·인사 현황 */}
-          {cio && (
+          {/* 리더십 (이사장/CEO · CIO) */}
+          {((profile && (profile.ceo || profile.cio)) || cio) && (
             <div style={{marginTop:20}}>
-              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9}}>
-                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>CIO·운용 사령탑</div>
-                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출</span>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9, flexWrap:'wrap'}}>
+                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>리더십</div>
+                {profile && profile.leadershipAsOf && <span style={{font:'500 9.5px Pretendard', color:'#9a9ca0'}}>· {profile.leadershipAsOf} 기준</span>}
               </div>
-              <a href={cio.url && /^https?:\/\//.test(cio.url) ? cio.url : undefined} target="_blank" rel="noopener noreferrer"
-                 style={{display:'block', textDecoration:'none', color:'inherit', border:'1px solid #ece9e2', borderRadius:13, padding:'13px 14px', cursor:cio.url?'pointer':'default'}}>
-                <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
-                  <span style={{font:'700 9px Pretendard', color:cio.status==='선임'?'#1a5fa4':'#9a7d12', background:cio.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{cio.status}</span>
-                  {cio.person && <span style={{font:'700 13px Pretendard', color:'#1c1d1f'}}>{cio.person}</span>}
-                  {cio.background && <span style={{font:'500 11px Pretendard', color:'#9a9ca0'}}>{cio.background} 출신</span>}
-                </div>
-                <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{cio.note}</div>
-                <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{cio.date} · {cio.source}{cio.url ? ' · 기사 보기 ↗' : ''}</div>
-              </a>
+              <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                {/* 이사장/회장/대표 */}
+                {profile && profile.ceo && (
+                  <div style={{display:'flex', alignItems:'center', gap:9, border:'1px solid #ece9e2', borderRadius:12, padding:'12px 14px'}}>
+                    <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6, flexShrink:0}}>{profile.ceoTitle || '대표'}</span>
+                    <span style={{font:'700 13.5px Pretendard', color:'#1c1d1f'}}>{profile.ceo}</span>
+                  </div>
+                )}
+                {/* CIO — 뉴스 추출(라이브) 우선, 없으면 큐레이션 값 */}
+                {cio ? (
+                  <a href={cio.url && /^https?:\/\//.test(cio.url) ? cio.url : undefined} target="_blank" rel="noopener noreferrer"
+                     style={{display:'block', textDecoration:'none', color:'inherit', border:'1px solid #ece9e2', borderRadius:12, padding:'12px 14px', cursor:cio.url?'pointer':'default'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                      <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6}}>CIO</span>
+                      <span style={{font:'700 9px Pretendard', color:cio.status==='선임'?'#1a5fa4':'#9a7d12', background:cio.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{cio.status}</span>
+                      {cio.person && <span style={{font:'700 13px Pretendard', color:'#1c1d1f'}}>{cio.person}</span>}
+                      {cio.background && <span style={{font:'500 11px Pretendard', color:'#9a9ca0'}}>{cio.background} 출신</span>}
+                      <span style={{marginLeft:'auto', font:'500 9px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 6px', borderRadius:4}}>뉴스 추출</span>
+                    </div>
+                    <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:6}}>{cio.note}</div>
+                    <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{cio.date} · {cio.source}{cio.url ? ' · 기사 보기 ↗' : ''}</div>
+                  </a>
+                ) : profile && profile.cio ? (
+                  <div style={{display:'flex', alignItems:'center', gap:9, border:'1px solid #ece9e2', borderRadius:12, padding:'12px 14px'}}>
+                    <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6, flexShrink:0}}>CIO</span>
+                    <span style={{font:'600 13px Pretendard', color:'#1c1d1f'}}>{profile.cio}</span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
 

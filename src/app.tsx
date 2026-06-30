@@ -61,8 +61,8 @@ const pad2 = (n) => String(n).padStart(2, '0');
 
 // Canonical share URL for an article.
 function articleUrl(it) {
-  if (!it) return 'https://kbgis.app';
-  return it.url || ('https://kbgis.app/news/' + it.id);
+  if (!it) return 'https://oneedong.github.io/KB-GIS-App/';
+  return it.url || 'https://oneedong.github.io/KB-GIS-App/';
 }
 
 const ASSET = {

@@ -70,8 +70,8 @@ const pad2 = (n) => String(n).padStart(2, '0');
 // Canonical share URL for an article.
 function articleUrl(it) {
     if (!it)
-        return 'https://kbgis.app';
-    return it.url || ('https://kbgis.app/news/' + it.id);
+        return 'https://oneedong.github.io/KB-GIS-App/';
+    return it.url || 'https://oneedong.github.io/KB-GIS-App/';
 }
 const ASSET = {
     RE: { label: '부동산', code: 'Real Estate', color: 'oklch(0.62 0.13 55)' },

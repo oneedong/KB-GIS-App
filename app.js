@@ -366,6 +366,9 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
             React.createElement("div", { style: { padding: '18px 20px 28px', maxWidth: 760, margin: '0 auto' } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 } },
                     React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#56585c', background: '#f0eee7', padding: '3px 9px', borderRadius: 6 } }, group),
+                    profile && profile.curated
+                        ? React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '3px 8px', borderRadius: 6 } }, "\u25CF \uAC80\uC99D \uD504\uB85C\uD544")
+                        : React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#7a7c80', background: '#f0eee7', padding: '3px 8px', borderRadius: 6 } }, "\uC5C5\uAD8C \uC720\uD615 \uAE30\uC900"),
                     profile && profile.founded && React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#9a9ca0' } },
                         "\uC124\uB9BD ",
                         profile.founded,
@@ -462,7 +465,19 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
                                     " ",
                                     item.time)),
                             React.createElement("div", { style: { font: '650 13.5px/1.42 Pretendard', letterSpacing: '-.01em' } }, item.ko),
-                            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } }, item.source))))))))))));
+                            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } }, item.source)))))))),
+                React.createElement("div", { style: { marginTop: 24, paddingTop: 14, borderTop: '1px solid #f0ede4', font: '500 10px/1.6 Pretendard', color: '#b6b8bc' } },
+                    profile && profile.updatedAt && React.createElement("div", null,
+                        "\uD504\uB85C\uD544 \uC5C5\uB370\uC774\uD2B8 \u00B7 ",
+                        profile.updatedAt),
+                    profile && profile.asOf && React.createElement("div", { style: { marginTop: 2 } },
+                        "\uC815\uBCF4 \uAE30\uC900 \u00B7 ",
+                        profile.asOf),
+                    React.createElement("div", { style: { marginTop: 2 } },
+                        "CIO\u00B7\uB300\uCCB4\uD22C\uC790 \uBC30\uBD84\u00B7\uAD00\uB828 \uAE30\uC0AC\uB294 \uB274\uC2A4\u00B7\uACF5\uC2DC\uC5D0\uC11C \uC790\uB3D9 \uAC31\uC2E0\uB429\uB2C8\uB2E4",
+                        cio && cio.date ? ` (CIO 최신: ${cio.date})` : '',
+                        "."),
+                    profile && !profile.curated && React.createElement("div", { style: { marginTop: 4, color: '#c2c4c8' } }, "\u203B \uC6B4\uC6A9 \uAC1C\uC694\uB294 \uD574\uB2F9 \uC5C5\uAD8C(\uC720\uD615)\uC758 \uC77C\uBC18\uC801 \uC6B4\uC6A9 \uBC29\uC2DD \uAE30\uC900 \uC124\uBA85\uC774\uBA70, \uAC1C\uBCC4 \uAE30\uAD00\uC758 \uAD6C\uCCB4 \uC218\uCE58\u00B7\uB3D9\uD5A5\uC740 \uC704 \uAE30\uC0AC\u00B7\uBC30\uBD84 \uB370\uC774\uD130\uB97C \uCC38\uACE0\uD558\uC138\uC694."))))));
 }
 // ─── App ──────────────────────────────────────────────────
 function App() {
@@ -482,6 +497,7 @@ function App() {
     const [insights, setInsights] = useState(null);
     const [roster, setRoster] = useState(null); // 국내 LP 전체 로스터
     const [profiles, setProfiles] = useState(null); // 국내 LP 프로필(lp-profiles.json)
+    const [profilesAt, setProfilesAt] = useState(''); // 프로필 일괄 갱신일
     const [lpSel, setLpSel] = useState(null); // Korea LP 선택 기관(null = 목록)
     const [lpTab, setLpTab] = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
     const [lpExpanded, setLpExpanded] = useState(null); // Korea LP 업권 펼침
@@ -563,8 +579,11 @@ function App() {
     useEffect(() => {
         fetch(LP_PROFILES_API + '?t=' + Date.now())
             .then(r => r.json())
-            .then(d => { if (d && d.profiles)
-            setProfiles(d.profiles); })
+            .then(d => { if (d && d.profiles) {
+            setProfiles(d.profiles);
+            if (d.updatedAt)
+                setProfilesAt(d.updatedAt);
+        } })
             .catch(() => { });
     }, []);
     const flash = (msg) => {
@@ -938,7 +957,11 @@ function App() {
                             roster ? React.createElement("span", { style: { color: '#c4a93a' } },
                                 "\u00B7 \uC804\uCCB4 ",
                                 roster.length,
-                                "\uAC1C \uAE30\uAD00") : null),
+                                "\uAC1C \uAE30\uAD00") : null,
+                            profilesAt ? React.createElement("span", null,
+                                " \u00B7 \uD504\uB85C\uD544 ",
+                                profilesAt,
+                                " \uAE30\uC900") : null),
                         React.createElement("div", { style: { display: 'flex', gap: 7, marginTop: 13 } }, [['inst', '기관별 프로필'], ['alloc', '배분 비교']].map(([k, label]) => (React.createElement("div", { key: k, onClick: () => setLpTab(k), style: { font: lpTab === k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: lpTab === k ? '#1c1d1f' : '#9a9ca0', background: lpTab === k ? '#FFCC00' : '#f2f0ea', padding: '8px 16px', borderRadius: 999, cursor: 'pointer' } }, label)))))),
                 React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } }, lpTab === 'inst' ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
                     React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginBottom: 2 } }, "\uC5C5\uAD8C\uC744 \uD3BC\uCCD0 \uAE30\uAD00\uC744 \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\uC5F0\uB3C4\u00B7AUM\u00B7\uC6B4\uC6A9\uBC29\uC2DD\u00B7CIO\u00B7\uB300\uCCB4\uD22C\uC790 \uBC30\uBD84\uACFC \uAD00\uB828 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),

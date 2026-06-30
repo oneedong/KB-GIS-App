@@ -417,6 +417,9 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
           {/* 헤더 */}
           <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:6}}>
             <span style={{font:'700 10.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6}}>{group}</span>
+            {profile && profile.curated
+              ? <span style={{font:'700 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'3px 8px', borderRadius:6}}>● 검증 프로필</span>
+              : <span style={{font:'700 9.5px Pretendard', color:'#7a7c80', background:'#f0eee7', padding:'3px 8px', borderRadius:6}}>업권 유형 기준</span>}
             {profile && profile.founded && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>설립 {profile.founded}년</span>}
             {profile && profile.hq && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>· {profile.hq}</span>}
           </div>
@@ -551,6 +554,14 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
               </div>
             )}
           </div>
+
+          {/* 갱신일·정보 기준 푸터 */}
+          <div style={{marginTop:24, paddingTop:14, borderTop:'1px solid #f0ede4', font:'500 10px/1.6 Pretendard', color:'#b6b8bc'}}>
+            {profile && profile.updatedAt && <div>프로필 업데이트 · {profile.updatedAt}</div>}
+            {profile && profile.asOf && <div style={{marginTop:2}}>정보 기준 · {profile.asOf}</div>}
+            <div style={{marginTop:2}}>CIO·대체투자 배분·관련 기사는 뉴스·공시에서 자동 갱신됩니다{cio && cio.date ? ` (CIO 최신: ${cio.date})` : ''}.</div>
+            {profile && !profile.curated && <div style={{marginTop:4, color:'#c2c4c8'}}>※ 운용 개요는 해당 업권(유형)의 일반적 운용 방식 기준 설명이며, 개별 기관의 구체 수치·동향은 위 기사·배분 데이터를 참고하세요.</div>}
+          </div>
         </div>
       </div>
     </div>
@@ -575,6 +586,7 @@ function App() {
   const [insights, setInsights]    = useState(null);
   const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
   const [profiles, setProfiles]    = useState(null);   // 국내 LP 프로필(lp-profiles.json)
+  const [profilesAt, setProfilesAt] = useState('');    // 프로필 일괄 갱신일
   const [lpSel, setLpSel]          = useState(null);   // Korea LP 선택 기관(null = 목록)
   const [lpTab, setLpTab]          = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
   const [lpExpanded, setLpExpanded] = useState(null);  // Korea LP 업권 펼침
@@ -655,7 +667,7 @@ function App() {
   useEffect(() => {
     fetch(LP_PROFILES_API + '?t=' + Date.now())
       .then(r => r.json())
-      .then(d => { if (d && d.profiles) setProfiles(d.profiles); })
+      .then(d => { if (d && d.profiles) { setProfiles(d.profiles); if (d.updatedAt) setProfilesAt(d.updatedAt); } })
       .catch(() => {});
   }, []);
 
@@ -1081,7 +1093,7 @@ function App() {
             <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
             <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
               <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>Korea LP</div>
-              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>국내 기관(LP)별 프로필 · 대체투자 배분 현황 {roster ? <span style={{color:'#c4a93a'}}>· 전체 {roster.length}개 기관</span> : null}</div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>국내 기관(LP)별 프로필 · 대체투자 배분 현황 {roster ? <span style={{color:'#c4a93a'}}>· 전체 {roster.length}개 기관</span> : null}{profilesAt ? <span> · 프로필 {profilesAt} 기준</span> : null}</div>
               <div style={{display:'flex', gap:7, marginTop:13}}>
                 {[['inst','기관별 프로필'],['alloc','배분 비교']].map(([k, label]) => (
                   <div key={k} onClick={() => setLpTab(k)} style={{font: lpTab===k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: lpTab===k ? '#1c1d1f' : '#9a9ca0', background: lpTab===k ? '#FFCC00' : '#f2f0ea', padding:'8px 16px', borderRadius:999, cursor:'pointer'}}>{label}</div>

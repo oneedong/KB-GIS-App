@@ -45,6 +45,10 @@ const QUERIES = [
   '국민연금 (기금이사 OR CIO OR 기금운용본부장) (선임 OR 공모 OR 내정)',
   '(교직원공제회 OR 행정공제회 OR 군인공제회 OR 사학연금) CIO (선임 OR 내정 OR 공모)',
   '연기금 OR 공제회 CIO (선임 OR 인선 OR 영입)',
+  // 인사 강화 — 공제회·중앙회 전반의 CIO·운용임원·조직 인사 (예: 경찰공제회 신임 CIO)
+  '(경찰공제회 OR 대한소방공제회 OR 건설근로자공제회 OR 과학기술인공제회 OR 노란우산) (CIO OR 자금운용 OR 본부장 OR 이사) (선임 OR 임명 OR 공모 OR 내정)',
+  '(공제회 OR 중앙회 OR 연기금) (CIO OR 기금이사 OR 자금운용본부장 OR 운용본부장) (선임 OR 임명 OR 내정 OR 영입 OR 공모 OR 인선) when:30d',
+  '(국민연금 OR 한국투자공사 OR 새마을금고 OR 농협 OR 수협) (CIO OR 자금운용 OR 운용역) (인사 OR 선임 OR 조직개편)',
   // (5) 자산군별 수익률 — insights.json 자동 갱신용
   '국민연금 (대체투자 OR 사모투자 OR 부동산 OR 인프라) 수익률',
   '연기금 공제회 대체투자 수익률',
@@ -370,6 +374,20 @@ function hasHangul(s = '') { return /[가-힣]/.test(s); }
 function hashId(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return 'g' + (h >>> 0).toString(36); }
 function pick(pairs, text, def) { for (const [key, re] of pairs) if (re.test(text)) return key; return def; }
 function pickInst(text) { for (const [re, name, type] of INSTS) if (re.test(text)) return { inst: name, instType: type }; return null; }
+// 기사의 "주체" 기관을 고른다: 제목에서 가장 먼저 등장하는 기관(예: 인사
+// 기사의 채용 주체)을 우선하고, 제목에 없으면 본문에서 가장 먼저 등장하는
+// 기관을 쓴다. (예: "경찰공제회, 새 CIO에 강승오 전 신한證 본부장" → 경찰공제회)
+function pickInstOrdered(title = '', desc = '') {
+  const earliest = (s) => {
+    let best = null, bi = Infinity;
+    for (const [re, name, type] of INSTS) {
+      const m = s.match(re);
+      if (m && m.index < bi) { bi = m.index; best = { inst: name, instType: type }; }
+    }
+    return best;
+  };
+  return earliest(title) || earliest(desc) || null;
+}
 // 텍스트에서 마지막으로 등장하는 국내 LP 기관(직함 바로 앞 기관)을 찾습니다.
 function pickKoreanLpLast(text) {
   let best = null, bestIdx = -1;
@@ -575,7 +593,11 @@ export function isRelevant(raw) {
   // 자산군 키워드(ALT_RE)가 없어도 펀드·출자·시장·딜 맥락이면 해외대체투자 뉴스로
   // 폭넓게 수집한다(GP/LP 기사 누락 방지).
   if (gp || lp) {
-    return FUND_RE.test(text) || MARKET_RE.test(text) || ALT_RE.test(text);
+    // 펀드·출자·시장·딜·자산군 + (중요) CIO·임원·조직 인사 맥락까지 포함한다.
+    // 추적 대상 기관의 CIO 선임·임원 인사·조직개편 기사는 placement agent 핵심
+    // 정보이므로 자산군 키워드가 없어도 수집한다(예: 경찰공제회 신임 CIO 선임).
+    return FUND_RE.test(text) || MARKET_RE.test(text) || ALT_RE.test(text)
+        || PEOPLE_RE.test(text) || ORG_RE.test(text) || CIO_TITLE.test(text);
   }
   // 기관 미식별 일반 뉴스는 엄격 기준: 대체투자 자산군 + 해외 맥락 + 펀드/시장 맥락.
   if (!ALT_RE.test(text)) return false;               // 대체투자 자산군 신호
@@ -586,7 +608,7 @@ export function isRelevant(raw) {
 export function enrich(raw) {
   const text = `${raw.title} ${raw.desc}`;
   const lang = hasHangul(raw.title) ? 'ko' : 'en';
-  const instHit = pickInst(text);
+  const instHit = pickInstOrdered(raw.title, raw.desc);
   const inst = instHit ? instHit.inst : raw.source;
   const instType = instHit ? instHit.instType : '기타';
   const asset = pick(ASSETS, text, 'PE');

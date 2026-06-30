@@ -717,8 +717,11 @@ async function main() {
   let fetchBudget = 110, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
   for (const a of all) {
     const old = prevById.get(a.id);
-    if (old && old.url && !/news\.google\.com/.test(old.url)) a.url = old.url;   // 이전에 해석한 실제 URL 재사용
-    if (old && old.fetched) {                          // 과거에 확보한 본문/요약/번역 재사용
+    const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
+    if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
+    // 본문 재사용은 '실제 URL로 확보한' 경우만 — 과거 구글 인터스티셜 본문은 버리고
+    // 이번 회차에 다시 해석·크롤링한다.
+    if (old && old.fetched && oldReal) {
       a.body = old.body; a.fetched = true;
       a.ai = old.ai && old.ai.length ? old.ai : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;
@@ -728,11 +731,15 @@ async function main() {
     if (fetchBudget <= 0) continue;
     fetchBudget--;
     // 새 Google 뉴스 URL(CBMi…)을 실제 기사 주소로 해석한 뒤 본문을 크롤링.
+    // 해석에 실패하면(여전히 google.com) 본문을 긁지 않는다 — 구글 인터스티셜
+    // 페이지 텍스트가 가짜 본문으로 저장되는 것을 막는다(다음 회차에 재시도).
+    let canFetch = true;
     if (/news\.google\.com/.test(a.url)) {
       const real = await resolveGoogleNewsUrlAsync(a.url);
       if (real && !/news\.google\.com/.test(real)) { a.url = real; resolved++; }
+      else canFetch = false;
     }
-    const text = await fetchArticleText(a.url);
+    const text = canFetch ? await fetchArticleText(a.url) : '';
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);

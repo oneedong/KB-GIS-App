@@ -60,6 +60,13 @@ const QUERIES = [
   '글로벌 (사모펀드 OR 사모대출 OR 인프라 OR 부동산) 시장 (전망 OR 동향)',
   '해외 대체투자 (시장 OR 동향 OR 전망 OR 딜)',
   'private markets OR alternative assets (fundraising OR dry powder OR outlook) when:7d',
+  // (8) 글로벌 GP 딜·동향 강화 — GP News 폭넓게 수집 (펀드 결성 외 인수·매각·투자)
+  '(Blackstone OR KKR OR Apollo OR Carlyle OR Ares OR Brookfield) (acquires OR buys OR invests OR deal OR billion) when:7d',
+  '(EQT OR CVC OR TPG OR "Bain Capital" OR Permira OR Advent OR "Warburg Pincus") (deal OR acquire OR fund OR billion) when:7d',
+  '(BlackRock OR "Blue Owl" OR Oaktree OR HPS OR "Sixth Street" OR "Partners Group") (private OR credit OR fund OR deal) when:7d',
+  'private equity firm (acquire OR take private OR buyout OR billion) deal when:7d',
+  'global private equity OR private credit OR infrastructure (fund OR deal OR raise OR acquisition) when:3d',
+  '블랙스톤 OR KKR OR 아폴로 OR 칼라일 OR 브룩필드 OR 블랙록 (인수 OR 투자 OR 펀드 OR 매각)',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
@@ -563,10 +570,16 @@ const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
 export function isRelevant(raw) {
   const text = `${raw.title} ${raw.desc}`;
   if (EXCLUDE_RE.test(text)) return false;            // 상장주식·시황·리테일 잡음 제거
+  const gp = isForeignGP(text), lp = isKoreanLP(text);
+  // 알려진 글로벌 GP·국내 LP 가 등장하면 — 이들은 본질적으로 대체투자 주체이므로
+  // 자산군 키워드(ALT_RE)가 없어도 펀드·출자·시장·딜 맥락이면 해외대체투자 뉴스로
+  // 폭넓게 수집한다(GP/LP 기사 누락 방지).
+  if (gp || lp) {
+    return FUND_RE.test(text) || MARKET_RE.test(text) || ALT_RE.test(text);
+  }
+  // 기관 미식별 일반 뉴스는 엄격 기준: 대체투자 자산군 + 해외 맥락 + 펀드/시장 맥락.
   if (!ALT_RE.test(text)) return false;               // 대체투자 자산군 신호
-  // 해외/글로벌 또는 글로벌 GP/국내 LP 맥락이 있어야 함.
-  if (!(GLOBAL_RE.test(text) || isForeignGP(text) || isKoreanLP(text))) return false;
-  // 펀드·출자 딜뉴스 + 관련 마켓(시장·동향·딜) 뉴스 모두 포함.
+  if (!GLOBAL_RE.test(text)) return false;            // 해외/글로벌 맥락
   return FUND_RE.test(text) || MARKET_RE.test(text);
 }
 

@@ -506,6 +506,41 @@ export function resolveGoogleNewsUrl(link) {
   return link;
 }
 
+// 새 Google 뉴스 URL 형식(CBMi…)은 실제 주소를 담지 않아 위 디코딩이 실패합니다.
+// 이 경우 Google 의 batchexecute RPC(garturlreq)로 실제 기사 주소를 받아옵니다.
+// (googlenewsdecoder 가 쓰는 표준 방식) — 1) 기사 페이지에서 서명·타임스탬프를
+// 얻고 2) batchexecute 로 원문 URL 을 조회. 실패하면 원래 링크를 그대로 둡니다.
+export async function resolveGoogleNewsUrlAsync(link) {
+  const sync = resolveGoogleNewsUrl(link);
+  if (sync && !/news\.google\.com/.test(sync)) return sync;     // 구형식: 즉시 해석됨
+  const m = String(link).match(/news\.google\.com\/(?:rss\/)?articles\/([^?/]+)/);
+  if (!m) return link;
+  const id = m[1];
+  try {
+    const r0 = await fetch(`https://news.google.com/rss/articles/${id}`, { headers: { 'User-Agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
+    // (a) 단순 리다이렉트로 실제 기사에 도달하면 그 URL 사용
+    if (r0.url && !/news\.google\.com|google\.com\/sorry|consent\.google/.test(r0.url)) return r0.url;
+    const html = await r0.text();
+    const sg = html.match(/data-n-a-sg="([^"]+)"/);
+    const ts = html.match(/data-n-a-ts="([^"]+)"/);
+    if (!sg || !ts) return link;
+    // (b) batchexecute(garturlreq)로 원문 URL 조회
+    const inner = JSON.stringify(['garturlreq', [['X', 'X', ['X', 'X'], null, null, 1, 1, 'US:en', null, 1, null, null, null, null, null, 0, 1], 'X', 'X', 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], id, Number(ts[1]), sg[1]]);
+    const body = 'f.req=' + encodeURIComponent(JSON.stringify([[['Fbv4je', inner, null, 'generic']]]));
+    const r2 = await fetch('https://news.google.com/_/DotsSplashUi/data/batchexecute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', 'User-Agent': UA },
+      body, signal: AbortSignal.timeout(12000),
+    });
+    const t = await r2.text();
+    const cleaned = t.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&').replace(/\\\//g, '/').replace(/\\"/g, '"');
+    const urls = cleaned.match(/https?:\/\/[^"\\\s]+/g) || [];
+    const real = urls.find(u => !/(^|\.)google\.com|gstatic|googleusercontent|schema\.org|w3\.org/.test(u));
+    if (real) return real;
+  } catch {}
+  return link;
+}
+
 function metaContent(html, key) {
   const re1 = new RegExp(`<meta[^>]+(?:property|name)=["']${key}["'][^>]*content=["']([^"']+)["']`, 'i');
   const re2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${key}["']`, 'i');
@@ -679,19 +714,24 @@ async function main() {
 
   // 본문 크롤링 + 요약 패스. 이전 실행에서 이미 본문/요약을 확보한 기사는
   // 재사용해 매 실행마다 다시 긁지 않습니다(Actions 시간 절약).
-  let fetchBudget = 110, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0;
+  let fetchBudget = 110, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
   for (const a of all) {
     const old = prevById.get(a.id);
+    if (old && old.url && !/news\.google\.com/.test(old.url)) a.url = old.url;   // 이전에 해석한 실제 URL 재사용
     if (old && old.fetched) {                          // 과거에 확보한 본문/요약/번역 재사용
       a.body = old.body; a.fetched = true;
       a.ai = old.ai && old.ai.length ? old.ai : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;
       if (old.translated) { a.translated = true; a.ko = old.ko; a.en = old.en; a.enBody = old.enBody; }
-      if (old.url && !/google\.com/.test(old.url)) a.url = old.url;
       continue;
     }
     if (fetchBudget <= 0) continue;
     fetchBudget--;
+    // 새 Google 뉴스 URL(CBMi…)을 실제 기사 주소로 해석한 뒤 본문을 크롤링.
+    if (/news\.google\.com/.test(a.url)) {
+      const real = await resolveGoogleNewsUrlAsync(a.url);
+      if (real && !/news\.google\.com/.test(real)) { a.url = real; resolved++; }
+    }
     const text = await fetchArticleText(a.url);
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
@@ -714,7 +754,7 @@ async function main() {
       }
     }
   }
-  console.log(`article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
+  console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
 
   // 원문 본문을 확보한 기사를 우선 노출합니다. 다만 Google 뉴스 RSS·기사 사이트가
   // 통째로 봇차단(403)되어 단 한 건도 본문을 확보하지 못하는 환경에서는 피드를

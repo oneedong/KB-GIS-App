@@ -240,6 +240,30 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
 // ─── In-browser article body fetcher ────────────────────────
 // bodyCache: 세션 동안 한 번 가져온 본문을 재사용 (페이지 새로고침 시 초기화)
 const bodyCache = {};
+// 여러 무료 CORS 프록시를 순서대로 시도해 본문을 가져온다(한 곳이 막혀도 폴백).
+const CORS_PROXIES = [
+    (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+    (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+    (u) => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+];
+async function fetchBodyViaProxies(url, signal) {
+    for (const mk of CORS_PROXIES) {
+        try {
+            const r = await fetch(mk(url), { signal });
+            if (!r.ok)
+                continue;
+            const html = await r.text();
+            const body = parseArticleHtml(html);
+            if (body && body.length > 120)
+                return body;
+        }
+        catch (e) {
+            if (e && e.name === 'AbortError')
+                throw e;
+        }
+    }
+    return '';
+}
 function parseArticleHtml(html) {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -267,7 +291,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     useEffect(() => {
         setFetchedBody(null);
         setLoadingBody(false);
-        if (!sel || !sel.url || /google\.com/i.test(sel.url))
+        // 실제 외부 기사 주소가 있어야 본문을 가져올 수 있다(구글 뉴스 리디렉트
+        // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
+        if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url))
             return;
         // 이미 충분한 본문이 있으면 재요청 불필요
         if ((sel.body || '').length > 400)
@@ -279,16 +305,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
         }
         const ctrl = new AbortController();
         setLoadingBody(true);
-        fetch('https://corsproxy.io/?url=' + encodeURIComponent(sel.url), { signal: ctrl.signal })
-            .then(r => { if (!r.ok)
-            throw new Error(String(r.status)); return r.text(); })
-            .then(html => {
-            const body = parseArticleHtml(html);
-            if (body && body.length > 80) {
-                bodyCache[sel.id] = body;
-                setFetchedBody(body);
-            }
-        })
+        fetchBodyViaProxies(sel.url, ctrl.signal)
+            .then(body => { if (body) {
+            bodyCache[sel.id] = body;
+            setFetchedBody(body);
+        } })
             .catch(() => { })
             .finally(() => setLoadingBody(false));
         return () => ctrl.abort();

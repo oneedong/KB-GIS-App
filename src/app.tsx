@@ -915,10 +915,11 @@ function App() {
         <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column'}}>
           <div style={{background:'#1c1d1f', color:'#fff', flexShrink:0}}>
             <div style={{height:'env(safe-area-inset-top)', flexShrink:0}}></div>
+            {!isDesktop && (
             <div style={{padding:'14px 20px 18px'}}>
-              {!isDesktop && (
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
-                <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                {/* KB GIS 로고를 누르면 새로고침 */}
+                <div onClick={() => refreshNews(true)} style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
                   <div style={{width:27, height:27, borderRadius:7, background:'#FFCC00', display:'flex', alignItems:'center', justifyContent:'center', font:'800 12px Pretendard', color:'#1c1d1f', letterSpacing:'-.02em'}}>KB</div>
                   <div style={{font:'800 16px Pretendard', color:'#FFCC00', letterSpacing:'.04em'}}>KB GIS</div>
                 </div>
@@ -927,12 +928,9 @@ function App() {
                   <div style={{position:'absolute', top:6, right:7, width:6, height:6, borderRadius:'50%', background:'#FFCC00', border:'1.5px solid #1c1d1f'}}></div>
                 </div>
               </div>
-              )}
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-                <div style={{font:'800 19px Pretendard', letterSpacing:'-.02em'}}>News</div>
-                <div onClick={() => refreshNews(true)} style={{display:'flex', alignItems:'center', gap:5, cursor:'pointer', font:'600 11.5px Pretendard', color:'#cdced0', border:'1px solid #34363a', borderRadius:999, padding:'5px 11px'}}>⟳ 새로고침</div>
-              </div>
             </div>
+            )}
+            <div style={{height:isDesktop?14:0}}></div>
             <div style={{display:'flex', gap:7, padding:'0 18px 14px', whiteSpace:'nowrap', overflowX:'auto'}}>
               {chips.map(c => (
                 <div key={c.label} onClick={() => applyFilter(c.label)} style={{padding:'7px 13px', borderRadius:999, font:'600 12.5px Pretendard', flexShrink:0, cursor:'pointer', background:c.bg, color:c.color}}>{c.label}</div>

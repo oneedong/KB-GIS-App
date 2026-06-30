@@ -756,20 +756,17 @@ async function main() {
   }
   console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
 
-  // 원문 본문을 확보한 기사를 우선 노출합니다. 다만 Google 뉴스 RSS·기사 사이트가
-  // 통째로 봇차단(403)되어 단 한 건도 본문을 확보하지 못하는 환경에서는 피드를
-  // 통째로 비우지 않고(과거엔 news.json 이 []로 초기화되는 버그가 있었음) 관련성
-  // 필터를 통과한 RSS 기사라도 유지해 앱이 빈 화면이 되지 않게 합니다.
-  // 최근 3개월(92일) 기사만 노출합니다. RSS 검색이 간혹 수년 전 기사를 섞어
-  // 반환하므로 날짜 창으로 오래된 잡음을 걸러냅니다. (pinned 기사는 예외 보존)
+  // 관련성 필터를 통과한 최근 3개월(92일) 기사를 모두 노출합니다. 본문 크롤링
+  // 여부와 무관하게 기사를 유지합니다 — 본문은 예산(fetchBudget) 안에서 회차마다
+  // 점진적으로 확보되고, 미확보분도 제목·요약으로 보여주며 앱이 브라우저에서
+  // 직접 본문을 가져옵니다. (예전엔 '본문 확보분만' 남겨 기사 수가 급감했음)
+  // RSS 검색이 간혹 수년 전 기사를 섞어 반환하므로 날짜 창으로 거릅니다.
   const WINDOW_MS = 92 * 24 * 3600 * 1000;
   const cutoff = Date.now() - WINDOW_MS;
   const inWindow = (a) => { if (a.pinned) return true; const t = Date.parse(a.ts); return !isNaN(t) && t >= cutoff; };
-  const deduped = dedupe([...all, ...prev]).filter(inWindow);
-  const fetchedOnly = deduped.filter(a => a.fetched);
-  const merged = (fetchedOnly.length >= 10 ? fetchedOnly : deduped)
+  const merged = dedupe([...all, ...prev]).filter(inWindow)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
-    .slice(0, 500);
+    .slice(0, 600);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
   console.log(`collected ${all.length} relevant, archive now ${merged.length} articles`);
 

@@ -25,6 +25,8 @@ const ALLOC_API = './allocations.json';
 const INSIGHTS_API = './insights.json';
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
+// Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
+const LP_PROFILES_API = './lp-profiles.json';
 
 // 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
 // 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
@@ -109,7 +111,7 @@ function grp(t) {
 // 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 
 // ─── Navbar ───────────────────────────────────────────────
-function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAlloc, onSearch, onBookmarks }) {
+function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onSearch, onBookmarks }) {
   if (isDesktop) return null;          // 데스크톱은 좌측 사이드바를 사용
   const on = '#1c1d1f', off = '#b0b2b6';
   const tab = { display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flex:1 };
@@ -130,9 +132,9 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAll
         <span style={{fontSize:16, lineHeight:1, color:active==='category'?on:off}}>▦</span>
         <span style={{font:'600 10px Pretendard', color:active==='category'?on:off}}>카테고리</span>
       </div>
-      <div onClick={onAlloc} style={tab}>
-        <span style={{fontSize:16, lineHeight:1, color:active==='alloc'?on:off}}>▤</span>
-        <span style={{font:'600 10px Pretendard', color:active==='alloc'?on:off}}>배분현황</span>
+      <div onClick={onKoreaLp} style={tab}>
+        <span style={{fontSize:16, lineHeight:1, color:active==='korlp'?on:off}}>★</span>
+        <span style={{font:'600 10px Pretendard', color:active==='korlp'?on:off}}>Korea LP</span>
       </div>
       <div onClick={onSearch} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='search'?on:off}}>⌕</span>
@@ -239,7 +241,7 @@ function TrendChart({ trend }) {
 function Sidebar({ active, homeNew, go, onRefresh }) {
   const items = [
     ['home', '⌂', '홈'], ['today', '◷', '오늘'], ['category', '▦', '카테고리'],
-    ['alloc', '▤', '배분현황'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
+    ['korlp', '★', 'Korea LP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
   ];
   return (
     <div style={{width:236, flexShrink:0, background:'#1c1d1f', color:'#fff', display:'flex', flexDirection:'column', padding:'22px 14px'}}>
@@ -395,6 +397,166 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
   );
 }
 
+// ─── LpProfile (Korea LP — 기관별 프로필: placement agent 관점) ──
+// 설립연도·운용방식 등 안정적 사실은 lp-profiles.json(profile)에서, AUM·대체투자
+// 배분은 allocations.json(alloc)에서, CIO·인사와 자산군 수익률은 insights.json에서,
+// 관련 기사는 news.json(articles)에서 모아 한 화면에 보여준다.
+function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack, onOpenArticle }) {
+  const aum = (alloc && alloc.aum != null) ? alloc.aum : (profile && profile.aum != null ? profile.aum : null);
+  const aumAsOf = (alloc && alloc.aum != null) ? (alloc.asOf || '공시 기준') : (profile && profile.aumAsOf) || '';
+  const aumVerified = !!(alloc && alloc.aum != null);
+  // 검증(공시 확정)된 값은 그대로, 프로필 근사치는 '~'로 근사 표기.
+  const aumDisplay = aum == null ? '–' : (aumVerified ? fmtAmt(aum) : '~' + fmtAmt(aum));
+  return (
+    <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
+      <div style={{flexShrink:0, height:54, boxSizing:'content-box', display:'flex', alignItems:'center', padding:'env(safe-area-inset-top) 16px 0 12px', borderBottom:'1px solid #efece4'}}>
+        <div onClick={onBack} style={{display:'flex', alignItems:'center', gap:4, cursor:'pointer', font:'600 14px Pretendard', color:'#1c1d1f'}}><span style={{fontSize:20}}>‹</span> Korea LP</div>
+      </div>
+      <div style={{flex:1, minHeight:0, overflowY:'auto'}}>
+        <div style={{padding:'18px 20px 28px', maxWidth:760, margin:'0 auto'}}>
+          {/* 헤더 */}
+          <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:6}}>
+            <span style={{font:'700 10.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6}}>{group}</span>
+            {profile && profile.founded && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>설립 {profile.founded}년</span>}
+            {profile && profile.hq && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>· {profile.hq}</span>}
+          </div>
+          <div style={{font:'800 23px Pretendard', letterSpacing:'-.02em'}}>{name}</div>
+          {profile && profile.eng && <div style={{font:'500 12px Pretendard', color:'#a6a8ac', marginTop:3}}>{profile.eng}</div>}
+          {profile && profile.tags && (
+            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginTop:11}}>
+              {profile.tags.map(t => <span key={t} style={{font:'600 10.5px Pretendard', color:'#9a7d12', background:'#fffaeb', border:'1px solid #f3eccf', padding:'4px 9px', borderRadius:999}}>{t}</span>)}
+            </div>
+          )}
+
+          {/* 핵심 지표 */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginTop:16}}>
+            <div style={{background:'#f8f7f3', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'800 18px Pretendard'}}>{aumDisplay}</div>
+              <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>운용자산(AUM){aumAsOf ? ` · ${aumAsOf}` : ''}{aum != null && !aumVerified ? ' 공시 기준' : ''}</div>
+            </div>
+            <div style={{background:'#fffaeb', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'800 18px Pretendard', color:'#9a7d12'}}>{alloc && alloc.altPct != null ? fmtPct(alloc.altPct) : '–'}</div>
+              <div style={{font:'500 10px Pretendard', color:'#b89a2e', marginTop:2}}>대체투자 비중</div>
+            </div>
+            <div style={{background:'#f8f7f3', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'800 18px Pretendard'}}>{alloc && alloc.altAmount != null ? fmtAmt(alloc.altAmount) : '–'}</div>
+              <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 금액</div>
+            </div>
+            <div style={{background:'#f8f7f3', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'800 18px Pretendard'}}>{alloc && alloc.overseasAltPct != null ? fmtPct(alloc.overseasAltPct) : '–'}</div>
+              <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 중 해외</div>
+            </div>
+          </div>
+
+          {/* 운용 개요 */}
+          {profile && (profile.summary || profile.altFocus) ? (
+            <div style={{marginTop:18}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:8}}>운용 개요</div>
+              {profile.summary && <div style={{font:'500 13.5px/1.7 Pretendard', color:'#34353a'}}>{profile.summary}</div>}
+              {profile.mandate && (
+                <div style={{display:'flex', alignItems:'center', gap:7, marginTop:11, marginBottom:2}}>
+                  <span style={{font:'700 10px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'3px 9px', borderRadius:6}}>출자 방식</span>
+                  <span style={{font:'600 12px Pretendard', color:'#3d3e42'}}>{profile.mandate}</span>
+                </div>
+              )}
+              {profile.altFocus && (
+                <div style={{marginTop:11, background:'#f8f7f3', borderRadius:12, padding:'13px 14px'}}>
+                  <div style={{font:'700 10.5px Pretendard', color:'#9a7d12', letterSpacing:'.03em', marginBottom:6}}>대체투자 접근</div>
+                  <div style={{font:'500 12.5px/1.65 Pretendard', color:'#3d3e42'}}>{profile.altFocus}</div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{marginTop:18, font:'500 12px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>
+              상세 프로필을 준비 중입니다. 아래 최신 기사에서 운용 동향을 확인하세요.
+            </div>
+          )}
+
+          {/* CIO·인사 현황 */}
+          {cio && (
+            <div style={{marginTop:20}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9}}>
+                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>CIO·운용 사령탑</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출</span>
+              </div>
+              <a href={cio.url && /^https?:\/\//.test(cio.url) ? cio.url : undefined} target="_blank" rel="noopener noreferrer"
+                 style={{display:'block', textDecoration:'none', color:'inherit', border:'1px solid #ece9e2', borderRadius:13, padding:'13px 14px', cursor:cio.url?'pointer':'default'}}>
+                <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                  <span style={{font:'700 9px Pretendard', color:cio.status==='선임'?'#1a5fa4':'#9a7d12', background:cio.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{cio.status}</span>
+                  {cio.person && <span style={{font:'700 13px Pretendard', color:'#1c1d1f'}}>{cio.person}</span>}
+                  {cio.background && <span style={{font:'500 11px Pretendard', color:'#9a9ca0'}}>{cio.background} 출신</span>}
+                </div>
+                <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{cio.note}</div>
+                <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{cio.date} · {cio.source}{cio.url ? ' · 기사 보기 ↗' : ''}</div>
+              </a>
+            </div>
+          )}
+
+          {/* 대체투자 배분 추이 */}
+          {alloc && alloc.trend && alloc.trend.length >= 2 && (
+            <div style={{marginTop:22}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:6}}>대체투자 비중 추이</div>
+              <TrendChart trend={alloc.trend} />
+              {alloc.sourceNote && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#9a9ca0', marginTop:8, background:'#f8f7f3', borderRadius:9, padding:'9px 11px'}}>{alloc.sourceNote}</div>}
+              {alloc.source && <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:7}}>출처 · {alloc.sourceUrl
+                ? <a href={alloc.sourceUrl} target="_blank" rel="noopener noreferrer" style={{color:'#7a8190', textDecoration:'underline'}}>{alloc.source} ↗</a>
+                : alloc.source}</div>}
+            </div>
+          )}
+
+          {/* 자산군별 수익률 (기관 한정) */}
+          {returns && returns.length > 0 && (
+            <div style={{marginTop:22}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9}}>
+                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>자산군별 수익률</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 최근 기사 기준</span>
+              </div>
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {returns.map((r, i) => (
+                  <a key={r.asset+i} href={r.url && /^https?:\/\//.test(r.url) ? r.url : undefined} target="_blank" rel="noopener noreferrer"
+                     style={{display:'flex', alignItems:'center', gap:10, textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                    <span style={{width:7, height:7, borderRadius:2, background:(ASSET[r.asset]&&ASSET[r.asset].color)||'#c4a93a', display:'inline-block', flexShrink:0}}></span>
+                    <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1}}>{r.label}</span>
+                    <span style={{font:'800 14px Pretendard', color:r.value<0?'#c0392b':'#1a7a4a'}}>{r.value>0?'+':''}{r.value}%</span>
+                    <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc'}}>{r.date}↗</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 관련 기사 */}
+          <div style={{marginTop:24}}>
+            <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:10}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>관련 기사</div>
+              <span style={{font:'600 11px Pretendard', color:'#9a9ca0'}}>{articles.length}건</span>
+            </div>
+            {articles.length === 0 ? (
+              <div style={{font:'500 12px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 3개월 내 {name} 관련 기사가 아직 없습니다. 새 기사가 수집되면 자동 표시됩니다.</div>
+            ) : (
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {articles.map((item, i) => (
+                  <div key={item.id} onClick={() => onOpenArticle(item.id)} style={{display:'flex', gap:10, padding:'13px 14px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                    <div style={{width:3, borderRadius:2, background:item.assetColor, flexShrink:0}}></div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap'}}>
+                        <span style={{font:'600 10.5px Pretendard', color:item.assetColor}}>{item.assetLabel}</span>
+                        <span style={{font:'500 10.5px Pretendard', color:'#bcbec2'}}>{item.date} {item.time}</span>
+                      </div>
+                      <div style={{font:'650 13.5px/1.42 Pretendard', letterSpacing:'-.01em'}}>{item.ko}</div>
+                      <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{item.source}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────
 function App() {
   const [screen, setScreen]       = useState('home');
@@ -412,6 +574,10 @@ function App() {
   const [allocSel, setAllocSel]    = useState(null);
   const [insights, setInsights]    = useState(null);
   const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
+  const [profiles, setProfiles]    = useState(null);   // 국내 LP 프로필(lp-profiles.json)
+  const [lpSel, setLpSel]          = useState(null);   // Korea LP 선택 기관(null = 목록)
+  const [lpTab, setLpTab]          = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
+  const [lpExpanded, setLpExpanded] = useState(null);  // Korea LP 업권 펼침
   const [seen, setSeen]            = useState(() => store.get('seen', null));
   const [isDesktop, setIsDesktop]  = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
   useEffect(() => {
@@ -485,6 +651,14 @@ function App() {
       .catch(() => {});
   }, []);
 
+  // Load 국내 LP 프로필(설립연도·운용방식 등) — lp-profiles.json
+  useEffect(() => {
+    fetch(LP_PROFILES_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && d.profiles) setProfiles(d.profiles); })
+      .catch(() => {});
+  }, []);
+
   const flash = (msg) => {
     setToast(msg);
     clearTimeout(toastTimer.current);
@@ -502,12 +676,25 @@ function App() {
     }
   };
 
+  // 전체화면 상세로 강제 이동(데스크톱 포함). Korea LP 프로필 등 마스터-디테일
+  // 우측 패널이 없는 화면에서 기사를 열 때 사용.
+  const openItemFull = (id) => {
+    setSelectedId(id);
+    setRead(r => ({ ...r, [id]: true }));
+    markSeen([id]);
+    if (screen !== 'detail') setPrevScreen(screen);
+    setScreen('detail');
+  };
+
   const toggleBm = (id, e) => {
     if (e) e.stopPropagation();
     setBm(b => ({ ...b, [id]: !b[id] }));
   };
 
-  const goTab = (name) => setScreen(name);
+  const goTab = (name) => {
+    if (name === 'korlp') setLpSel(null);   // 탭 재진입 시 기관 목록으로 복귀
+    setScreen(name);
+  };
 
   const applyFilter = (key) => {
     setFilter(f => f === key ? '전체' : key);
@@ -659,11 +846,23 @@ function App() {
     { label:'팀즈',     icon:'T', bg:'#f0eee7', fg:'#56585c' },
   ];
 
-  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onAlloc:()=>goTab('alloc'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks') };
+  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks') };
 
   // Allocation screen derived data
   const allocRows = (alloc && alloc.institutions) || [];
   const allocSelData = allocRows.find(r => r.name === allocSel) || allocRows[0];
+
+  // Korea LP — 선택 기관 프로필 조립 (profile + alloc + insights + 기사)
+  const lpSelAllocRow = lpSel ? allocRows.find(r => r.name === lpSel) : null;
+  const lpSelAlloc = lpSelAllocRow ? { ...lpSelAllocRow, asOf: (alloc && alloc.asOf) || '' } : null;
+  const lpSelProfile = (lpSel && profiles && profiles[lpSel]) || null;
+  const lpSelCio = (lpSel && insights && insights.cios) ? insights.cios.find(c => c.inst === lpSel) : null;
+  const lpSelReturns = (lpSel && insights && insights.assetReturns) ? insights.assetReturns.filter(r => r.inst === lpSel) : [];
+  const lpSelArticles = lpSel ? items.filter(i => i.inst === lpSel) : [];
+  const lpSelGroup = lpSel
+    ? (((roster || []).find(r => r.name === lpSel) || {}).group || (lpSelAllocRow && lpSelAllocRow.group) || '국내 LP')
+    : '';
+  const openLp = (name) => { setLpSel(name); };
 
   // Desktop master-detail: list screens get a list pane + a persistent detail pane.
   const LIST_SCREENS = ['home', 'today', 'search', 'bookmarks'];
@@ -868,137 +1067,188 @@ function App() {
         </div>
       )}
 
-      {/* ── ALLOCATION (배분현황) ── */}
-      {screen === 'alloc' && (
+      {/* ── KOREA LP ── */}
+      {screen === 'korlp' && (lpSel ? (
+        <LpProfile
+          name={lpSel} group={lpSelGroup} profile={lpSelProfile}
+          alloc={lpSelAlloc} cio={lpSelCio} returns={lpSelReturns} articles={lpSelArticles}
+          onBack={() => setLpSel(null)}
+          onOpenArticle={(id) => openItemFull(id)}
+        />
+      ) : (
         <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
           <div style={{flexShrink:0}}>
             <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
-            <div style={{padding:'2px 20px 16px', borderBottom:'1px solid #efece4'}}>
-              <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>대체투자 배분현황</div>
-              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>국내 LP 기관별 대체투자 비중·금액·연도별 추이 {alloc && <span style={{color:'#c4a93a'}}>· {alloc.asOf} 기준</span>}</div>
+            <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
+              <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>Korea LP</div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>국내 기관(LP)별 프로필 · 대체투자 배분 현황 {roster ? <span style={{color:'#c4a93a'}}>· 전체 {roster.length}개 기관</span> : null}</div>
+              <div style={{display:'flex', gap:7, marginTop:13}}>
+                {[['inst','기관별 프로필'],['alloc','배분 비교']].map(([k, label]) => (
+                  <div key={k} onClick={() => setLpTab(k)} style={{font: lpTab===k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: lpTab===k ? '#1c1d1f' : '#9a9ca0', background: lpTab===k ? '#FFCC00' : '#f2f0ea', padding:'8px 16px', borderRadius:999, cursor:'pointer'}}>{label}</div>
+                ))}
+              </div>
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18}}>
-            {!allocSelData ? (
-              <div style={{padding:'80px 30px', textAlign:'center'}}>
-                <div style={{fontSize:30, color:'#d8d5cd'}}>▤</div>
-                <div style={{font:'600 14px Pretendard', color:'#56585c', marginTop:14}}>배분 데이터를 불러오는 중…</div>
+            {lpTab === 'inst' ? (
+              /* ── 업권별 기관 목록 → 기관 프로필 ── */
+              <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', marginBottom:2}}>업권을 펼쳐 기관을 선택하면 설립연도·AUM·운용방식·CIO·대체투자 배분과 관련 기사를 한눈에 볼 수 있습니다.</div>
+                {catGroups.map(g => {
+                  const open = lpExpanded === g.name;
+                  const names = rosterByGroup[g.name] || [];
+                  return (
+                    <div key={g.name} style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      <div onClick={() => setLpExpanded(x => x === g.name ? null : g.name)} style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 15px', cursor:'pointer'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:11}}>
+                          <span style={{width:34, height:34, borderRadius:9, background:'#f2f0ea', display:'flex', alignItems:'center', justifyContent:'center', font:'800 12px Pretendard', color:'#56585c'}}>{g.icon}</span>
+                          <div>
+                            <div style={{font:'700 14px Pretendard'}}>{g.name}</div>
+                            <div style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginTop:2}}>{g.sample}</div>
+                          </div>
+                        </div>
+                        <div style={{display:'flex', alignItems:'center', gap:9}}>
+                          <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>기관 {names.length}</span>
+                          <span style={{color:'#cfccc4', transform:open?'rotate(90deg)':'none', transition:'transform .15s'}}>›</span>
+                        </div>
+                      </div>
+                      {open && (
+                        <div style={{padding:'0 13px 8px'}}>
+                          {names.length === 0
+                            ? <span style={{font:'500 11.5px Pretendard', color:'#a6a8ac', display:'block', padding:'8px 2px'}}>기관 목록을 불러오는 중…</span>
+                            : names.map(name => {
+                              const c = (instsByGroup[g.name] || {})[name] || 0;
+                              const hasProfile = !!(profiles && profiles[name]);
+                              return (
+                                <div key={name} onClick={() => openLp(name)} style={{display:'flex', alignItems:'center', gap:8, padding:'11px 4px', borderTop:'1px solid #f3f1ea', cursor:'pointer'}}>
+                                  <span style={{flex:1, minWidth:0, font:'600 13px Pretendard', color:'#1c1d1f'}}>{name}{hasProfile && <span style={{color:'#e0b500', marginLeft:5, fontSize:10}}>★</span>}</span>
+                                  {c > 0 && <span style={{font:'600 10px Pretendard', color:'#9a7d12', background:'#fff7d6', padding:'2px 8px', borderRadius:999, flexShrink:0}}>기사 {c}</span>}
+                                  <span style={{color:'#cfccc4', flexShrink:0}}>›</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:6, textAlign:'center'}}>★ 표시는 설립연도·운용방식 등 상세 프로필이 정리된 기관입니다</div>
               </div>
             ) : (
-              <>
-                {/* 비교 막대 */}
-                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
-                  <span style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>기관별 대체투자 비중</span>
-                  <span style={{display:'flex', alignItems:'center', gap:10, font:'500 10px Pretendard', color:'#9a9ca0'}}>
-                    <span style={{display:'flex', alignItems:'center', gap:4}}><span style={{width:9, height:9, borderRadius:2, background:'#FFCC00', display:'inline-block'}}></span>해외</span>
-                    <span style={{display:'flex', alignItems:'center', gap:4}}><span style={{width:9, height:9, borderRadius:2, background:'#FFE695', display:'inline-block'}}></span>전체</span>
-                  </span>
+              /* ── 배분 비교 (기관 간 대체투자 비중·금액) ── */
+              !allocSelData ? (
+                <div style={{padding:'80px 30px', textAlign:'center'}}>
+                  <div style={{fontSize:30, color:'#d8d5cd'}}>▤</div>
+                  <div style={{font:'600 14px Pretendard', color:'#56585c', marginTop:14}}>배분 데이터를 불러오는 중…</div>
                 </div>
-                <AllocBars rows={allocRows} selName={allocSel} onSelect={setAllocSel} />
+              ) : (
+                <>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
+                    <span style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>기관별 대체투자 비중 {alloc && <span style={{fontWeight:500, color:'#c4a93a'}}>· {alloc.asOf}</span>}</span>
+                    <span style={{display:'flex', alignItems:'center', gap:10, font:'500 10px Pretendard', color:'#9a9ca0'}}>
+                      <span style={{display:'flex', alignItems:'center', gap:4}}><span style={{width:9, height:9, borderRadius:2, background:'#FFCC00', display:'inline-block'}}></span>해외</span>
+                      <span style={{display:'flex', alignItems:'center', gap:4}}><span style={{width:9, height:9, borderRadius:2, background:'#FFE695', display:'inline-block'}}></span>전체</span>
+                    </span>
+                  </div>
+                  <AllocBars rows={allocRows} selName={allocSel} onSelect={setAllocSel} />
 
-                {/* 선택 기관 상세 */}
-                <div style={{marginTop:24, border:'1px solid #ece9e2', borderRadius:16, padding:16}}>
-                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:13, flexWrap:'wrap'}}>
-                    <span style={{font:'800 16px Pretendard', letterSpacing:'-.02em'}}>{allocSelData.name}</span>
-                    <span style={{font:'600 10.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'2px 8px', borderRadius:5}}>{allocSelData.group}</span>
-                    {allocSelData.auto
-                      ? <span style={{font:'700 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>● {allocSelData.autoKind === 'news' ? '기사 기반' : '자동 갱신'}</span>
-                      : allocSelData.verified
+                  {/* 선택 기관 요약 + 프로필 진입 */}
+                  <div style={{marginTop:24, border:'1px solid #ece9e2', borderRadius:16, padding:16}}>
+                    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:13, flexWrap:'wrap'}}>
+                      <span style={{font:'800 16px Pretendard', letterSpacing:'-.02em'}}>{allocSelData.name}</span>
+                      <span style={{font:'600 10.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'2px 8px', borderRadius:5}}>{allocSelData.group}</span>
+                      {allocSelData.verified
                         ? <span style={{font:'700 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>● 공시 확정</span>
                         : <span style={{font:'700 9.5px Pretendard', color:'#9a7d12', background:'#fffaeb', padding:'2px 8px', borderRadius:5, letterSpacing:'.02em'}}>공시 추정치</span>}
+                    </div>
+                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:14}}>
+                      <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
+                        <div style={{font:'800 18px Pretendard'}}>{fmtAmt(allocSelData.aum)}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>운용자산(AUM)</div>
+                      </div>
+                      <div style={{background:'#fffaeb', borderRadius:11, padding:'11px 13px'}}>
+                        <div style={{font:'800 18px Pretendard', color:'#9a7d12'}}>{fmtAmt(allocSelData.altAmount)}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#b89a2e', marginTop:2}}>대체투자 금액</div>
+                      </div>
+                      <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
+                        <div style={{font:'800 18px Pretendard'}}>{fmtPct(allocSelData.altPct)}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 비중</div>
+                      </div>
+                      <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
+                        <div style={{font:'800 18px Pretendard'}}>{fmtPct(allocSelData.overseasAltPct)}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 중 해외</div>
+                      </div>
+                    </div>
+                    <div onClick={() => openLp(allocSelData.name)} style={{display:'flex', alignItems:'center', justifyContent:'center', gap:6, height:40, background:'#1c1d1f', borderRadius:11, cursor:'pointer', font:'700 12.5px Pretendard', color:'#fff'}}>{allocSelData.name} 기관 프로필 보기 →</div>
                   </div>
-                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:16}}>
-                    <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
-                      <div style={{font:'800 18px Pretendard'}}>{fmtAmt(allocSelData.aum)}</div>
-                      <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>운용자산(AUM)</div>
-                    </div>
-                    <div style={{background:'#fffaeb', borderRadius:11, padding:'11px 13px'}}>
-                      <div style={{font:'800 18px Pretendard', color:'#9a7d12'}}>{fmtAmt(allocSelData.altAmount)}</div>
-                      <div style={{font:'500 10px Pretendard', color:'#b89a2e', marginTop:2}}>대체투자 금액</div>
-                    </div>
-                    <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
-                      <div style={{font:'800 18px Pretendard'}}>{fmtPct(allocSelData.altPct)}</div>
-                      <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 비중</div>
-                    </div>
-                    <div style={{background:'#f8f7f3', borderRadius:11, padding:'11px 13px'}}>
-                      <div style={{font:'800 18px Pretendard'}}>{fmtPct(allocSelData.overseasAltPct)}</div>
-                      <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 중 해외</div>
-                    </div>
-                  </div>
-                  <div style={{font:'700 10.5px Pretendard', color:'#a6a8ac', letterSpacing:'.05em', marginBottom:6}}>대체투자 비중 추이</div>
-                  <TrendChart trend={allocSelData.trend} />
-                  {allocSelData.sourceNote && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#9a9ca0', marginTop:10, background:'#f8f7f3', borderRadius:9, padding:'9px 11px'}}>{allocSelData.sourceNote}</div>}
-                  <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:8}}>출처 · {allocSelData.sourceUrl
-                    ? <a href={allocSelData.sourceUrl} target="_blank" rel="noopener noreferrer" style={{color:'#7a8190', textDecoration:'underline'}}>{allocSelData.source} ↗</a>
-                    : allocSelData.source}{allocSelData.auto && allocSelData.updatedAt ? ` · ${allocSelData.updatedAt} 자동 갱신` : ''}</div>
-                </div>
 
-                {/* 표 */}
-                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', margin:'24px 0 10px'}}>전체 표</div>
-                <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                  <div style={{display:'grid', gridTemplateColumns:'1.7fr 1fr 0.9fr 0.9fr', background:'#f8f7f3', padding:'9px 12px', font:'700 10.5px Pretendard', color:'#7a7c80'}}>
-                    <span>기관</span><span style={{textAlign:'right'}}>대체투자</span><span style={{textAlign:'right'}}>비중</span><span style={{textAlign:'right'}}>해외</span>
-                  </div>
-                  {allocRows.map((r, i) => (
-                    <div key={r.name} onClick={() => setAllocSel(r.name)} style={{display:'grid', gridTemplateColumns:'1.7fr 1fr 0.9fr 0.9fr', padding:'11px 12px', borderTop:'1px solid #f3f1ea', cursor:'pointer', background:allocSel===r.name?'#fffaeb':'#fff', alignItems:'center'}}>
-                      <span style={{font:'600 12px Pretendard', color:'#1c1d1f'}}>{r.name}</span>
-                      <span style={{font:'600 12px Pretendard', textAlign:'right'}}>{fmtAmt(r.altAmount)}</span>
-                      <span style={{font:'700 12px Pretendard', textAlign:'right', color:'#9a7d12'}}>{fmtPct(r.altPct)}</span>
-                      <span style={{font:'500 12px Pretendard', textAlign:'right', color:'#7a7c80'}}>{fmtPct(r.overseasAltPct)}</span>
-                    </div>
-                  ))}
-                </div>
-                {alloc && alloc.note && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:14}}>※ {alloc.note}</div>}
-
-                {/* CIO·인사 현황 (뉴스 자동 추출) */}
-                <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'30px 0 10px'}}>
-                  <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>주요 LP CIO·인사 현황</div>
-                  <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출{insights && insights.updatedAt ? ` · ${insights.updatedAt}` : ''}</span>
-                </div>
-                {insights && insights.cios && insights.cios.length ? (
+                  {/* 표 */}
+                  <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', margin:'24px 0 10px'}}>전체 표</div>
                   <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                    {insights.cios.map((c, i) => (
-                      <a key={c.inst+i} href={c.url && /^https?:\/\//.test(c.url) ? c.url : undefined} target="_blank" rel="noopener noreferrer"
-                         style={{display:'block', textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:c.url?'pointer':'default'}}>
-                        <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
-                          <span style={{font:'700 12.5px Pretendard', color:'#1c1d1f'}}>{c.inst}</span>
-                          <span style={{font:'700 9px Pretendard', color:c.status==='선임'?'#1a5fa4':'#9a7d12', background:c.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{c.status}</span>
+                    <div style={{display:'grid', gridTemplateColumns:'1.7fr 1fr 0.9fr 0.9fr', background:'#f8f7f3', padding:'9px 12px', font:'700 10.5px Pretendard', color:'#7a7c80'}}>
+                      <span>기관</span><span style={{textAlign:'right'}}>대체투자</span><span style={{textAlign:'right'}}>비중</span><span style={{textAlign:'right'}}>해외</span>
+                    </div>
+                    {allocRows.map((r) => (
+                      <div key={r.name} onClick={() => setAllocSel(r.name)} style={{display:'grid', gridTemplateColumns:'1.7fr 1fr 0.9fr 0.9fr', padding:'11px 12px', borderTop:'1px solid #f3f1ea', cursor:'pointer', background:allocSel===r.name?'#fffaeb':'#fff', alignItems:'center'}}>
+                        <span style={{font:'600 12px Pretendard', color:'#1c1d1f'}}>{r.name}</span>
+                        <span style={{font:'600 12px Pretendard', textAlign:'right'}}>{fmtAmt(r.altAmount)}</span>
+                        <span style={{font:'700 12px Pretendard', textAlign:'right', color:'#9a7d12'}}>{fmtPct(r.altPct)}</span>
+                        <span style={{font:'500 12px Pretendard', textAlign:'right', color:'#7a7c80'}}>{fmtPct(r.overseasAltPct)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {alloc && alloc.note && <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:14}}>※ {alloc.note}</div>}
+
+                  {/* CIO·인사 현황 (뉴스 자동 추출) */}
+                  <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'30px 0 10px'}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>주요 LP CIO·인사 현황</div>
+                    <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출{insights && insights.updatedAt ? ` · ${insights.updatedAt}` : ''}</span>
+                  </div>
+                  {insights && insights.cios && insights.cios.length ? (
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      {insights.cios.map((c, i) => (
+                        <div key={c.inst+i} onClick={() => openLp(c.inst)} style={{padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                          <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                            <span style={{font:'700 12.5px Pretendard', color:'#1c1d1f'}}>{c.inst}</span>
+                            <span style={{font:'700 9px Pretendard', color:c.status==='선임'?'#1a5fa4':'#9a7d12', background:c.status==='선임'?'#e6effa':'#fffaeb', padding:'2px 7px', borderRadius:5}}>{c.status}</span>
+                            <span style={{marginLeft:'auto', color:'#cfccc4'}}>›</span>
+                          </div>
+                          <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{c.note}</div>
+                          <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{c.date} · {c.source}</div>
                         </div>
-                        <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{c.note}</div>
-                        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{c.date} · {c.source}{c.url ? ' · 기사 보기 ↗' : ''}</div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 추출된 CIO·인사 정보가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 추출된 CIO·인사 정보가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                  )}
 
-                {/* 자산군별 수익률 (뉴스 자동 추출) */}
-                <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
-                  <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>자산군별 수익률</div>
-                  <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 최근 기사 기준</span>
-                </div>
-                {insights && insights.assetReturns && insights.assetReturns.length ? (
-                  <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                    {insights.assetReturns.map((r, i) => (
-                      <a key={r.asset+i} href={r.url && /^https?:\/\//.test(r.url) ? r.url : undefined} target="_blank" rel="noopener noreferrer"
-                         style={{display:'flex', alignItems:'center', gap:10, textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
-                        <span style={{width:7, height:7, borderRadius:2, background:(ASSET[r.asset]&&ASSET[r.asset].color)||'#c4a93a', display:'inline-block', flexShrink:0}}></span>
-                        <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1}}>{r.label}{r.inst?` · ${r.inst}`:''}</span>
-                        <span style={{font:'800 14px Pretendard', color:r.value<0?'#c0392b':'#1a7a4a'}}>{r.value>0?'+':''}{r.value}%</span>
-                        <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc'}}>{r.date}↗</span>
-                      </a>
-                    ))}
+                  {/* 자산군별 수익률 (뉴스 자동 추출) */}
+                  <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>자산군별 수익률</div>
+                    <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 최근 기사 기준</span>
                   </div>
-                ) : (
-                  <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 확인된 자산군별 수익률이 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
-                )}
-              </>
+                  {insights && insights.assetReturns && insights.assetReturns.length ? (
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      {insights.assetReturns.map((r, i) => (
+                        <a key={r.asset+i} href={r.url && /^https?:\/\//.test(r.url) ? r.url : undefined} target="_blank" rel="noopener noreferrer"
+                           style={{display:'flex', alignItems:'center', gap:10, textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                          <span style={{width:7, height:7, borderRadius:2, background:(ASSET[r.asset]&&ASSET[r.asset].color)||'#c4a93a', display:'inline-block', flexShrink:0}}></span>
+                          <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1}}>{r.label}{r.inst?` · ${r.inst}`:''}</span>
+                          <span style={{font:'800 14px Pretendard', color:r.value<0?'#c0392b':'#1a7a4a'}}>{r.value>0?'+':''}{r.value}%</span>
+                          <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc'}}>{r.date}↗</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 확인된 자산군별 수익률이 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                  )}
+                </>
+              )
             )}
           </div>
-          <Navbar active="alloc" {...navProps} />
+          <Navbar active="korlp" {...navProps} />
         </div>
-      )}
+      ))}
 
       {/* ── SEARCH ── */}
       {screen === 'search' && (
@@ -1095,8 +1345,9 @@ function App() {
         </div>
       )}
 
-      {/* ── DETAIL (mobile full screen) ── */}
-      {screen === 'detail' && sel && !isDesktop && (
+      {/* ── DETAIL (full screen — mobile always; desktop when reached from a
+             non-list screen like Korea LP that has no master-detail pane) ── */}
+      {screen === 'detail' && sel && (!isDesktop || !LIST_SCREENS.includes(prevScreen)) && (
         <ArticleDetail sel={sel} bookmarked={!!bm[sel.id]} onToggleBm={(e) => toggleBm(sel.id, e)} onShare={(e) => onShare(sel, e)} onBack={() => setScreen(prevScreen)} showBack={true} />
       )}
 

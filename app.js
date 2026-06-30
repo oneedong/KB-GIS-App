@@ -33,6 +33,8 @@ const ALLOC_API = './allocations.json';
 const INSIGHTS_API = './insights.json';
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
+// Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
+const LP_PROFILES_API = './lp-profiles.json';
 // 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
 // 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
 function isRealArticle(a) {
@@ -121,7 +123,7 @@ function grp(t) {
 // 시드 데모 데이터는 제거되었습니다. 앱은 수집기가 채우는 news.json 의 실제
 // 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 // ─── Navbar ───────────────────────────────────────────────
-function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAlloc, onSearch, onBookmarks }) {
+function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onSearch, onBookmarks }) {
     if (isDesktop)
         return null; // 데스크톱은 좌측 사이드바를 사용
     const on = '#1c1d1f', off = '#b0b2b6';
@@ -138,9 +140,9 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onAll
         React.createElement("div", { onClick: onCategory, style: tab },
             React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'category' ? on : off } }, "\u25A6"),
             React.createElement("span", { style: { font: '600 10px Pretendard', color: active === 'category' ? on : off } }, "\uCE74\uD14C\uACE0\uB9AC")),
-        React.createElement("div", { onClick: onAlloc, style: tab },
-            React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'alloc' ? on : off } }, "\u25A4"),
-            React.createElement("span", { style: { font: '600 10px Pretendard', color: active === 'alloc' ? on : off } }, "\uBC30\uBD84\uD604\uD669")),
+        React.createElement("div", { onClick: onKoreaLp, style: tab },
+            React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'korlp' ? on : off } }, "\u2605"),
+            React.createElement("span", { style: { font: '600 10px Pretendard', color: active === 'korlp' ? on : off } }, "Korea LP")),
         React.createElement("div", { onClick: onSearch, style: tab },
             React.createElement("span", { style: { fontSize: 16, lineHeight: 1, color: active === 'search' ? on : off } }, "\u2315"),
             React.createElement("span", { style: { font: '600 10px Pretendard', color: active === 'search' ? on : off } }, "\uAC80\uC0C9")),
@@ -220,7 +222,7 @@ function TrendChart({ trend }) {
 function Sidebar({ active, homeNew, go, onRefresh }) {
     const items = [
         ['home', '⌂', '홈'], ['today', '◷', '오늘'], ['category', '▦', '카테고리'],
-        ['alloc', '▤', '배분현황'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
+        ['korlp', '★', 'Korea LP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
     ];
     return (React.createElement("div", { style: { width: 236, flexShrink: 0, background: '#1c1d1f', color: '#fff', display: 'flex', flexDirection: 'column', padding: '22px 14px' } },
         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9, padding: '4px 12px 22px' } },
@@ -345,6 +347,123 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                     realUrl && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
                 React.createElement("div", { style: { font: '500 11px Pretendard', color: '#b6b8bc', textAlign: 'center', marginTop: 10 } }, realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다')))));
 }
+// ─── LpProfile (Korea LP — 기관별 프로필: placement agent 관점) ──
+// 설립연도·운용방식 등 안정적 사실은 lp-profiles.json(profile)에서, AUM·대체투자
+// 배분은 allocations.json(alloc)에서, CIO·인사와 자산군 수익률은 insights.json에서,
+// 관련 기사는 news.json(articles)에서 모아 한 화면에 보여준다.
+function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack, onOpenArticle }) {
+    const aum = (alloc && alloc.aum != null) ? alloc.aum : (profile && profile.aum != null ? profile.aum : null);
+    const aumAsOf = (alloc && alloc.aum != null) ? (alloc.asOf || '공시 기준') : (profile && profile.aumAsOf) || '';
+    const aumVerified = !!(alloc && alloc.aum != null);
+    // 검증(공시 확정)된 값은 그대로, 프로필 근사치는 '~'로 근사 표기.
+    const aumDisplay = aum == null ? '–' : (aumVerified ? fmtAmt(aum) : '~' + fmtAmt(aum));
+    return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
+        React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
+            React.createElement("div", { onClick: onBack, style: { display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', font: '600 14px Pretendard', color: '#1c1d1f' } },
+                React.createElement("span", { style: { fontSize: 20 } }, "\u2039"),
+                " Korea LP")),
+        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+            React.createElement("div", { style: { padding: '18px 20px 28px', maxWidth: 760, margin: '0 auto' } },
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 } },
+                    React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#56585c', background: '#f0eee7', padding: '3px 9px', borderRadius: 6 } }, group),
+                    profile && profile.founded && React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#9a9ca0' } },
+                        "\uC124\uB9BD ",
+                        profile.founded,
+                        "\uB144"),
+                    profile && profile.hq && React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#9a9ca0' } },
+                        "\u00B7 ",
+                        profile.hq)),
+                React.createElement("div", { style: { font: '800 23px Pretendard', letterSpacing: '-.02em' } }, name),
+                profile && profile.eng && React.createElement("div", { style: { font: '500 12px Pretendard', color: '#a6a8ac', marginTop: 3 } }, profile.eng),
+                profile && profile.tags && (React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 11 } }, profile.tags.map(t => React.createElement("span", { key: t, style: { font: '600 10.5px Pretendard', color: '#9a7d12', background: '#fffaeb', border: '1px solid #f3eccf', padding: '4px 9px', borderRadius: 999 } }, t)))),
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 16 } },
+                    React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '12px 13px' } },
+                        React.createElement("div", { style: { font: '800 18px Pretendard' } }, aumDisplay),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } },
+                            "\uC6B4\uC6A9\uC790\uC0B0(AUM)",
+                            aumAsOf ? ` · ${aumAsOf}` : '',
+                            aum != null && !aumVerified ? ' 공시 기준' : '')),
+                    React.createElement("div", { style: { background: '#fffaeb', borderRadius: 11, padding: '12px 13px' } },
+                        React.createElement("div", { style: { font: '800 18px Pretendard', color: '#9a7d12' } }, alloc && alloc.altPct != null ? fmtPct(alloc.altPct) : '–'),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b89a2e', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911")),
+                    React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '12px 13px' } },
+                        React.createElement("div", { style: { font: '800 18px Pretendard' } }, alloc && alloc.altAmount != null ? fmtAmt(alloc.altAmount) : '–'),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uAE08\uC561")),
+                    React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '12px 13px' } },
+                        React.createElement("div", { style: { font: '800 18px Pretendard' } }, alloc && alloc.overseasAltPct != null ? fmtPct(alloc.overseasAltPct) : '–'),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uC911 \uD574\uC678"))),
+                profile && (profile.summary || profile.altFocus) ? (React.createElement("div", { style: { marginTop: 18 } },
+                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 8 } }, "\uC6B4\uC6A9 \uAC1C\uC694"),
+                    profile.summary && React.createElement("div", { style: { font: '500 13.5px/1.7 Pretendard', color: '#34353a' } }, profile.summary),
+                    profile.mandate && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginTop: 11, marginBottom: 2 } },
+                        React.createElement("span", { style: { font: '700 10px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '3px 9px', borderRadius: 6 } }, "\uCD9C\uC790 \uBC29\uC2DD"),
+                        React.createElement("span", { style: { font: '600 12px Pretendard', color: '#3d3e42' } }, profile.mandate))),
+                    profile.altFocus && (React.createElement("div", { style: { marginTop: 11, background: '#f8f7f3', borderRadius: 12, padding: '13px 14px' } },
+                        React.createElement("div", { style: { font: '700 10.5px Pretendard', color: '#9a7d12', letterSpacing: '.03em', marginBottom: 6 } }, "\uB300\uCCB4\uD22C\uC790 \uC811\uADFC"),
+                        React.createElement("div", { style: { font: '500 12.5px/1.65 Pretendard', color: '#3d3e42' } }, profile.altFocus))))) : (React.createElement("div", { style: { marginTop: 18, font: '500 12px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uC0C1\uC138 \uD504\uB85C\uD544\uC744 \uC900\uBE44 \uC911\uC785\uB2C8\uB2E4. \uC544\uB798 \uCD5C\uC2E0 \uAE30\uC0AC\uC5D0\uC11C \uC6B4\uC6A9 \uB3D9\uD5A5\uC744 \uD655\uC778\uD558\uC138\uC694.")),
+                cio && (React.createElement("div", { style: { marginTop: 20 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "CIO\u00B7\uC6B4\uC6A9 \uC0AC\uB839\uD0D1"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB274\uC2A4 \uC790\uB3D9 \uCD94\uCD9C")),
+                    React.createElement("a", { href: cio.url && /^https?:\/\//.test(cio.url) ? cio.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #ece9e2', borderRadius: 13, padding: '13px 14px', cursor: cio.url ? 'pointer' : 'default' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
+                            React.createElement("span", { style: { font: '700 9px Pretendard', color: cio.status === '선임' ? '#1a5fa4' : '#9a7d12', background: cio.status === '선임' ? '#e6effa' : '#fffaeb', padding: '2px 7px', borderRadius: 5 } }, cio.status),
+                            cio.person && React.createElement("span", { style: { font: '700 13px Pretendard', color: '#1c1d1f' } }, cio.person),
+                            cio.background && React.createElement("span", { style: { font: '500 11px Pretendard', color: '#9a9ca0' } },
+                                cio.background,
+                                " \uCD9C\uC2E0")),
+                        React.createElement("div", { style: { font: '500 12px/1.5 Pretendard', color: '#3d3e42', marginTop: 5 } }, cio.note),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                            cio.date,
+                            " \u00B7 ",
+                            cio.source,
+                            cio.url ? ' · 기사 보기 ↗' : '')))),
+                alloc && alloc.trend && alloc.trend.length >= 2 && (React.createElement("div", { style: { marginTop: 22 } },
+                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 6 } }, "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911 \uCD94\uC774"),
+                    React.createElement(TrendChart, { trend: alloc.trend }),
+                    alloc.sourceNote && React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#9a9ca0', marginTop: 8, background: '#f8f7f3', borderRadius: 9, padding: '9px 11px' } }, alloc.sourceNote),
+                    alloc.source && React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 7 } },
+                        "\uCD9C\uCC98 \u00B7 ",
+                        alloc.sourceUrl
+                            ? React.createElement("a", { href: alloc.sourceUrl, target: "_blank", rel: "noopener noreferrer", style: { color: '#7a8190', textDecoration: 'underline' } },
+                                alloc.source,
+                                " \u2197")
+                            : alloc.source))),
+                returns && returns.length > 0 && (React.createElement("div", { style: { marginTop: 22 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uCD5C\uADFC \uAE30\uC0AC \uAE30\uC900")),
+                    React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, returns.map((r, i) => (React.createElement("a", { key: r.asset + i, href: r.url && /^https?:\/\//.test(r.url) ? r.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
+                        React.createElement("span", { style: { width: 7, height: 7, borderRadius: 2, background: (ASSET[r.asset] && ASSET[r.asset].color) || '#c4a93a', display: 'inline-block', flexShrink: 0 } }),
+                        React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', flex: 1 } }, r.label),
+                        React.createElement("span", { style: { font: '800 14px Pretendard', color: r.value < 0 ? '#c0392b' : '#1a7a4a' } },
+                            r.value > 0 ? '+' : '',
+                            r.value,
+                            "%"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc' } },
+                            r.date,
+                            "\u2197"))))))),
+                React.createElement("div", { style: { marginTop: 24 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAD00\uB828 \uAE30\uC0AC"),
+                        React.createElement("span", { style: { font: '600 11px Pretendard', color: '#9a9ca0' } },
+                            articles.length,
+                            "\uAC74")),
+                    articles.length === 0 ? (React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } },
+                        "\uCD5C\uADFC 3\uAC1C\uC6D4 \uB0B4 ",
+                        name,
+                        " \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9 \uD45C\uC2DC\uB429\uB2C8\uB2E4.")) : (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, articles.map((item, i) => (React.createElement("div", { key: item.id, onClick: () => onOpenArticle(item.id), style: { display: 'flex', gap: 10, padding: '13px 14px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                        React.createElement("div", { style: { width: 3, borderRadius: 2, background: item.assetColor, flexShrink: 0 } }),
+                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' } },
+                                React.createElement("span", { style: { font: '600 10.5px Pretendard', color: item.assetColor } }, item.assetLabel),
+                                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#bcbec2' } },
+                                    item.date,
+                                    " ",
+                                    item.time)),
+                            React.createElement("div", { style: { font: '650 13.5px/1.42 Pretendard', letterSpacing: '-.01em' } }, item.ko),
+                            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } }, item.source))))))))))));
+}
 // ─── App ──────────────────────────────────────────────────
 function App() {
     const [screen, setScreen] = useState('home');
@@ -362,6 +481,10 @@ function App() {
     const [allocSel, setAllocSel] = useState(null);
     const [insights, setInsights] = useState(null);
     const [roster, setRoster] = useState(null); // 국내 LP 전체 로스터
+    const [profiles, setProfiles] = useState(null); // 국내 LP 프로필(lp-profiles.json)
+    const [lpSel, setLpSel] = useState(null); // Korea LP 선택 기관(null = 목록)
+    const [lpTab, setLpTab] = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
+    const [lpExpanded, setLpExpanded] = useState(null); // Korea LP 업권 펼침
     const [seen, setSeen] = useState(() => store.get('seen', null));
     const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
     useEffect(() => {
@@ -436,6 +559,14 @@ function App() {
             setRoster(d.institutions); })
             .catch(() => { });
     }, []);
+    // Load 국내 LP 프로필(설립연도·운용방식 등) — lp-profiles.json
+    useEffect(() => {
+        fetch(LP_PROFILES_API + '?t=' + Date.now())
+            .then(r => r.json())
+            .then(d => { if (d && d.profiles)
+            setProfiles(d.profiles); })
+            .catch(() => { });
+    }, []);
     const flash = (msg) => {
         setToast(msg);
         clearTimeout(toastTimer.current);
@@ -452,12 +583,26 @@ function App() {
             setScreen('detail');
         }
     };
+    // 전체화면 상세로 강제 이동(데스크톱 포함). Korea LP 프로필 등 마스터-디테일
+    // 우측 패널이 없는 화면에서 기사를 열 때 사용.
+    const openItemFull = (id) => {
+        setSelectedId(id);
+        setRead(r => ({ ...r, [id]: true }));
+        markSeen([id]);
+        if (screen !== 'detail')
+            setPrevScreen(screen);
+        setScreen('detail');
+    };
     const toggleBm = (id, e) => {
         if (e)
             e.stopPropagation();
         setBm(b => ({ ...b, [id]: !b[id] }));
     };
-    const goTab = (name) => setScreen(name);
+    const goTab = (name) => {
+        if (name === 'korlp')
+            setLpSel(null); // 탭 재진입 시 기관 목록으로 복귀
+        setScreen(name);
+    };
     const applyFilter = (key) => {
         setFilter(f => f === key ? '전체' : key);
         setScreen('home');
@@ -620,10 +765,21 @@ function App() {
         { label: '슬랙', icon: 'S', bg: '#f0eee7', fg: '#56585c' },
         { label: '팀즈', icon: 'T', bg: '#f0eee7', fg: '#56585c' },
     ];
-    const navProps = { homeNew: newCount, isDesktop, onHome: () => goTab('home'), onToday: () => goTab('today'), onCategory: () => goTab('category'), onAlloc: () => goTab('alloc'), onSearch: () => goTab('search'), onBookmarks: () => goTab('bookmarks') };
+    const navProps = { homeNew: newCount, isDesktop, onHome: () => goTab('home'), onToday: () => goTab('today'), onCategory: () => goTab('category'), onKoreaLp: () => goTab('korlp'), onSearch: () => goTab('search'), onBookmarks: () => goTab('bookmarks') };
     // Allocation screen derived data
     const allocRows = (alloc && alloc.institutions) || [];
     const allocSelData = allocRows.find(r => r.name === allocSel) || allocRows[0];
+    // Korea LP — 선택 기관 프로필 조립 (profile + alloc + insights + 기사)
+    const lpSelAllocRow = lpSel ? allocRows.find(r => r.name === lpSel) : null;
+    const lpSelAlloc = lpSelAllocRow ? { ...lpSelAllocRow, asOf: (alloc && alloc.asOf) || '' } : null;
+    const lpSelProfile = (lpSel && profiles && profiles[lpSel]) || null;
+    const lpSelCio = (lpSel && insights && insights.cios) ? insights.cios.find(c => c.inst === lpSel) : null;
+    const lpSelReturns = (lpSel && insights && insights.assetReturns) ? insights.assetReturns.filter(r => r.inst === lpSel) : [];
+    const lpSelArticles = lpSel ? items.filter(i => i.inst === lpSel) : [];
+    const lpSelGroup = lpSel
+        ? (((roster || []).find(r => r.name === lpSel) || {}).group || (lpSelAllocRow && lpSelAllocRow.group) || '국내 LP')
+        : '';
+    const openLp = (name) => { setLpSel(name); };
     // Desktop master-detail: list screens get a list pane + a persistent detail pane.
     const LIST_SCREENS = ['home', 'today', 'search', 'bookmarks'];
     const desktopMaster = isDesktop && LIST_SCREENS.includes(screen);
@@ -772,22 +928,61 @@ function App() {
                         " ",
                         React.createElement("span", { style: { color: '#a6a8ac' } }, r.count)))))),
                 React.createElement(Navbar, { active: "category", ...navProps }))),
-            screen === 'alloc' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
+            screen === 'korlp' && (lpSel ? (React.createElement(LpProfile, { name: lpSel, group: lpSelGroup, profile: lpSelProfile, alloc: lpSelAlloc, cio: lpSelCio, returns: lpSelReturns, articles: lpSelArticles, onBack: () => setLpSel(null), onOpenArticle: (id) => openItemFull(id) })) : (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },
                     React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
-                    React.createElement("div", { style: { padding: '2px 20px 16px', borderBottom: '1px solid #efece4' } },
-                        React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uB300\uCCB4\uD22C\uC790 \uBC30\uBD84\uD604\uD669"),
+                    React.createElement("div", { style: { padding: '2px 20px 14px', borderBottom: '1px solid #efece4' } },
+                        React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "Korea LP"),
                         React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } },
-                            "\uAD6D\uB0B4 LP \uAE30\uAD00\uBCC4 \uB300\uCCB4\uD22C\uC790 \uBE44\uC911\u00B7\uAE08\uC561\u00B7\uC5F0\uB3C4\uBCC4 \uCD94\uC774 ",
-                            alloc && React.createElement("span", { style: { color: '#c4a93a' } },
-                                "\u00B7 ",
-                                alloc.asOf,
-                                " \uAE30\uC900")))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } }, !allocSelData ? (React.createElement("div", { style: { padding: '80px 30px', textAlign: 'center' } },
+                            "\uAD6D\uB0B4 \uAE30\uAD00(LP)\uBCC4 \uD504\uB85C\uD544 \u00B7 \uB300\uCCB4\uD22C\uC790 \uBC30\uBD84 \uD604\uD669 ",
+                            roster ? React.createElement("span", { style: { color: '#c4a93a' } },
+                                "\u00B7 \uC804\uCCB4 ",
+                                roster.length,
+                                "\uAC1C \uAE30\uAD00") : null),
+                        React.createElement("div", { style: { display: 'flex', gap: 7, marginTop: 13 } }, [['inst', '기관별 프로필'], ['alloc', '배분 비교']].map(([k, label]) => (React.createElement("div", { key: k, onClick: () => setLpTab(k), style: { font: lpTab === k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: lpTab === k ? '#1c1d1f' : '#9a9ca0', background: lpTab === k ? '#FFCC00' : '#f2f0ea', padding: '8px 16px', borderRadius: 999, cursor: 'pointer' } }, label)))))),
+                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } }, lpTab === 'inst' ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+                    React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginBottom: 2 } }, "\uC5C5\uAD8C\uC744 \uD3BC\uCCD0 \uAE30\uAD00\uC744 \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\uC5F0\uB3C4\u00B7AUM\u00B7\uC6B4\uC6A9\uBC29\uC2DD\u00B7CIO\u00B7\uB300\uCCB4\uD22C\uC790 \uBC30\uBD84\uACFC \uAD00\uB828 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),
+                    catGroups.map(g => {
+                        const open = lpExpanded === g.name;
+                        const names = rosterByGroup[g.name] || [];
+                        return (React.createElement("div", { key: g.name, style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
+                            React.createElement("div", { onClick: () => setLpExpanded(x => x === g.name ? null : g.name), style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 15px', cursor: 'pointer' } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 11 } },
+                                    React.createElement("span", { style: { width: 34, height: 34, borderRadius: 9, background: '#f2f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 12px Pretendard', color: '#56585c' } }, g.icon),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { font: '700 14px Pretendard' } }, g.name),
+                                        React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, g.sample))),
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9 } },
+                                    React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#9a9ca0' } },
+                                        "\uAE30\uAD00 ",
+                                        names.length),
+                                    React.createElement("span", { style: { color: '#cfccc4', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' } }, "\u203A"))),
+                            open && (React.createElement("div", { style: { padding: '0 13px 8px' } }, names.length === 0
+                                ? React.createElement("span", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', display: 'block', padding: '8px 2px' } }, "\uAE30\uAD00 \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026")
+                                : names.map(name => {
+                                    const c = (instsByGroup[g.name] || {})[name] || 0;
+                                    const hasProfile = !!(profiles && profiles[name]);
+                                    return (React.createElement("div", { key: name, onClick: () => openLp(name), style: { display: 'flex', alignItems: 'center', gap: 8, padding: '11px 4px', borderTop: '1px solid #f3f1ea', cursor: 'pointer' } },
+                                        React.createElement("span", { style: { flex: 1, minWidth: 0, font: '600 13px Pretendard', color: '#1c1d1f' } },
+                                            name,
+                                            hasProfile && React.createElement("span", { style: { color: '#e0b500', marginLeft: 5, fontSize: 10 } }, "\u2605")),
+                                        c > 0 && React.createElement("span", { style: { font: '600 10px Pretendard', color: '#9a7d12', background: '#fff7d6', padding: '2px 8px', borderRadius: 999, flexShrink: 0 } },
+                                            "\uAE30\uC0AC ",
+                                            c),
+                                        React.createElement("span", { style: { color: '#cfccc4', flexShrink: 0 } }, "\u203A")));
+                                })))));
+                    }),
+                    React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#b6b8bc', marginTop: 6, textAlign: 'center' } }, "\u2605 \uD45C\uC2DC\uB294 \uC124\uB9BD\uC5F0\uB3C4\u00B7\uC6B4\uC6A9\uBC29\uC2DD \uB4F1 \uC0C1\uC138 \uD504\uB85C\uD544\uC774 \uC815\uB9AC\uB41C \uAE30\uAD00\uC785\uB2C8\uB2E4"))) : (
+                /* ── 배분 비교 (기관 간 대체투자 비중·금액) ── */
+                !allocSelData ? (React.createElement("div", { style: { padding: '80px 30px', textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 30, color: '#d8d5cd' } }, "\u25A4"),
                     React.createElement("div", { style: { font: '600 14px Pretendard', color: '#56585c', marginTop: 14 } }, "\uBC30\uBD84 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026"))) : (React.createElement(React.Fragment, null,
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 } },
-                        React.createElement("span", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAE30\uAD00\uBCC4 \uB300\uCCB4\uD22C\uC790 \uBE44\uC911"),
+                        React.createElement("span", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } },
+                            "\uAE30\uAD00\uBCC4 \uB300\uCCB4\uD22C\uC790 \uBE44\uC911 ",
+                            alloc && React.createElement("span", { style: { fontWeight: 500, color: '#c4a93a' } },
+                                "\u00B7 ",
+                                alloc.asOf)),
                         React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: 10, font: '500 10px Pretendard', color: '#9a9ca0' } },
                             React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: 4 } },
                                 React.createElement("span", { style: { width: 9, height: 9, borderRadius: 2, background: '#FFCC00', display: 'inline-block' } }),
@@ -800,14 +995,10 @@ function App() {
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 13, flexWrap: 'wrap' } },
                             React.createElement("span", { style: { font: '800 16px Pretendard', letterSpacing: '-.02em' } }, allocSelData.name),
                             React.createElement("span", { style: { font: '600 10.5px Pretendard', color: '#56585c', background: '#f0eee7', padding: '2px 8px', borderRadius: 5 } }, allocSelData.group),
-                            allocSelData.auto
-                                ? React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 8px', borderRadius: 5, letterSpacing: '.02em' } },
-                                    "\u25CF ",
-                                    allocSelData.autoKind === 'news' ? '기사 기반' : '자동 갱신')
-                                : allocSelData.verified
-                                    ? React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 8px', borderRadius: 5, letterSpacing: '.02em' } }, "\u25CF \uACF5\uC2DC \uD655\uC815")
-                                    : React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#9a7d12', background: '#fffaeb', padding: '2px 8px', borderRadius: 5, letterSpacing: '.02em' } }, "\uACF5\uC2DC \uCD94\uC815\uCE58")),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 16 } },
+                            allocSelData.verified
+                                ? React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 8px', borderRadius: 5, letterSpacing: '.02em' } }, "\u25CF \uACF5\uC2DC \uD655\uC815")
+                                : React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#9a7d12', background: '#fffaeb', padding: '2px 8px', borderRadius: 5, letterSpacing: '.02em' } }, "\uACF5\uC2DC \uCD94\uC815\uCE58")),
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 14 } },
                             React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '11px 13px' } },
                                 React.createElement("div", { style: { font: '800 18px Pretendard' } }, fmtAmt(allocSelData.aum)),
                                 React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uC6B4\uC6A9\uC790\uC0B0(AUM)")),
@@ -820,17 +1011,9 @@ function App() {
                             React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '11px 13px' } },
                                 React.createElement("div", { style: { font: '800 18px Pretendard' } }, fmtPct(allocSelData.overseasAltPct)),
                                 React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uC911 \uD574\uC678"))),
-                        React.createElement("div", { style: { font: '700 10.5px Pretendard', color: '#a6a8ac', letterSpacing: '.05em', marginBottom: 6 } }, "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911 \uCD94\uC774"),
-                        React.createElement(TrendChart, { trend: allocSelData.trend }),
-                        allocSelData.sourceNote && React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#9a9ca0', marginTop: 10, background: '#f8f7f3', borderRadius: 9, padding: '9px 11px' } }, allocSelData.sourceNote),
-                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 8 } },
-                            "\uCD9C\uCC98 \u00B7 ",
-                            allocSelData.sourceUrl
-                                ? React.createElement("a", { href: allocSelData.sourceUrl, target: "_blank", rel: "noopener noreferrer", style: { color: '#7a8190', textDecoration: 'underline' } },
-                                    allocSelData.source,
-                                    " \u2197")
-                                : allocSelData.source,
-                            allocSelData.auto && allocSelData.updatedAt ? ` · ${allocSelData.updatedAt} 자동 갱신` : '')),
+                        React.createElement("div", { onClick: () => openLp(allocSelData.name), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40, background: '#1c1d1f', borderRadius: 11, cursor: 'pointer', font: '700 12.5px Pretendard', color: '#fff' } },
+                            allocSelData.name,
+                            " \uAE30\uAD00 \uD504\uB85C\uD544 \uBCF4\uAE30 \u2192")),
                     React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', margin: '24px 0 10px' } }, "\uC804\uCCB4 \uD45C"),
                     React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
                         React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1.7fr 1fr 0.9fr 0.9fr', background: '#f8f7f3', padding: '9px 12px', font: '700 10.5px Pretendard', color: '#7a7c80' } },
@@ -838,7 +1021,7 @@ function App() {
                             React.createElement("span", { style: { textAlign: 'right' } }, "\uB300\uCCB4\uD22C\uC790"),
                             React.createElement("span", { style: { textAlign: 'right' } }, "\uBE44\uC911"),
                             React.createElement("span", { style: { textAlign: 'right' } }, "\uD574\uC678")),
-                        allocRows.map((r, i) => (React.createElement("div", { key: r.name, onClick: () => setAllocSel(r.name), style: { display: 'grid', gridTemplateColumns: '1.7fr 1fr 0.9fr 0.9fr', padding: '11px 12px', borderTop: '1px solid #f3f1ea', cursor: 'pointer', background: allocSel === r.name ? '#fffaeb' : '#fff', alignItems: 'center' } },
+                        allocRows.map((r) => (React.createElement("div", { key: r.name, onClick: () => setAllocSel(r.name), style: { display: 'grid', gridTemplateColumns: '1.7fr 1fr 0.9fr 0.9fr', padding: '11px 12px', borderTop: '1px solid #f3f1ea', cursor: 'pointer', background: allocSel === r.name ? '#fffaeb' : '#fff', alignItems: 'center' } },
                             React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f' } }, r.name),
                             React.createElement("span", { style: { font: '600 12px Pretendard', textAlign: 'right' } }, fmtAmt(r.altAmount)),
                             React.createElement("span", { style: { font: '700 12px Pretendard', textAlign: 'right', color: '#9a7d12' } }, fmtPct(r.altPct)),
@@ -851,16 +1034,16 @@ function App() {
                         React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } },
                             "\u25CF \uB274\uC2A4 \uC790\uB3D9 \uCD94\uCD9C",
                             insights && insights.updatedAt ? ` · ${insights.updatedAt}` : '')),
-                    insights && insights.cios && insights.cios.length ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, insights.cios.map((c, i) => (React.createElement("a", { key: c.inst + i, href: c.url && /^https?:\/\//.test(c.url) ? c.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: c.url ? 'pointer' : 'default' } },
+                    insights && insights.cios && insights.cios.length ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, insights.cios.map((c, i) => (React.createElement("div", { key: c.inst + i, onClick: () => openLp(c.inst), style: { padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
                             React.createElement("span", { style: { font: '700 12.5px Pretendard', color: '#1c1d1f' } }, c.inst),
-                            React.createElement("span", { style: { font: '700 9px Pretendard', color: c.status === '선임' ? '#1a5fa4' : '#9a7d12', background: c.status === '선임' ? '#e6effa' : '#fffaeb', padding: '2px 7px', borderRadius: 5 } }, c.status)),
+                            React.createElement("span", { style: { font: '700 9px Pretendard', color: c.status === '선임' ? '#1a5fa4' : '#9a7d12', background: c.status === '선임' ? '#e6effa' : '#fffaeb', padding: '2px 7px', borderRadius: 5 } }, c.status),
+                            React.createElement("span", { style: { marginLeft: 'auto', color: '#cfccc4' } }, "\u203A")),
                         React.createElement("div", { style: { font: '500 12px/1.5 Pretendard', color: '#3d3e42', marginTop: 5 } }, c.note),
                         React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
                             c.date,
                             " \u00B7 ",
-                            c.source,
-                            c.url ? ' · 기사 보기 ↗' : '')))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uCD94\uCD9C\uB41C CIO\u00B7\uC778\uC0AC \uC815\uBCF4\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
+                            c.source)))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uCD94\uCD9C\uB41C CIO\u00B7\uC778\uC0AC \uC815\uBCF4\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
                     React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, margin: '26px 0 10px' } },
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960"),
                         React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uCD5C\uADFC \uAE30\uC0AC \uAE30\uC900")),
@@ -875,8 +1058,8 @@ function App() {
                             "%"),
                         React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc' } },
                             r.date,
-                            "\u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uB41C \uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4."))))),
-                React.createElement(Navbar, { active: "alloc", ...navProps }))),
+                            "\u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uB41C \uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")))))),
+                React.createElement(Navbar, { active: "korlp", ...navProps })))),
             screen === 'search' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },
                     React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
@@ -937,7 +1120,7 @@ function App() {
                         React.createElement("div", { style: { font: '650 14px/1.4 Pretendard' } }, item.ko)),
                     React.createElement("div", { onClick: e => toggleBm(item.id, e), style: { flexShrink: 0, alignSelf: 'flex-start', fontSize: 15, cursor: 'pointer', color: '#1c1d1f', padding: 2 } }, "\u25A3"))))),
                 React.createElement(Navbar, { active: "bookmarks", ...navProps }))),
-            screen === 'detail' && sel && !isDesktop && (React.createElement(ArticleDetail, { sel: sel, bookmarked: !!bm[sel.id], onToggleBm: (e) => toggleBm(sel.id, e), onShare: (e) => onShare(sel, e), onBack: () => setScreen(prevScreen), showBack: true }))),
+            screen === 'detail' && sel && (!isDesktop || !LIST_SCREENS.includes(prevScreen)) && (React.createElement(ArticleDetail, { sel: sel, bookmarked: !!bm[sel.id], onToggleBm: (e) => toggleBm(sel.id, e), onShare: (e) => onShare(sel, e), onBack: () => setScreen(prevScreen), showBack: true }))),
         desktopMaster && (React.createElement("div", { style: { flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' } },
             React.createElement(ArticleDetail, { sel: sel, bookmarked: !!(sel && bm[sel.id]), onToggleBm: (e) => sel && toggleBm(sel.id, e), onShare: (e) => onShare(sel, e), showBack: false }))),
         showShare && (React.createElement("div", { onClick: () => setShowShare(false), style: { position: 'absolute', inset: 0, background: 'rgba(20,20,22,.42)', display: 'flex', alignItems: 'flex-end', zIndex: 30 } },

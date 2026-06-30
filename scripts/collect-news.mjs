@@ -495,12 +495,29 @@ export function extractReadable(html) {
   const h = html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ');
-  const ps = [...h.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+
+  // <p> 태그 (표준 마크업) 시도
+  let ps = [...h.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
     .map(m => stripTags(m[1]))
-    .filter(s => s.length > 40 && !BOILER_RE.test(s));
-  let combined = `${lead} ${ps.join(' ')}`.replace(/\s+/g, ' ').trim();
-  return combined.slice(0, 8000);          // 기사 본문 전체(거의)를 담아 상세화면에서 바로 읽도록
+    .filter(s => s.length > 30 && !BOILER_RE.test(s));
+
+  // 한국 뉴스 사이트 공통 본문 컨테이너 (article 요소 또는 class 기반) 시도
+  if (ps.length < 2) {
+    const cm = h.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i) ||
+               h.match(/class=["'][^"']*(?:article[_\-](?:txt|body|content|text|view)|view[_\-]content|news[_\-](?:view|content|body)|cont_article)[^"']*["'][^>]*>([\s\S]{100,}?)(?=<\/div>|<\/section>)/i);
+    if (cm) {
+      const extra = [...(cm[1] || cm[2] || '').matchAll(/<(?:p|div)\b[^>]*>([\s\S]*?)<\/(?:p|div)>/gi)]
+        .map(m => stripTags(m[1]))
+        .filter(s => s.length > 30 && !BOILER_RE.test(s) && /[가-힣a-zA-Z]{5,}/.test(s));
+      if (extra.length > ps.length) ps = extra;
+    }
+  }
+
+  const seen = new Set();
+  const unique = ps.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
+  return [lead, ...unique].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
 }
 
 async function fetchArticleText(url) {
@@ -641,7 +658,7 @@ async function main() {
     if (fetchBudget <= 0) continue;
     fetchBudget--;
     const text = await fetchArticleText(a.url);
-    if (text && text.length > 120) {                   // 진짜 본문 확보
+    if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);
       a.fetched = true;

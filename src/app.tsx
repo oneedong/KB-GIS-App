@@ -264,18 +264,68 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
   );
 }
 
+// ─── In-browser article body fetcher ────────────────────────
+// bodyCache: 세션 동안 한 번 가져온 본문을 재사용 (페이지 새로고침 시 초기화)
+const bodyCache = {};
+
+function parseArticleHtml(html) {
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const ogEl = doc.querySelector('meta[property="og:description"], meta[name="description"]');
+    const lead = ogEl ? (ogEl.getAttribute('content') || '') : '';
+    const BOILER = /구독|로그인|회원가입|저작권|무단전재|재배포 금지|all rights reserved|cookie|쿠키|광고/i;
+    // 다양한 한국 뉴스 사이트 본문 컨테이너 + 표준 <p> 태그 순서대로 시도
+    const ps = [...doc.querySelectorAll([
+      'article p', '.article_txt p', '.article-body p', '.article_body p',
+      '#article-view-content-div p', '.view_content p', '.news_content p',
+      '.article_view p', '.cont_article p', '.news-article-body p', 'p',
+    ].join(', '))]
+      .map(el => el.textContent.trim())
+      .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && a.indexOf(s) === i);
+    return [lead, ...ps].filter(Boolean).join('\n\n').trim().slice(0, 8000);
+  } catch { return ''; }
+}
+
 // ─── ArticleDetail (shared by mobile detail screen & desktop right pane) ──
 function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack }) {
+  const [fetchedBody, setFetchedBody] = useState(null);
+  const [loadingBody, setLoadingBody] = useState(false);
+
+  useEffect(() => {
+    setFetchedBody(null);
+    setLoadingBody(false);
+    if (!sel || !sel.url || /google\.com/i.test(sel.url)) return;
+    // 이미 충분한 본문이 있으면 재요청 불필요
+    if ((sel.body || '').length > 400) return;
+    // 세션 캐시에 있으면 즉시 사용
+    if (bodyCache[sel.id]) { setFetchedBody(bodyCache[sel.id]); return; }
+
+    const ctrl = new AbortController();
+    setLoadingBody(true);
+    fetch('https://corsproxy.io/?url=' + encodeURIComponent(sel.url), { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
+      .then(html => {
+        const body = parseArticleHtml(html);
+        if (body && body.length > 80) { bodyCache[sel.id] = body; setFetchedBody(body); }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingBody(false));
+
+    return () => ctrl.abort();
+  }, [sel ? sel.id : null]);
+
   if (!sel) return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, background:'#fcfbf9', color:'#c2c4c8'}}>
       <div style={{fontSize:34}}>▢</div>
       <div style={{font:'600 13.5px Pretendard'}}>왼쪽 목록에서 기사를 선택하세요</div>
     </div>
   );
+
   const { y, m, d } = kstYMD(itemMs(sel));
-  // "기사 전문 보기" 는 실제 외부 원문 링크가 있을 때만 노출한다. 시드/내부
-  // 플레이스홀더(kbgis.app)나 링크가 없는 항목은 버튼을 숨겨 죽은 버튼을 막는다.
   const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
+  const displayBody = fetchedBody || sel.body || '';
+  const isFullBody = displayBody.length > 300;
+
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
       <div style={{flexShrink:0, height:54, boxSizing:'content-box', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'env(safe-area-inset-top) 16px 0 12px', borderBottom:'1px solid #efece4'}}>
@@ -317,12 +367,25 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
           </div>
 
           <div style={{marginTop:20}}>
-            <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>기사 원문</div>
-            <div style={{font:'500 14px/1.75 Pretendard', color:'#34353a', whiteSpace:'pre-wrap'}}>{sel.body}</div>
+            <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:10}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>기사 원문</div>
+              {loadingBody && <div style={{font:'600 10px Pretendard', color:'#a6a8ac'}}>불러오는 중…</div>}
+              {!loadingBody && isFullBody && <span style={{font:'600 10px Pretendard', color:'#2563eb', background:'#dbeafe', padding:'2px 8px', borderRadius:4}}>전문</span>}
+            </div>
+            {loadingBody ? (
+              <div style={{font:'500 13px/1.6 Pretendard', color:'#c2c4c8', padding:'8px 0'}}>기사 내용을 불러오는 중입니다…</div>
+            ) : isFullBody ? (
+              <div style={{font:'500 14px/1.85 Pretendard', color:'#2a2b2f', whiteSpace:'pre-wrap'}}>{displayBody}</div>
+            ) : (
+              <div>
+                <div style={{font:'500 14px/1.75 Pretendard', color:'#34353a'}}>{displayBody}</div>
+                {realUrl && <div style={{marginTop:10, font:'500 12px Pretendard', color:'#9a9ca0'}}>전체 본문은 원문 기사에서 확인하세요.</div>}
+              </div>
+            )}
           </div>
 
           <div style={{display:'flex', gap:8, marginTop:22}}>
-            <div onClick={onShare} style={{flex:realUrl?1:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
+            <div onClick={onShare} style={{flex:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
             {realUrl && <a href={realUrl} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
           </div>
           <div style={{font:'500 11px Pretendard', color:'#b6b8bc', textAlign:'center', marginTop:10}}>{realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다'}</div>

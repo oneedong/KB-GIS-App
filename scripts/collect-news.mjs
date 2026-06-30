@@ -714,7 +714,10 @@ async function main() {
 
   // 본문 크롤링 + 요약 패스. 이전 실행에서 이미 본문/요약을 확보한 기사는
   // 재사용해 매 실행마다 다시 긁지 않습니다(Actions 시간 절약).
-  let fetchBudget = 110, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
+  // 최신 기사를 먼저 해석·크롤링합니다 — 피드 상단(사용자가 먼저 여는 기사)이
+  // 실제 URL·본문을 갖도록 하여, 예산 안에서 우선순위를 둔다.
+  all.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  let fetchBudget = 170, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
   for (const a of all) {
     const old = prevById.get(a.id);
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);

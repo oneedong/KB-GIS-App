@@ -576,8 +576,15 @@ export function extractReadable(html) {
   }
 
   const seen = new Set();
-  const unique = ps.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
-  return [lead, ...unique].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
+  const unique = ps.filter(s => {
+    const t = s.replace(/\s+/g, ' ').trim();
+    if (!t || seen.has(t)) return false; seen.add(t); return true;
+  }).map(s => s.replace(/\s+/g, ' ').trim());
+  // 문단은 개행 두 번(\n\n)으로 구분해 저장 → 앱에서 문단별로 띄워 보여줄 수 있게.
+  // 선두의 og:description(lead)이 첫 문단과 겹치면 중복 제거.
+  const leadT = (lead || '').replace(/\s+/g, ' ').trim();
+  const paras = (leadT && !unique.some(u => u.includes(leadT.slice(0, 40))) ? [leadT] : []).concat(unique);
+  return paras.join('\n\n').slice(0, 8000);
 }
 
 async function fetchArticleText(url) {

@@ -292,6 +292,30 @@ async function fetchBodyViaProxies(url, signal) {
   return '';
 }
 
+// 본문 문자열을 읽기 좋은 문단 배열로 나눈다. 개행(\n)이 있으면 그 기준으로
+// 나누고, 없는 옛 본문(한 덩어리)은 문장 2~3개씩 묶어 문단을 만든다.
+function toParagraphs(text, title) {
+  if (!text) return [];
+  const t = String(text).replace(/\r/g, '').trim();
+  let paras;
+  if (/\n/.test(t)) {
+    paras = t.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
+  } else {
+    const sentences = t.split(/(?<=다\.|요\.|[.!?。…])\s+/).map(s => s.trim()).filter(Boolean);
+    paras = []; let buf = [];
+    for (const s of sentences) {
+      buf.push(s);
+      if (buf.length >= 3 || buf.join(' ').length > 150) { paras.push(buf.join(' ')); buf = []; }
+    }
+    if (buf.length) paras.push(buf.join(' '));
+    if (!paras.length) paras = [t];
+  }
+  // 제목을 그대로 반복하는 선두 문단은 제거(제목은 이미 상단에 헤딩으로 표시).
+  const norm = (s) => s.replace(/[\s"'“”‘’·…\-]/g, '').slice(0, 24);
+  if (title && paras.length && norm(paras[0]).includes(norm(title))) paras = paras.slice(1);
+  return paras;
+}
+
 function parseArticleHtml(html) {
   try {
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -347,6 +371,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
   const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
   const displayBody = fetchedBody || sel.body || '';
   const isFullBody = displayBody.length > 300;
+  const paragraphs = toParagraphs(displayBody, sel.ko);
 
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
@@ -371,9 +396,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
               {sel.assetLabel}
             </span>
           </div>
-          <div style={{font:'700 21px/1.4 Pretendard', letterSpacing:'-.02em'}}>{sel.ko}</div>
+          <div style={{font:'800 22px/1.42 Pretendard', letterSpacing:'-.02em', color:'#111214'}}>{sel.ko}</div>
           {sel.en && sel.en !== sel.ko && <div style={{font:'400 13.5px/1.5 Pretendard', color:'#8a8c90', marginTop:8}}>{sel.en}</div>}
-          <div style={{font:'500 11.5px Pretendard', color:'#a6a8ac', marginTop:11}}>{sel.source} · {`${y}.${pad2(m)}.${pad2(d)}`} {sel.time}</div>
+          <div style={{font:'500 11.5px Pretendard', color:'#a6a8ac', marginTop:12, paddingBottom:16, borderBottom:'1px solid #efece4'}}>{sel.source} · {`${y}.${pad2(m)}.${pad2(d)}`} {sel.time}</div>
 
           <div style={{marginTop:18, background:'#fffaeb', border:'1px solid #f6ecc8', borderRadius:14, padding:'15px 16px'}}>
             <div style={{display:'flex', alignItems:'center', gap:6, font:'700 11.5px Pretendard', color:'#9a7d12', letterSpacing:'.03em', marginBottom:10}}>
@@ -396,13 +421,15 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
             </div>
             {loadingBody ? (
               <div style={{font:'500 13px/1.6 Pretendard', color:'#c2c4c8', padding:'8px 0'}}>기사 내용을 불러오는 중입니다…</div>
-            ) : isFullBody ? (
-              <div style={{font:'500 14px/1.85 Pretendard', color:'#2a2b2f', whiteSpace:'pre-wrap'}}>{displayBody}</div>
-            ) : (
+            ) : paragraphs.length ? (
               <div>
-                <div style={{font:'500 14px/1.75 Pretendard', color:'#34353a'}}>{displayBody}</div>
-                {realUrl && <div style={{marginTop:10, font:'500 12px Pretendard', color:'#9a9ca0'}}>전체 본문은 원문 기사에서 확인하세요.</div>}
+                {paragraphs.map((p, i) => (
+                  <p key={i} style={{font:'400 15px/1.95 Pretendard', color:'#2a2b2f', margin:'0 0 15px', wordBreak:'keep-all'}}>{p}</p>
+                ))}
+                {!isFullBody && realUrl && <div style={{marginTop:2, font:'500 12px Pretendard', color:'#9a9ca0'}}>전체 본문은 아래 ‘기사 전문 보기’에서 확인하세요.</div>}
               </div>
+            ) : (
+              <div style={{font:'500 13px/1.7 Pretendard', color:'#9a9ca0'}}>{realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'}</div>
             )}
           </div>
 

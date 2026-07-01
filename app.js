@@ -264,6 +264,38 @@ async function fetchBodyViaProxies(url, signal) {
     }
     return '';
 }
+// 본문 문자열을 읽기 좋은 문단 배열로 나눈다. 개행(\n)이 있으면 그 기준으로
+// 나누고, 없는 옛 본문(한 덩어리)은 문장 2~3개씩 묶어 문단을 만든다.
+function toParagraphs(text, title) {
+    if (!text)
+        return [];
+    const t = String(text).replace(/\r/g, '').trim();
+    let paras;
+    if (/\n/.test(t)) {
+        paras = t.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
+    }
+    else {
+        const sentences = t.split(/(?<=다\.|요\.|[.!?。…])\s+/).map(s => s.trim()).filter(Boolean);
+        paras = [];
+        let buf = [];
+        for (const s of sentences) {
+            buf.push(s);
+            if (buf.length >= 3 || buf.join(' ').length > 150) {
+                paras.push(buf.join(' '));
+                buf = [];
+            }
+        }
+        if (buf.length)
+            paras.push(buf.join(' '));
+        if (!paras.length)
+            paras = [t];
+    }
+    // 제목을 그대로 반복하는 선두 문단은 제거(제목은 이미 상단에 헤딩으로 표시).
+    const norm = (s) => s.replace(/[\s"'“”‘’·…\-]/g, '').slice(0, 24);
+    if (title && paras.length && norm(paras[0]).includes(norm(title)))
+        paras = paras.slice(1);
+    return paras;
+}
 function parseArticleHtml(html) {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -322,6 +354,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
     const displayBody = fetchedBody || sel.body || '';
     const isFullBody = displayBody.length > 300;
+    const paragraphs = toParagraphs(displayBody, sel.ko);
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
             showBack
@@ -340,9 +373,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                     React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 5, font: '600 11px Pretendard' } },
                         React.createElement("span", { style: { width: 7, height: 7, borderRadius: 2, background: sel.assetColor, display: 'inline-block' } }),
                         sel.assetLabel)),
-                React.createElement("div", { style: { font: '700 21px/1.4 Pretendard', letterSpacing: '-.02em' } }, sel.ko),
+                React.createElement("div", { style: { font: '800 22px/1.42 Pretendard', letterSpacing: '-.02em', color: '#111214' } }, sel.ko),
                 sel.en && sel.en !== sel.ko && React.createElement("div", { style: { font: '400 13.5px/1.5 Pretendard', color: '#8a8c90', marginTop: 8 } }, sel.en),
-                React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', marginTop: 11 } },
+                React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#a6a8ac', marginTop: 12, paddingBottom: 16, borderBottom: '1px solid #efece4' } },
                     sel.source,
                     " \u00B7 ",
                     `${y}.${pad2(m)}.${pad2(d)}`,
@@ -360,9 +393,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAE30\uC0AC \uC6D0\uBB38"),
                         loadingBody && React.createElement("div", { style: { font: '600 10px Pretendard', color: '#a6a8ac' } }, "\uBD88\uB7EC\uC624\uB294 \uC911\u2026"),
                         !loadingBody && isFullBody && React.createElement("span", { style: { font: '600 10px Pretendard', color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: 4 } }, "\uC804\uBB38")),
-                    loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : isFullBody ? (React.createElement("div", { style: { font: '500 14px/1.85 Pretendard', color: '#2a2b2f', whiteSpace: 'pre-wrap' } }, displayBody)) : (React.createElement("div", null,
-                        React.createElement("div", { style: { font: '500 14px/1.75 Pretendard', color: '#34353a' } }, displayBody),
-                        realUrl && React.createElement("div", { style: { marginTop: 10, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC6D0\uBB38 \uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694.")))),
+                    loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : paragraphs.length ? (React.createElement("div", null,
+                        paragraphs.map((p, i) => (React.createElement("p", { key: i, style: { font: '400 15px/1.95 Pretendard', color: '#2a2b2f', margin: '0 0 15px', wordBreak: 'keep-all' } }, p))),
+                        !isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."))) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     React.createElement("div", { onClick: onShare, style: { flex: 1, height: 42, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720"),
                     realUrl && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),

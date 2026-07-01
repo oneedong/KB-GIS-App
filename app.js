@@ -264,6 +264,19 @@ async function fetchBodyViaProxies(url, signal) {
     }
     return '';
 }
+// 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
+const SITE_BOILER = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)/;
+function looksJunky(s) {
+    if (!s)
+        return false;
+    const t = String(s);
+    if (SITE_BOILER.test(t.slice(0, 140)))
+        return true;
+    const ell = (t.match(/…|\.\.\./g) || []).length;
+    if (ell >= 4 && t.length < 3500)
+        return true;
+    return false;
+}
 // 본문 문자열을 읽기 좋은 문단 배열로 나눈다. 개행(\n)이 있으면 그 기준으로
 // 나누고, 없는 옛 본문(한 덩어리)은 문장 2~3개씩 묶어 문단을 만든다.
 function toParagraphs(text, title) {
@@ -299,18 +312,44 @@ function toParagraphs(text, title) {
 function parseArticleHtml(html) {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
+        // 1) JSON-LD articleBody 우선 — 매체 소개문/인기기사 위젯 오염을 피한다.
+        for (const el of [...doc.querySelectorAll('script[type="application/ld+json"]')]) {
+            let data;
+            try {
+                data = JSON.parse(el.textContent);
+            }
+            catch {
+                continue;
+            }
+            const nodes = [];
+            const push = (x) => { if (Array.isArray(x))
+                x.forEach(push);
+            else if (x && typeof x === 'object')
+                nodes.push(x); };
+            push(Array.isArray(data) ? data : (data['@graph'] || data));
+            for (const n of nodes) {
+                if (n.articleBody && String(n.articleBody).trim().length > 120) {
+                    const body = String(n.articleBody).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 8000);
+                    if (!looksJunky(body))
+                        return body;
+                }
+            }
+        }
+        // 2) 컨테이너 기반 <p> 추출 (매체 소개문 og 는 버림)
         const ogEl = doc.querySelector('meta[property="og:description"], meta[name="description"]');
-        const lead = ogEl ? (ogEl.getAttribute('content') || '') : '';
+        let lead = ogEl ? (ogEl.getAttribute('content') || '') : '';
+        if (SITE_BOILER.test(lead))
+            lead = '';
         const BOILER = /구독|로그인|회원가입|저작권|무단전재|재배포 금지|all rights reserved|cookie|쿠키|광고/i;
-        // 다양한 한국 뉴스 사이트 본문 컨테이너 + 표준 <p> 태그 순서대로 시도
         const ps = [...doc.querySelectorAll([
                 'article p', '.article_txt p', '.article-body p', '.article_body p',
-                '#article-view-content-div p', '.view_content p', '.news_content p',
-                '.article_view p', '.cont_article p', '.news-article-body p', 'p',
+                '#article-view-content-div p', '.view_content p', '.news_content p', '.news_body p',
+                '.article_view p', '.cont_article p', '.news-article-body p', '.art_body p', 'p',
             ].join(', '))]
             .map(el => el.textContent.trim())
             .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && a.indexOf(s) === i);
-        return [lead, ...ps].filter(Boolean).join('\n\n').trim().slice(0, 8000);
+        const out = [lead, ...ps].filter(Boolean).join('\n\n').trim().slice(0, 8000);
+        return looksJunky(out) ? '' : out;
     }
     catch {
         return '';
@@ -327,8 +366,8 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
         // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
         if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url))
             return;
-        // 이미 충분한 본문이 있으면 재요청 불필요
-        if ((sel.body || '').length > 400)
+        // 충분한 본문이 이미 있고, 오염(매체 소개문·인기기사 나열)되지 않았으면 재요청 불필요.
+        if ((sel.body || '').length > 400 && !looksJunky(sel.body))
             return;
         // 세션 캐시에 있으면 즉시 사용
         if (bodyCache[sel.id]) {
@@ -352,9 +391,13 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
             React.createElement("div", { style: { font: '600 13.5px Pretendard' } }, "\uC67C\uCABD \uBAA9\uB85D\uC5D0\uC11C \uAE30\uC0AC\uB97C \uC120\uD0DD\uD558\uC138\uC694")));
     const { y, m, d } = kstYMD(itemMs(sel));
     const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
-    const displayBody = fetchedBody || sel.body || '';
+    // 오염된 저장 본문은 표시하지 않는다(브라우저에서 다시 가져오기 전까지 빈 값 취급).
+    const cleanBody = looksJunky(sel.body) ? '' : (sel.body || '');
+    const displayBody = fetchedBody || cleanBody || '';
     const isFullBody = displayBody.length > 300;
     const paragraphs = toParagraphs(displayBody, sel.ko);
+    // AI 3줄 요약도 오염 본문에서 뽑혔으면 제목으로 대체.
+    const aiLines = looksJunky((sel.ai || []).join(' ')) ? [sel.ko] : (sel.ai || []);
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
             showBack
@@ -385,7 +428,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, font: '700 11.5px Pretendard', color: '#9a7d12', letterSpacing: '.03em', marginBottom: 10 } },
                         React.createElement("span", { style: { width: 17, height: 17, borderRadius: 5, background: '#FFCC00', color: '#1c1d1f', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: '800 9px Pretendard' } }, "AI"),
                         "3\uC904 \uC694\uC57D"),
-                    sel.ai.map((line, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 8, font: '500 13px/1.55 Pretendard', color: '#3d3e42', marginTop: 5 } },
+                    aiLines.map((line, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 8, font: '500 13px/1.55 Pretendard', color: '#3d3e42', marginTop: 5 } },
                         React.createElement("span", { style: { color: '#d9b400', flexShrink: 0 } }, "\u2014"),
                         React.createElement("span", null, line))))),
                 React.createElement("div", { style: { marginTop: 20 } },

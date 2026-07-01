@@ -549,9 +549,41 @@ function metaContent(html, key) {
 }
 
 const BOILER_RE = /구독|로그인|회원가입|저작권|무단전재|재배포 금지|all rights reserved|cookie|쿠키|광고|subscribe|sign in|newsletter|관련 기사|기자\s*$/i;
+// 사이트 공통 소개문(og:description 이 기사 요약이 아니라 매체 소개일 때) 판별.
+const SITE_BOILER_RE = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)|경제신문|일간지|newspaper|leading (economic|daily)/i;
+// 기사 본문이 아니라 '많이 본 뉴스' 같은 헤드라인 나열로 보이는지 판별.
+export function looksJunky(s) {
+  if (!s) return false;
+  const t = String(s);
+  if (SITE_BOILER_RE.test(t.slice(0, 140))) return true;               // 매체 소개문으로 시작
+  const ell = (t.match(/…|\.\.\./g) || []).length;
+  if (ell >= 4 && t.length < 3500) return true;                        // 말줄임표 다수 = 헤드라인 나열
+  return false;
+}
+// NewsArticle JSON-LD 의 articleBody (가장 정확한 기사 본문).
+function extractJsonLdBody(html) {
+  const blocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+  for (const b of blocks) {
+    const jsonText = b.replace(/^[\s\S]*?>/, '').replace(/<\/script>\s*$/i, '').trim();
+    let data; try { data = JSON.parse(jsonText); } catch { continue; }
+    const nodes = [];
+    const push = (x) => { if (Array.isArray(x)) x.forEach(push); else if (x && typeof x === 'object') nodes.push(x); };
+    push(Array.isArray(data) ? data : (data['@graph'] || data));
+    for (const n of nodes) {
+      if (n.articleBody && String(n.articleBody).trim().length > 120) {
+        return decodeEntities(String(n.articleBody)).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      }
+    }
+  }
+  return '';
+}
 export function extractReadable(html) {
   if (!html) return '';
-  const lead = metaContent(html, 'og:description') || metaContent(html, 'description');
+  // 1) JSON-LD articleBody 우선 — 매체 소개문/인기기사 위젯 오염을 피한다.
+  const ld = extractJsonLdBody(html);
+  if (ld) return ld.slice(0, 8000);
+  let lead = metaContent(html, 'og:description') || metaContent(html, 'description');
+  if (SITE_BOILER_RE.test(lead)) lead = '';                            // 매체 소개문이면 버림
   const h = html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -584,7 +616,10 @@ export function extractReadable(html) {
   // 선두의 og:description(lead)이 첫 문단과 겹치면 중복 제거.
   const leadT = (lead || '').replace(/\s+/g, ' ').trim();
   const paras = (leadT && !unique.some(u => u.includes(leadT.slice(0, 40))) ? [leadT] : []).concat(unique);
-  return paras.join('\n\n').slice(0, 8000);
+  const out = paras.join('\n\n').slice(0, 8000);
+  // 매체 소개문/인기기사 나열로 오염된 결과는 버린다(가짜 본문 저장 방지).
+  if (looksJunky(out)) return '';
+  return out;
 }
 
 async function fetchArticleText(url) {
@@ -729,9 +764,9 @@ async function main() {
     const old = prevById.get(a.id);
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
     if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
-    // 본문 재사용은 '실제 URL로 확보한' 경우만 — 과거 구글 인터스티셜 본문은 버리고
-    // 이번 회차에 다시 해석·크롤링한다.
-    if (old && old.fetched && oldReal) {
+    // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
+    // 인터스티셜/매체 소개문·인기기사 나열로 오염된 본문은 버리고 재크롤링한다.
+    if (old && old.fetched && oldReal && !looksJunky(old.body)) {
       a.body = old.body; a.fetched = true;
       a.ai = old.ai && old.ai.length ? old.ai : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;

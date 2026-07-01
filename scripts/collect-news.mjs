@@ -71,6 +71,27 @@ const QUERIES = [
   'private equity firm (acquire OR take private OR buyout OR billion) deal when:7d',
   'global private equity OR private credit OR infrastructure (fund OR deal OR raise OR acquisition) when:3d',
   '블랙스톤 OR KKR OR 아폴로 OR 칼라일 OR 브룩필드 OR 블랙록 (인수 OR 투자 OR 펀드 OR 매각)',
+  // (9) 업권별 국내 LP 확대 — 연기금·국민연금 쏠림을 완화하고 공제회·중앙회·
+  //     은행·보험·운용/증권의 해외 대체투자 출자·투자 뉴스를 폭넓게 수집.
+  // 공제회
+  '(경찰공제회 OR 대한소방공제회 OR 과학기술인공제회 OR 노란우산 OR 건설공제조합 OR 전문건설공제조합 OR 한국지방재정공제회) (대체투자 OR 사모 OR 사모대출 OR 인프라 OR 부동산 OR 출자 OR 투자)',
+  '공제회 (해외 OR 글로벌) (대체투자 OR 사모펀드 OR 사모대출 OR 인프라 OR 부동산 OR 출자 OR 코인베스트)',
+  // 중앙회
+  '(새마을금고 OR 농협 OR 수협 OR 신협 OR 산림조합 OR 중소기업중앙회) (대체투자 OR 사모 OR 사모대출 OR 인프라 OR 부동산 OR 출자 OR PEF)',
+  '새마을금고중앙회 OR 농협중앙회 (해외 OR 글로벌) (대체투자 OR 사모 OR 인프라 OR 부동산 OR 출자)',
+  // 은행
+  '(산업은행 OR 기업은행 OR 수출입은행 OR 국민은행 OR 신한은행 OR 하나은행 OR 우리은행 OR 농협은행) (해외 대체투자 OR 인프라 금융 OR 사모대출 OR 셀다운 OR PF)',
+  // 보험
+  '(삼성생명 OR 한화생명 OR 교보생명 OR 삼성화재 OR 현대해상 OR DB손해보험 OR 미래에셋생명) (해외 대체투자 OR 사모대출 OR 인프라 OR 부동산 OR 사모펀드 OR 출자)',
+  '보험사 (해외 OR 글로벌) (사모대출 OR 대체투자 OR 인프라 OR 부동산) (투자 OR 출자)',
+  // 운용·증권 (셀다운·GP·자기계정 투자)
+  '(미래에셋 OR 삼성 OR KB OR 한국투자 OR NH OR 신한 OR 하나 OR 메리츠) (증권 OR 자산운용) (해외 부동산 OR 인프라 OR 사모대출 OR 셀다운 OR 대체투자)',
+  '(이지스자산운용 OR 마스턴투자운용 OR 코람코 OR 하나대체투자 OR 삼성SRA) (해외 OR 글로벌) (부동산 OR 인프라 OR 펀드 OR 인수)',
+  // 연기금(국민연금 외)
+  '(사학연금 OR 공무원연금 OR 우정사업본부 OR 노동부 기금) (해외 대체투자 OR 사모 OR 인프라 OR 부동산 OR 출자)',
+  // 국내 기관 일반 (LP 출자·앵커 뉴스)
+  '국내 (연기금 OR 공제회 OR 보험사 OR 기관투자자) (해외 사모펀드 OR PEF OR 사모대출 OR 인프라 OR 부동산) (출자 OR 앵커 OR 커밋 OR 약정) when:30d',
+  '(LP OR 기관투자자) 해외 (블라인드펀드 OR PEF OR 사모대출) 출자 when:30d',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────

@@ -271,22 +271,47 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
 const bodyCache = {};
 
 // 여러 무료 CORS 프록시를 순서대로 시도해 본문을 가져온다(한 곳이 막혀도 폴백).
+// kind:'text' 는 r.jina.ai 처럼 기사 텍스트(마크다운)를 돌려주는 리더 프록시.
 const CORS_PROXIES = [
-  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  (u) => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+  { mk: (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), kind: 'html' },
+  { mk: (u) => 'https://r.jina.ai/' + u, kind: 'text' },
+  { mk: (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u), kind: 'html' },
+  { mk: (u) => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u), kind: 'html' },
 ];
 
+// r.jina.ai 리더 출력(마크다운) → 문단 텍스트.
+function parseReaderText(t) {
+  if (!t) return '';
+  let s = String(t)
+    .replace(/^(Title|URL Source|Published Time|Warning):.*$/gm, '')
+    .replace(/^Markdown Content:\s*$/m, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // 이미지 제거
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');      // 링크 → 텍스트
+  const paras = s.split(/\n{2,}/)
+    .map(x => x.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && /[가-힣a-zA-Z]{5,}/.test(x));
+  const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
+  return looksJunky(out) ? '' : out;
+}
+
 async function fetchBodyViaProxies(url, signal) {
-  for (const mk of CORS_PROXIES) {
+  for (const p of CORS_PROXIES) {
+    if (signal && signal.aborted) return '';
     try {
-      const r = await fetch(mk(url), { signal });
+      // 프록시별 9초 제한 — 한 곳이 매달려도 다음으로 넘어가 '무한 불러오는 중'을 막는다.
+      const r = await Promise.race([
+        fetch(p.mk(url), { signal }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000)),
+      ]);
       if (!r.ok) continue;
-      const html = await r.text();
-      const body = parseArticleHtml(html);
+      const raw = await Promise.race([
+        r.text(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000)),
+      ]);
+      const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw);
       if (body && body.length > 120) return body;
     } catch (e) {
-      if (e && e.name === 'AbortError') throw e;
+      if (e && e.name === 'AbortError') return '';
     }
   }
   return '';
@@ -389,13 +414,14 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     if (bodyCache[sel.id]) { setFetchedBody(bodyCache[sel.id]); return; }
 
     const ctrl = new AbortController();
+    let cancelled = false;
     setLoadingBody(true);
     fetchBodyViaProxies(sel.url, ctrl.signal)
-      .then(body => { if (body) { bodyCache[sel.id] = body; setFetchedBody(body); } })
+      .then(body => { if (!cancelled && body) { bodyCache[sel.id] = body; setFetchedBody(body); } })
       .catch(() => {})
-      .finally(() => setLoadingBody(false));
+      .finally(() => { if (!cancelled) setLoadingBody(false); });
 
-    return () => ctrl.abort();
+    return () => { cancelled = true; ctrl.abort(); };
   }, [sel ? sel.id : null]);
 
   if (!sel) return (
@@ -413,14 +439,28 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
   const isFullBody = displayBody.length > 300;
   const paragraphs = toParagraphs(displayBody, sel.ko);
   // AI 3줄 요약 정리: 푸터 꼬리 절단 → 오염 줄 제외 → 과도하게 긴 줄은 요약답게 자름.
-  // 쓸만한 줄이 없으면 본문 첫 문단(정리된)이나 제목으로 대체.
+  // 저장된 요약이 '제목 반복'(RSS 설명이 제목+매체명뿐인 경우)이면 본문에서 재생성.
   const capLine = (s) => s.length > 170 ? s.slice(0, 168).trimEnd() + '…' : s;
+  const normT = (s) => String(s).replace(/[\s"'“”‘’·…\-\[\]().]/g, '');
+  const isTitleEcho = (l) => {
+    const a = normT(l), b = normT(sel.ko);
+    return a.includes(b.slice(0, 18)) || b.includes(a.slice(0, 18));
+  };
   let aiLines = (sel.ai || [])
     .map(l => stripSiteFooter(String(l)))
     .filter(l => l && l.length >= 15 && !looksJunky(l))
     .map(capLine)
     .slice(0, 3);
-  if (!aiLines.length) aiLines = paragraphs.length ? paragraphs.slice(0, 3).map(capLine) : [sel.ko];
+  const echoOnly = aiLines.length > 0 && aiLines.every(isTitleEcho);
+  if ((!aiLines.length || echoOnly) && paragraphs.length) {
+    // 확보된 본문(사전 수집분 또는 방금 불러온 것)의 첫 문장들로 요약 재구성.
+    const sents = paragraphs.join(' ')
+      .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15 && !isTitleEcho(s) && !FOOTER_RE.test(s));
+    if (sents.length) aiLines = sents.slice(0, 3).map(capLine);
+  }
+  if (!aiLines.length) aiLines = [sel.ko];
 
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>

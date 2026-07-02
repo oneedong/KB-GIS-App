@@ -659,11 +659,13 @@ export function extractReadable(html) {
 async function fetchArticleText(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko,en;q=0.8' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
-    if (!res.ok) return '';
+    // 404/410 = 기사가 삭제됐거나 존재하지 않는 링크 → 호출부가 피드에서 제외한다.
+    if (res.status === 404 || res.status === 410) return { text: '', dead: true };
+    if (!res.ok) return { text: '' };
     const ct = res.headers.get('content-type') || '';
-    if (!/text|html/i.test(ct)) return '';
-    return extractReadable(await res.text());
-  } catch { return ''; }
+    if (!/text|html/i.test(ct)) return { text: '' };
+    return { text: extractReadable(await res.text()) };
+  } catch { return { text: '' }; }
 }
 
 function extractiveSummary(text) {
@@ -821,7 +823,9 @@ async function main() {
       if (real && !/news\.google\.com/.test(real)) { a.url = real; resolved++; }
       else canFetch = false;
     }
-    const text = canFetch ? await fetchArticleText(a.url) : '';
+    const fr = canFetch ? await fetchArticleText(a.url) : { text: '' };
+    if (fr.dead) { a.linkDead = true; continue; }      // 존재하지 않는 기사(404/410) → 피드에서 제외
+    const text = fr.text;
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);
@@ -853,11 +857,14 @@ async function main() {
   const WINDOW_MS = 92 * 24 * 3600 * 1000;
   const cutoff = Date.now() - WINDOW_MS;
   const inWindow = (a) => { if (a.pinned) return true; const t = Date.parse(a.ts); return !isNaN(t) && t >= cutoff; };
-  const merged = dedupe([...all, ...prev]).filter(inWindow)
+  const deadCount = all.filter(a => a.linkDead).length;
+  const merged = dedupe([...all, ...prev])
+    .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/410) 제외
+    .filter(inWindow)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
     .slice(0, 600);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
-  console.log(`collected ${all.length} relevant, archive now ${merged.length} articles`);
+  console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);
 
   // CIO·자산군 수익률 인사이트 자동 갱신(insights.json). 기존 값은 새 추출이
   // 있을 때만 갱신해, 일시적으로 기사가 없어도 최근 정보가 사라지지 않게 합니다.

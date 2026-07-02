@@ -289,7 +289,7 @@ function parseReaderText(t) {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');      // 링크 → 텍스트
   const paras = s.split(/\n{2,}/)
     .map(x => x.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && /[가-힣a-zA-Z]{5,}/.test(x));
+    .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(x));
   const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
   return looksJunky(out) ? '' : out;
 }
@@ -319,12 +319,18 @@ async function fetchBodyViaProxies(url, signal) {
 
 // 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
+// 기사 뒤에 딸려오는 '관련기사·많이 본 뉴스' 등 추천 위젯 헤드라인 나열.
+const RELATED_RE = /관련\s*기사|많이\s*본\s*뉴스|인기\s*기사|추천\s*기사|함께\s*본\s*기사|핫\s*클릭|실시간\s*뉴스|이\s*시각\s*(?:추천|인기|주요)|화제의\s*뉴스|기자\s*구독|댓글\s*정책/;
 function stripSiteFooter(t) {
   if (!t) return '';
   let s = String(t);
   const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
   if (i > 80) s = s.slice(0, i);
-  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x)).join('\n\n');
+  // 본문에 이어 붙은 '관련기사/많이 본 뉴스' 위젯부터 끝까지 절단
+  const j = s.search(RELATED_RE);
+  if (j > 80) s = s.slice(0, j);
+  // 문단 선두가 위젯 표제로 시작하면(예: "관련기사 삼성, …") 그 문단은 제거
+  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
   return s.trim();
 }
 
@@ -408,8 +414,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     // 실제 외부 기사 주소가 있어야 본문을 가져올 수 있다(구글 뉴스 리디렉트
     // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
     if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url)) return;
-    // 충분한 본문이 이미 있고, 오염(매체 소개문·인기기사 나열)되지 않았으면 재요청 불필요.
-    if ((sel.body || '').length > 400 && !looksJunky(sel.body)) return;
+    // '정리 후' 본문이 충분할 때만 재요청 생략 — 관련기사 위젯/푸터를 걷어내면
+    // 몇 줄 안 남는 기사는 브라우저에서 전체 본문을 다시 가져온다.
+    const cleanStored = stripSiteFooter(sel.body || '');
+    if (cleanStored.length > 400 && !looksJunky(cleanStored)) return;
     // 세션 캐시에 있으면 즉시 사용
     if (bodyCache[sel.id]) { setFetchedBody(bodyCache[sel.id]); return; }
 
@@ -433,8 +441,8 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 
   const { y, m, d } = kstYMD(itemMs(sel));
   const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
-  // 오염된 저장 본문은 표시하지 않는다(브라우저에서 다시 가져오기 전까지 빈 값 취급).
-  const cleanBody = looksJunky(sel.body) ? '' : (sel.body || '');
+  // 오염된 저장 본문은 표시하지 않고, 남은 본문도 위젯/푸터를 걷어낸 뒤 사용.
+  const cleanBody = looksJunky(sel.body) ? '' : stripSiteFooter(sel.body || '');
   const displayBody = fetchedBody || cleanBody || '';
   const isFullBody = displayBody.length > 300;
   const paragraphs = toParagraphs(displayBody, sel.ko);
@@ -448,7 +456,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
   };
   let aiLines = (sel.ai || [])
     .map(l => stripSiteFooter(String(l)))
-    .filter(l => l && l.length >= 15 && !looksJunky(l))
+    .filter(l => l && l.length >= 15 && !looksJunky(l) && !RELATED_RE.test(l.slice(0, 24)))
     .map(capLine)
     .slice(0, 3);
   const echoOnly = aiLines.length > 0 && aiLines.every(isTitleEcho);
@@ -457,7 +465,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const sents = paragraphs.join(' ')
       .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
       .map(s => s.trim())
-      .filter(s => s.length > 15 && !isTitleEcho(s) && !FOOTER_RE.test(s));
+      .filter(s => s.length > 15 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)));
     if (sents.length) aiLines = sents.slice(0, 3).map(capLine);
   }
   if (!aiLines.length) aiLines = [sel.ko];

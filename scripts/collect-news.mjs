@@ -601,14 +601,19 @@ function extractJsonLdBody(html) {
 // 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
 // (예: "…전망 등록번호 : 서울,아54780 / 발행인·편집인 : ○○○ / 고충처리인 …")
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
+// 기사 뒤에 딸려오는 '관련기사·많이 본 뉴스' 등 추천 위젯 헤드라인 나열.
+const RELATED_RE = /관련\s*기사|많이\s*본\s*뉴스|인기\s*기사|추천\s*기사|함께\s*본\s*기사|핫\s*클릭|실시간\s*뉴스|이\s*시각\s*(?:추천|인기|주요)|화제의\s*뉴스|기자\s*구독|댓글\s*정책/;
 export function stripSiteFooter(t) {
   if (!t) return '';
   let s = String(t);
   // 본문에 이어 붙은 꼬리는 첫 등록정보 표기부터 끝까지 절단
   const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
   if (i > 80) s = s.slice(0, i);
-  // 독립 문단으로 들어온 푸터는 문단째 제거
-  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x)).join('\n\n');
+  // '관련기사/많이 본 뉴스' 위젯이 이어 붙었으면 그 지점부터 절단
+  const j = s.search(RELATED_RE);
+  if (j > 80) s = s.slice(0, j);
+  // 독립 문단으로 들어온 푸터/위젯 표제 문단은 문단째 제거
+  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
   return s.trim();
 }
 export function extractReadable(html) {
@@ -672,7 +677,7 @@ function extractiveSummary(text) {
   const s = stripSiteFooter(text || '')
     .split(/(?<=[.!?。])\s+|(?<=다\.)\s*/)
     .map(x => x.trim())
-    .filter(x => x.length > 12 && !FOOTER_RE.test(x));
+    .filter(x => x.length > 12 && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)));
   // 한 줄이 지나치게 길면(문장 분리 실패한 덩어리) 잘라서 요약답게 만든다.
   return s.slice(0, 3).map(x => x.length > 180 ? x.slice(0, 178).trimEnd() + '…' : x);
 }
@@ -802,10 +807,11 @@ async function main() {
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
     if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
     // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
-    // 인터스티셜/매체 소개문·인기기사 나열로 오염된 본문은 버리고 재크롤링한다.
-    if (old && old.fetched && oldReal && !looksJunky(old.body)) {
-      a.body = stripSiteFooter(old.body); a.fetched = true;   // 과거 저장분의 푸터 꼬리도 정리
-      const oldAi = (old.ai || []).map(l => stripSiteFooter(l)).filter(l => l && l.length > 12)
+    // 인터스티셜/매체 소개문·관련기사 위젯으로 오염된 본문은 버리고 재크롤링한다.
+    const oldClean = (old && old.fetched && oldReal && !looksJunky(old.body)) ? stripSiteFooter(old.body) : '';
+    if (oldClean.length > 120) {                        // 정리 후에도 본문이 실하게 남을 때만 재사용
+      a.body = oldClean; a.fetched = true;
+      const oldAi = (old.ai || []).map(l => stripSiteFooter(l)).filter(l => l && l.length > 12 && !RELATED_RE.test(l.slice(0, 24)))
         .map(l => l.length > 180 ? l.slice(0, 178).trimEnd() + '…' : l);
       a.ai = oldAi.length ? oldAi : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;

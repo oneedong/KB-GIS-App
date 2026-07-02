@@ -292,6 +292,17 @@ async function fetchBodyViaProxies(url, signal) {
   return '';
 }
 
+// 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
+const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
+function stripSiteFooter(t) {
+  if (!t) return '';
+  let s = String(t);
+  const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
+  if (i > 80) s = s.slice(0, i);
+  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x)).join('\n\n');
+  return s.trim();
+}
+
 // 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
 const SITE_BOILER = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)/;
 function looksJunky(s) {
@@ -307,7 +318,8 @@ function looksJunky(s) {
 // 나누고, 없는 옛 본문(한 덩어리)은 문장 2~3개씩 묶어 문단을 만든다.
 function toParagraphs(text, title) {
   if (!text) return [];
-  const t = String(text).replace(/\r/g, '').trim();
+  const t = stripSiteFooter(String(text).replace(/\r/g, '').trim());
+  if (!t) return [];
   let paras;
   if (/\n/.test(t)) {
     paras = t.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
@@ -338,8 +350,8 @@ function parseArticleHtml(html) {
       push(Array.isArray(data) ? data : (data['@graph'] || data));
       for (const n of nodes) {
         if (n.articleBody && String(n.articleBody).trim().length > 120) {
-          const body = String(n.articleBody).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 8000);
-          if (!looksJunky(body)) return body;
+          const body = stripSiteFooter(String(n.articleBody).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()).slice(0, 8000);
+          if (body.length > 120 && !looksJunky(body)) return body;
         }
       }
     }
@@ -355,7 +367,7 @@ function parseArticleHtml(html) {
     ].join(', '))]
       .map(el => el.textContent.trim())
       .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && a.indexOf(s) === i);
-    const out = [lead, ...ps].filter(Boolean).join('\n\n').trim().slice(0, 8000);
+    const out = stripSiteFooter([lead, ...ps].filter(Boolean).join('\n\n').trim()).slice(0, 8000);
     return looksJunky(out) ? '' : out;
   } catch { return ''; }
 }
@@ -400,8 +412,15 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
   const displayBody = fetchedBody || cleanBody || '';
   const isFullBody = displayBody.length > 300;
   const paragraphs = toParagraphs(displayBody, sel.ko);
-  // AI 3줄 요약도 오염 본문에서 뽑혔으면 제목으로 대체.
-  const aiLines = looksJunky((sel.ai || []).join(' ')) ? [sel.ko] : (sel.ai || []);
+  // AI 3줄 요약 정리: 푸터 꼬리 절단 → 오염 줄 제외 → 과도하게 긴 줄은 요약답게 자름.
+  // 쓸만한 줄이 없으면 본문 첫 문단(정리된)이나 제목으로 대체.
+  const capLine = (s) => s.length > 170 ? s.slice(0, 168).trimEnd() + '…' : s;
+  let aiLines = (sel.ai || [])
+    .map(l => stripSiteFooter(String(l)))
+    .filter(l => l && l.length >= 15 && !looksJunky(l))
+    .map(capLine)
+    .slice(0, 3);
+  if (!aiLines.length) aiLines = paragraphs.length ? paragraphs.slice(0, 3).map(capLine) : [sel.ko];
 
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
@@ -484,6 +503,19 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
   const aumVerified = !!(alloc && alloc.aum != null);
   // 검증(공시 확정)된 값은 그대로, 프로필 근사치는 '~'로 근사 표기.
   const aumDisplay = aum == null ? '–' : (aumVerified ? fmtAmt(aum) : '~' + fmtAmt(aum));
+
+  // ── 최신 기사 기반 자동 동향 (항상 최신 뉴스에 연동) ──
+  const nowMs = Date.now();
+  const cnt30 = articles.filter(a => nowMs - itemMs(a) < 30 * 86400000).length;
+  const latest = articles[0] || null;                       // items 는 최신순 정렬
+  const latestYMD = latest ? kstYMD(itemMs(latest)) : null;
+  // 기관의 최근 기사가 다루는 자산군 분포 → 관심 자산군 칩
+  const assetMix = (() => {
+    const m = {};
+    articles.forEach(a => { m[a.asset] = (m[a.asset] || 0) + 1; });
+    return Object.entries(m).sort((x, y) => y[1] - x[1]);
+  })();
+
   return (
     <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
       <div style={{flexShrink:0, height:54, boxSizing:'content-box', display:'flex', alignItems:'center', padding:'env(safe-area-inset-top) 16px 0 12px', borderBottom:'1px solid #efece4'}}>
@@ -526,6 +558,41 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
               <div style={{font:'800 18px Pretendard'}}>{alloc && alloc.overseasAltPct != null ? fmtPct(alloc.overseasAltPct) : '–'}</div>
               <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>대체투자 중 해외</div>
             </div>
+          </div>
+
+          {/* 최근 동향 — 최신 기사에서 자동 산출 (항상 최신 상태 유지) */}
+          <div style={{marginTop:14, border:'1px solid #ece9e2', borderRadius:13, padding:'13px 14px', background:'#fbfaf7'}}>
+            <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:9}}>
+              <span style={{font:'700 10.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'3px 9px', borderRadius:6}}>● 최근 동향</span>
+              <span style={{font:'500 9.5px Pretendard', color:'#9a9ca0'}}>최신 기사 자동 연동{latestYMD ? ` · ${latestYMD.y}.${pad2(latestYMD.m)}.${pad2(latestYMD.d)} 갱신` : ''}</span>
+            </div>
+            {articles.length === 0 ? (
+              <div style={{font:'500 12px/1.6 Pretendard', color:'#a6a8ac'}}>최근 3개월 내 수집된 기사가 없습니다. 새 기사가 올라오면 자동 반영됩니다.</div>
+            ) : (
+              <>
+                <div style={{display:'flex', gap:14, marginBottom:latest ? 10 : 0}}>
+                  <div><span style={{font:'800 16px Pretendard'}}>{articles.length}</span><span style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginLeft:4}}>기사 · 3개월</span></div>
+                  <div><span style={{font:'800 16px Pretendard', color:cnt30 ? '#1a7a4a' : '#1c1d1f'}}>{cnt30}</span><span style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginLeft:4}}>기사 · 30일</span></div>
+                </div>
+                {assetMix.length > 0 && (
+                  <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:latest ? 10 : 0}}>
+                    {assetMix.map(([k, c]) => (
+                      <span key={k} style={{display:'inline-flex', alignItems:'center', gap:5, font:'600 10.5px Pretendard', color:'#3d3e42', background:'#f0eee7', padding:'4px 9px', borderRadius:999}}>
+                        <span style={{width:6, height:6, borderRadius:2, background:(ASSET[k] && ASSET[k].color) || '#c4a93a', display:'inline-block'}}></span>
+                        {(ASSET[k] && ASSET[k].label) || k} {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {latest && (
+                  <div onClick={() => onOpenArticle(latest.id)} style={{cursor:'pointer', borderTop:'1px solid #f0ede4', paddingTop:9}}>
+                    <div style={{font:'700 9.5px Pretendard', color:'#9a7d12', marginBottom:3}}>최신 기사</div>
+                    <div style={{font:'650 12.5px/1.45 Pretendard', color:'#1c1d1f'}}>{latest.ko}</div>
+                    <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{latest.date} {latest.time} · {latest.source} ›</div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* 운용 개요 */}

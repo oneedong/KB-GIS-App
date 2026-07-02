@@ -264,6 +264,18 @@ async function fetchBodyViaProxies(url, signal) {
     }
     return '';
 }
+// 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
+const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
+function stripSiteFooter(t) {
+    if (!t)
+        return '';
+    let s = String(t);
+    const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
+    if (i > 80)
+        s = s.slice(0, i);
+    s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x)).join('\n\n');
+    return s.trim();
+}
 // 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
 const SITE_BOILER = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)/;
 function looksJunky(s) {
@@ -282,7 +294,9 @@ function looksJunky(s) {
 function toParagraphs(text, title) {
     if (!text)
         return [];
-    const t = String(text).replace(/\r/g, '').trim();
+    const t = stripSiteFooter(String(text).replace(/\r/g, '').trim());
+    if (!t)
+        return [];
     let paras;
     if (/\n/.test(t)) {
         paras = t.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
@@ -329,8 +343,8 @@ function parseArticleHtml(html) {
             push(Array.isArray(data) ? data : (data['@graph'] || data));
             for (const n of nodes) {
                 if (n.articleBody && String(n.articleBody).trim().length > 120) {
-                    const body = String(n.articleBody).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 8000);
-                    if (!looksJunky(body))
+                    const body = stripSiteFooter(String(n.articleBody).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()).slice(0, 8000);
+                    if (body.length > 120 && !looksJunky(body))
                         return body;
                 }
             }
@@ -348,7 +362,7 @@ function parseArticleHtml(html) {
             ].join(', '))]
             .map(el => el.textContent.trim())
             .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && a.indexOf(s) === i);
-        const out = [lead, ...ps].filter(Boolean).join('\n\n').trim().slice(0, 8000);
+        const out = stripSiteFooter([lead, ...ps].filter(Boolean).join('\n\n').trim()).slice(0, 8000);
         return looksJunky(out) ? '' : out;
     }
     catch {
@@ -396,8 +410,16 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const displayBody = fetchedBody || cleanBody || '';
     const isFullBody = displayBody.length > 300;
     const paragraphs = toParagraphs(displayBody, sel.ko);
-    // AI 3줄 요약도 오염 본문에서 뽑혔으면 제목으로 대체.
-    const aiLines = looksJunky((sel.ai || []).join(' ')) ? [sel.ko] : (sel.ai || []);
+    // AI 3줄 요약 정리: 푸터 꼬리 절단 → 오염 줄 제외 → 과도하게 긴 줄은 요약답게 자름.
+    // 쓸만한 줄이 없으면 본문 첫 문단(정리된)이나 제목으로 대체.
+    const capLine = (s) => s.length > 170 ? s.slice(0, 168).trimEnd() + '…' : s;
+    let aiLines = (sel.ai || [])
+        .map(l => stripSiteFooter(String(l)))
+        .filter(l => l && l.length >= 15 && !looksJunky(l))
+        .map(capLine)
+        .slice(0, 3);
+    if (!aiLines.length)
+        aiLines = paragraphs.length ? paragraphs.slice(0, 3).map(capLine) : [sel.ko];
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
             showBack
@@ -454,6 +476,17 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
     const aumVerified = !!(alloc && alloc.aum != null);
     // 검증(공시 확정)된 값은 그대로, 프로필 근사치는 '~'로 근사 표기.
     const aumDisplay = aum == null ? '–' : (aumVerified ? fmtAmt(aum) : '~' + fmtAmt(aum));
+    // ── 최신 기사 기반 자동 동향 (항상 최신 뉴스에 연동) ──
+    const nowMs = Date.now();
+    const cnt30 = articles.filter(a => nowMs - itemMs(a) < 30 * 86400000).length;
+    const latest = articles[0] || null; // items 는 최신순 정렬
+    const latestYMD = latest ? kstYMD(itemMs(latest)) : null;
+    // 기관의 최근 기사가 다루는 자산군 분포 → 관심 자산군 칩
+    const assetMix = (() => {
+        const m = {};
+        articles.forEach(a => { m[a.asset] = (m[a.asset] || 0) + 1; });
+        return Object.entries(m).sort((x, y) => y[1] - x[1]);
+    })();
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
             React.createElement("div", { onClick: onBack, style: { display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', font: '600 14px Pretendard', color: '#1c1d1f' } },
@@ -492,6 +525,35 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
                     React.createElement("div", { style: { background: '#f8f7f3', borderRadius: 11, padding: '12px 13px' } },
                         React.createElement("div", { style: { font: '800 18px Pretendard' } }, alloc && alloc.overseasAltPct != null ? fmtPct(alloc.overseasAltPct) : '–'),
                         React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uC911 \uD574\uC678"))),
+                React.createElement("div", { style: { marginTop: 14, border: '1px solid #ece9e2', borderRadius: 13, padding: '13px 14px', background: '#fbfaf7' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 } },
+                        React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '3px 9px', borderRadius: 6 } }, "\u25CF \uCD5C\uADFC \uB3D9\uD5A5"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0' } },
+                            "\uCD5C\uC2E0 \uAE30\uC0AC \uC790\uB3D9 \uC5F0\uB3D9",
+                            latestYMD ? ` · ${latestYMD.y}.${pad2(latestYMD.m)}.${pad2(latestYMD.d)} 갱신` : '')),
+                    articles.length === 0 ? (React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#a6a8ac' } }, "\uCD5C\uADFC 3\uAC1C\uC6D4 \uB0B4 \uC218\uC9D1\uB41C \uAE30\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0C8 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")) : (React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { display: 'flex', gap: 14, marginBottom: latest ? 10 : 0 } },
+                            React.createElement("div", null,
+                                React.createElement("span", { style: { font: '800 16px Pretendard' } }, articles.length),
+                                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginLeft: 4 } }, "\uAE30\uC0AC \u00B7 3\uAC1C\uC6D4")),
+                            React.createElement("div", null,
+                                React.createElement("span", { style: { font: '800 16px Pretendard', color: cnt30 ? '#1a7a4a' : '#1c1d1f' } }, cnt30),
+                                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginLeft: 4 } }, "\uAE30\uC0AC \u00B7 30\uC77C"))),
+                        assetMix.length > 0 && (React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: latest ? 10 : 0 } }, assetMix.map(([k, c]) => (React.createElement("span", { key: k, style: { display: 'inline-flex', alignItems: 'center', gap: 5, font: '600 10.5px Pretendard', color: '#3d3e42', background: '#f0eee7', padding: '4px 9px', borderRadius: 999 } },
+                            React.createElement("span", { style: { width: 6, height: 6, borderRadius: 2, background: (ASSET[k] && ASSET[k].color) || '#c4a93a', display: 'inline-block' } }),
+                            (ASSET[k] && ASSET[k].label) || k,
+                            " ",
+                            c))))),
+                        latest && (React.createElement("div", { onClick: () => onOpenArticle(latest.id), style: { cursor: 'pointer', borderTop: '1px solid #f0ede4', paddingTop: 9 } },
+                            React.createElement("div", { style: { font: '700 9.5px Pretendard', color: '#9a7d12', marginBottom: 3 } }, "\uCD5C\uC2E0 \uAE30\uC0AC"),
+                            React.createElement("div", { style: { font: '650 12.5px/1.45 Pretendard', color: '#1c1d1f' } }, latest.ko),
+                            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 3 } },
+                                latest.date,
+                                " ",
+                                latest.time,
+                                " \u00B7 ",
+                                latest.source,
+                                " \u203A")))))),
                 profile && (profile.summary || profile.altFocus) ? (React.createElement("div", { style: { marginTop: 18 } },
                     React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 8 } }, "\uC6B4\uC6A9 \uAC1C\uC694"),
                     profile.summary && React.createElement("div", { style: { font: '500 13.5px/1.7 Pretendard', color: '#34353a' } }, profile.summary),

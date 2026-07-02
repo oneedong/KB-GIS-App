@@ -598,11 +598,24 @@ function extractJsonLdBody(html) {
   }
   return '';
 }
+// 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
+// (예: "…전망 등록번호 : 서울,아54780 / 발행인·편집인 : ○○○ / 고충처리인 …")
+const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
+export function stripSiteFooter(t) {
+  if (!t) return '';
+  let s = String(t);
+  // 본문에 이어 붙은 꼬리는 첫 등록정보 표기부터 끝까지 절단
+  const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
+  if (i > 80) s = s.slice(0, i);
+  // 독립 문단으로 들어온 푸터는 문단째 제거
+  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x)).join('\n\n');
+  return s.trim();
+}
 export function extractReadable(html) {
   if (!html) return '';
   // 1) JSON-LD articleBody 우선 — 매체 소개문/인기기사 위젯 오염을 피한다.
-  const ld = extractJsonLdBody(html);
-  if (ld) return ld.slice(0, 8000);
+  const ld = stripSiteFooter(extractJsonLdBody(html));
+  if (ld && ld.length > 120) return ld.slice(0, 8000);
   let lead = metaContent(html, 'og:description') || metaContent(html, 'description');
   if (SITE_BOILER_RE.test(lead)) lead = '';                            // 매체 소개문이면 버림
   const h = html
@@ -637,7 +650,7 @@ export function extractReadable(html) {
   // 선두의 og:description(lead)이 첫 문단과 겹치면 중복 제거.
   const leadT = (lead || '').replace(/\s+/g, ' ').trim();
   const paras = (leadT && !unique.some(u => u.includes(leadT.slice(0, 40))) ? [leadT] : []).concat(unique);
-  const out = paras.join('\n\n').slice(0, 8000);
+  const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
   // 매체 소개문/인기기사 나열로 오염된 결과는 버린다(가짜 본문 저장 방지).
   if (looksJunky(out)) return '';
   return out;
@@ -654,11 +667,12 @@ async function fetchArticleText(url) {
 }
 
 function extractiveSummary(text) {
-  const s = (text || '')
+  const s = stripSiteFooter(text || '')
     .split(/(?<=[.!?。])\s+|(?<=다\.)\s*/)
     .map(x => x.trim())
-    .filter(x => x.length > 12);
-  return s.slice(0, 3);
+    .filter(x => x.length > 12 && !FOOTER_RE.test(x));
+  // 한 줄이 지나치게 길면(문장 분리 실패한 덩어리) 잘라서 요약답게 만든다.
+  return s.slice(0, 3).map(x => x.length > 180 ? x.slice(0, 178).trimEnd() + '…' : x);
 }
 
 // ── RSS 파싱 + 기사 객체화 ───────────────────────────────
@@ -788,8 +802,10 @@ async function main() {
     // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
     // 인터스티셜/매체 소개문·인기기사 나열로 오염된 본문은 버리고 재크롤링한다.
     if (old && old.fetched && oldReal && !looksJunky(old.body)) {
-      a.body = old.body; a.fetched = true;
-      a.ai = old.ai && old.ai.length ? old.ai : a.ai;
+      a.body = stripSiteFooter(old.body); a.fetched = true;   // 과거 저장분의 푸터 꼬리도 정리
+      const oldAi = (old.ai || []).map(l => stripSiteFooter(l)).filter(l => l && l.length > 12)
+        .map(l => l.length > 180 ? l.slice(0, 178).trimEnd() + '…' : l);
+      a.ai = oldAi.length ? oldAi : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;
       if (old.translated) { a.translated = true; a.ko = old.ko; a.en = old.en; a.enBody = old.enBody; }
       continue;

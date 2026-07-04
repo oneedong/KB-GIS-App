@@ -238,8 +238,25 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
         React.createElement("div", { onClick: onRefresh, style: { marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', font: '600 12.5px Pretendard', color: '#cdced0', border: '1px solid #34363a', borderRadius: 999, padding: '9px 12px' } }, "\u27F3 \uC0C8\uB85C\uACE0\uCE68")));
 }
 // ─── In-browser article body fetcher ────────────────────────
-// bodyCache: 세션 동안 한 번 가져온 본문을 재사용 (페이지 새로고침 시 초기화)
+// bodyCache: 세션 내 재사용. bodyStore: localStorage 영구 캐시(최대 120건 LRU) —
+// 한 번 불러온 기사는 재방문 시 즉시 표시된다.
 const bodyCache = {};
+const bodyStore = {
+    get(id) { const m = store.get('bodies', {}); const e = m[id]; return e ? e.b : ''; },
+    set(id, body) {
+        try {
+            const m = store.get('bodies', {});
+            m[id] = { b: body, t: Date.now() };
+            const ks = Object.keys(m);
+            if (ks.length > 120) {
+                ks.sort((a, b) => m[a].t - m[b].t);
+                ks.slice(0, ks.length - 120).forEach(k => { delete m[k]; });
+            }
+            store.set('bodies', m);
+        }
+        catch (e) { }
+    },
+};
 // 여러 무료 CORS 프록시를 순서대로 시도해 본문을 가져온다(한 곳이 막혀도 폴백).
 // kind:'text' 는 r.jina.ai 처럼 기사 텍스트(마크다운)를 돌려주는 리더 프록시.
 const CORS_PROXIES = [
@@ -259,43 +276,43 @@ function parseReaderText(t) {
         .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'); // 링크 → 텍스트
     const paras = s.split(/\n{2,}/)
         .map(x => x.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-        .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(x));
+        .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(x) && isSentencey(x));
     const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
     return looksJunky(out) ? '' : out;
 }
 // '소프트 404' — 200 응답이지만 "존재하지 않는 링크/기사" 안내만 있는 페이지.
 const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
+// 모든 프록시에 '동시에' 요청해 가장 먼저 성공한 본문을 쓴다(순차 대기 제거 →
+// 체감 속도 대폭 개선). 각 시도는 8초(+읽기 5초) 제한이라 전체 ~13초 안에 끝난다.
 async function fetchBodyViaProxies(url, signal) {
-    const deadline = Date.now() + 25000; // 전체 25초 안에 끝낸다
     let sawDead = false;
-    for (const p of CORS_PROXIES) {
-        if ((signal && signal.aborted) || Date.now() > deadline)
-            break;
-        try {
-            // 프록시별 9초 제한 — 한 곳이 매달려도 다음으로 넘어가 '무한 불러오는 중'을 막는다.
-            const r = await Promise.race([
-                fetch(p.mk(url), { signal }),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000)),
-            ]);
-            if (!r.ok)
-                continue;
-            const raw = await Promise.race([
-                r.text(),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000)),
-            ]);
-            const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw);
-            if (body && body.length > 120)
-                return { body, dead: false };
-            // 본문이 없고 '존재하지 않는 기사' 안내가 보이면 죽은 링크로 판정.
-            if (DEAD_PAGE_RE.test(String(raw).slice(0, 8000)))
-                sawDead = true;
-        }
-        catch (e) {
-            if (e && e.name === 'AbortError')
-                break;
-        }
+    const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
+    const attempt = async (p) => {
+        const r = await Promise.race([fetch(p.mk(url), { signal }), timeout(8000)]);
+        if (!r.ok)
+            throw new Error('http');
+        const raw = await Promise.race([r.text(), timeout(5000)]);
+        const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw);
+        if (body && body.length > 120)
+            return body;
+        if (DEAD_PAGE_RE.test(String(raw).slice(0, 8000)))
+            sawDead = true;
+        throw new Error('empty');
+    };
+    const attempts = CORS_PROXIES.map(p => attempt(p));
+    try {
+        const body = typeof Promise.any === 'function'
+            ? await Promise.any(attempts)
+            : await new Promise((res, rej) => {
+                let left = attempts.length;
+                attempts.forEach(a => a.then(res, () => { if (--left === 0)
+                    rej(new Error('all')); }));
+            });
+        return { body, dead: false };
     }
-    return { body: '', dead: sawDead };
+    catch {
+        return { body: '', dead: sawDead };
+    }
 }
 // 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
@@ -315,6 +332,14 @@ function stripSiteFooter(t) {
     // 문단 선두가 위젯 표제로 시작하면(예: "관련기사 삼성, …") 그 문단은 제거
     s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
     return s.trim();
+}
+// '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열(문장 종결 없음, 짧고 "…"로
+// 끝남)을 본문에서 걸러낸다. 종결어미(다./요.)나 마침표로 끝나거나 충분히 길면 통과.
+function isSentencey(s) {
+    const t = String(s).trim();
+    if (t.length > 160)
+        return true;
+    return /(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t);
 }
 // 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
 const SITE_BOILER = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)/;
@@ -389,19 +414,27 @@ function parseArticleHtml(html) {
                 }
             }
         }
-        // 2) 컨테이너 기반 <p> 추출 (매체 소개문 og 는 버림)
+        // 2) 본문 컨테이너 스코어링 — 페이지에서 '긴 문단이 가장 많이 모인' 요소를
+        //    기사 본문으로 보고 그 안의 <p>만 추출한다. 페이지 전체 <p>를 긁으면
+        //    사이드바·다른 뉴스 헤드라인이 섞이므로 전역 추출은 최후 수단으로만.
         const ogEl = doc.querySelector('meta[property="og:description"], meta[name="description"]');
         let lead = ogEl ? (ogEl.getAttribute('content') || '') : '';
         if (SITE_BOILER.test(lead))
             lead = '';
         const BOILER = /구독|로그인|회원가입|저작권|무단전재|재배포 금지|all rights reserved|cookie|쿠키|광고/i;
-        const ps = [...doc.querySelectorAll([
-                'article p', '.article_txt p', '.article-body p', '.article_body p',
-                '#article-view-content-div p', '.view_content p', '.news_content p', '.news_body p',
-                '.article_view p', '.cont_article p', '.news-article-body p', '.art_body p', 'p',
-            ].join(', '))]
-            .map(el => el.textContent.trim())
-            .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && a.indexOf(s) === i);
+        const pickPs = (root) => [...root.querySelectorAll('p')]
+            .map(el => el.textContent.replace(/\s+/g, ' ').trim())
+            .filter((s, i, a) => s.length > 30 && !BOILER.test(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && isSentencey(s) && a.indexOf(s) === i);
+        const scopes = [...doc.querySelectorAll('article, [itemprop~="articleBody"], [class*="article"], [id*="article"], [class*="news_"], [class*="view_"], [class*="content"]')];
+        let best = null, bestLen = 0;
+        for (const sc of scopes) {
+            const len = pickPs(sc).reduce((n, s) => n + s.length, 0);
+            if (len > bestLen) {
+                bestLen = len;
+                best = sc;
+            }
+        }
+        const ps = bestLen > 250 ? pickPs(best) : pickPs(doc);
         const out = stripSiteFooter([lead, ...ps].filter(Boolean).join('\n\n').trim()).slice(0, 8000);
         return looksJunky(out) ? '' : out;
     }
@@ -427,9 +460,15 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
         const cleanStored = stripSiteFooter(sel.body || '');
         if (cleanStored.length > 400 && !looksJunky(cleanStored))
             return;
-        // 세션 캐시에 있으면 즉시 사용
+        // 세션/영구 캐시에 있으면 즉시 사용(재방문 시 대기 없음)
         if (bodyCache[sel.id]) {
             setFetchedBody(bodyCache[sel.id]);
+            return;
+        }
+        const stored = bodyStore.get(sel.id);
+        if (stored) {
+            bodyCache[sel.id] = stored;
+            setFetchedBody(stored);
             return;
         }
         const ctrl = new AbortController();
@@ -441,6 +480,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                 return;
             if (r.body) {
                 bodyCache[sel.id] = r.body;
+                bodyStore.set(sel.id, r.body);
                 setFetchedBody(r.body);
             }
             else if (r.dead)
@@ -462,30 +502,33 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const displayBody = fetchedBody || cleanBody || '';
     const isFullBody = displayBody.length > 300;
     const paragraphs = toParagraphs(displayBody, sel.ko);
-    // AI 3줄 요약 정리: 푸터 꼬리 절단 → 오염 줄 제외 → 과도하게 긴 줄은 요약답게 자름.
-    // 저장된 요약이 '제목 반복'(RSS 설명이 제목+매체명뿐인 경우)이면 본문에서 재생성.
+    // AI 3줄 요약: (1) LLM 요약(aiSource==='llm')은 정리만 해서 사용
+    // (2) 그 외에는 '깨끗한 본문'의 첫 핵심 문장들로 항상 재생성 — 저장된 발췌
+    //     요약은 과거 오염 본문에서 만들어졌을 수 있어 신뢰하지 않는다.
+    // (3) 본문이 전혀 없으면 저장 요약(정리) → 제목 순으로 대체.
     const capLine = (s) => s.length > 170 ? s.slice(0, 168).trimEnd() + '…' : s;
     const normT = (s) => String(s).replace(/[\s"'“”‘’·…\-\[\]().]/g, '');
     const isTitleEcho = (l) => {
         const a = normT(l), b = normT(sel.ko);
         return a.includes(b.slice(0, 18)) || b.includes(a.slice(0, 18));
     };
-    let aiLines = (sel.ai || [])
+    const cleanStoredAi = (sel.ai || [])
         .map(l => stripSiteFooter(String(l)))
-        .filter(l => l && l.length >= 15 && !looksJunky(l) && !RELATED_RE.test(l.slice(0, 24)))
+        .filter(l => l && l.length >= 15 && !looksJunky(l) && !RELATED_RE.test(l.slice(0, 24)) && !isTitleEcho(l))
         .map(capLine)
         .slice(0, 3);
-    const echoOnly = aiLines.length > 0 && aiLines.every(isTitleEcho);
-    if ((!aiLines.length || echoOnly) && paragraphs.length) {
-        // 확보된 본문(사전 수집분 또는 방금 불러온 것)의 첫 문장들로 요약 재구성.
-        const sents = paragraphs.join(' ')
-            .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
-            .map(s => s.trim())
-            .filter(s => s.length > 15 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)));
-        if (sents.length)
-            aiLines = sents.slice(0, 3).map(capLine);
-    }
-    if (!aiLines.length)
+    const bodySents = paragraphs.join(' ')
+        .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length >= 20 && s.length <= 220 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && isSentencey(s));
+    let aiLines;
+    if (sel.aiSource === 'llm' && cleanStoredAi.length)
+        aiLines = cleanStoredAi;
+    else if (bodySents.length)
+        aiLines = bodySents.slice(0, 3).map(capLine);
+    else if (cleanStoredAi.length)
+        aiLines = cleanStoredAi;
+    else
         aiLines = [sel.ko];
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },

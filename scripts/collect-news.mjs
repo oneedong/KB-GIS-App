@@ -616,6 +616,13 @@ export function stripSiteFooter(t) {
   s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
   return s.trim();
 }
+// '문장형' 문단인지 — 다른 뉴스 헤드라인 나열(종결어미·마침표 없이 끝나는 짧은
+// 제목들)을 본문에서 걸러낸다. 종결어미(다./요.)나 문장부호로 끝나거나 충분히 길면 통과.
+export function isSentencey(s) {
+  const t = String(s).trim();
+  if (t.length > 160) return true;
+  return /(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t);
+}
 export function extractReadable(html) {
   if (!html) return '';
   // 1) JSON-LD articleBody 우선 — 매체 소개문/인기기사 위젯 오염을 피한다.
@@ -629,21 +636,21 @@ export function extractReadable(html) {
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ');
 
-  // <p> 태그 (표준 마크업) 시도
-  let ps = [...h.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map(m => stripTags(m[1]))
-    .filter(s => s.length > 30 && !BOILER_RE.test(s));
-
-  // 한국 뉴스 사이트 공통 본문 컨테이너 (article 요소 또는 class 기반) 시도
+  // 기사 컨테이너(article/본문 class) 안의 <p> 를 우선 시도 — 페이지 전체 <p>를
+  // 긁으면 사이드바 '다른 뉴스' 헤드라인이 섞이므로 전역 추출은 최후 수단.
+  const pFilter = (s) => s.length > 30 && !BOILER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(s) && isSentencey(s);
+  let ps = [];
+  const cm = h.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i) ||
+             h.match(/class=["'][^"']*(?:article[_\-](?:txt|body|content|text|view)|view[_\-]content|news[_\-](?:view|content|body)|cont_article)[^"']*["'][^>]*>([\s\S]{100,}?)(?=<\/div>|<\/section>)/i);
+  if (cm) {
+    ps = [...(cm[1] || cm[2] || '').matchAll(/<(?:p|div)\b[^>]*>([\s\S]*?)<\/(?:p|div)>/gi)]
+      .map(m => stripTags(m[1]))
+      .filter(pFilter);
+  }
   if (ps.length < 2) {
-    const cm = h.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i) ||
-               h.match(/class=["'][^"']*(?:article[_\-](?:txt|body|content|text|view)|view[_\-]content|news[_\-](?:view|content|body)|cont_article)[^"']*["'][^>]*>([\s\S]{100,}?)(?=<\/div>|<\/section>)/i);
-    if (cm) {
-      const extra = [...(cm[1] || cm[2] || '').matchAll(/<(?:p|div)\b[^>]*>([\s\S]*?)<\/(?:p|div)>/gi)]
-        .map(m => stripTags(m[1]))
-        .filter(s => s.length > 30 && !BOILER_RE.test(s) && /[가-힣a-zA-Z]{5,}/.test(s));
-      if (extra.length > ps.length) ps = extra;
-    }
+    ps = [...h.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map(m => stripTags(m[1]))
+      .filter(pFilter);
   }
 
   const seen = new Set();
@@ -682,12 +689,15 @@ async function fetchArticleText(url) {
 }
 
 function extractiveSummary(text) {
-  const s = stripSiteFooter(text || '')
+  const all = stripSiteFooter(text || '')
     .split(/(?<=[.!?。])\s+|(?<=다\.)\s*/)
     .map(x => x.trim())
     .filter(x => x.length > 12 && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)));
+  // 종결어미가 있는 '온전한 문장'을 우선 채택하고, 부족하면 나머지로 채운다.
+  const good = all.filter(isSentencey);
+  const s = (good.length >= 3 ? good : good.concat(all.filter(x => !good.includes(x)))).slice(0, 3);
   // 한 줄이 지나치게 길면(문장 분리 실패한 덩어리) 잘라서 요약답게 만든다.
-  return s.slice(0, 3).map(x => x.length > 180 ? x.slice(0, 178).trimEnd() + '…' : x);
+  return s.map(x => x.length > 180 ? x.slice(0, 178).trimEnd() + '…' : x);
 }
 
 // ── RSS 파싱 + 기사 객체화 ───────────────────────────────

@@ -263,10 +263,14 @@ function parseReaderText(t) {
     const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
     return looksJunky(out) ? '' : out;
 }
+// '소프트 404' — 200 응답이지만 "존재하지 않는 링크/기사" 안내만 있는 페이지.
+const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
 async function fetchBodyViaProxies(url, signal) {
+    const deadline = Date.now() + 25000; // 전체 25초 안에 끝낸다
+    let sawDead = false;
     for (const p of CORS_PROXIES) {
-        if (signal && signal.aborted)
-            return '';
+        if ((signal && signal.aborted) || Date.now() > deadline)
+            break;
         try {
             // 프록시별 9초 제한 — 한 곳이 매달려도 다음으로 넘어가 '무한 불러오는 중'을 막는다.
             const r = await Promise.race([
@@ -281,14 +285,17 @@ async function fetchBodyViaProxies(url, signal) {
             ]);
             const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw);
             if (body && body.length > 120)
-                return body;
+                return { body, dead: false };
+            // 본문이 없고 '존재하지 않는 기사' 안내가 보이면 죽은 링크로 판정.
+            if (DEAD_PAGE_RE.test(String(raw).slice(0, 8000)))
+                sawDead = true;
         }
         catch (e) {
             if (e && e.name === 'AbortError')
-                return '';
+                break;
         }
     }
-    return '';
+    return { body: '', dead: sawDead };
 }
 // 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
@@ -406,9 +413,11 @@ function parseArticleHtml(html) {
 function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack }) {
     const [fetchedBody, setFetchedBody] = useState(null);
     const [loadingBody, setLoadingBody] = useState(false);
+    const [deadLink, setDeadLink] = useState(false);
     useEffect(() => {
         setFetchedBody(null);
         setLoadingBody(false);
+        setDeadLink(false);
         // 실제 외부 기사 주소가 있어야 본문을 가져올 수 있다(구글 뉴스 리디렉트
         // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
         if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url))
@@ -427,10 +436,16 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
         let cancelled = false;
         setLoadingBody(true);
         fetchBodyViaProxies(sel.url, ctrl.signal)
-            .then(body => { if (!cancelled && body) {
-            bodyCache[sel.id] = body;
-            setFetchedBody(body);
-        } })
+            .then(r => {
+            if (cancelled)
+                return;
+            if (r.body) {
+                bodyCache[sel.id] = r.body;
+                setFetchedBody(r.body);
+            }
+            else if (r.dead)
+                setDeadLink(true);
+        })
             .catch(() => { })
             .finally(() => { if (!cancelled)
             setLoadingBody(false); });
@@ -510,12 +525,12 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAE30\uC0AC \uC6D0\uBB38"),
                         loadingBody && React.createElement("div", { style: { font: '600 10px Pretendard', color: '#a6a8ac' } }, "\uBD88\uB7EC\uC624\uB294 \uC911\u2026"),
                         !loadingBody && isFullBody && React.createElement("span", { style: { font: '600 10px Pretendard', color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: 4 } }, "\uC804\uBB38")),
-                    loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : paragraphs.length ? (React.createElement("div", null,
+                    loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : deadLink && !paragraphs.length ? (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#c0392b', background: '#fdf1ef', border: '1px solid #f5d9d4', borderRadius: 11, padding: '12px 14px' } }, "\uC774 \uAE30\uC0AC\uC758 \uC6D0\uBB38 \uB9C1\uD06C\uAC00 \uB354 \uC774\uC0C1 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4(\uC0AD\uC81C\uB41C \uAE30\uC0AC). \uB2E4\uC74C \uB274\uC2A4 \uAC31\uC2E0 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uC81C\uAC70\uB429\uB2C8\uB2E4.")) : paragraphs.length ? (React.createElement("div", null,
                         paragraphs.map((p, i) => (React.createElement("p", { key: i, style: { font: '400 15px/1.95 Pretendard', color: '#2a2b2f', margin: '0 0 15px', wordBreak: 'keep-all' } }, p))),
                         !isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."))) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     React.createElement("div", { onClick: onShare, style: { flex: 1, height: 42, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720"),
-                    realUrl && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
+                    realUrl && !deadLink && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
                 React.createElement("div", { style: { font: '500 11px Pretendard', color: '#b6b8bc', textAlign: 'center', marginTop: 10 } }, realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다')))));
 }
 // ─── LpProfile (Korea LP — 기관별 프로필: placement agent 관점) ──

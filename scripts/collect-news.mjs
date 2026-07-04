@@ -661,6 +661,10 @@ export function extractReadable(html) {
   return out;
 }
 
+// '소프트 404' — 200 응답이지만 "존재하지 않는 링크/기사" 안내만 있는 페이지.
+// (예: todaymild.com 이 alert 로 '존재하지 않는 링크 입니다'를 띄우는 경우)
+const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
+
 async function fetchArticleText(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko,en;q=0.8' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
@@ -669,7 +673,11 @@ async function fetchArticleText(url) {
     if (!res.ok) return { text: '' };
     const ct = res.headers.get('content-type') || '';
     if (!/text|html/i.test(ct)) return { text: '' };
-    return { text: extractReadable(await res.text()) };
+    const html = await res.text();
+    const text = extractReadable(html);
+    // 본문이 사실상 없고 '존재하지 않는 기사' 안내가 있으면 소프트 404 로 판정.
+    if ((!text || text.length < 200) && DEAD_PAGE_RE.test(html.slice(0, 8000))) return { text: '', dead: true };
+    return { text };
   } catch { return { text: '' }; }
 }
 
@@ -704,7 +712,10 @@ export function parseFeed(xml) {
 
 const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
 const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
+// 기사 링크가 상시 깨져 있는(존재하지 않는 링크 안내) 저품질 매체 차단 목록.
+const SOURCE_BLOCK_RE = /마일드경제|todaymild/i;
 export function isRelevant(raw) {
+  if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
   const text = `${raw.title} ${raw.desc}`;
   if (EXCLUDE_RE.test(text)) return false;            // 상장주식·시황·리테일 잡음 제거
   const gp = isForeignGP(text), lp = isKoreanLP(text);
@@ -865,7 +876,8 @@ async function main() {
   const inWindow = (a) => { if (a.pinned) return true; const t = Date.parse(a.ts); return !isNaN(t) && t >= cutoff; };
   const deadCount = all.filter(a => a.linkDead).length;
   const merged = dedupe([...all, ...prev])
-    .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/410) 제외
+    .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/소프트404) 제외
+    .filter(a => !SOURCE_BLOCK_RE.test(a.source || '') && !SOURCE_BLOCK_RE.test(a.url || ''))  // 깨진 링크 매체 제외(기존 보관분 포함)
     .filter(inWindow)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
     .slice(0, 600);

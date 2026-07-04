@@ -294,9 +294,14 @@ function parseReaderText(t) {
   return looksJunky(out) ? '' : out;
 }
 
+// '소프트 404' — 200 응답이지만 "존재하지 않는 링크/기사" 안내만 있는 페이지.
+const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
+
 async function fetchBodyViaProxies(url, signal) {
+  const deadline = Date.now() + 25000;                  // 전체 25초 안에 끝낸다
+  let sawDead = false;
   for (const p of CORS_PROXIES) {
-    if (signal && signal.aborted) return '';
+    if ((signal && signal.aborted) || Date.now() > deadline) break;
     try {
       // 프록시별 9초 제한 — 한 곳이 매달려도 다음으로 넘어가 '무한 불러오는 중'을 막는다.
       const r = await Promise.race([
@@ -309,12 +314,14 @@ async function fetchBodyViaProxies(url, signal) {
         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000)),
       ]);
       const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw);
-      if (body && body.length > 120) return body;
+      if (body && body.length > 120) return { body, dead: false };
+      // 본문이 없고 '존재하지 않는 기사' 안내가 보이면 죽은 링크로 판정.
+      if (DEAD_PAGE_RE.test(String(raw).slice(0, 8000))) sawDead = true;
     } catch (e) {
-      if (e && e.name === 'AbortError') return '';
+      if (e && e.name === 'AbortError') break;
     }
   }
-  return '';
+  return { body: '', dead: sawDead };
 }
 
 // 기사 끝에 붙는 신문사 등록정보/발행인/보도원칙 등 '푸터 꼬리' 제거.
@@ -407,10 +414,12 @@ function parseArticleHtml(html) {
 function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack }) {
   const [fetchedBody, setFetchedBody] = useState(null);
   const [loadingBody, setLoadingBody] = useState(false);
+  const [deadLink, setDeadLink] = useState(false);
 
   useEffect(() => {
     setFetchedBody(null);
     setLoadingBody(false);
+    setDeadLink(false);
     // 실제 외부 기사 주소가 있어야 본문을 가져올 수 있다(구글 뉴스 리디렉트
     // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
     if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url)) return;
@@ -425,7 +434,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     let cancelled = false;
     setLoadingBody(true);
     fetchBodyViaProxies(sel.url, ctrl.signal)
-      .then(body => { if (!cancelled && body) { bodyCache[sel.id] = body; setFetchedBody(body); } })
+      .then(r => {
+        if (cancelled) return;
+        if (r.body) { bodyCache[sel.id] = r.body; setFetchedBody(r.body); }
+        else if (r.dead) setDeadLink(true);
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoadingBody(false); });
 
@@ -518,6 +531,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
             </div>
             {loadingBody ? (
               <div style={{font:'500 13px/1.6 Pretendard', color:'#c2c4c8', padding:'8px 0'}}>기사 내용을 불러오는 중입니다…</div>
+            ) : deadLink && !paragraphs.length ? (
+              <div style={{font:'500 13px/1.7 Pretendard', color:'#c0392b', background:'#fdf1ef', border:'1px solid #f5d9d4', borderRadius:11, padding:'12px 14px'}}>
+                이 기사의 원문 링크가 더 이상 존재하지 않습니다(삭제된 기사). 다음 뉴스 갱신 때 목록에서 자동으로 제거됩니다.
+              </div>
             ) : paragraphs.length ? (
               <div>
                 {paragraphs.map((p, i) => (
@@ -532,7 +549,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 
           <div style={{display:'flex', gap:8, marginTop:22}}>
             <div onClick={onShare} style={{flex:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
-            {realUrl && <a href={realUrl} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
+            {realUrl && !deadLink && <a href={realUrl} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
           </div>
           <div style={{font:'500 11px Pretendard', color:'#b6b8bc', textAlign:'center', marginTop:10}}>{realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다'}</div>
         </div>

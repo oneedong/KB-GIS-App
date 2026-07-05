@@ -921,6 +921,23 @@ async function main() {
     .filter(inWindow)
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
     .slice(0, 600);
+  // 저장 직전 전체 아카이브 위생 패스 — 이번 회차에 재수집되지 않은 보관분에도
+  // 최신 위젯/푸터 필터를 소급 적용한다(필터가 개선될 때마다 과거분도 정화).
+  let sanitized = 0;
+  for (const a of merged) {
+    if (a.body) {
+      const c = stripSiteFooter(a.body);
+      if (c !== a.body) { a.body = c; sanitized++; }
+      if (a.fetched && c.length < 120) a.fetched = false;   // 정리 후 본문이 사라지면 재크롤 대상
+    }
+    if (Array.isArray(a.ai) && a.ai.length) {
+      const cl = a.ai.map(l => stripSiteFooter(String(l)))
+        .filter(l => l && l.length > 12 && !TTS_RE.test(l) && !isLangList(l))
+        .map(l => l.length > 180 ? l.slice(0, 178).trimEnd() + '…' : l);
+      a.ai = cl.length ? cl : [a.ko];
+    }
+  }
+  if (sanitized) console.log(`archive sanitized: ${sanitized} bodies re-cleaned`);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
   console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);
 

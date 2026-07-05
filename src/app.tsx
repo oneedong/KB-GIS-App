@@ -343,26 +343,38 @@ async function fetchBodyViaProxies(url, signal) {
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
 // 기사 뒤에 딸려오는 '관련기사·많이 본 뉴스' 등 추천 위젯 헤드라인 나열.
 const RELATED_RE = /관련\s*기사|많이\s*본\s*뉴스|인기\s*기사|추천\s*기사|함께\s*본\s*기사|핫\s*클릭|실시간\s*뉴스|이\s*시각\s*(?:추천|인기|주요)|화제의\s*뉴스|기자\s*구독|댓글\s*정책/;
-// 포털(다음 등) '음성으로 듣기'(TTS) 위젯 안내문.
-const TTS_RE = /음성으로\s*듣기|음성\s*재생|데이터\s*요금이\s*발생|글자\s*수\s*[\d,]+\s*자?\s*초과|본문\s*듣기|텍스트\s*음성\s*변환/;
+// 포털(다음 등) 위젯 안내문 — TTS(음성듣기)·글자크기 조절·포털 홍보문.
+const TTS_RE = /음성으로\s*듣기|음성\s*재생|데이터\s*요금이\s*발생|글자\s*수\s*[\d,]+\s*자?\s*초과|본문\s*듣기|텍스트\s*음성\s*변환|글씨\s*크기\s*조절|글자\s*크기\s*설정|글자크기가\s*변경|파란\s*원을\s*좌우로|다음뉴스를\s*만나보세요|쌍방향\s*소통이\s*숨쉬는|뉴스를\s*입체적으로\s*전달|\(예시\)\s*가장\s*빠른\s*뉴스/;
 // 언어 선택 목록(English/日本語/简体中文…)이 3개 이상 나열되면 위젯으로 판정.
 const LANG_TOKEN_RE = /English|日本語|简体中文|Nederlands|Deutsch|Русский|Español|Italiano|Türkçe|tiếng\s*Việt|bahasa|ภาษาไทย|벵골어|아랍어|네델란드어/g;
 const isLangList = (s) => ((String(s).match(LANG_TOKEN_RE) || []).length >= 3);
 function stripSiteFooter(t) {
   if (!t) return '';
   let s = String(t);
-  // 본문 중간에 끼어든 TTS 안내문을 통째로 제거(문장 중간 접합 케이스 포함)
+  // 본문 중간에 끼어든 포털 위젯 안내문을 통째로 제거(문장 중간 접합 케이스 포함)
   s = s.replace(/음성으로\s*듣기[^\n]{0,200}?있습니다\./g, ' ')
        .replace(/글자\s*수\s*[\d,]+\s*자?\s*초과[^\n]{0,80}?제공합니다\./g, ' ')
-       .replace(/음성\s*재생\s*설정[^\n]{0,120}?있습니다\./g, ' ');
+       .replace(/음성\s*재생\s*설정[^\n]{0,120}?있습니다\./g, ' ')
+       .replace(/글씨\s*크기\s*조절하기[^\n]{0,140}?변경\s*됩니다\./g, ' ')
+       .replace(/\(예시\)[^\n]{0,260}?(?:전달하고\s*있습니다|만나보세요)\./g, ' ')
+       .replace(/가장\s*빠른\s*뉴스가\s*있고[^\n]{0,260}?(?:전달하고\s*있습니다|만나보세요)\./g, ' ');
   const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
   if (i > 80) s = s.slice(0, i);
   // 본문에 이어 붙은 '관련기사/많이 본 뉴스' 위젯부터 끝까지 절단
   const j = s.search(RELATED_RE);
   if (j > 80) s = s.slice(0, j);
-  // 문단 선두가 위젯 표제로 시작하거나 TTS 안내/언어목록 문단이면 제거
+  // 문단 선두가 위젯 표제로 시작하거나 위젯 안내/언어목록 문단이면 제거하고,
+  // 앞서 나온 문단과 사실상 같은 반복 문단(포털이 리드를 재삽입)은 걸러낸다.
+  const norms = [];
   s = s.split(/\n{1,}/).map(x => x.trim())
-    .filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && !TTS_RE.test(x) && !isLangList(x))
+    .filter(x => {
+      if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x)) return false;
+      const n = x.replace(/[\s\W]/g, '').slice(0, 200);
+      const head = n.slice(0, 40);
+      if (head && norms.some(p => p.includes(head))) return false;   // 중복 문단 제거
+      norms.push(n);
+      return true;
+    })
     .join('\n\n');
   return s.replace(/[ \t]{2,}/g, ' ').trim();
 }

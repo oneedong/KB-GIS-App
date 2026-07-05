@@ -1030,8 +1030,10 @@ function App() {
     else if (isRegion)
         feedFilterLabel = REGION[filter];
     const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스' };
+    // key = 필터 내부 키, label = 표시용. 클릭 시 반드시 key 로 필터해야 한다
+    // (라벨 '마켓 뉴스'/'조직·인사'를 필터에 넣으면 어떤 분기에도 안 걸려 0건).
     const chips = ['전체', '마켓', 'Global GP', '연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권', '인사'].map(k => ({
-        label: CHIP_LABEL[k] || k, active: filter === k,
+        key: k, label: CHIP_LABEL[k] || k, active: filter === k,
         bg: filter === k ? '#FFCC00' : '#2a2c30',
         color: filter === k ? '#1c1d1f' : '#cdced0',
     }));
@@ -1125,7 +1127,7 @@ function App() {
                                 "\u2303",
                                 React.createElement("div", { style: { position: 'absolute', top: 6, right: 7, width: 6, height: 6, borderRadius: '50%', background: '#FFCC00', border: '1.5px solid #1c1d1f' } }))))),
                     React.createElement("div", { style: { height: isDesktop ? 14 : 0 } }),
-                    React.createElement("div", { style: { display: 'flex', gap: 7, padding: '0 18px 14px', whiteSpace: 'nowrap', overflowX: 'auto' } }, chips.map(c => (React.createElement("div", { key: c.label, onClick: () => applyFilter(c.label), style: { padding: '7px 13px', borderRadius: 999, font: '600 12.5px Pretendard', flexShrink: 0, cursor: 'pointer', background: c.bg, color: c.color } }, c.label))))),
+                    React.createElement("div", { style: { display: 'flex', gap: 7, padding: '0 18px 14px', whiteSpace: 'nowrap', overflowX: 'auto' } }, chips.map(c => (React.createElement("div", { key: c.key, onClick: () => applyFilter(c.key), style: { padding: '7px 13px', borderRadius: 999, font: '600 12.5px Pretendard', flexShrink: 0, cursor: 'pointer', background: c.bg, color: c.color } }, c.label))))),
                 React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', background: '#fff' } },
                     newCount > 0 && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', background: '#1c1d1f' } },
                         React.createElement("span", { style: { font: '600 12px Pretendard', color: '#FFCC00' } },

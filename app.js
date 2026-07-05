@@ -552,6 +552,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
             React.createElement("div", { style: { font: '600 13.5px Pretendard' } }, "\uC67C\uCABD \uBAA9\uB85D\uC5D0\uC11C \uAE30\uC0AC\uB97C \uC120\uD0DD\uD558\uC138\uC694")));
     const { y, m, d } = kstYMD(itemMs(sel));
     const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
+    // '기사 전문 보기'는 구글 뉴스 경유 링크(gurl)를 우선 사용 — 리퍼러 검사
+    // ("정상적인 접근이 아닙니다")가 있는 매체도 구글 리다이렉트를 거치면 정상
+    // 열리고, 해석된 URL 이 변형된 경우의 안전망이 된다.
+    const viewUrl = (sel.gurl && /^https?:\/\//i.test(sel.gurl)) ? sel.gurl : realUrl;
     // 오염된 저장 본문은 표시하지 않고, 남은 본문도 위젯/푸터를 걷어낸 뒤 사용.
     const cleanBody = looksJunky(sel.body) ? '' : stripSiteFooter(sel.body || '');
     const displayBody = fetchedBody || cleanBody || '';
@@ -613,7 +617,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                         !isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."))) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     React.createElement("div", { onClick: onShare, style: { flex: 1, height: 42, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720"),
-                    realUrl && !deadLink && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
+                    viewUrl && !deadLink && React.createElement("a", { href: viewUrl, target: "_blank", rel: "noopener", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
                 React.createElement("div", { style: { font: '500 11px Pretendard', color: '#b6b8bc', textAlign: 'center', marginTop: 10 } }, realUrl ? '핵심 하이라이트는 자동 추출된 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다')))));
 }
 // ─── LpProfile (Korea LP — 기관별 프로필: placement agent 관점) ──

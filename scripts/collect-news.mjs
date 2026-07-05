@@ -559,8 +559,16 @@ export async function resolveGoogleNewsUrlAsync(link) {
     const t = await r2.text();
     const cleaned = t.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&').replace(/\\\//g, '/').replace(/\\"/g, '"');
     const urls = cleaned.match(/https?:\/\/[^"\\\s]+/g) || [];
-    const real = urls.find(u => !/(^|\.)google\.com|gstatic|googleusercontent|schema\.org|w3\.org/.test(u));
-    if (real) return real;
+    let real = urls.find(u => !/(^|\.)google\.com|gstatic|googleusercontent|schema\.org|w3\.org/.test(u));
+    if (real) {
+      // URL 꼬리 오염 정리 — 이스케이프 잔여물·괄호가 붙으면 일부 사이트가
+      // "정상적인 접근이 아닙니다"류로 거부한다. idxno= 형(국내 CMS)은 숫자
+      // 뒤를 잘라 정규화한다.
+      real = real.replace(/[)\]"'\\,;]+$/, '');
+      const m2 = real.match(/^(.*?[?&]idxno=\d+)/);
+      if (m2) real = m2[1];
+      return real;
+    }
   } catch {}
   return link;
 }
@@ -800,6 +808,10 @@ export function enrich(raw) {
     body: raw.desc || raw.title,
     fetched: false,
     url: resolveGoogleNewsUrl(raw.link),
+    // 구글 뉴스 원본 링크 — '기사 전문 보기'는 이 경유 링크로 연다. 구글
+    // 리다이렉트를 거치면 리퍼러 검사("정상적인 접근이 아닙니다")가 있는
+    // 사이트도 정상 통과하고, 해석 URL 이 변형된 경우의 안전망이 된다.
+    gurl: /news\.google\.com/.test(raw.link) ? raw.link : undefined,
   };
 }
 

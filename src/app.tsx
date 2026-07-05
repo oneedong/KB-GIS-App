@@ -531,6 +531,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 
   const { y, m, d } = kstYMD(itemMs(sel));
   const realUrl = sel.url && /^https?:\/\//i.test(sel.url) && !/(^|\/\/)kbgis\.app/i.test(sel.url) ? sel.url : '';
+  // '기사 전문 보기'는 구글 뉴스 경유 링크(gurl)를 우선 사용 — 리퍼러 검사
+  // ("정상적인 접근이 아닙니다")가 있는 매체도 구글 리다이렉트를 거치면 정상
+  // 열리고, 해석된 URL 이 변형된 경우의 안전망이 된다.
+  const viewUrl = (sel.gurl && /^https?:\/\//i.test(sel.gurl)) ? sel.gurl : realUrl;
   // 오염된 저장 본문은 표시하지 않고, 남은 본문도 위젯/푸터를 걷어낸 뒤 사용.
   const cleanBody = looksJunky(sel.body) ? '' : stripSiteFooter(sel.body || '');
   const displayBody = fetchedBody || cleanBody || '';
@@ -612,7 +616,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 
           <div style={{display:'flex', gap:8, marginTop:22}}>
             <div onClick={onShare} style={{flex:1, height:42, background:'#1c1d1f', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#fff', cursor:'pointer'}}>↗ 공유</div>
-            {realUrl && !deadLink && <a href={realUrl} target="_blank" rel="noopener noreferrer" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
+            {viewUrl && !deadLink && <a href={viewUrl} target="_blank" rel="noopener" style={{flex:1.6, height:42, background:'#FFCC00', borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', gap:6, font:'700 13px Pretendard', color:'#1c1d1f', textDecoration:'none'}}>기사 전문 보기 ↗</a>}
           </div>
           <div style={{font:'500 11px Pretendard', color:'#b6b8bc', textAlign:'center', marginTop:10}}>{realUrl ? '핵심 하이라이트는 자동 추출된 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다'}</div>
         </div>

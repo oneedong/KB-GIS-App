@@ -721,6 +721,29 @@ async function fetchArticleText(url) {
   } catch { return { text: '' }; }
 }
 
+// r.jina.ai 리더 폴백 — 직접 크롤링이 리드 한두 줄밖에 못 얻는 사이트(봇차단·
+// 특수 마크업)에서 기사 전문 텍스트를 확보한다. 출력(마크다운)을 문단으로 정리.
+function parseReaderTextSrv(t) {
+  if (!t) return '';
+  let s = String(t)
+    .replace(/^(Title|URL Source|Published Time|Warning):.*$/gm, '')
+    .replace(/^Markdown Content:\s*$/m, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  const paras = s.split(/\n{2,}/)
+    .map(x => x.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(x) && isSentencey(x));
+  const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
+  return looksJunky(out) ? '' : out;
+}
+async function fetchViaReader(url) {
+  try {
+    const r = await fetch('https://r.jina.ai/' + url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(18000) });
+    if (!r.ok) return '';
+    return parseReaderTextSrv(await r.text());
+  } catch { return ''; }
+}
+
 function extractiveSummary(text) {
   const all = stripSiteFooter(text || '')
     .split(/(?<=[.!?。])\s+|(?<=다\.)\s*/)
@@ -865,6 +888,7 @@ async function main() {
   // 실제 URL·본문을 갖도록 하여, 예산 안에서 우선순위를 둔다.
   all.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
   let fetchBudget = 170, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
+  let readerBudget = 45, readerHits = 0;               // jina 리더 폴백 예산(회당)
   for (const a of all) {
     const old = prevById.get(a.id);
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
@@ -873,7 +897,7 @@ async function main() {
     // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
     // 인터스티셜/매체 소개문·관련기사 위젯으로 오염된 본문은 버리고 재크롤링한다.
     const oldClean = (old && old.fetched && oldReal && !looksJunky(old.body)) ? stripSiteFooter(old.body) : '';
-    if (oldClean.length > 120) {                        // 정리 후에도 본문이 실하게 남을 때만 재사용
+    if (oldClean.length > 250) {                        // 전문급 본문만 재사용 — 리드 요약(짧은 본문)은 리더 폴백으로 재시도
       a.body = oldClean; a.fetched = true;
       const oldAi = (old.ai || []).map(l => stripSiteFooter(l)).filter(l => l && l.length > 12 && !RELATED_RE.test(l.slice(0, 24)))
         .map(l => l.length > 180 ? l.slice(0, 178).trimEnd() + '…' : l);
@@ -896,7 +920,14 @@ async function main() {
     const fr = canFetch ? await fetchArticleText(a.url) : { text: '' };
     if (fr.dead) { a.linkDead = true; continue; }      // 존재하지 않는 기사(404/410) → 피드에서 제외
     if (fr.ok) a.linkOk = true;                        // 링크 생존 확인 → 검증 패스 재확인 생략
-    const text = fr.text;
+    let text = fr.text;
+    // 직접 크롤링이 리드 요약(짧은 본문)만 얻으면 jina 리더로 전문 재시도 —
+    // 봇차단·특수 마크업 사이트의 '문장 중간에 끊기는 본문'을 해소한다.
+    if (canFetch && (!text || text.length < 250) && readerBudget > 0) {
+      readerBudget--;
+      const alt = await fetchViaReader(a.url);
+      if (alt && alt.length > (text || '').length + 100) { text = alt; readerHits++; }
+    }
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);
@@ -918,7 +949,7 @@ async function main() {
       }
     }
   }
-  console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
+  console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched} (reader fallback: ${readerHits}), LLM summaries: ${summarized}`);
 
   // ── 아카이브 링크 검증 패스 ────────────────────────────────
   // 이번 회차에 재수집되지 않은 보관분도 회당 40건씩(최신순) 링크 생존을

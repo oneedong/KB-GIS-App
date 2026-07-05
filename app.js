@@ -406,9 +406,11 @@ function looksJunky(s) {
 function toParagraphs(text, title) {
     if (!text)
         return [];
-    const t = stripSiteFooter(String(text).replace(/\r/g, '').trim());
+    let t = stripSiteFooter(String(text).replace(/\r/g, '').trim());
     if (!t)
         return [];
+    // 문장 붙음 정리: "…마련했다.한국투자증권은" → 마침표 뒤 공백 삽입
+    t = t.replace(/(다\.|요\.)(?=[가-힣A-Za-z"'‘“])/g, '$1 ');
     let paras;
     if (/\n/.test(t)) {
         paras = t.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
@@ -433,6 +435,13 @@ function toParagraphs(text, title) {
     const norm = (s) => s.replace(/[\s"'“”‘’·…\-]/g, '').slice(0, 24);
     if (title && paras.length && norm(paras[0]).includes(norm(title)))
         paras = paras.slice(1);
+    // 마지막 문단이 문장 중간에서 끊긴 리드 요약이면 말줄임(…)으로 표시.
+    if (paras.length) {
+        const last = paras[paras.length - 1];
+        if (last.length <= 160 && !isSentencey(last) && !/…$/.test(last)) {
+            paras[paras.length - 1] = last.replace(/[\s·,]+$/, '') + '…';
+        }
+    }
     return paras;
 }
 function parseArticleHtml(html) {

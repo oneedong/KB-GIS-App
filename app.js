@@ -358,6 +358,22 @@ function stripSiteFooter(t) {
         .join('\n\n');
     return s.replace(/[ \t]{2,}/g, ' ').trim();
 }
+// ── 핵심 문장 판별 (본문 하이라이트용) ──────────────────────
+// 금액·비율, 딜/인사 행위, 기관명이 함께 담긴 문장이 기사의 실질 정보다.
+const AMOUNT_RE = /[\d,.]+\s*(?:조|억|만)\s*(?:원|달러|유로|파운드)|\$\s?[\d,.]+\s*(?:billion|million|bn|mn|m\b|b\b)?|€\s?[\d,.]+|£\s?[\d,.]+|[\d.]+\s*%|[\d,.]+\s*(?:billion|million)\b|[\d,.]+\s*베드|[\d,.]+\s*bp\b/i;
+const KEY_ACTION_RE = /출자|약정|커밋|결성|클로징|클로즈|조성|모집|인수|매각|매입|투자하|투자한다|투자했|선임|임명|내정|취임|영입|증자|자본\s*확충|배정|배분|계약|체결|확보|돌파|기록했|급증|급감|확대|철회|무산|합의|출범|설립|진출|final\s*close|acquir|invest|appoint|raise[sd]?|commit/i;
+function scoreKeySentence(s, inst) {
+    let sc = 0;
+    if (AMOUNT_RE.test(s))
+        sc += 3; // 금액·비율이 있으면 핵심일 확률 높음
+    if (KEY_ACTION_RE.test(s))
+        sc += 2; // 출자·인수·선임 등 행위
+    if (inst && inst !== '출처 미상' && s.includes(inst))
+        sc += 1; // 기사 주체 기관 언급
+    if (/CIO|기금이사|운용본부장|최고투자책임자/.test(s))
+        sc += 1;
+    return sc;
+}
 // '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열(문장 종결 없음, 짧고 "…"로
 // 끝남)을 본문에서 걸러낸다. 종결어미(다./요.)나 마침표로 끝나거나 충분히 길면 통과.
 function isSentencey(s) {
@@ -527,34 +543,17 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const displayBody = fetchedBody || cleanBody || '';
     const isFullBody = displayBody.length > 300;
     const paragraphs = toParagraphs(displayBody, sel.ko);
-    // AI 3줄 요약: (1) LLM 요약(aiSource==='llm')은 정리만 해서 사용
-    // (2) 그 외에는 '깨끗한 본문'의 첫 핵심 문장들로 항상 재생성 — 저장된 발췌
-    //     요약은 과거 오염 본문에서 만들어졌을 수 있어 신뢰하지 않는다.
-    // (3) 본문이 전혀 없으면 저장 요약(정리) → 제목 순으로 대체.
-    const capLine = (s) => s.length > 170 ? s.slice(0, 168).trimEnd() + '…' : s;
-    const normT = (s) => String(s).replace(/[\s"'“”‘’·…\-\[\]().]/g, '');
-    const isTitleEcho = (l) => {
-        const a = normT(l), b = normT(sel.ko);
-        return a.includes(b.slice(0, 18)) || b.includes(a.slice(0, 18));
-    };
-    const cleanStoredAi = (sel.ai || [])
-        .map(l => stripSiteFooter(String(l)))
-        .filter(l => l && l.length >= 15 && !looksJunky(l) && !RELATED_RE.test(l.slice(0, 24)) && !isTitleEcho(l))
-        .map(capLine)
-        .slice(0, 3);
-    const bodySents = paragraphs.join(' ')
-        .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
-        .map(s => s.trim())
-        .filter(s => s.length >= 20 && s.length <= 220 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && !TTS_RE.test(s) && !isLangList(s) && isSentencey(s));
-    let aiLines;
-    if (sel.aiSource === 'llm' && cleanStoredAi.length)
-        aiLines = cleanStoredAi;
-    else if (bodySents.length)
-        aiLines = bodySents.slice(0, 3).map(capLine);
-    else if (cleanStoredAi.length)
-        aiLines = cleanStoredAi;
-    else
-        aiLines = [sel.ko];
+    // 핵심 문장 하이라이트 — 문단을 문장 단위로 나눠 금액·행위·기관 신호로 점수를
+    // 매기고, 상위 3문장(점수 3점 이상)에 형광펜 표시를 입힌다.
+    const paraSents = paragraphs.map(p => p.split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean));
+    const cands = [];
+    paraSents.forEach((ss, pi) => ss.forEach((s, si) => {
+        const sc = scoreKeySentence(s, sel.inst);
+        if (sc >= 3 && s.length >= 20 && s.length <= 320)
+            cands.push({ pi, si, sc });
+    }));
+    cands.sort((a, b) => b.sc - a.sc || a.pi - b.pi || a.si - b.si);
+    const hlSet = new Set(cands.slice(0, 3).map(c => c.pi + ':' + c.si));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
         React.createElement("div", { style: { flexShrink: 0, height: 54, boxSizing: 'content-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'env(safe-area-inset-top) 16px 0 12px', borderBottom: '1px solid #efece4' } },
             showBack
@@ -581,25 +580,27 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                     `${y}.${pad2(m)}.${pad2(d)}`,
                     " ",
                     sel.time),
-                React.createElement("div", { style: { marginTop: 18, background: '#fffaeb', border: '1px solid #f6ecc8', borderRadius: 14, padding: '15px 16px' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, font: '700 11.5px Pretendard', color: '#9a7d12', letterSpacing: '.03em', marginBottom: 10 } },
-                        React.createElement("span", { style: { width: 17, height: 17, borderRadius: 5, background: '#FFCC00', color: '#1c1d1f', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: '800 9px Pretendard' } }, "AI"),
-                        "3\uC904 \uC694\uC57D"),
-                    aiLines.map((line, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 8, font: '500 13px/1.55 Pretendard', color: '#3d3e42', marginTop: 5 } },
-                        React.createElement("span", { style: { color: '#d9b400', flexShrink: 0 } }, "\u2014"),
-                        React.createElement("span", null, line))))),
                 React.createElement("div", { style: { marginTop: 20 } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 } },
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAE30\uC0AC \uC6D0\uBB38"),
                         loadingBody && React.createElement("div", { style: { font: '600 10px Pretendard', color: '#a6a8ac' } }, "\uBD88\uB7EC\uC624\uB294 \uC911\u2026"),
-                        !loadingBody && isFullBody && React.createElement("span", { style: { font: '600 10px Pretendard', color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: 4 } }, "\uC804\uBB38")),
+                        !loadingBody && isFullBody && React.createElement("span", { style: { font: '600 10px Pretendard', color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: 4 } }, "\uC804\uBB38"),
+                        !loadingBody && hlSet.size > 0 && (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4, font: '600 10px Pretendard', color: '#9a7d12' } },
+                            React.createElement("span", { style: { width: 10, height: 10, borderRadius: 2, background: '#FFCC00', opacity: .55, display: 'inline-block' } }),
+                            "\uD575\uC2EC \uD558\uC774\uB77C\uC774\uD2B8"))),
                     loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : deadLink && !paragraphs.length ? (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#c0392b', background: '#fdf1ef', border: '1px solid #f5d9d4', borderRadius: 11, padding: '12px 14px' } }, "\uC774 \uAE30\uC0AC\uC758 \uC6D0\uBB38 \uB9C1\uD06C\uAC00 \uB354 \uC774\uC0C1 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4(\uC0AD\uC81C\uB41C \uAE30\uC0AC). \uB2E4\uC74C \uB274\uC2A4 \uAC31\uC2E0 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uC81C\uAC70\uB429\uB2C8\uB2E4.")) : paragraphs.length ? (React.createElement("div", null,
-                        paragraphs.map((p, i) => (React.createElement("p", { key: i, style: { font: '400 15px/1.95 Pretendard', color: '#2a2b2f', margin: '0 0 15px', wordBreak: 'keep-all' } }, p))),
+                        paraSents.map((ss, pi) => (React.createElement("p", { key: pi, style: { font: '400 15px/1.95 Pretendard', color: '#2a2b2f', margin: '0 0 15px', wordBreak: 'keep-all' } }, ss.map((s, si) => hlSet.has(pi + ':' + si)
+                            ? React.createElement("span", { key: si, style: { fontWeight: 600, color: '#1c1d1f', background: 'linear-gradient(transparent 58%, rgba(255,204,0,.5) 58%)' } },
+                                s,
+                                si < ss.length - 1 ? ' ' : '')
+                            : React.createElement("span", { key: si },
+                                s,
+                                si < ss.length - 1 ? ' ' : ''))))),
                         !isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."))) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     React.createElement("div", { onClick: onShare, style: { flex: 1, height: 42, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720"),
                     realUrl && !deadLink && React.createElement("a", { href: realUrl, target: "_blank", rel: "noopener noreferrer", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),
-                React.createElement("div", { style: { font: '500 11px Pretendard', color: '#b6b8bc', textAlign: 'center', marginTop: 10 } }, realUrl ? '요약은 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다')))));
+                React.createElement("div", { style: { font: '500 11px Pretendard', color: '#b6b8bc', textAlign: 'center', marginTop: 10 } }, realUrl ? '핵심 하이라이트는 자동 추출된 참고용입니다 · 전체 내용은 기사 원문에서 확인하세요' : '원문 링크가 확인되지 않은 기사입니다')))));
 }
 // ─── LpProfile (Korea LP — 기관별 프로필: placement agent 관점) ──
 // 설립연도·운용방식 등 안정적 사실은 lp-profiles.json(profile)에서, AUM·대체투자

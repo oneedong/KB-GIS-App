@@ -318,10 +318,19 @@ async function fetchBodyViaProxies(url, signal) {
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
 // 기사 뒤에 딸려오는 '관련기사·많이 본 뉴스' 등 추천 위젯 헤드라인 나열.
 const RELATED_RE = /관련\s*기사|많이\s*본\s*뉴스|인기\s*기사|추천\s*기사|함께\s*본\s*기사|핫\s*클릭|실시간\s*뉴스|이\s*시각\s*(?:추천|인기|주요)|화제의\s*뉴스|기자\s*구독|댓글\s*정책/;
+// 포털(다음 등) '음성으로 듣기'(TTS) 위젯 안내문.
+const TTS_RE = /음성으로\s*듣기|음성\s*재생|데이터\s*요금이\s*발생|글자\s*수\s*[\d,]+\s*자?\s*초과|본문\s*듣기|텍스트\s*음성\s*변환/;
+// 언어 선택 목록(English/日本語/简体中文…)이 3개 이상 나열되면 위젯으로 판정.
+const LANG_TOKEN_RE = /English|日本語|简体中文|Nederlands|Deutsch|Русский|Español|Italiano|Türkçe|tiếng\s*Việt|bahasa|ภาษาไทย|벵골어|아랍어|네델란드어/g;
+const isLangList = (s) => ((String(s).match(LANG_TOKEN_RE) || []).length >= 3);
 function stripSiteFooter(t) {
     if (!t)
         return '';
     let s = String(t);
+    // 본문 중간에 끼어든 TTS 안내문을 통째로 제거(문장 중간 접합 케이스 포함)
+    s = s.replace(/음성으로\s*듣기[^\n]{0,200}?있습니다\./g, ' ')
+        .replace(/글자\s*수\s*[\d,]+\s*자?\s*초과[^\n]{0,80}?제공합니다\./g, ' ')
+        .replace(/음성\s*재생\s*설정[^\n]{0,120}?있습니다\./g, ' ');
     const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
     if (i > 80)
         s = s.slice(0, i);
@@ -329,9 +338,11 @@ function stripSiteFooter(t) {
     const j = s.search(RELATED_RE);
     if (j > 80)
         s = s.slice(0, j);
-    // 문단 선두가 위젯 표제로 시작하면(예: "관련기사 삼성, …") 그 문단은 제거
-    s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
-    return s.trim();
+    // 문단 선두가 위젯 표제로 시작하거나 TTS 안내/언어목록 문단이면 제거
+    s = s.split(/\n{1,}/).map(x => x.trim())
+        .filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && !TTS_RE.test(x) && !isLangList(x))
+        .join('\n\n');
+    return s.replace(/[ \t]{2,}/g, ' ').trim();
 }
 // '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열(문장 종결 없음, 짧고 "…"로
 // 끝남)을 본문에서 걸러낸다. 종결어미(다./요.)나 마침표로 끝나거나 충분히 길면 통과.
@@ -520,7 +531,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const bodySents = paragraphs.join(' ')
         .split(/(?<=다\.|요\.)\s+|(?<=[.!?])\s+/)
         .map(s => s.trim())
-        .filter(s => s.length >= 20 && s.length <= 220 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && isSentencey(s));
+        .filter(s => s.length >= 20 && s.length <= 220 && !isTitleEcho(s) && !FOOTER_RE.test(s) && !RELATED_RE.test(s.slice(0, 24)) && !TTS_RE.test(s) && !isLangList(s) && isSentencey(s));
     let aiLines;
     if (sel.aiSource === 'llm' && cleanStoredAi.length)
         aiLines = cleanStoredAi;

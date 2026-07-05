@@ -603,18 +603,28 @@ function extractJsonLdBody(html) {
 const FOOTER_RE = /등록번호|사업자등록번호|등록일자|발행일자|발행인|편집인|정보보호\s*책임자|청소년\s*보호책임자|고충처리인|대표전화|보도원칙|반론이나\s*정정|추후보도/;
 // 기사 뒤에 딸려오는 '관련기사·많이 본 뉴스' 등 추천 위젯 헤드라인 나열.
 const RELATED_RE = /관련\s*기사|많이\s*본\s*뉴스|인기\s*기사|추천\s*기사|함께\s*본\s*기사|핫\s*클릭|실시간\s*뉴스|이\s*시각\s*(?:추천|인기|주요)|화제의\s*뉴스|기자\s*구독|댓글\s*정책/;
+// 포털(다음 등) '음성으로 듣기'(TTS) 위젯 안내문과 언어 선택 목록.
+const TTS_RE = /음성으로\s*듣기|음성\s*재생|데이터\s*요금이\s*발생|글자\s*수\s*[\d,]+\s*자?\s*초과|본문\s*듣기|텍스트\s*음성\s*변환/;
+const LANG_TOKEN_RE = /English|日本語|简体中文|Nederlands|Deutsch|Русский|Español|Italiano|Türkçe|tiếng\s*Việt|bahasa|ภาษาไทย|벵골어|아랍어|네델란드어/g;
+const isLangList = (s) => ((String(s).match(LANG_TOKEN_RE) || []).length >= 3);
 export function stripSiteFooter(t) {
   if (!t) return '';
   let s = String(t);
+  // 본문 중간에 끼어든 TTS 안내문 제거(문장 중간 접합 케이스 포함)
+  s = s.replace(/음성으로\s*듣기[^\n]{0,200}?있습니다\./g, ' ')
+       .replace(/글자\s*수\s*[\d,]+\s*자?\s*초과[^\n]{0,80}?제공합니다\./g, ' ')
+       .replace(/음성\s*재생\s*설정[^\n]{0,120}?있습니다\./g, ' ');
   // 본문에 이어 붙은 꼬리는 첫 등록정보 표기부터 끝까지 절단
   const i = s.search(/(?:등록번호|제호|발행인)\s*[:：]/);
   if (i > 80) s = s.slice(0, i);
   // '관련기사/많이 본 뉴스' 위젯이 이어 붙었으면 그 지점부터 절단
   const j = s.search(RELATED_RE);
   if (j > 80) s = s.slice(0, j);
-  // 독립 문단으로 들어온 푸터/위젯 표제 문단은 문단째 제거
-  s = s.split(/\n{1,}/).map(x => x.trim()).filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24))).join('\n\n');
-  return s.trim();
+  // 독립 문단으로 들어온 푸터/위젯 표제/TTS/언어목록 문단은 문단째 제거
+  s = s.split(/\n{1,}/).map(x => x.trim())
+    .filter(x => x && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && !TTS_RE.test(x) && !isLangList(x))
+    .join('\n\n');
+  return s.replace(/[ \t]{2,}/g, ' ').trim();
 }
 // '문장형' 문단인지 — 다른 뉴스 헤드라인 나열(종결어미·마침표 없이 끝나는 짧은
 // 제목들)을 본문에서 걸러낸다. 종결어미(다./요.)나 문장부호로 끝나거나 충분히 길면 통과.

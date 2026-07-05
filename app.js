@@ -530,8 +530,16 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                 bodyStore.set(sel.id, r.body);
                 setFetchedBody(r.body);
             }
-            else if (r.dead)
+            else if (r.dead) {
                 setDeadLink(true);
+                // 죽은 링크로 확인된 기사는 기억해 두었다가 다음 로드부터 목록에서 제외.
+                try {
+                    const m = store.get('deadIds', {});
+                    m[sel.id] = 1;
+                    store.set('deadIds', m);
+                }
+                catch (e) { }
+            }
         })
             .catch(() => { })
             .finally(() => { if (!cancelled)
@@ -918,7 +926,9 @@ function App() {
     const [bm, setBm] = useState(() => store.get('bookmarks', {}));
     const [read, setRead] = useState(() => store.get('read', {}));
     // 저장된 기사는 유효(실제 링크)한 것만 불러온다 — 옛 시드/가짜 기사 즉시 제거.
-    const [articles, setArticles] = useState(() => sortArticles((store.get('articles', []) || []).filter(isRealArticle)));
+    // 죽은 링크로 확인(브라우저 감지)된 기사는 목록에서 제외한다.
+    const notDead = (a) => !(store.get('deadIds', {}) || {})[a.id];
+    const [articles, setArticles] = useState(() => sortArticles((store.get('articles', []) || []).filter(isRealArticle).filter(notDead)));
     const [selectedId, setSelectedId] = useState(null);
     const [showShare, setShowShare] = useState(false);
     const [expandedGroup, setExpandedGroup] = useState(null);
@@ -970,7 +980,7 @@ function App() {
             .then(r => r.json())
             .then(incoming => {
             if (Array.isArray(incoming) && incoming.length) {
-                setArticles(sortArticles(incoming.filter(isRealArticle)));
+                setArticles(sortArticles(incoming.filter(isRealArticle).filter(notDead)));
             }
             if (showToast)
                 flash('최신 뉴스를 불러왔어요');

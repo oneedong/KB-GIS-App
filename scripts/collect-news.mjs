@@ -704,12 +704,12 @@ async function fetchArticleText(url) {
     if (res.status === 404 || res.status === 410) return { text: '', dead: true };
     if (!res.ok) return { text: '' };
     const ct = res.headers.get('content-type') || '';
-    if (!/text|html/i.test(ct)) return { text: '' };
+    if (!/text|html/i.test(ct)) return { text: '', ok: true };
     const html = await res.text();
     const text = extractReadable(html);
     // 본문이 사실상 없고 '존재하지 않는 기사' 안내가 있으면 소프트 404 로 판정.
     if ((!text || text.length < 200) && DEAD_PAGE_RE.test(html.slice(0, 8000))) return { text: '', dead: true };
-    return { text };
+    return { text, ok: true };
   } catch { return { text: '' }; }
 }
 
@@ -857,6 +857,7 @@ async function main() {
     const old = prevById.get(a.id);
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
     if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
+    if (old && old.linkOk) a.linkOk = true;             // 링크 검증 결과 승계
     // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
     // 인터스티셜/매체 소개문·관련기사 위젯으로 오염된 본문은 버리고 재크롤링한다.
     const oldClean = (old && old.fetched && oldReal && !looksJunky(old.body)) ? stripSiteFooter(old.body) : '';
@@ -882,6 +883,7 @@ async function main() {
     }
     const fr = canFetch ? await fetchArticleText(a.url) : { text: '' };
     if (fr.dead) { a.linkDead = true; continue; }      // 존재하지 않는 기사(404/410) → 피드에서 제외
+    if (fr.ok) a.linkOk = true;                        // 링크 생존 확인 → 검증 패스 재확인 생략
     const text = fr.text;
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
@@ -905,6 +907,30 @@ async function main() {
     }
   }
   console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched}, LLM summaries: ${summarized}`);
+
+  // ── 아카이브 링크 검증 패스 ────────────────────────────────
+  // 이번 회차에 재수집되지 않은 보관분도 회당 40건씩(최신순) 링크 생존을
+  // 확인한다 — 404/소프트404 는 linkDead 로 표시해 피드에서 제거되고,
+  // 정상 링크는 linkOk 로 기록해 재확인하지 않는다(수일 내 전체 검증 완료).
+  // 검증 중 본문을 확보하면 덤으로 저장한다(본문 커버리지 확대).
+  const allIds = new Set(all.map(a => a.id));
+  let verifyBudget = 40, deadArchived = 0, verifiedOk = 0;
+  for (const p of prev) {
+    if (verifyBudget <= 0) break;
+    if (allIds.has(p.id) || p.pinned || p.linkOk || p.linkDead) continue;
+    if (!p.url || !/^https?:\/\//.test(p.url) || /news\.google\.com/.test(p.url)) continue;
+    verifyBudget--;
+    const chk = await fetchArticleText(p.url);
+    if (chk.dead) { p.linkDead = true; deadArchived++; continue; }
+    if (chk.ok) {
+      p.linkOk = true; verifiedOk++;
+      if (!p.fetched && chk.text && chk.text.length > 120) {   // 본문 백필
+        p.body = chk.text; p.ai = extractiveSummary(chk.text); p.fetched = true;
+      }
+    }
+    // ok 도 dead 도 아니면(403·타임아웃 등) 다음 회차에 재시도
+  }
+  if (deadArchived || verifiedOk) console.log(`archive link-check: ${verifiedOk} ok, ${deadArchived} dead removed`);
 
   // 관련성 필터를 통과한 최근 3개월(92일) 기사를 모두 노출합니다. 본문 크롤링
   // 여부와 무관하게 기사를 유지합니다 — 본문은 예산(fetchBudget) 안에서 회차마다

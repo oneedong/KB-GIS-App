@@ -27,6 +27,8 @@ const INSIGHTS_API = './insights.json';
 const INSTITUTIONS_API = './institutions.json';
 // Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
 const LP_PROFILES_API = './lp-profiles.json';
+// Global GP 프로필 (설립·본사·AUM·강점 전략과 근거) — gp-profiles.json
+const GP_PROFILES_API = './gp-profiles.json';
 
 // 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
 // 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
@@ -111,10 +113,11 @@ function grp(t) {
 // 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 
 // ─── Navbar ───────────────────────────────────────────────
-function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onSearch, onBookmarks }) {
+function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onGlobalGp, onSearch, onBookmarks }) {
   if (isDesktop) return null;          // 데스크톱은 좌측 사이드바를 사용
   const on = '#1c1d1f', off = '#b0b2b6';
-  const tab = { display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flex:1 };
+  const tab = { display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flex:1, minWidth:0 };
+  const lbl = (act) => ({ font:'600 9.5px Pretendard', color:act?on:off, whiteSpace:'nowrap' });
   return (
     <div style={{flexShrink:0, height:64, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(10px)', borderTop:'1px solid #ece9e2', display:'flex', alignItems:'center', justifyContent:'space-around', paddingBottom:'max(env(safe-area-inset-bottom), 6px)', boxSizing:'content-box'}}>
       <div onClick={onHome} style={tab}>
@@ -122,27 +125,31 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
           <span style={{fontSize:17, lineHeight:1, color:active==='home'?on:off}}>⌂</span>
           {homeNew > 0 && <span style={{position:'absolute', top:-5, right:-11, minWidth:15, height:15, padding:'0 3px', boxSizing:'border-box', borderRadius:999, background:'#e8392f', color:'#fff', font:'700 9px Pretendard', display:'flex', alignItems:'center', justifyContent:'center'}}>{homeNew > 99 ? '99+' : homeNew}</span>}
         </div>
-        <span style={{font:'600 10px Pretendard', color:active==='home'?on:off}}>홈</span>
+        <span style={lbl(active==='home')}>홈</span>
       </div>
       <div onClick={onToday} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='today'?on:off}}>◷</span>
-        <span style={{font:'600 10px Pretendard', color:active==='today'?on:off}}>오늘</span>
+        <span style={lbl(active==='today')}>오늘</span>
       </div>
       <div onClick={onCategory} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='category'?on:off}}>▦</span>
-        <span style={{font:'600 10px Pretendard', color:active==='category'?on:off}}>카테고리</span>
+        <span style={lbl(active==='category')}>카테고리</span>
       </div>
       <div onClick={onKoreaLp} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='korlp'?on:off}}>★</span>
-        <span style={{font:'600 10px Pretendard', color:active==='korlp'?on:off}}>Korea LP</span>
+        <span style={lbl(active==='korlp')}>Korea LP</span>
+      </div>
+      <div onClick={onGlobalGp} style={tab}>
+        <span style={{fontSize:15, lineHeight:1, color:active==='gp'?on:off}}>◆</span>
+        <span style={lbl(active==='gp')}>Global GP</span>
       </div>
       <div onClick={onSearch} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='search'?on:off}}>⌕</span>
-        <span style={{font:'600 10px Pretendard', color:active==='search'?on:off}}>검색</span>
+        <span style={lbl(active==='search')}>검색</span>
       </div>
       <div onClick={onBookmarks} style={tab}>
         <span style={{fontSize:15, lineHeight:1, color:active==='bookmarks'?on:off}}>▢</span>
-        <span style={{font:'600 10px Pretendard', color:active==='bookmarks'?on:off}}>북마크</span>
+        <span style={lbl(active==='bookmarks')}>북마크</span>
       </div>
     </div>
   );
@@ -241,7 +248,7 @@ function TrendChart({ trend }) {
 function Sidebar({ active, homeNew, go, onRefresh }) {
   const items = [
     ['home', '⌂', '홈'], ['today', '◷', '오늘'], ['category', '▦', '카테고리'],
-    ['korlp', '★', 'Korea LP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
+    ['korlp', '★', 'Korea LP'], ['gp', '◆', 'Global GP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
   ];
   return (
     <div style={{width:236, flexShrink:0, background:'#1c1d1f', color:'#fff', display:'flex', flexDirection:'column', padding:'22px 14px'}}>
@@ -856,6 +863,141 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
   );
 }
 
+// ─── GpProfile (Global GP — 운용사별 프로필) ────────────────
+// 설립·본사·AUM·강점 전략(근거 포함)은 gp-profiles.json 에서, 최근 동향·관련
+// 기사(펀드 클로징·딜·환매·참여 등 전체)는 news.json 에서 실시간 연동한다.
+function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
+  const nowMs = Date.now();
+  const cnt30 = articles.filter(a => nowMs - itemMs(a) < 30 * 86400000).length;
+  const latest = articles[0] || null;
+  const latestYMD = latest ? kstYMD(itemMs(latest)) : null;
+  const assetMix = (() => {
+    const m = {};
+    articles.forEach(a => { m[a.asset] = (m[a.asset] || 0) + 1; });
+    return Object.entries(m).sort((x, y) => y[1] - x[1]);
+  })();
+  return (
+    <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
+      <div style={{flexShrink:0, height:54, boxSizing:'content-box', display:'flex', alignItems:'center', padding:'env(safe-area-inset-top) 16px 0 12px', borderBottom:'1px solid #efece4'}}>
+        <div onClick={onBack} style={{display:'flex', alignItems:'center', gap:4, cursor:'pointer', font:'600 14px Pretendard', color:'#1c1d1f'}}><span style={{fontSize:20}}>‹</span> Global GP</div>
+      </div>
+      <div style={{flex:1, minHeight:0, overflowY:'auto'}}>
+        <div style={{padding:'18px 20px 28px', maxWidth:760, margin:'0 auto'}}>
+          {/* 헤더 */}
+          <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:6}}>
+            <span style={{font:'700 10.5px Pretendard', color:'#fff', background:'#1c1d1f', padding:'3px 9px', borderRadius:6}}>Global GP</span>
+            {profile && profile.founded && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>설립 {profile.founded}년</span>}
+            {profile && profile.hq && <span style={{font:'600 10.5px Pretendard', color:'#9a9ca0'}}>· {profile.hq}</span>}
+            {profile && profile.listed && <span style={{font:'600 10px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 7px', borderRadius:5}}>{profile.listed}</span>}
+          </div>
+          <div style={{font:'800 23px Pretendard', letterSpacing:'-.02em'}}>{name}</div>
+          {profile && profile.summary && <div style={{font:'500 13px/1.6 Pretendard', color:'#56585c', marginTop:8}}>{profile.summary}</div>}
+          {profile && profile.tags && (
+            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginTop:11}}>
+              {profile.tags.map(t => <span key={t} style={{font:'600 10.5px Pretendard', color:'#9a7d12', background:'#fffaeb', border:'1px solid #f3eccf', padding:'4px 9px', borderRadius:999}}>{t}</span>)}
+            </div>
+          )}
+
+          {/* AUM */}
+          {profile && profile.aum && (
+            <div style={{marginTop:16, background:'#f8f7f3', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'800 18px Pretendard'}}>{profile.aum}</div>
+              <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>운용자산(AUM) · {profile.aumAsOf || '공시 기준(약)'}</div>
+            </div>
+          )}
+
+          {/* 최근 동향 — 최신 기사 자동 연동 */}
+          <div style={{marginTop:14, border:'1px solid #ece9e2', borderRadius:13, padding:'13px 14px', background:'#fbfaf7'}}>
+            <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:9}}>
+              <span style={{font:'700 10.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'3px 9px', borderRadius:6}}>● 최근 동향</span>
+              <span style={{font:'500 9.5px Pretendard', color:'#9a9ca0'}}>최신 기사 자동 연동{latestYMD ? ` · ${latestYMD.y}.${pad2(latestYMD.m)}.${pad2(latestYMD.d)} 갱신` : ''}</span>
+            </div>
+            {articles.length === 0 ? (
+              <div style={{font:'500 12px/1.6 Pretendard', color:'#a6a8ac'}}>최근 3개월 내 수집된 기사가 없습니다. 새 기사가 올라오면 자동 반영됩니다.</div>
+            ) : (
+              <>
+                <div style={{display:'flex', gap:14, marginBottom:latest ? 10 : 0}}>
+                  <div><span style={{font:'800 16px Pretendard'}}>{articles.length}</span><span style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginLeft:4}}>기사 · 3개월</span></div>
+                  <div><span style={{font:'800 16px Pretendard', color:cnt30 ? '#1a7a4a' : '#1c1d1f'}}>{cnt30}</span><span style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginLeft:4}}>기사 · 30일</span></div>
+                </div>
+                {assetMix.length > 0 && (
+                  <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:latest ? 10 : 0}}>
+                    {assetMix.map(([k, c]) => (
+                      <span key={k} style={{display:'inline-flex', alignItems:'center', gap:5, font:'600 10.5px Pretendard', color:'#3d3e42', background:'#f0eee7', padding:'4px 9px', borderRadius:999}}>
+                        <span style={{width:6, height:6, borderRadius:2, background:(ASSET[k] && ASSET[k].color) || '#c4a93a', display:'inline-block'}}></span>
+                        {(ASSET[k] && ASSET[k].label) || k} {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {latest && (
+                  <div onClick={() => onOpenArticle(latest.id)} style={{cursor:'pointer', borderTop:'1px solid #f0ede4', paddingTop:9}}>
+                    <div style={{font:'700 9.5px Pretendard', color:'#9a7d12', marginBottom:3}}>최신 기사</div>
+                    <div style={{font:'650 12.5px/1.45 Pretendard', color:'#1c1d1f'}}>{latest.ko}</div>
+                    <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{latest.date} {latest.time} · {latest.source} ›</div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* 강점 전략 (근거 포함) */}
+          {profile && profile.strengths && profile.strengths.length > 0 && (
+            <div style={{marginTop:20}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>강점 자산군·전략 <span style={{fontWeight:500, letterSpacing:0}}>· 근거 포함</span></div>
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {profile.strengths.map((st, i) => (
+                  <div key={i} style={{display:'flex', gap:10, padding:'12px 14px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                    <span style={{width:8, height:8, borderRadius:2, marginTop:5, flexShrink:0, background:(st.k && ASSET[st.k] && ASSET[st.k].color) || '#8a8c90', display:'inline-block'}}></span>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{font:'700 13px Pretendard', color:'#1c1d1f'}}>{st.k && ASSET[st.k] ? ASSET[st.k].label : (st.label || '전략')}</div>
+                      {st.note && <div style={{font:'500 12px/1.6 Pretendard', color:'#56585c', marginTop:3}}>{st.note}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 관련 기사 — 펀드 클로징·딜·환매·참여 등 전체 */}
+          <div style={{marginTop:24}}>
+            <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:10}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>관련 기사</div>
+              <span style={{font:'600 11px Pretendard', color:'#9a9ca0'}}>{articles.length}건 · 클로징·딜·환매·인사 포함</span>
+            </div>
+            {articles.length === 0 ? (
+              <div style={{font:'500 12px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 3개월 내 {name} 관련 기사가 아직 없습니다. 새 기사가 수집되면 자동 표시됩니다.</div>
+            ) : (
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {articles.map((item, i) => (
+                  <div key={item.id} onClick={() => onOpenArticle(item.id)} style={{display:'flex', gap:10, padding:'13px 14px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                    <div style={{width:3, borderRadius:2, background:item.assetColor, flexShrink:0}}></div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap'}}>
+                        <span style={{font:'600 10.5px Pretendard', color:item.assetColor}}>{item.assetLabel}</span>
+                        {item.cat === '인사' && <span style={{font:'700 9px Pretendard', color:'#9a7d12', background:'#fffaeb', padding:'1px 6px', borderRadius:4}}>인사</span>}
+                        <span style={{font:'500 10.5px Pretendard', color:'#bcbec2'}}>{item.date} {item.time}</span>
+                      </div>
+                      <div style={{font:'650 13.5px/1.42 Pretendard', letterSpacing:'-.01em'}}>{item.ko}</div>
+                      <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{item.source}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 기준 푸터 */}
+          <div style={{marginTop:24, paddingTop:14, borderTop:'1px solid #f0ede4', font:'500 10px/1.6 Pretendard', color:'#b6b8bc'}}>
+            {profile && <div>프로필 기준 · 공개 자료(연차보고서·공시·주요 보도), AUM 은 근사치</div>}
+            <div style={{marginTop:2}}>관련 기사·최근 동향은 뉴스 수집기로 자동 갱신됩니다{latestYMD ? ` (최신: ${latestYMD.y}.${pad2(latestYMD.m)}.${pad2(latestYMD.d)})` : ''}.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────
 function App() {
   const [screen, setScreen]       = useState('home');
@@ -875,6 +1017,9 @@ function App() {
   const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
   const [profiles, setProfiles]    = useState(null);   // 국내 LP 프로필(lp-profiles.json)
   const [profilesAt, setProfilesAt] = useState('');    // 프로필 일괄 갱신일
+  const [gpProfiles, setGpProfiles] = useState(null);  // Global GP 프로필(gp-profiles.json)
+  const [gpProfilesAt, setGpProfilesAt] = useState('');
+  const [gpSel, setGpSel]          = useState(null);   // Global GP 선택 운용사(null = 목록)
   const [lpSel, setLpSel]          = useState(null);   // Korea LP 선택 기관(null = 목록)
   const [lpTab, setLpTab]          = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
   const [lpExpanded, setLpExpanded] = useState(null);  // Korea LP 업권 펼침
@@ -959,6 +1104,14 @@ function App() {
       .catch(() => {});
   }, []);
 
+  // Load Global GP 프로필(설립·본사·AUM·강점 전략) — gp-profiles.json
+  useEffect(() => {
+    fetch(GP_PROFILES_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && d.profiles) { setGpProfiles(d.profiles); if (d.updatedAt) setGpProfilesAt(d.updatedAt); } })
+      .catch(() => {});
+  }, []);
+
   const flash = (msg) => {
     setToast(msg);
     clearTimeout(toastTimer.current);
@@ -993,6 +1146,7 @@ function App() {
 
   const goTab = (name) => {
     if (name === 'korlp') setLpSel(null);   // 탭 재진입 시 기관 목록으로 복귀
+    if (name === 'gp') setGpSel(null);
     setScreen(name);
   };
 
@@ -1148,7 +1302,7 @@ function App() {
     { label:'팀즈',     icon:'T', bg:'#f0eee7', fg:'#56585c' },
   ];
 
-  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks') };
+  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onGlobalGp:()=>goTab('gp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks') };
 
   // Allocation screen derived data
   const allocRows = (alloc && alloc.institutions) || [];
@@ -1165,6 +1319,14 @@ function App() {
     ? (((roster || []).find(r => r.name === lpSel) || {}).group || (lpSelAllocRow && lpSelAllocRow.group) || '국내 LP')
     : '';
   const openLp = (name) => { setLpSel(name); };
+
+  // Global GP — 목록(기사 수 내림차순)과 선택 운용사 데이터
+  const gpNames = gpProfiles ? Object.keys(gpProfiles) : [];
+  const gpArtCount = {};
+  items.forEach(i => { if (i.instGroup === 'Global GP') gpArtCount[i.inst] = (gpArtCount[i.inst] || 0) + 1; });
+  const gpListSorted = gpNames.slice().sort((a, b) => (gpArtCount[b] || 0) - (gpArtCount[a] || 0) || gpNames.indexOf(a) - gpNames.indexOf(b));
+  const gpSelProfile = (gpSel && gpProfiles && gpProfiles[gpSel]) || null;
+  const gpSelArticles = gpSel ? items.filter(i => i.inst === gpSel) : [];
 
   // Desktop master-detail: list screens get a list pane + a persistent detail pane.
   const LIST_SCREENS = ['home', 'today', 'search', 'bookmarks'];
@@ -1547,6 +1709,62 @@ function App() {
             )}
           </div>
           <Navbar active="korlp" {...navProps} />
+        </div>
+      ))}
+
+      {/* ── GLOBAL GP ── */}
+      {screen === 'gp' && (gpSel ? (
+        <GpProfile
+          name={gpSel} profile={gpSelProfile} articles={gpSelArticles}
+          onBack={() => setGpSel(null)}
+          onOpenArticle={(id) => openItemFull(id)}
+        />
+      ) : (
+        <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
+          <div style={{flexShrink:0}}>
+            <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
+            <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
+              <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>Global GP</div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>해외 운용사 프로필 · 강점 전략 · 최신 딜 뉴스 {gpNames.length ? <span style={{color:'#c4a93a'}}>· 전체 {gpNames.length}개사</span> : null}{gpProfilesAt ? <span> · 프로필 {gpProfilesAt} 기준</span> : null}</div>
+            </div>
+          </div>
+          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:'12px 18px 18px'}}>
+            <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', margin:'4px 0 10px'}}>운용사를 선택하면 설립·본사·AUM·강점 자산군(근거 포함)과 펀드 클로징·딜·환매 등 최신 기사를 한눈에 볼 수 있습니다.</div>
+            {!gpProfiles ? (
+              <div style={{padding:'60px 30px', textAlign:'center', color:'#b0b2b6'}}>
+                <div style={{fontSize:30}}>◆</div>
+                <div style={{font:'600 13px Pretendard', marginTop:10}}>GP 프로필을 불러오는 중…</div>
+              </div>
+            ) : (
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {gpListSorted.map((n, i) => {
+                  const p = gpProfiles[n] || {};
+                  const c = gpArtCount[n] || 0;
+                  return (
+                    <div key={n} onClick={() => setGpSel(n)} style={{display:'flex', alignItems:'center', gap:10, padding:'13px 14px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                          <span style={{font:'700 13.5px Pretendard', color:'#1c1d1f'}}>{n}</span>
+                          {p.aum && <span style={{font:'600 10px Pretendard', color:'#9a9ca0'}}>{p.aum}</span>}
+                        </div>
+                        <div style={{display:'flex', alignItems:'center', gap:6, marginTop:4, flexWrap:'wrap'}}>
+                          {(p.strengths || []).slice(0, 3).map((st, si) => (
+                            <span key={si} style={{display:'inline-flex', alignItems:'center', gap:4, font:'600 9.5px Pretendard', color:'#56585c'}}>
+                              <span style={{width:6, height:6, borderRadius:2, background:(st.k && ASSET[st.k] && ASSET[st.k].color) || '#8a8c90', display:'inline-block'}}></span>
+                              {st.k && ASSET[st.k] ? ASSET[st.k].label : (st.label || '')}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {c > 0 && <span style={{font:'600 10px Pretendard', color:'#9a7d12', background:'#fff7d6', padding:'2px 8px', borderRadius:999, flexShrink:0}}>기사 {c}</span>}
+                      <span style={{color:'#cfccc4', flexShrink:0}}>›</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <Navbar active="gp" {...navProps} />
         </div>
       ))}
 

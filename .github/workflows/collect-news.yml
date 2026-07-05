@@ -36,7 +36,12 @@ jobs:
           if ! git diff --quiet news.json insights.json institutions.json; then
             git add news.json insights.json institutions.json
             git commit -m "chore: refresh news feed [skip ci]"
-            git push
+            # 수집이 길어진 사이 main 이 앞서가면 리베이스 후 재시도 (푸시 경합 방지)
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase origin main || exit 1
+              [ "$i" = "3" ] && exit 1
+            done
           else
             echo "No changes."
           fi

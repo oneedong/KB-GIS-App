@@ -92,6 +92,9 @@ const QUERIES = [
   // 국내 기관 일반 (LP 출자·앵커 뉴스)
   '국내 (연기금 OR 공제회 OR 보험사 OR 기관투자자) (해외 사모펀드 OR PEF OR 사모대출 OR 인프라 OR 부동산) (출자 OR 앵커 OR 커밋 OR 약정) when:30d',
   '(LP OR 기관투자자) 해외 (블라인드펀드 OR PEF OR 사모대출) 출자 when:30d',
+  // (10) 추적 기관의 자본확충 — 유상증자·증자·발행어음·IMA (투자여력 확대 신호)
+  '(KB증권 OR 미래에셋증권 OR 한국투자증권 OR NH투자증권 OR 신한투자증권 OR 삼성증권 OR 메리츠증권 OR 키움증권 OR 하나증권) (유상증자 OR 자본확충 OR 발행어음 OR IMA)',
+  '(증권사 OR 보험사 OR 캐피탈 OR 공제회) (유상증자 OR 자본확충) when:30d',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
@@ -734,11 +737,15 @@ const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
 const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
 // 기사 링크가 상시 깨져 있는(존재하지 않는 링크 안내) 저품질 매체 차단 목록.
 const SOURCE_BLOCK_RE = /마일드경제|todaymild/i;
+// 추적 기관의 자본확충(유상증자 등) — 투자여력 확대라는 placement agent 핵심
+// 신호이므로, EXCLUDE_RE(상장사 잡음 제거)에 걸려도 예외로 수집한다.
+const CAPITAL_RE = /유상\s*증자|자본\s*확충|자본금\s*(?:확대|증액)|출자\s*전환/;
 export function isRelevant(raw) {
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
   const text = `${raw.title} ${raw.desc}`;
-  if (EXCLUDE_RE.test(text)) return false;            // 상장주식·시황·리테일 잡음 제거
   const gp = isForeignGP(text), lp = isKoreanLP(text);
+  // 잡음 제거 — 단, 추적 GP/LP 의 유상증자·자본확충 뉴스는 예외 통과.
+  if (EXCLUDE_RE.test(text) && !((gp || lp) && CAPITAL_RE.test(text))) return false;
   // 알려진 글로벌 GP·국내 LP 가 등장하면 — 이들은 본질적으로 대체투자 주체이므로
   // 자산군 키워드(ALT_RE)가 없어도 펀드·출자·시장·딜 맥락이면 해외대체투자 뉴스로
   // 폭넓게 수집한다(GP/LP 기사 누락 방지).
@@ -747,7 +754,8 @@ export function isRelevant(raw) {
     // 추적 대상 기관의 CIO 선임·임원 인사·조직개편 기사는 placement agent 핵심
     // 정보이므로 자산군 키워드가 없어도 수집한다(예: 경찰공제회 신임 CIO 선임).
     return FUND_RE.test(text) || MARKET_RE.test(text) || ALT_RE.test(text)
-        || PEOPLE_RE.test(text) || ORG_RE.test(text) || CIO_TITLE.test(text);
+        || PEOPLE_RE.test(text) || ORG_RE.test(text) || CIO_TITLE.test(text)
+        || CAPITAL_RE.test(text);
   }
   // 기관 미식별 일반 뉴스는 엄격 기준: 대체투자 자산군 + 해외 맥락 + 펀드/시장 맥락.
   if (!ALT_RE.test(text)) return false;               // 대체투자 자산군 신호

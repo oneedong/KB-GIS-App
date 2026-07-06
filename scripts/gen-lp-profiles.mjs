@@ -14,7 +14,7 @@
 import { readFile, writeFile } from 'fs/promises';
 
 // 프로필을 손봤을 때 이 날짜를 갱신한다. (KST 기준 표기)
-const UPDATED = '2026.07.02';
+const UPDATED = '2026.07.06';
 
 // ── 영문명 자동 추출 (collect-news.mjs 사전 정규식에서) ──────────
 const src = await readFile(new URL('./collect-news.mjs', import.meta.url), 'utf8');
@@ -366,8 +366,8 @@ const LEADERSHIP = {
     ceo: { title: '이사장', name: '송하중', bio: '재정 안정·고객 혁신을 과제로 임기 수행 중.' },
   },
   '한국투자공사': {
-    asOf: '2026.06',
-    cio: { title: '투자운용본부장(CIO)', note: '공모·인선 진행 중 — 이훈 전 CIO(1969년생, 서강대 경제·버클리 MBA, 2022.8~2025.8) 임기 종료, 차기 이경직(한은·국민연금 출신) 유력.' },
+    asOf: '2026.07',
+    cio: { title: '투자운용본부장(CIO)', name: '이훈', born: 1969, bio: '서강대 경제·버클리 MBA, 2022.8 취임. 설립 후 첫 CIO 공개모집이 무산(2026.7)되며 이훈 체제가 당분간 유지 — 재공모 수순 전망.' },
   },
   '새마을금고중앙회': {
     asOf: '2026.06',

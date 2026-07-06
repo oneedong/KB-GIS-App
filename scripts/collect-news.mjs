@@ -426,6 +426,8 @@ function pickKoreanLpLast(text) {
 const CIO_TITLE = /기금이사|\bCIO\b|최고투자책임자|투자운용본부장|운용본부장|자금운용본부장/;
 const CIO_APPOINT = /선임|임명|내정|취임|영입|발탁/;
 const CIO_RECRUIT = /공모|모집|후보|압축|인선|공석|선정/;
+// 공모가 무산·백지화된 상황 — '진행 중'보다 우선해 상태를 정확히 반영.
+const CIO_SCRAP = /무산|백지화|없던\s*일로|원점으로|재공모/;
 const NAME_BLOCK = /국민|연금|공제|기금|운용|투자|대체|사모|신임|차기|올해|내년|최고|책임|본부|이사|대표|부문|해외|국내|글로벌|수익|자산|증원|복지|행정|교직|군인|과학|우정|연기|수협|중앙/;
 // CIO/운용 사령탑 인사 추출 → { inst, status, person, background } | null
 export function extractCio(text) {
@@ -440,7 +442,9 @@ export function extractCio(text) {
     let m2 = text.match(/([가-힣]{2,4})\s*(?:신임)\s*(?:기금이사|CIO|최고투자책임자|운용본부장)/);
     if (m2 && !NAME_BLOCK.test(m2[1]) && CIO_APPOINT.test(text)) person = m2[1];
   }
-  const status = person ? '선임' : (CIO_RECRUIT.test(text) ? '공모·인선 진행' : null);
+  const status = person ? '선임'
+    : (CIO_SCRAP.test(text) ? '공모 무산·재공모 수순'
+    : (CIO_RECRUIT.test(text) ? '공모·인선 진행' : null));
   if (!person && !status) return null;
   let background = (text.match(/([가-힣A-Za-z·]{2,18})\s*출신/) || [])[1] || '';
   if (background && NAME_BLOCK.test(background) && background.length <= 3) background = '';
@@ -470,7 +474,9 @@ export function buildInsights(articles) {
       if (!cioByInst.has(c.inst)) {
         const note = c.status === '선임'
           ? `신임 CIO ${c.person}${c.background ? ` (${c.background} 출신)` : ''}`
-          : 'CIO 공모·인선 진행 중';
+          : c.status === '공모 무산·재공모 수순'
+            ? 'CIO 공모 무산 — 재공모 수순 전망'
+            : 'CIO 공모·인선 진행 중';
         cioByInst.set(c.inst, { inst: c.inst, group: grpName(c.instType), status: c.status, person: c.person, background: c.background, note, source: a.source, url: a.url, date: a.date, ts: a.ts });
       }
     }

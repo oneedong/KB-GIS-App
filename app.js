@@ -352,7 +352,7 @@ function stripSiteFooter(t) {
     const norms = [];
     s = s.split(/\n{1,}/).map(x => x.trim())
         .filter(x => {
-        if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x))
+        if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x) || isNavBlob(x) || isHeadlineRun(x))
             return false;
         const n = x.replace(/[\s\W]/g, '').slice(0, 200);
         const head = n.slice(0, 40);
@@ -380,13 +380,29 @@ function scoreKeySentence(s, inst) {
         sc += 1;
     return sc;
 }
-// '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열(문장 종결 없음, 짧고 "…"로
-// 끝남)을 본문에서 걸러낸다. 종결어미(다./요.)나 마침표로 끝나거나 충분히 길면 통과.
+// '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열·내비 메뉴 뭉치를 걸러낸다.
+// 종결어미/마침표로 끝나면 통과. 길이만으로는 통과 못 하고, 긴 문단이라도
+// 문장부호(다./요./.!?)가 전혀 없으면(메뉴·헤드라인 뭉치) 탈락한다.
 function isSentencey(s) {
     const t = String(s).trim();
-    if (t.length > 160)
+    if (/(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t))
         return true;
-    return /(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t);
+    return t.length > 160 && /(?:다|요)\.|[.!?]/.test(t);
+}
+// 사이트 내비게이션/카테고리 메뉴 뭉치 — 공백이 거의 없는 긴 한글 덩어리.
+function isNavBlob(s) {
+    const t = String(s).trim();
+    if (t.length < 120)
+        return false;
+    const spaces = (t.match(/\s/g) || []).length;
+    const enders = (t.match(/다\.|요\.|[.!?]/g) || []).length;
+    return spaces / t.length < 0.06 || (enders === 0 && t.length > 200);
+}
+// 다른 기사 헤드라인 나열 — 말줄임(…) 2개 이상인데 문장 종결이 전혀 없음.
+function isHeadlineRun(s) {
+    const t = String(s).trim();
+    const ell = (t.match(/…|\.\.\./g) || []).length;
+    return ell >= 2 && !/(?:다|요)\.|[.!?]/.test(t.replace(/\.\.\./g, ''));
 }
 // 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
 const SITE_BOILER = /No\.?1\s*종합|종합\s*경제지|빠르고,?\s*정확하게|정확하게\s*전달|대한민국\s*(대표|No\.?1)/;
@@ -615,7 +631,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                         !loadingBody && hlSet.size > 0 && (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4, font: '600 10px Pretendard', color: '#9a7d12' } },
                             React.createElement("span", { style: { width: 10, height: 10, borderRadius: 2, background: '#FFCC00', opacity: .55, display: 'inline-block' } }),
                             "\uD575\uC2EC \uD558\uC774\uB77C\uC774\uD2B8"))),
-                    loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : deadLink && !paragraphs.length ? (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#c0392b', background: '#fdf1ef', border: '1px solid #f5d9d4', borderRadius: 11, padding: '12px 14px' } }, "\uC774 \uAE30\uC0AC\uC758 \uC6D0\uBB38 \uB9C1\uD06C\uAC00 \uB354 \uC774\uC0C1 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4(\uC0AD\uC81C\uB41C \uAE30\uC0AC). \uB2E4\uC74C \uB274\uC2A4 \uAC31\uC2E0 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uC81C\uAC70\uB429\uB2C8\uB2E4.")) : paragraphs.length ? (React.createElement("div", null,
+                    deadLink && !paragraphs.length ? (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#c0392b', background: '#fdf1ef', border: '1px solid #f5d9d4', borderRadius: 11, padding: '12px 14px' } }, "\uC774 \uAE30\uC0AC\uC758 \uC6D0\uBB38 \uB9C1\uD06C\uAC00 \uB354 \uC774\uC0C1 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4(\uC0AD\uC81C\uB41C \uAE30\uC0AC). \uB2E4\uC74C \uB274\uC2A4 \uAC31\uC2E0 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uC790\uB3D9\uC73C\uB85C \uC81C\uAC70\uB429\uB2C8\uB2E4.")) : paragraphs.length ? (React.createElement("div", null,
                         paraSents.map((ss, pi) => (React.createElement("p", { key: pi, style: { font: '400 15px/1.95 Pretendard', color: '#2a2b2f', margin: '0 0 15px', wordBreak: 'keep-all' } }, ss.map((s, si) => hlSet.has(pi + ':' + si)
                             ? React.createElement("span", { key: si, style: { fontWeight: 600, color: '#1c1d1f', background: 'linear-gradient(transparent 58%, rgba(255,204,0,.5) 58%)' } },
                                 s,
@@ -623,7 +639,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                             : React.createElement("span", { key: si },
                                 s,
                                 si < ss.length - 1 ? ' ' : ''))))),
-                        !isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."))) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
+                        loadingBody
+                            ? React.createElement("div", { style: { font: '500 12px Pretendard', color: '#c4a93a' } }, "\uC804\uBB38\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026 \uC7A0\uC2DC \uD6C4 \uC774\uC5B4\uC9D1\uB2C8\uB2E4")
+                            : (!isFullBody && realUrl && React.createElement("div", { style: { marginTop: 2, font: '500 12px Pretendard', color: '#9a9ca0' } }, "\uC804\uCCB4 \uBCF8\uBB38\uC740 \uC544\uB798 \u2018\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30\u2019\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694.")))) : loadingBody ? (React.createElement("div", { style: { font: '500 13px/1.6 Pretendard', color: '#c2c4c8', padding: '8px 0' } }, "\uAE30\uC0AC \uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")) : (React.createElement("div", { style: { font: '500 13px/1.7 Pretendard', color: '#9a9ca0' } }, realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'))),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     React.createElement("div", { onClick: onShare, style: { flex: 1, height: 42, background: '#1c1d1f', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#fff', cursor: 'pointer' } }, "\u2197 \uACF5\uC720"),
                     viewUrl && !deadLink && React.createElement("a", { href: viewUrl, target: "_blank", rel: "noopener", style: { flex: 1.6, height: 42, background: '#FFCC00', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '700 13px Pretendard', color: '#1c1d1f', textDecoration: 'none' } }, "\uAE30\uC0AC \uC804\uBB38 \uBCF4\uAE30 \u2197")),

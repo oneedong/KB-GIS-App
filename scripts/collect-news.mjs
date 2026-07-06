@@ -639,7 +639,7 @@ export function stripSiteFooter(t) {
   const norms = [];
   s = s.split(/\n{1,}/).map(x => x.trim())
     .filter(x => {
-      if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x)) return false;
+      if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x) || isNavBlob(x) || isHeadlineRun(x)) return false;
       const n = x.replace(/[\s\W]/g, '').slice(0, 200);
       const head = n.slice(0, 40);
       if (head && norms.some(p => p.includes(head))) return false;   // 중복 문단 제거
@@ -649,12 +649,26 @@ export function stripSiteFooter(t) {
     .join('\n\n');
   return s.replace(/[ \t]{2,}/g, ' ').trim();
 }
-// '문장형' 문단인지 — 다른 뉴스 헤드라인 나열(종결어미·마침표 없이 끝나는 짧은
-// 제목들)을 본문에서 걸러낸다. 종결어미(다./요.)나 문장부호로 끝나거나 충분히 길면 통과.
+// '문장형' 문단인지 — 헤드라인 나열·내비 메뉴 뭉치를 걸러낸다. 종결어미/마침표로
+// 끝나면 통과. 긴 문단이라도 문장부호가 전혀 없으면(메뉴·헤드라인 뭉치) 탈락.
 export function isSentencey(s) {
   const t = String(s).trim();
-  if (t.length > 160) return true;
-  return /(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t);
+  if (/(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t)) return true;
+  return t.length > 160 && /(?:다|요)\.|[.!?]/.test(t);
+}
+// 사이트 내비게이션/카테고리 메뉴 뭉치 — 공백이 거의 없는 긴 한글 덩어리.
+export function isNavBlob(s) {
+  const t = String(s).trim();
+  if (t.length < 120) return false;
+  const spaces = (t.match(/\s/g) || []).length;
+  const enders = (t.match(/다\.|요\.|[.!?]/g) || []).length;
+  return spaces / t.length < 0.06 || (enders === 0 && t.length > 200);
+}
+// 다른 기사 헤드라인 나열 — 말줄임(…) 2개 이상인데 문장 종결이 전혀 없음.
+export function isHeadlineRun(s) {
+  const t = String(s).trim();
+  const ell = (t.match(/…|\.\.\./g) || []).length;
+  return ell >= 2 && !/(?:다|요)\.|[.!?]/.test(t.replace(/\.\.\./g, ''));
 }
 export function extractReadable(html) {
   if (!html) return '';

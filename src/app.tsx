@@ -375,7 +375,7 @@ function stripSiteFooter(t) {
   const norms = [];
   s = s.split(/\n{1,}/).map(x => x.trim())
     .filter(x => {
-      if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x)) return false;
+      if (!x || FOOTER_RE.test(x) || RELATED_RE.test(x.slice(0, 24)) || TTS_RE.test(x) || isLangList(x) || isNavBlob(x) || isHeadlineRun(x)) return false;
       const n = x.replace(/[\s\W]/g, '').slice(0, 200);
       const head = n.slice(0, 40);
       if (head && norms.some(p => p.includes(head))) return false;   // 중복 문단 제거
@@ -399,12 +399,27 @@ function scoreKeySentence(s, inst) {
   return sc;
 }
 
-// '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열(문장 종결 없음, 짧고 "…"로
-// 끝남)을 본문에서 걸러낸다. 종결어미(다./요.)나 마침표로 끝나거나 충분히 길면 통과.
+// '문장형' 문단인지 검사 — 다른 뉴스 헤드라인 나열·내비 메뉴 뭉치를 걸러낸다.
+// 종결어미/마침표로 끝나면 통과. 길이만으로는 통과 못 하고, 긴 문단이라도
+// 문장부호(다./요./.!?)가 전혀 없으면(메뉴·헤드라인 뭉치) 탈락한다.
 function isSentencey(s) {
   const t = String(s).trim();
-  if (t.length > 160) return true;
-  return /(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t);
+  if (/(?:다|요)\.["'”’]?\s*$|[.!?]["'”’]?\s*$/.test(t)) return true;
+  return t.length > 160 && /(?:다|요)\.|[.!?]/.test(t);
+}
+// 사이트 내비게이션/카테고리 메뉴 뭉치 — 공백이 거의 없는 긴 한글 덩어리.
+function isNavBlob(s) {
+  const t = String(s).trim();
+  if (t.length < 120) return false;
+  const spaces = (t.match(/\s/g) || []).length;
+  const enders = (t.match(/다\.|요\.|[.!?]/g) || []).length;
+  return spaces / t.length < 0.06 || (enders === 0 && t.length > 200);
+}
+// 다른 기사 헤드라인 나열 — 말줄임(…) 2개 이상인데 문장 종결이 전혀 없음.
+function isHeadlineRun(s) {
+  const t = String(s).trim();
+  const ell = (t.match(/…|\.\.\./g) || []).length;
+  return ell >= 2 && !/(?:다|요)\.|[.!?]/.test(t.replace(/\.\.\./g, ''));
 }
 
 // 매체 소개문/인기기사 나열로 오염된 '가짜 본문' 판별 (제목과 무관한 잡content).
@@ -601,13 +616,12 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                 </span>
               )}
             </div>
-            {loadingBody ? (
-              <div style={{font:'500 13px/1.6 Pretendard', color:'#c2c4c8', padding:'8px 0'}}>기사 내용을 불러오는 중입니다…</div>
-            ) : deadLink && !paragraphs.length ? (
+            {deadLink && !paragraphs.length ? (
               <div style={{font:'500 13px/1.7 Pretendard', color:'#c0392b', background:'#fdf1ef', border:'1px solid #f5d9d4', borderRadius:11, padding:'12px 14px'}}>
                 이 기사의 원문 링크가 더 이상 존재하지 않습니다(삭제된 기사). 다음 뉴스 갱신 때 목록에서 자동으로 제거됩니다.
               </div>
             ) : paragraphs.length ? (
+              // 확보된 본문(리드라도)을 즉시 보여주고, 전문은 배경에서 불러와 교체한다.
               <div>
                 {paraSents.map((ss, pi) => (
                   <p key={pi} style={{font:'400 15px/1.95 Pretendard', color:'#2a2b2f', margin:'0 0 15px', wordBreak:'keep-all'}}>
@@ -616,8 +630,12 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
                       : <span key={si}>{s}{si < ss.length - 1 ? ' ' : ''}</span>)}
                   </p>
                 ))}
-                {!isFullBody && realUrl && <div style={{marginTop:2, font:'500 12px Pretendard', color:'#9a9ca0'}}>전체 본문은 아래 ‘기사 전문 보기’에서 확인하세요.</div>}
+                {loadingBody
+                  ? <div style={{font:'500 12px Pretendard', color:'#c4a93a'}}>전문을 불러오는 중… 잠시 후 이어집니다</div>
+                  : (!isFullBody && realUrl && <div style={{marginTop:2, font:'500 12px Pretendard', color:'#9a9ca0'}}>전체 본문은 아래 ‘기사 전문 보기’에서 확인하세요.</div>)}
               </div>
+            ) : loadingBody ? (
+              <div style={{font:'500 13px/1.6 Pretendard', color:'#c2c4c8', padding:'8px 0'}}>기사 내용을 불러오는 중입니다…</div>
             ) : (
               <div style={{font:'500 13px/1.7 Pretendard', color:'#9a9ca0'}}>{realUrl ? '본문을 불러오지 못했습니다. 아래 ‘기사 전문 보기’에서 확인하세요.' : '원문 링크가 확인되지 않은 기사입니다.'}</div>
             )}

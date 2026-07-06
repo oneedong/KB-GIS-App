@@ -95,6 +95,15 @@ const QUERIES = [
   // (10) 추적 기관의 자본확충 — 유상증자·증자·발행어음·IMA (투자여력 확대 신호)
   '(KB증권 OR 미래에셋증권 OR 한국투자증권 OR NH투자증권 OR 신한투자증권 OR 삼성증권 OR 메리츠증권 OR 키움증권 OR 하나증권) (유상증자 OR 자본확충 OR 발행어음 OR IMA)',
   '(증권사 OR 보험사 OR 캐피탈 OR 공제회) (유상증자 OR 자본확충) when:30d',
+  // (11) 자산군별 플래그십·GP 펀드 뉴스 — 사모 대체투자 펀드 전반 (마켓뉴스 확충)
+  'flagship fund (private equity OR private credit OR infrastructure OR real estate) (launch OR close OR raise) when:14d',
+  '(secondaries OR continuation) fund (close OR raise OR launch) when:14d',
+  'private real estate fund OR real estate debt fund (close OR raise) when:14d',
+  '(사모펀드 OR 사모대출펀드 OR 인프라펀드 OR 부동산펀드 OR 세컨더리펀드) (결성 OR 조성 OR 클로징 OR 자금 모집) when:14d',
+  // (12) Aviation — 항공기 리스·항공기금융 펀드/딜 (BBAM 등)
+  '(BBAM OR Castlelake OR "Carlyle Aviation" OR "DAE Capital" OR Avolon OR AerCap OR "Air Lease") (fund OR aircraft OR leasing OR order) when:14d',
+  'aircraft leasing fund OR aviation fund (close OR raise OR invest) when:14d',
+  '항공기 (리스 OR 금융 OR 펀드) (투자 OR 조성 OR 출자 OR 결성)',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
@@ -343,6 +352,7 @@ const FOREIGN_GPS = [
   [/lone star funds|론스타/i, 'Lone Star', '해외 GP'],
   [/angelo gordon/i, 'Angelo Gordon', '해외 GP'],
   [/davidson kempner/i, 'Davidson Kempner', '해외 GP'],
+  [/\bBBAM\b|비비에이엠/i, 'BBAM', '해외 GP'],
 ];
 const INSTS = [...KOREAN_LPS, ...FOREIGN_GPS];
 
@@ -821,8 +831,11 @@ export function isRelevant(raw) {
         || CAPITAL_RE.test(text);
   }
   // 기관 미식별 일반 뉴스는 엄격 기준: 대체투자 자산군 + 해외 맥락 + 펀드/시장 맥락.
+  // 영문 기사는 지역 키워드가 없어도 해외 뉴스이므로 글로벌 맥락으로 간주한다
+  // (예: "Castlelake closes $2B aviation fund" — 자산군·펀드 신호만으로 통과).
+  const isEnglish = !/[가-힣]/.test(raw.title);
   if (!ALT_RE.test(text)) return false;               // 대체투자 자산군 신호
-  if (!GLOBAL_RE.test(text)) return false;            // 해외/글로벌 맥락
+  if (!(GLOBAL_RE.test(text) || isEnglish)) return false;   // 해외/글로벌 맥락
   return FUND_RE.test(text) || MARKET_RE.test(text);
 }
 

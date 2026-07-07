@@ -100,6 +100,9 @@ const QUERIES = [
   '(secondaries OR continuation) fund (close OR raise OR launch) when:14d',
   'private real estate fund OR real estate debt fund (close OR raise) when:14d',
   '(사모펀드 OR 사모대출펀드 OR 인프라펀드 OR 부동산펀드 OR 세컨더리펀드) (결성 OR 조성 OR 클로징 OR 자금 모집) when:14d',
+  // (13) 국민연금 광역 — '해외' 키워드 없는 국내외 총괄 기사도 수집
+  //      (예: "[단독] 248조로 불어난 국민연금 대체 투자" 유형의 단독 기사)
+  '국민연금 (대체투자 OR 기금운용 OR 사모 OR 인프라 OR 부동산) when:7d',
   // (12) Aviation — 항공기 리스·항공기금융 펀드/딜 (BBAM 등)
   '(BBAM OR Castlelake OR "Carlyle Aviation" OR "DAE Capital" OR Avolon OR AerCap OR "Air Lease") (fund OR aircraft OR leasing OR order) when:14d',
   'aircraft leasing fund OR aviation fund (close OR raise OR invest) when:14d',

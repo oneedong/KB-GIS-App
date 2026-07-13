@@ -523,6 +523,47 @@ function grpName(t) {
   return '기타';
 }
 
+// ── 펀드레이징 트래커: 기사에서 모집 단계 추출 ─────────────────
+// 단계 판별 순서가 중요 — 구체적 표현(파이널/1차)을 일반 표현보다 먼저 본다.
+const FR_STAGES = [
+  ['파이널 클로즈', /파이널\s*클로(?:즈|징)|최종\s*클로(?:즈|징)|final\s*clos/i],
+  ['1차 클로즈', /1차\s*클로(?:즈|징)|퍼스트\s*클로(?:즈|징)|first\s*clos/i],
+  ['클로즈', /클로(?:즈|징)|결성(?:했|을|식|한)|\bclose[sd]\b|\bclosed\b|raised\s/i],
+  ['모집 중', /모집|조성(?:\s*중|한다|에\s*나서)|목표(?:로|액)|타깃|target(?:ing|s)?\s|raising|launch(?:es|ed)?\b|출범/i],
+];
+// 펀드레이징 이벤트 추출 → { stage, size } | null
+export function extractFundraising(a) {
+  const txt = `${a.ko || ''} ${(a.body || '').slice(0, 260)}`;
+  if (!/펀드|\bfund\b|블라인드|비히클|vehicle/i.test(txt)) return null;   // 펀드 맥락 필수
+  if (/환매|redemption|상장폐지/i.test(a.ko || '')) return null;          // 환매·비모집 이슈 제외
+  for (const [stage, re] of FR_STAGES) {
+    if (re.test(txt)) {
+      const size = (a.metric && a.metric !== '뉴스') ? a.metric : (extractMetric(txt) || '');
+      return { stage, size };
+    }
+  }
+  return null;
+}
+// 기사 목록 → fundraising.json 아이템 (GP 귀속 + 미식별 스폰서 모두, 최신순 60건)
+export function buildFundraising(articles) {
+  const seen = new Set();
+  const items = [];
+  const sorted = articles.slice().sort((x, y) => (x.ts < y.ts ? 1 : x.ts > y.ts ? -1 : 0));
+  for (const a of sorted) {
+    if (a.cat !== 'GP' && a.cat !== '마켓') continue;
+    const fr = extractFundraising(a);
+    if (!fr) continue;
+    const gp = a.cat === 'GP' ? a.inst : '';
+    const key = gp + '|' + String(a.ko).replace(/[\s\W]/g, '').slice(0, 24);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ gp, asset: a.asset, stage: fr.stage, size: fr.size, title: a.ko, id: a.id, url: a.url, gurl: a.gurl, date: a.date, ts: a.ts, source: a.source });
+    if (items.length >= 60) break;
+  }
+  const { date } = kstParts();
+  return { updatedAt: date, count: items.length, items };
+}
+
 function extractMetric(text) {
   const pats = [
     /[+\-]?\$[\d.,]+\s?(?:billion|million|bn|m|B|M)?/i,
@@ -1077,6 +1118,11 @@ async function main() {
   };
   await writeFile(new URL('../insights.json', import.meta.url), JSON.stringify(insights, null, 0));
   console.log(`insights: ${insights.cios.length} CIO, ${insights.assetReturns.length} asset-returns`);
+
+  // 펀드레이징 트래커(fundraising.json) — 모집·클로징 이벤트 자동 추출.
+  const fr = buildFundraising(merged);
+  await writeFile(new URL('../fundraising.json', import.meta.url), JSON.stringify(fr, null, 0));
+  console.log(`fundraising: ${fr.count} events`);
 }
 
 function selftest() {

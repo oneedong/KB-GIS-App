@@ -29,6 +29,16 @@ const INSTITUTIONS_API = './institutions.json';
 const LP_PROFILES_API = './lp-profiles.json';
 // Global GP 프로필 (설립·본사·AUM·강점 전략과 근거) — gp-profiles.json
 const GP_PROFILES_API = './gp-profiles.json';
+// 펀드레이징 트래커 (뉴스에서 모집·클로징 이벤트 자동 추출) — fundraising.json
+const FUNDRAISING_API = './fundraising.json';
+
+// 모집 단계별 배지 색상
+const FR_STAGE_STYLE = {
+  '모집 중':      { color: '#9a7d12', bg: '#fffaeb' },
+  '1차 클로즈':   { color: '#1a5fa4', bg: '#e6effa' },
+  '클로즈':       { color: '#1a7a4a', bg: '#e4f5ea' },
+  '파이널 클로즈': { color: '#fff',    bg: '#1a7a4a' },
+};
 
 // 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
 // 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
@@ -902,7 +912,7 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
 // ─── GpProfile (Global GP — 운용사별 프로필) ────────────────
 // 설립·본사·AUM·강점 전략(근거 포함)은 gp-profiles.json 에서, 최근 동향·관련
 // 기사(펀드 클로징·딜·환매·참여 등 전체)는 news.json 에서 실시간 연동한다.
-function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
+function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle }) {
   const nowMs = Date.now();
   const cnt30 = articles.filter(a => nowMs - itemMs(a) < 30 * 86400000).length;
   const latest = articles[0] || null;
@@ -1003,6 +1013,30 @@ function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
             </div>
           )}
 
+          {/* 펀드레이징 동향 (뉴스 자동 추출) */}
+          {frEvents && frEvents.length > 0 && (
+            <div style={{marginTop:20}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9}}>
+                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>펀드레이징 동향</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출</span>
+              </div>
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {frEvents.slice(0, 5).map((f, i) => {
+                  const st = FR_STAGE_STYLE[f.stage] || FR_STAGE_STYLE['모집 중'];
+                  return (
+                    <div key={f.id + i} onClick={() => onOpenArticle(f.id)} style={{display:'flex', gap:9, alignItems:'flex-start', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                      <span style={{font:'700 9.5px Pretendard', color:st.color, background:st.bg, padding:'2px 8px', borderRadius:5, flexShrink:0, marginTop:1}}>{f.stage}</span>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{font:'650 12.5px/1.45 Pretendard'}}>{f.title}</div>
+                        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{f.size ? `${f.size} · ` : ''}{f.date} · {f.source}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 관련 기사 — 펀드 클로징·딜·환매·참여 등 전체 */}
           <div style={{marginTop:24}}>
             <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:10}}>
@@ -1066,6 +1100,8 @@ function App() {
   const [gpProfiles, setGpProfiles] = useState(null);  // Global GP 프로필(gp-profiles.json)
   const [gpProfilesAt, setGpProfilesAt] = useState('');
   const [gpSel, setGpSel]          = useState(null);   // Global GP 선택 운용사(null = 목록)
+  const [gpTab, setGpTab]          = useState('list'); // Global GP 하위 탭: 'list' | 'fr'
+  const [fundraising, setFundraising] = useState(null); // 펀드레이징 트래커
   const [lpSel, setLpSel]          = useState(null);   // Korea LP 선택 기관(null = 목록)
   const [lpTab, setLpTab]          = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
   const [lpExpanded, setLpExpanded] = useState(null);  // Korea LP 업권 펼침
@@ -1155,6 +1191,14 @@ function App() {
     fetch(GP_PROFILES_API + '?t=' + Date.now())
       .then(r => r.json())
       .then(d => { if (d && d.profiles) { setGpProfiles(d.profiles); if (d.updatedAt) setGpProfilesAt(d.updatedAt); } })
+      .catch(() => {});
+  }, []);
+
+  // Load 펀드레이징 트래커 — fundraising.json (수집기가 뉴스에서 자동 추출)
+  useEffect(() => {
+    fetch(FUNDRAISING_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && Array.isArray(d.items)) setFundraising(d); })
       .catch(() => {});
   }, []);
 
@@ -1762,6 +1806,7 @@ function App() {
       {screen === 'gp' && (gpSel ? (
         <GpProfile
           name={gpSel} profile={gpSelProfile} articles={gpSelArticles}
+          frEvents={(fundraising && fundraising.items || []).filter(f => f.gp === gpSel)}
           onBack={() => setGpSel(null)}
           onOpenArticle={(id) => openItemFull(id)}
         />
@@ -1771,11 +1816,56 @@ function App() {
             <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
             <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
               <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>Global GP</div>
-              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>해외 운용사 프로필 · 강점 전략 · 최신 딜 뉴스 {gpNames.length ? <span style={{color:'#c4a93a'}}>· 전체 {gpNames.length}개사</span> : null}{gpProfilesAt ? <span> · 프로필 {gpProfilesAt} 기준</span> : null}</div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>해외 운용사 프로필 · 강점 전략 · 펀드레이징 {gpNames.length ? <span style={{color:'#c4a93a'}}>· 전체 {gpNames.length}개사</span> : null}{gpProfilesAt ? <span> · 프로필 {gpProfilesAt} 기준</span> : null}</div>
+              <div style={{display:'flex', gap:7, marginTop:13}}>
+                {[['list','운용사 목록'],['fr','펀드레이징 트래커']].map(([k, label]) => (
+                  <div key={k} onClick={() => setGpTab(k)} style={{font: gpTab===k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: gpTab===k ? '#1c1d1f' : '#9a9ca0', background: gpTab===k ? '#FFCC00' : '#f2f0ea', padding:'8px 16px', borderRadius:999, cursor:'pointer'}}>{label}</div>
+                ))}
+              </div>
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto', padding:'12px 18px 18px', width:'100%', maxWidth:900, margin:'0 auto', boxSizing:'border-box'}}>
-            <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', margin:'4px 0 10px'}}>운용사를 선택하면 설립·본사·AUM·강점 자산군(근거 포함)과 펀드 클로징·딜·환매 등 최신 기사를 한눈에 볼 수 있습니다.</div>
+            {gpTab === 'fr' ? (
+              /* ── 펀드레이징 트래커 — 모집·클로징 이벤트 (뉴스 자동 추출) ── */
+              <div>
+                <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', margin:'4px 0 12px'}}>
+                  <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출{fundraising && fundraising.updatedAt ? ` · ${fundraising.updatedAt} 갱신` : ''}</span>
+                  {Object.entries(FR_STAGE_STYLE).map(([st, s]) => (
+                    <span key={st} style={{font:'600 9.5px Pretendard', color:s.color, background:s.bg, padding:'2px 8px', borderRadius:5, border:'1px solid rgba(0,0,0,.04)'}}>{st}</span>
+                  ))}
+                </div>
+                {!fundraising ? (
+                  <div style={{padding:'50px 30px', textAlign:'center', color:'#b0b2b6', font:'600 13px Pretendard'}}>펀드레이징 데이터를 불러오는 중…</div>
+                ) : fundraising.items.length === 0 ? (
+                  <div style={{font:'500 12px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 수집된 모집·클로징 이벤트가 없습니다. 새 기사가 수집되면 자동 반영됩니다.</div>
+                ) : (
+                  <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                    {fundraising.items.map((f, i) => {
+                      const st = FR_STAGE_STYLE[f.stage] || FR_STAGE_STYLE['모집 중'];
+                      const inFeed = items.some(x => x.id === f.id);
+                      return (
+                        <div key={f.id + i} onClick={() => { if (inFeed) openItemFull(f.id); else if (f.gurl || f.url) window.open(f.gurl || f.url, '_blank'); }}
+                             style={{display:'flex', gap:10, padding:'13px 14px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                          <span style={{width:3, borderRadius:2, background:(ASSET[f.asset] && ASSET[f.asset].color) || '#c4a93a', flexShrink:0}}></span>
+                          <div style={{flex:1, minWidth:0}}>
+                            <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginBottom:4}}>
+                              <span style={{font:'700 9.5px Pretendard', color:st.color, background:st.bg, padding:'2px 8px', borderRadius:5}}>{f.stage}</span>
+                              {f.gp ? <span style={{font:'700 11px Pretendard', color:'#1c1d1f', background:'#f0eee7', padding:'2px 7px', borderRadius:5}}>{f.gp}</span> : <span style={{font:'600 10px Pretendard', color:'#9a9ca0'}}>{f.source}</span>}
+                              {f.size && <span style={{font:'700 11px Pretendard', color:'#9a7d12'}}>{f.size}</span>}
+                              <span style={{font:'500 10px Pretendard', color:'#bcbec2', marginLeft:'auto'}}>{f.date}</span>
+                            </div>
+                            <div style={{font:'650 13px/1.42 Pretendard', letterSpacing:'-.01em'}}>{f.title}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{font:'500 10px/1.6 Pretendard', color:'#b6b8bc', marginTop:12, textAlign:'center'}}>단계·규모는 기사에서 자동 추출된 참고용입니다 · 매 수집(3시간)마다 갱신</div>
+              </div>
+            ) : (
+            <>
+            <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', margin:'4px 0 10px'}}>운용사를 선택하면 설립·본사·AUM·플래그십 펀드·강점 자산군(근거 포함)과 최신 기사를 한눈에 볼 수 있습니다.</div>
             {!gpProfiles ? (
               <div style={{padding:'60px 30px', textAlign:'center', color:'#b0b2b6'}}>
                 <div style={{fontSize:30}}>◆</div>
@@ -1808,6 +1898,8 @@ function App() {
                   );
                 })}
               </div>
+            )}
+            </>
             )}
           </div>
           <Navbar active="gp" {...navProps} />

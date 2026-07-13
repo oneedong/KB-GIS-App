@@ -37,6 +37,15 @@ const INSTITUTIONS_API = './institutions.json';
 const LP_PROFILES_API = './lp-profiles.json';
 // Global GP 프로필 (설립·본사·AUM·강점 전략과 근거) — gp-profiles.json
 const GP_PROFILES_API = './gp-profiles.json';
+// 펀드레이징 트래커 (뉴스에서 모집·클로징 이벤트 자동 추출) — fundraising.json
+const FUNDRAISING_API = './fundraising.json';
+// 모집 단계별 배지 색상
+const FR_STAGE_STYLE = {
+    '모집 중': { color: '#9a7d12', bg: '#fffaeb' },
+    '1차 클로즈': { color: '#1a5fa4', bg: '#e6effa' },
+    '클로즈': { color: '#1a7a4a', bg: '#e4f5ea' },
+    '파이널 클로즈': { color: '#fff', bg: '#1a7a4a' },
+};
 // 실제 외부 원문 링크가 있는 기사만 유효로 본다. 과거 시드/하드코딩 기사는
 // 링크가 없으므로 걸러진다(브라우저 localStorage 에 남은 옛 가짜 기사 제거).
 function isRealArticle(a) {
@@ -847,7 +856,7 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
 // ─── GpProfile (Global GP — 운용사별 프로필) ────────────────
 // 설립·본사·AUM·강점 전략(근거 포함)은 gp-profiles.json 에서, 최근 동향·관련
 // 기사(펀드 클로징·딜·환매·참여 등 전체)는 news.json 에서 실시간 연동한다.
-function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
+function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle }) {
     const nowMs = Date.now();
     const cnt30 = articles.filter(a => nowMs - itemMs(a) < 30 * 86400000).length;
     const latest = articles[0] || null;
@@ -923,6 +932,22 @@ function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                             React.createElement("div", { style: { font: '700 13px Pretendard', color: '#1c1d1f' } }, st.k && ASSET[st.k] ? ASSET[st.k].label : (st.label || '전략')),
                             st.note && React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#56585c', marginTop: 3 } }, st.note)))))))),
+                frEvents && frEvents.length > 0 && (React.createElement("div", { style: { marginTop: 20 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uD380\uB4DC\uB808\uC774\uC9D5 \uB3D9\uD5A5"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB274\uC2A4 \uC790\uB3D9 \uCD94\uCD9C")),
+                    React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, frEvents.slice(0, 5).map((f, i) => {
+                        const st = FR_STAGE_STYLE[f.stage] || FR_STAGE_STYLE['모집 중'];
+                        return (React.createElement("div", { key: f.id + i, onClick: () => onOpenArticle(f.id), style: { display: 'flex', gap: 9, alignItems: 'flex-start', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                            React.createElement("span", { style: { font: '700 9.5px Pretendard', color: st.color, background: st.bg, padding: '2px 8px', borderRadius: 5, flexShrink: 0, marginTop: 1 } }, f.stage),
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { font: '650 12.5px/1.45 Pretendard' } }, f.title),
+                                React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 3 } },
+                                    f.size ? `${f.size} · ` : '',
+                                    f.date,
+                                    " \u00B7 ",
+                                    f.source))));
+                    })))),
                 React.createElement("div", { style: { marginTop: 24 } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 } },
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uAD00\uB828 \uAE30\uC0AC"),
@@ -975,6 +1000,8 @@ function App() {
     const [gpProfiles, setGpProfiles] = useState(null); // Global GP 프로필(gp-profiles.json)
     const [gpProfilesAt, setGpProfilesAt] = useState('');
     const [gpSel, setGpSel] = useState(null); // Global GP 선택 운용사(null = 목록)
+    const [gpTab, setGpTab] = useState('list'); // Global GP 하위 탭: 'list' | 'fr'
+    const [fundraising, setFundraising] = useState(null); // 펀드레이징 트래커
     const [lpSel, setLpSel] = useState(null); // Korea LP 선택 기관(null = 목록)
     const [lpTab, setLpTab] = useState('inst'); // Korea LP 하위 탭: 'inst' | 'alloc'
     const [lpExpanded, setLpExpanded] = useState(null); // Korea LP 업권 펼침
@@ -1072,6 +1099,14 @@ function App() {
             if (d.updatedAt)
                 setGpProfilesAt(d.updatedAt);
         } })
+            .catch(() => { });
+    }, []);
+    // Load 펀드레이징 트래커 — fundraising.json (수집기가 뉴스에서 자동 추출)
+    useEffect(() => {
+        fetch(FUNDRAISING_API + '?t=' + Date.now())
+            .then(r => r.json())
+            .then(d => { if (d && Array.isArray(d.items))
+            setFundraising(d); })
             .catch(() => { });
     }, []);
     const flash = (msg) => {
@@ -1581,13 +1616,13 @@ function App() {
                             r.date,
                             "\u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uB41C \uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")))))),
                 React.createElement(Navbar, { active: "korlp", ...navProps })))),
-            screen === 'gp' && (gpSel ? (React.createElement(GpProfile, { name: gpSel, profile: gpSelProfile, articles: gpSelArticles, onBack: () => setGpSel(null), onOpenArticle: (id) => openItemFull(id) })) : (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
+            screen === 'gp' && (gpSel ? (React.createElement(GpProfile, { name: gpSel, profile: gpSelProfile, articles: gpSelArticles, frEvents: (fundraising && fundraising.items || []).filter(f => f.gp === gpSel), onBack: () => setGpSel(null), onOpenArticle: (id) => openItemFull(id) })) : (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },
                     React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
                     React.createElement("div", { style: { padding: '2px 20px 14px', borderBottom: '1px solid #efece4' } },
                         React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "Global GP"),
                         React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } },
-                            "\uD574\uC678 \uC6B4\uC6A9\uC0AC \uD504\uB85C\uD544 \u00B7 \uAC15\uC810 \uC804\uB7B5 \u00B7 \uCD5C\uC2E0 \uB51C \uB274\uC2A4 ",
+                            "\uD574\uC678 \uC6B4\uC6A9\uC0AC \uD504\uB85C\uD544 \u00B7 \uAC15\uC810 \uC804\uB7B5 \u00B7 \uD380\uB4DC\uB808\uC774\uC9D5 ",
                             gpNames.length ? React.createElement("span", { style: { color: '#c4a93a' } },
                                 "\u00B7 \uC804\uCCB4 ",
                                 gpNames.length,
@@ -1595,9 +1630,32 @@ function App() {
                             gpProfilesAt ? React.createElement("span", null,
                                 " \u00B7 \uD504\uB85C\uD544 ",
                                 gpProfilesAt,
-                                " \uAE30\uC900") : null))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 18px 18px', width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } },
-                    React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', margin: '4px 0 10px' } }, "\uC6B4\uC6A9\uC0AC\uB97C \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\u00B7\uBCF8\uC0AC\u00B7AUM\u00B7\uAC15\uC810 \uC790\uC0B0\uAD70(\uADFC\uAC70 \uD3EC\uD568)\uACFC \uD380\uB4DC \uD074\uB85C\uC9D5\u00B7\uB51C\u00B7\uD658\uB9E4 \uB4F1 \uCD5C\uC2E0 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),
+                                " \uAE30\uC900") : null),
+                        React.createElement("div", { style: { display: 'flex', gap: 7, marginTop: 13 } }, [['list', '운용사 목록'], ['fr', '펀드레이징 트래커']].map(([k, label]) => (React.createElement("div", { key: k, onClick: () => setGpTab(k), style: { font: gpTab === k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: gpTab === k ? '#1c1d1f' : '#9a9ca0', background: gpTab === k ? '#FFCC00' : '#f2f0ea', padding: '8px 16px', borderRadius: 999, cursor: 'pointer' } }, label)))))),
+                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 18px 18px', width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } }, gpTab === 'fr' ? (React.createElement("div", null,
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', margin: '4px 0 12px' } },
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } },
+                            "\u25CF \uB274\uC2A4 \uC790\uB3D9 \uCD94\uCD9C",
+                            fundraising && fundraising.updatedAt ? ` · ${fundraising.updatedAt} 갱신` : ''),
+                        Object.entries(FR_STAGE_STYLE).map(([st, s]) => (React.createElement("span", { key: st, style: { font: '600 9.5px Pretendard', color: s.color, background: s.bg, padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(0,0,0,.04)' } }, st)))),
+                    !fundraising ? (React.createElement("div", { style: { padding: '50px 30px', textAlign: 'center', color: '#b0b2b6', font: '600 13px Pretendard' } }, "\uD380\uB4DC\uB808\uC774\uC9D5 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026")) : fundraising.items.length === 0 ? (React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uC218\uC9D1\uB41C \uBAA8\uC9D1\u00B7\uD074\uB85C\uC9D5 \uC774\uBCA4\uD2B8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")) : (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, fundraising.items.map((f, i) => {
+                        const st = FR_STAGE_STYLE[f.stage] || FR_STAGE_STYLE['모집 중'];
+                        const inFeed = items.some(x => x.id === f.id);
+                        return (React.createElement("div", { key: f.id + i, onClick: () => { if (inFeed)
+                                openItemFull(f.id);
+                            else if (f.gurl || f.url)
+                                window.open(f.gurl || f.url, '_blank'); }, style: { display: 'flex', gap: 10, padding: '13px 14px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                            React.createElement("span", { style: { width: 3, borderRadius: 2, background: (ASSET[f.asset] && ASSET[f.asset].color) || '#c4a93a', flexShrink: 0 } }),
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 } },
+                                    React.createElement("span", { style: { font: '700 9.5px Pretendard', color: st.color, background: st.bg, padding: '2px 8px', borderRadius: 5 } }, f.stage),
+                                    f.gp ? React.createElement("span", { style: { font: '700 11px Pretendard', color: '#1c1d1f', background: '#f0eee7', padding: '2px 7px', borderRadius: 5 } }, f.gp) : React.createElement("span", { style: { font: '600 10px Pretendard', color: '#9a9ca0' } }, f.source),
+                                    f.size && React.createElement("span", { style: { font: '700 11px Pretendard', color: '#9a7d12' } }, f.size),
+                                    React.createElement("span", { style: { font: '500 10px Pretendard', color: '#bcbec2', marginLeft: 'auto' } }, f.date)),
+                                React.createElement("div", { style: { font: '650 13px/1.42 Pretendard', letterSpacing: '-.01em' } }, f.title))));
+                    }))),
+                    React.createElement("div", { style: { font: '500 10px/1.6 Pretendard', color: '#b6b8bc', marginTop: 12, textAlign: 'center' } }, "\uB2E8\uACC4\u00B7\uADDC\uBAA8\uB294 \uAE30\uC0AC\uC5D0\uC11C \uC790\uB3D9 \uCD94\uCD9C\uB41C \uCC38\uACE0\uC6A9\uC785\uB2C8\uB2E4 \u00B7 \uB9E4 \uC218\uC9D1(3\uC2DC\uAC04)\uB9C8\uB2E4 \uAC31\uC2E0"))) : (React.createElement(React.Fragment, null,
+                    React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', margin: '4px 0 10px' } }, "\uC6B4\uC6A9\uC0AC\uB97C \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\u00B7\uBCF8\uC0AC\u00B7AUM\u00B7\uD50C\uB798\uADF8\uC2ED \uD380\uB4DC\u00B7\uAC15\uC810 \uC790\uC0B0\uAD70(\uADFC\uAC70 \uD3EC\uD568)\uACFC \uCD5C\uC2E0 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),
                     !gpProfiles ? (React.createElement("div", { style: { padding: '60px 30px', textAlign: 'center', color: '#b0b2b6' } },
                         React.createElement("div", { style: { fontSize: 30 } }, "\u25C6"),
                         React.createElement("div", { style: { font: '600 13px Pretendard', marginTop: 10 } }, "GP \uD504\uB85C\uD544\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026"))) : (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, gpListSorted.map((n, i) => {
@@ -1615,7 +1673,7 @@ function App() {
                                 "\uAE30\uC0AC ",
                                 c),
                             React.createElement("span", { style: { color: '#cfccc4', flexShrink: 0 } }, "\u203A")));
-                    })))),
+                    })))))),
                 React.createElement(Navbar, { active: "gp", ...navProps })))),
             screen === 'search' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },

@@ -356,6 +356,20 @@ const FOREIGN_GPS = [
   [/angelo gordon/i, 'Angelo Gordon', '해외 GP'],
   [/davidson kempner/i, 'Davidson Kempner', '해외 GP'],
   [/\bBBAM\b|비비에이엠/i, 'BBAM', '해외 GP'],
+  [/\bPJT\b|park\s?hill|파크힐/i, 'PJT Park Hill', '해외 GP'],
+  [/campbell\s?lutyens|캠벨\s?루티언스/i, 'Campbell Lutyens', '해외 GP'],
+  [/evercore|에버코어/i, 'Evercore', '해외 GP'],
+  [/\bapax\b|아팍스/i, 'Apax', '해외 GP'],
+  [/clearlake|클리어레이크/i, 'Clearlake', '해외 GP'],
+  [/francisco partners|프란시스코\s?파트너스|프랜시스코\s?파트너스/i, 'Francisco Partners', '해외 GP'],
+  [/insight partners|인사이트\s?파트너스/i, 'Insight Partners', '해외 GP'],
+  [/platinum equity|플래티넘\s?에쿼티/i, 'Platinum Equity', '해외 GP'],
+  [/l\s?catterton|엘\s?캐터튼/i, 'L Catterton', '해외 GP'],
+  [/bridgepoint|브리지포인트/i, 'Bridgepoint', '해외 GP'],
+  [/\bPAG\b/, 'PAG', '해외 GP'],
+  [/\bMBK\b|엠비케이/i, 'MBK Partners', '해외 GP'],
+  [/hillhouse|힐하우스/i, 'Hillhouse', '해외 GP'],
+  [/affinity equity|어피니티|어피너티/i, 'Affinity Equity Partners', '해외 GP'],
 ];
 const INSTS = [...KOREAN_LPS, ...FOREIGN_GPS];
 

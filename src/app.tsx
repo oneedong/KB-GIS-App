@@ -252,7 +252,8 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
   ];
   return (
     <div style={{width:236, flexShrink:0, background:'#1c1d1f', color:'#fff', display:'flex', flexDirection:'column', padding:'22px 14px'}}>
-      <div style={{display:'flex', alignItems:'center', gap:9, padding:'4px 12px 22px'}}>
+      {/* 로고 클릭 = 홈 이동 + 최신 뉴스 새로고침 */}
+      <div onClick={() => { go('home'); onRefresh(); }} style={{display:'flex', alignItems:'center', gap:9, padding:'4px 12px 22px', cursor:'pointer'}}>
         <div style={{width:30, height:30, borderRadius:8, background:'#FFCC00', display:'flex', alignItems:'center', justifyContent:'center', font:'800 13px Pretendard', color:'#1c1d1f', letterSpacing:'-.02em'}}>KB</div>
         <div style={{font:'800 17px Pretendard', color:'#FFCC00', letterSpacing:'.04em'}}>KB GIS</div>
       </div>
@@ -941,6 +942,14 @@ function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
             </div>
           )}
 
+          {/* 플래그십 펀드 */}
+          {profile && profile.flagship && (
+            <div style={{marginTop:10, background:'#fffaeb', border:'1px solid #f6ecc8', borderRadius:11, padding:'12px 13px'}}>
+              <div style={{font:'700 10px Pretendard', color:'#9a7d12', letterSpacing:'.04em', marginBottom:5}}>플래그십 펀드</div>
+              <div style={{font:'600 12.5px/1.6 Pretendard', color:'#3d3e42'}}>{profile.flagship}</div>
+            </div>
+          )}
+
           {/* 최근 동향 — 최신 기사 자동 연동 */}
           <div style={{marginTop:14, border:'1px solid #ece9e2', borderRadius:13, padding:'13px 14px', background:'#fbfaf7'}}>
             <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:9}}>
@@ -1481,7 +1490,7 @@ function App() {
               <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>기관·자산군·지역별로 빠르게 모아보기</div>
             </div>
           </div>
-          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18}}>
+          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18, width:'100%', maxWidth:900, margin:'0 auto', boxSizing:'border-box'}}>
             {/* 마켓 뉴스 — 기관과 무관한 대체투자 시장·딜·동향 뉴스 */}
             <div onClick={() => applyFilter('마켓')} style={{display:'flex', alignItems:'center', gap:13, border:'1px solid #ece9e2', borderRadius:14, padding:'14px 15px', marginBottom:18, cursor:'pointer', background:'linear-gradient(90deg,#fffaeb,#fff)'}}>
               <span style={{width:38, height:38, borderRadius:10, background:'#FFCC00', display:'flex', alignItems:'center', justifyContent:'center', font:'800 15px Pretendard', color:'#1c1d1f', flexShrink:0}}>📈</span>
@@ -1588,7 +1597,7 @@ function App() {
               </div>
             </div>
           </div>
-          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18}}>
+          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18, width:'100%', maxWidth:900, margin:'0 auto', boxSizing:'border-box'}}>
             {lpTab === 'inst' ? (
               /* ── 업권별 기관 목록 → 기관 프로필 ── */
               <div style={{display:'flex', flexDirection:'column', gap:8}}>
@@ -1765,7 +1774,7 @@ function App() {
               <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>해외 운용사 프로필 · 강점 전략 · 최신 딜 뉴스 {gpNames.length ? <span style={{color:'#c4a93a'}}>· 전체 {gpNames.length}개사</span> : null}{gpProfilesAt ? <span> · 프로필 {gpProfilesAt} 기준</span> : null}</div>
             </div>
           </div>
-          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:'12px 18px 18px'}}>
+          <div style={{flex:1, minHeight:0, overflowY:'auto', padding:'12px 18px 18px', width:'100%', maxWidth:900, margin:'0 auto', boxSizing:'border-box'}}>
             <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', margin:'4px 0 10px'}}>운용사를 선택하면 설립·본사·AUM·강점 자산군(근거 포함)과 펀드 클로징·딜·환매 등 최신 기사를 한눈에 볼 수 있습니다.</div>
             {!gpProfiles ? (
               <div style={{padding:'60px 30px', textAlign:'center', color:'#b0b2b6'}}>

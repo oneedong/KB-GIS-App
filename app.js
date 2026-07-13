@@ -231,7 +231,7 @@ function Sidebar({ active, homeNew, go, onRefresh }) {
         ['korlp', '★', 'Korea LP'], ['gp', '◆', 'Global GP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
     ];
     return (React.createElement("div", { style: { width: 236, flexShrink: 0, background: '#1c1d1f', color: '#fff', display: 'flex', flexDirection: 'column', padding: '22px 14px' } },
-        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 9, padding: '4px 12px 22px' } },
+        React.createElement("div", { onClick: () => { go('home'); onRefresh(); }, style: { display: 'flex', alignItems: 'center', gap: 9, padding: '4px 12px 22px', cursor: 'pointer' } },
             React.createElement("div", { style: { width: 30, height: 30, borderRadius: 8, background: '#FFCC00', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 13px Pretendard', color: '#1c1d1f', letterSpacing: '-.02em' } }, "KB"),
             React.createElement("div", { style: { font: '800 17px Pretendard', color: '#FFCC00', letterSpacing: '.04em' } }, "KB GIS")),
         React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 3 } }, items.map(([key, icon, label]) => {
@@ -882,6 +882,9 @@ function GpProfile({ name, profile, articles, onBack, onOpenArticle }) {
                     React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } },
                         "\uC6B4\uC6A9\uC790\uC0B0(AUM) \u00B7 ",
                         profile.aumAsOf || '공시 기준(약)'))),
+                profile && profile.flagship && (React.createElement("div", { style: { marginTop: 10, background: '#fffaeb', border: '1px solid #f6ecc8', borderRadius: 11, padding: '12px 13px' } },
+                    React.createElement("div", { style: { font: '700 10px Pretendard', color: '#9a7d12', letterSpacing: '.04em', marginBottom: 5 } }, "\uD50C\uB798\uADF8\uC2ED \uD380\uB4DC"),
+                    React.createElement("div", { style: { font: '600 12.5px/1.6 Pretendard', color: '#3d3e42' } }, profile.flagship))),
                 React.createElement("div", { style: { marginTop: 14, border: '1px solid #ece9e2', borderRadius: 13, padding: '13px 14px', background: '#fbfaf7' } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 } },
                         React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '3px 9px', borderRadius: 6 } }, "\u25CF \uCD5C\uADFC \uB3D9\uD5A5"),
@@ -1379,7 +1382,7 @@ function App() {
                     React.createElement("div", { style: { padding: '2px 20px 16px', borderBottom: '1px solid #efece4' } },
                         React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uCE74\uD14C\uACE0\uB9AC"),
                         React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, "\uAE30\uAD00\u00B7\uC790\uC0B0\uAD70\u00B7\uC9C0\uC5ED\uBCC4\uB85C \uBE60\uB974\uAC8C \uBAA8\uC544\uBCF4\uAE30"))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } },
+                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } },
                     React.createElement("div", { onClick: () => applyFilter('마켓'), style: { display: 'flex', alignItems: 'center', gap: 13, border: '1px solid #ece9e2', borderRadius: 14, padding: '14px 15px', marginBottom: 18, cursor: 'pointer', background: 'linear-gradient(90deg,#fffaeb,#fff)' } },
                         React.createElement("span", { style: { width: 38, height: 38, borderRadius: 10, background: '#FFCC00', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 15px Pretendard', color: '#1c1d1f', flexShrink: 0 } }, "\uD83D\uDCC8"),
                         React.createElement("div", { style: { flex: 1 } },
@@ -1458,7 +1461,7 @@ function App() {
                                 profilesAt,
                                 " \uAE30\uC900") : null),
                         React.createElement("div", { style: { display: 'flex', gap: 7, marginTop: 13 } }, [['inst', '기관별 프로필'], ['alloc', '배분 비교']].map(([k, label]) => (React.createElement("div", { key: k, onClick: () => setLpTab(k), style: { font: lpTab === k ? '700 12.5px Pretendard' : '600 12.5px Pretendard', color: lpTab === k ? '#1c1d1f' : '#9a9ca0', background: lpTab === k ? '#FFCC00' : '#f2f0ea', padding: '8px 16px', borderRadius: 999, cursor: 'pointer' } }, label)))))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18 } }, lpTab === 'inst' ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } }, lpTab === 'inst' ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
                     React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginBottom: 2 } }, "\uC5C5\uAD8C\uC744 \uD3BC\uCCD0 \uAE30\uAD00\uC744 \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\uC5F0\uB3C4\u00B7AUM\u00B7\uC6B4\uC6A9\uBC29\uC2DD\u00B7CIO\u00B7\uB300\uCCB4\uD22C\uC790 \uBC30\uBD84\uACFC \uAD00\uB828 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),
                     catGroups.map(g => {
                         const open = lpExpanded === g.name;
@@ -1593,7 +1596,7 @@ function App() {
                                 " \u00B7 \uD504\uB85C\uD544 ",
                                 gpProfilesAt,
                                 " \uAE30\uC900") : null))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 18px 18px' } },
+                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 18px 18px', width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } },
                     React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', margin: '4px 0 10px' } }, "\uC6B4\uC6A9\uC0AC\uB97C \uC120\uD0DD\uD558\uBA74 \uC124\uB9BD\u00B7\uBCF8\uC0AC\u00B7AUM\u00B7\uAC15\uC810 \uC790\uC0B0\uAD70(\uADFC\uAC70 \uD3EC\uD568)\uACFC \uD380\uB4DC \uD074\uB85C\uC9D5\u00B7\uB51C\u00B7\uD658\uB9E4 \uB4F1 \uCD5C\uC2E0 \uAE30\uC0AC\uB97C \uD55C\uB208\uC5D0 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."),
                     !gpProfiles ? (React.createElement("div", { style: { padding: '60px 30px', textAlign: 'center', color: '#b0b2b6' } },
                         React.createElement("div", { style: { fontSize: 30 } }, "\u25C6"),

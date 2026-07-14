@@ -131,6 +131,83 @@ function grp(t) {
         return 'Global GP';
     return '기타';
 }
+// ─── 플래그십 펀드 · 관련 뉴스 매칭 ───────────────────────────
+// gp-profiles.json 의 flagship 문자열(예: "BCP IX — 약 $21B · 부동산 BREP X …")을
+// 개별 펀드 항목으로 분해하고, 각 펀드명에서 뉴스 매칭용 키워드를 뽑아낸다.
+// 매칭은 펀드 고유명(시리즈 포함)·구별력 있는 약어만 대상으로 해 오탐을 줄인다.
+const FLAGSHIP_STOP = new Set(['fund', 'funds', 'partners', 'partner', 'capital', 'asia', 'asian', 'europe', 'european', 'global', 'growth', 'america', 'americas', 'north', 'south', 'climate', 'infrastructure', 'infra', 'opportunities', 'opportunity', 'strategic', 'equity', 'investment', 'investments', 'senior', 'direct', 'lending', 'group', 'specialty', 'loan', 'series', 'energy', 'core', 'plus', 'value', 'real', 'estate', 'credit', 'private', 'flagship', 'platform', 'secondary', 'secondaries', 'buyout', 'ventures', 'venture', 'holdings', 'general', 'special', 'situations', 'yield', 'income', 'property', 'realty', 'trust', 'bdc', 'sma', 'llc', 'inc', 'company', 'sof', 'and', 'of', 'the']);
+const ROMAN_RE = /^[ivxlcdm]+$/i;
+// 펀드 고유명(라틴 코어)에서 매칭 키워드 후보를 만든다. GP 자기 이름·일반명사는 제외.
+function flagshipKeywords(core, gpName) {
+    const kws = [];
+    const gp = String(gpName || '').toLowerCase();
+    const gpWords = new Set(gp.split(/\s+/));
+    const push = (kw) => {
+        const k = String(kw).trim();
+        const kl = k.toLowerCase();
+        if (k.length < 3)
+            return; // 너무 짧은 토큰 제외
+        if (!/[A-Za-z]/.test(k))
+            return; // 라틴 문자가 있어야 함
+        if (ROMAN_RE.test(k) || /^\d+$/.test(k))
+            return;
+        if (FLAGSHIP_STOP.has(kl))
+            return;
+        // 구성 단어가 모두 일반명사/지명이면(예: "North America", "Capital Partners") 제외 — 오탐 방지
+        if (k.split(/\s+/).every(w => FLAGSHIP_STOP.has(w.toLowerCase())))
+            return;
+        if (kl === gp || gpWords.has(kl))
+            return; // GP 자기 이름/티커는 플래그십 특정성이 없음
+        if (kws.indexOf(k) === -1)
+            kws.push(k);
+    };
+    push(core);
+    const toks = core.split(/\s+/).filter(Boolean);
+    const last = toks[toks.length - 1] || '';
+    if (toks.length >= 2 && (ROMAN_RE.test(last) || /^\d+$/.test(last))) {
+        const base = toks.slice(0, -1).join(' '); // 시리즈 번호를 뗀 상위 펀드명
+        if (base.indexOf(' ') !== -1 || base === base.toUpperCase())
+            push(base);
+    }
+    return kws;
+}
+// flagship 문자열 → [{ label(원문 세그먼트), name(라틴 코어), keywords[] }]
+function parseFlagshipFunds(flagship, gpName) {
+    if (!flagship)
+        return [];
+    return String(flagship).split('·').map(s => s.trim()).filter(Boolean).map(seg => {
+        const noParen = seg.replace(/[\(（][^\)）]*[\)）]/g, ' ');
+        let namePart = noParen.split(/\s[—–]\s|\s-\s/)[0].split(/[$€₩]/)[0];
+        let toks = namePart.split(/\s+/).map(t => t.replace(/^[,.;:()]+|[,.;:()]+$/g, '')).filter(Boolean);
+        while (toks.length && /[가-힣]/.test(toks[0]))
+            toks.shift();
+        while (toks.length && /[가-힣]/.test(toks[toks.length - 1]))
+            toks.pop();
+        const core = toks.join(' ');
+        return { label: seg, name: core, keywords: core ? flagshipKeywords(core, gpName) : [] };
+    });
+}
+// 라틴 키워드는 단어 경계로(부분 일치 오탐 방지), 그 외는 부분 문자열로 매칭.
+function textMatchesKw(kw, text) {
+    if (/[A-Za-z]/.test(kw)) {
+        const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp('(?:^|[^A-Za-z])' + esc + '(?:[^A-Za-z]|$)', 'i').test(text);
+    }
+    return text.indexOf(kw) !== -1;
+}
+// GP 기사 목록에서 각 플래그십 펀드가 언급된 기사를 매칭(최신순).
+function matchFlagshipNews(flagship, gpName, articles) {
+    const funds = parseFlagshipFunds(flagship, gpName);
+    return funds.map(f => {
+        const news = f.keywords.length
+            ? sortArticles(articles.filter(a => {
+                const t = ' ' + (a.ko || '') + ' ' + (a.en || '') + ' ' + (a.body || '') + ' ';
+                return f.keywords.some(kw => textMatchesKw(kw, t));
+            }))
+            : [];
+        return { ...f, news };
+    });
+}
 // 시드 데모 데이터는 제거되었습니다. 앱은 수집기가 채우는 news.json 의 실제
 // 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 // ─── Navbar ───────────────────────────────────────────────
@@ -891,9 +968,34 @@ function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle })
                     React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } },
                         "\uC6B4\uC6A9\uC790\uC0B0(AUM) \u00B7 ",
                         profile.aumAsOf || '공시 기준(약)'))),
-                profile && profile.flagship && (React.createElement("div", { style: { marginTop: 10, background: '#fffaeb', border: '1px solid #f6ecc8', borderRadius: 11, padding: '12px 13px' } },
-                    React.createElement("div", { style: { font: '700 10px Pretendard', color: '#9a7d12', letterSpacing: '.04em', marginBottom: 5 } }, "\uD50C\uB798\uADF8\uC2ED \uD380\uB4DC"),
-                    React.createElement("div", { style: { font: '600 12.5px/1.6 Pretendard', color: '#3d3e42' } }, profile.flagship))),
+                profile && profile.flagship && (() => {
+                    const funds = matchFlagshipNews(profile.flagship, name, articles);
+                    const allNews = funds.reduce((acc, f) => acc.concat(f.news), []);
+                    const latestMs = allNews.length ? Math.max(...allNews.map(itemMs)) : 0;
+                    const recent = latestMs > 0 && (nowMs - latestMs < 30 * 86400000);
+                    const latestY = latestMs ? kstYMD(latestMs) : null;
+                    return (React.createElement("div", { style: { marginTop: 10, background: '#fffaeb', border: '1px solid #f6ecc8', borderRadius: 11, padding: '12px 13px' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 } },
+                            React.createElement("div", { style: { font: '700 10px Pretendard', color: '#9a7d12', letterSpacing: '.04em' } }, "\uD50C\uB798\uADF8\uC2ED \uD380\uB4DC"),
+                            allNews.length > 0 && (React.createElement("span", { style: { font: '700 9px Pretendard', color: recent ? '#1a7a4a' : '#9a7d12', background: recent ? '#e4f5ea' : '#fff5d6', padding: '2px 7px', borderRadius: 5 } }, recent ? `업데이트 · ${latestY.m}.${pad2(latestY.d)}` : `관련 뉴스 ${allNews.length}`)),
+                            React.createElement("span", { style: { marginLeft: 'auto', font: '500 9px Pretendard', color: '#c2b06a' } }, "\uB274\uC2A4 \uC790\uB3D9 \uC5F0\uB3D9")),
+                        React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 9 } }, funds.map((f, i) => (React.createElement("div", { key: i, style: { borderTop: i ? '1px solid #f2e6bf' : 'none', paddingTop: i ? 9 : 0 } },
+                            React.createElement("div", { style: { font: '600 12.5px/1.55 Pretendard', color: '#3d3e42' } }, f.label),
+                            f.news.length > 0 && (React.createElement("div", { style: { marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5 } }, f.news.slice(0, 3).map(a => {
+                                const isNew = nowMs - itemMs(a) < 30 * 86400000;
+                                return (React.createElement("div", { key: a.id, onClick: () => onOpenArticle(a.id), style: { display: 'flex', gap: 6, alignItems: 'flex-start', cursor: 'pointer', background: '#fff', border: '1px solid #f1e7c6', borderRadius: 8, padding: '7px 9px' } },
+                                    React.createElement("span", { style: { width: 5, height: 5, borderRadius: 2, marginTop: 5, flexShrink: 0, background: (ASSET[a.asset] && ASSET[a.asset].color) || '#c4a93a', display: 'inline-block' } }),
+                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                        React.createElement("div", { style: { font: '600 11.5px/1.4 Pretendard', color: '#1c1d1f' } }, a.ko),
+                                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 } },
+                                            isNew && React.createElement("span", { style: { font: '700 8px Pretendard', color: '#9a7d12', background: '#FFCC00', borderRadius: 3, padding: '1px 4px', letterSpacing: '.04em' } }, "NEW"),
+                                            React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6a55f' } },
+                                                a.date,
+                                                " \u00B7 ",
+                                                a.source)))));
+                            }))))))),
+                        React.createElement("div", { style: { font: '500 9.5px/1.5 Pretendard', color: '#c2b06a', marginTop: 9 } }, allNews.length > 0 ? '펀드명이 언급된 기사를 자동 매칭해 표시합니다.' : '플래그십 펀드가 언급된 새 기사가 수집되면 여기에 자동 표시됩니다.')));
+                })(),
                 React.createElement("div", { style: { marginTop: 14, border: '1px solid #ece9e2', borderRadius: 13, padding: '13px 14px', background: '#fbfaf7' } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 } },
                         React.createElement("span", { style: { font: '700 10.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '3px 9px', borderRadius: 6 } }, "\u25CF \uCD5C\uADFC \uB3D9\uD5A5"),

@@ -87,7 +87,7 @@ const ASSET = {
   AV: { label: 'Aviation',       code: '항공기금융',       color: 'oklch(0.62 0.14 25)'  },
 };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
-const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동', '마켓': '마켓 뉴스' };
+const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동', '마켓': '마켓 뉴스', '이전': '지방이전 이슈' };
 // 국내 LP 업권 그룹
 const GROUPS = ['연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권'];
 // Global GP — 카테고리에서 운용사별로 바로 필터
@@ -667,7 +667,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 // 설립연도·운용방식 등 안정적 사실은 lp-profiles.json(profile)에서, AUM·대체투자
 // 배분은 allocations.json(alloc)에서, CIO·인사와 자산군 수익률은 insights.json에서,
 // 관련 기사는 news.json(articles)에서 모아 한 화면에 보여준다.
-function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack, onOpenArticle }) {
+function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, returns, articles, onBack, onOpenArticle }) {
   const aum = (alloc && alloc.aum != null) ? alloc.aum : (profile && profile.aum != null ? profile.aum : null);
   const aumAsOf = (alloc && alloc.aum != null) ? (alloc.asOf || '공시 기준') : (profile && profile.aumAsOf) || '';
   const aumVerified = !!(alloc && alloc.aum != null);
@@ -715,6 +715,13 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
             <div style={{background:'#f8f7f3', borderRadius:11, padding:'12px 13px'}}>
               <div style={{font:'800 18px Pretendard'}}>{aumDisplay}</div>
               <div style={{font:'500 10px Pretendard', color:'#9a9ca0', marginTop:2}}>운용자산(AUM){aumAsOf ? ` · ${aumAsOf}` : ''}{aum != null && !aumVerified ? ' 공시 기준' : ''}</div>
+              {/* 기사에서 자동 포착한 최신 운용자산 — 공시치와 다르면 함께 보여준다(수치 근거 링크 포함) */}
+              {aumNews && aumNews.display && (
+                <a href={aumNews.url && /^https?:\/\//.test(aumNews.url) ? aumNews.url : undefined} target="_blank" rel="noopener noreferrer"
+                   style={{display:'block', textDecoration:'none', font:'600 10px Pretendard', color:'#1a7a4a', marginTop:6, lineHeight:1.5}}>
+                  ● 뉴스 기준 {aumNews.display} · {aumNews.date} {aumNews.url ? '↗' : ''}
+                </a>
+              )}
             </div>
             <div style={{background:'#fffaeb', borderRadius:11, padding:'12px 13px'}}>
               <div style={{font:'800 18px Pretendard', color:'#9a7d12'}}>{alloc && alloc.altPct != null ? fmtPct(alloc.altPct) : '–'}</div>
@@ -835,6 +842,45 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
               </div>
             );
           })()}
+
+          {/* 대체투자 운용조직 인사 (본부장·실장·팀장 — 뉴스 자동 추출) */}
+          {execs && execs.length > 0 && (
+            <div style={{marginTop:20}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9, flexWrap:'wrap'}}>
+                <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>운용조직 인사</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 뉴스 자동 추출</span>
+              </div>
+              <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                {execs.map((e, i) => (
+                  <a key={e.key || i} href={e.url && /^https?:\/\//.test(e.url) ? e.url : undefined} target="_blank" rel="noopener noreferrer"
+                     style={{display:'block', textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                      <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6}}>{e.title}</span>
+                      <span style={{font:'700 13px Pretendard', color:'#1c1d1f'}}>{e.person}</span>
+                      <span style={{font:'700 9px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 7px', borderRadius:5}}>{e.action}</span>
+                    </div>
+                    <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{e.date} · {e.source}{e.url ? ' · 기사 보기 ↗' : ''}</div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 지방이전 이슈 — 운용인력·조직에 직접 영향을 주는 이슈라 별도 카드로 */}
+          {move && (
+            <div style={{marginTop:20}}>
+              <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>지방이전 이슈</div>
+              <a href={move.url && /^https?:\/\//.test(move.url) ? move.url : undefined} target="_blank" rel="noopener noreferrer"
+                 style={{display:'block', textDecoration:'none', color:'inherit', border:'1px solid #dde6f3', borderRadius:13, padding:'13px 14px', background:'#f6f9fe'}}>
+                <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                  <span style={{font:'700 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'3px 9px', borderRadius:6}}>{move.stage}</span>
+                  <span style={{marginLeft:'auto', font:'500 9px Pretendard', color:'#9a9ca0'}}>뉴스 자동</span>
+                </div>
+                <div style={{font:'600 12.5px/1.5 Pretendard', color:'#1c1d1f', marginTop:7}}>{move.title}</div>
+                <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{move.date} · {move.source}{move.url ? ' · 기사 보기 ↗' : ''}</div>
+              </a>
+            </div>
+          )}
 
           {/* 대체투자 배분 추이 */}
           {alloc && alloc.trend && alloc.trend.length >= 2 && (
@@ -1054,6 +1100,7 @@ function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle })
                       <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap'}}>
                         <span style={{font:'600 10.5px Pretendard', color:item.assetColor}}>{item.assetLabel}</span>
                         {item.cat === '인사' && <span style={{font:'700 9px Pretendard', color:'#9a7d12', background:'#fffaeb', padding:'1px 6px', borderRadius:4}}>인사</span>}
+                        {item.cat === '이전' && <span style={{font:'700 9px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'1px 6px', borderRadius:4}}>지방이전</span>}
                         <span style={{font:'500 10.5px Pretendard', color:'#bcbec2'}}>{item.date} {item.time}</span>
                       </div>
                       <div style={{font:'650 13.5px/1.42 Pretendard', letterSpacing:'-.01em'}}>{item.ko}</div>
@@ -1313,6 +1360,7 @@ function App() {
   let feedItems = items;
   if (filter !== '전체') {
     if (filter === '인사')        feedItems = items.filter(i => i.cat === '인사');
+    else if (filter === '이전')   feedItems = items.filter(i => i.cat === '이전');
     else if (filter === '마켓')   feedItems = items.filter(i => i.cat === '마켓');
     else if (filter === 'Global GP') feedItems = items.filter(i => i.instGroup === 'Global GP' && i.cat !== '인사');
     else if (isGroup)            feedItems = items.filter(i => i.instGroup === filter && i.cat !== '인사');
@@ -1323,14 +1371,15 @@ function App() {
 
   let feedFilterLabel = filter;
   if (filter === '인사')    feedFilterLabel = '조직·인사 이동';
+  else if (filter === '이전') feedFilterLabel = '지방이전 이슈';
   else if (filter === '마켓') feedFilterLabel = '마켓 뉴스';
   else if (isAsset)         feedFilterLabel = ASSET[filter].label;
   else if (isRegion)        feedFilterLabel = REGION[filter];
 
-  const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스' };
+  const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스', '이전': '지방이전' };
   // key = 필터 내부 키, label = 표시용. 클릭 시 반드시 key 로 필터해야 한다
   // (라벨 '마켓 뉴스'/'조직·인사'를 필터에 넣으면 어떤 분기에도 안 걸려 0건).
-  const chips = ['전체','마켓','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사'].map(k => ({
+  const chips = ['전체','마켓','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사','이전'].map(k => ({
     key: k, label: CHIP_LABEL[k] || k, active: filter === k,
     bg: filter === k ? '#FFCC00' : '#2a2c30',
     color: filter === k ? '#1c1d1f' : '#cdced0',
@@ -1404,6 +1453,9 @@ function App() {
   const lpSelProfile = (lpSel && profiles && profiles[lpSel]) || null;
   const lpSelCio = (lpSel && insights && insights.cios) ? insights.cios.find(c => c.inst === lpSel) : null;
   const lpSelReturns = (lpSel && insights && insights.assetReturns) ? insights.assetReturns.filter(r => r.inst === lpSel) : [];
+  const lpSelExecs = (lpSel && insights && insights.execs) ? insights.execs.filter(e => e.inst === lpSel) : [];
+  const lpSelAum = (lpSel && insights && insights.aums) ? insights.aums.find(x => x.inst === lpSel) : null;
+  const lpSelMove = (lpSel && insights && insights.relocations) ? insights.relocations.find(x => x.inst === lpSel) : null;
   const lpSelArticles = lpSel ? items.filter(i => i.inst === lpSel) : [];
   const lpSelGroup = lpSel
     ? (((roster || []).find(r => r.name === lpSel) || {}).group || (lpSelAllocRow && lpSelAllocRow.group) || '국내 LP')
@@ -1623,7 +1675,8 @@ function App() {
       {screen === 'korlp' && (lpSel ? (
         <LpProfile
           name={lpSel} group={lpSelGroup} profile={lpSelProfile}
-          alloc={lpSelAlloc} cio={lpSelCio} returns={lpSelReturns} articles={lpSelArticles}
+          alloc={lpSelAlloc} cio={lpSelCio} execs={lpSelExecs} aumNews={lpSelAum} move={lpSelMove}
+          returns={lpSelReturns} articles={lpSelArticles}
           onBack={() => setLpSel(null)}
           onOpenArticle={(id) => openItemFull(id)}
         />
@@ -1772,6 +1825,79 @@ function App() {
                     </div>
                   ) : (
                     <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 추출된 CIO·인사 정보가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                  )}
+
+                  {/* 대체투자 운용조직 인사 (본부장·실장·팀장) */}
+                  <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>대체투자 운용조직 인사</div>
+                    <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 본부장·실장·팀장급</span>
+                  </div>
+                  {insights && insights.execs && insights.execs.length ? (
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      {insights.execs.slice(0, 12).map((e, i) => (
+                        <div key={e.key || i} onClick={() => openLp(e.inst)} style={{padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                          <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                            <span style={{font:'700 12.5px Pretendard', color:'#1c1d1f'}}>{e.inst}</span>
+                            <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'2px 8px', borderRadius:5}}>{e.title}</span>
+                            <span style={{marginLeft:'auto', color:'#cfccc4'}}>›</span>
+                          </div>
+                          <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{e.person} {e.action}</div>
+                          <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{e.date} · {e.source}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>최근 기사에서 확인된 본부장·실장·팀장급 인사가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
+                  )}
+
+                  {/* 지방이전 이슈 보드 */}
+                  <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>지방이전 이슈</div>
+                    <span style={{font:'500 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 7px', borderRadius:5}}>● 공제회·국책은행·연기금</span>
+                  </div>
+                  {insights && insights.relocations && insights.relocations.length ? (
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      {insights.relocations.slice(0, 12).map((m, i) => (
+                        <div key={m.inst+i} onClick={() => openLp(m.inst)} style={{padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                          <div style={{display:'flex', alignItems:'center', gap:7, flexWrap:'wrap'}}>
+                            <span style={{font:'700 12.5px Pretendard', color:'#1c1d1f'}}>{m.inst}</span>
+                            <span style={{font:'700 9px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 7px', borderRadius:5}}>{m.stage}</span>
+                            <span style={{marginLeft:'auto', color:'#cfccc4'}}>›</span>
+                          </div>
+                          <div style={{font:'500 12px/1.5 Pretendard', color:'#3d3e42', marginTop:5}}>{m.title}</div>
+                          <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{m.date} · {m.source}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>공제회·국책은행 지방이전 관련 기사를 상시 수집합니다. 새 기사가 올라오면 자동 반영됩니다.</div>
+                  )}
+
+                  {/* AUM 최신화 (기사 스크리닝) */}
+                  <div style={{display:'flex', alignItems:'baseline', gap:8, margin:'26px 0 10px'}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>운용자산(AUM) 최신화</div>
+                    <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 기사 스크리닝</span>
+                  </div>
+                  {insights && insights.aums && insights.aums.length ? (
+                    <>
+                      <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                        {insights.aums.slice(0, 14).map((x, i) => (
+                          <div key={x.inst+i} onClick={() => openLp(x.inst)} style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none', cursor:'pointer'}}>
+                            <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1, minWidth:0}}>{x.inst}</span>
+                            <span style={{font:'800 13.5px Pretendard', color:'#1c1d1f'}}>{x.display}</span>
+                            {x.ref != null && x.jo != null && (
+                              <span style={{font:'600 10px Pretendard', color:x.jo >= x.ref/10000 ? '#1a7a4a' : '#c0392b'}}>
+                                {x.jo >= x.ref/10000 ? '▲' : '▼'} 공시 {Math.round(x.ref/10000)}조
+                              </span>
+                            )}
+                            <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc'}}>{x.date}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:8}}>※ 기사 본문에서 &lsquo;운용자산·기금 규모·적립금&rsquo; 문구와 함께 언급된 수치만 반영합니다. 공시 확정치와 다를 수 있어 기관별 최신 공시치와 함께 표시합니다.</div>
+                    </>
+                  ) : (
+                    <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>기사에서 확인된 운용자산 수치가 아직 없습니다. 관련 기사가 올라오면 자동 반영됩니다.</div>
                   )}
 
                   {/* 자산군별 수익률 (뉴스 자동 추출) */}

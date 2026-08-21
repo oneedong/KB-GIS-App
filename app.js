@@ -94,7 +94,7 @@ const ASSET = {
     AV: { label: 'Aviation', code: '항공기금융', color: 'oklch(0.62 0.14 25)' },
 };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
-const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동', '마켓': '마켓 뉴스' };
+const CAT_LABEL = { LP: '한국 LP 동향', GP: 'Global GP 동향', '인사': '조직·인사 이동', '마켓': '마켓 뉴스', '이전': '지방이전 이슈' };
 // 국내 LP 업권 그룹
 const GROUPS = ['연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권'];
 // Global GP — 카테고리에서 운용사별로 바로 필터
@@ -660,7 +660,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
 // 설립연도·운용방식 등 안정적 사실은 lp-profiles.json(profile)에서, AUM·대체투자
 // 배분은 allocations.json(alloc)에서, CIO·인사와 자산군 수익률은 insights.json에서,
 // 관련 기사는 news.json(articles)에서 모아 한 화면에 보여준다.
-function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack, onOpenArticle }) {
+function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, returns, articles, onBack, onOpenArticle }) {
     const aum = (alloc && alloc.aum != null) ? alloc.aum : (profile && profile.aum != null ? profile.aum : null);
     const aumAsOf = (alloc && alloc.aum != null) ? (alloc.asOf || '공시 기준') : (profile && profile.aumAsOf) || '';
     const aumVerified = !!(alloc && alloc.aum != null);
@@ -705,7 +705,14 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
                         React.createElement("div", { style: { font: '500 10px Pretendard', color: '#9a9ca0', marginTop: 2 } },
                             "\uC6B4\uC6A9\uC790\uC0B0(AUM)",
                             aumAsOf ? ` · ${aumAsOf}` : '',
-                            aum != null && !aumVerified ? ' 공시 기준' : '')),
+                            aum != null && !aumVerified ? ' 공시 기준' : ''),
+                        aumNews && aumNews.display && (React.createElement("a", { href: aumNews.url && /^https?:\/\//.test(aumNews.url) ? aumNews.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', font: '600 10px Pretendard', color: '#1a7a4a', marginTop: 6, lineHeight: 1.5 } },
+                            "\u25CF \uB274\uC2A4 \uAE30\uC900 ",
+                            aumNews.display,
+                            " \u00B7 ",
+                            aumNews.date,
+                            " ",
+                            aumNews.url ? '↗' : ''))),
                     React.createElement("div", { style: { background: '#fffaeb', borderRadius: 11, padding: '12px 13px' } },
                         React.createElement("div", { style: { font: '800 18px Pretendard', color: '#9a7d12' } }, alloc && alloc.altPct != null ? fmtPct(alloc.altPct) : '–'),
                         React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b89a2e', marginTop: 2 } }, "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911")),
@@ -795,6 +802,32 @@ function LpProfile({ name, group, profile, alloc, cio, returns, articles, onBack
                                     cio.source,
                                     cio.url ? ' · 기사 보기 ↗' : ''))))));
                 })(),
+                execs && execs.length > 0 && (React.createElement("div", { style: { marginTop: 20 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, flexWrap: 'wrap' } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC6B4\uC6A9\uC870\uC9C1 \uC778\uC0AC"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB274\uC2A4 \uC790\uB3D9 \uCD94\uCD9C")),
+                    React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, execs.map((e, i) => (React.createElement("a", { key: e.key || i, href: e.url && /^https?:\/\//.test(e.url) ? e.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
+                            React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#56585c', background: '#f0eee7', padding: '3px 9px', borderRadius: 6 } }, e.title),
+                            React.createElement("span", { style: { font: '700 13px Pretendard', color: '#1c1d1f' } }, e.person),
+                            React.createElement("span", { style: { font: '700 9px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 7px', borderRadius: 5 } }, e.action)),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                            e.date,
+                            " \u00B7 ",
+                            e.source,
+                            e.url ? ' · 기사 보기 ↗' : ''))))))),
+                move && (React.createElement("div", { style: { marginTop: 20 } },
+                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uC9C0\uBC29\uC774\uC804 \uC774\uC288"),
+                    React.createElement("a", { href: move.url && /^https?:\/\//.test(move.url) ? move.url : undefined, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #dde6f3', borderRadius: 13, padding: '13px 14px', background: '#f6f9fe' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
+                            React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '3px 9px', borderRadius: 6 } }, move.stage),
+                            React.createElement("span", { style: { marginLeft: 'auto', font: '500 9px Pretendard', color: '#9a9ca0' } }, "\uB274\uC2A4 \uC790\uB3D9")),
+                        React.createElement("div", { style: { font: '600 12.5px/1.5 Pretendard', color: '#1c1d1f', marginTop: 7 } }, move.title),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                            move.date,
+                            " \u00B7 ",
+                            move.source,
+                            move.url ? ' · 기사 보기 ↗' : '')))),
                 alloc && alloc.trend && alloc.trend.length >= 2 && (React.createElement("div", { style: { marginTop: 22 } },
                     React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 6 } }, "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911 \uCD94\uC774"),
                     React.createElement(TrendChart, { trend: alloc.trend }),
@@ -963,6 +996,7 @@ function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle })
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' } },
                                 React.createElement("span", { style: { font: '600 10.5px Pretendard', color: item.assetColor } }, item.assetLabel),
                                 item.cat === '인사' && React.createElement("span", { style: { font: '700 9px Pretendard', color: '#9a7d12', background: '#fffaeb', padding: '1px 6px', borderRadius: 4 } }, "\uC778\uC0AC"),
+                                item.cat === '이전' && React.createElement("span", { style: { font: '700 9px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '1px 6px', borderRadius: 4 } }, "\uC9C0\uBC29\uC774\uC804"),
                                 React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#bcbec2' } },
                                     item.date,
                                     " ",
@@ -1227,6 +1261,8 @@ function App() {
     if (filter !== '전체') {
         if (filter === '인사')
             feedItems = items.filter(i => i.cat === '인사');
+        else if (filter === '이전')
+            feedItems = items.filter(i => i.cat === '이전');
         else if (filter === '마켓')
             feedItems = items.filter(i => i.cat === '마켓');
         else if (filter === 'Global GP')
@@ -1243,16 +1279,18 @@ function App() {
     let feedFilterLabel = filter;
     if (filter === '인사')
         feedFilterLabel = '조직·인사 이동';
+    else if (filter === '이전')
+        feedFilterLabel = '지방이전 이슈';
     else if (filter === '마켓')
         feedFilterLabel = '마켓 뉴스';
     else if (isAsset)
         feedFilterLabel = ASSET[filter].label;
     else if (isRegion)
         feedFilterLabel = REGION[filter];
-    const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스' };
+    const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스', '이전': '지방이전' };
     // key = 필터 내부 키, label = 표시용. 클릭 시 반드시 key 로 필터해야 한다
     // (라벨 '마켓 뉴스'/'조직·인사'를 필터에 넣으면 어떤 분기에도 안 걸려 0건).
-    const chips = ['전체', '마켓', 'Global GP', '연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권', '인사'].map(k => ({
+    const chips = ['전체', '마켓', 'Global GP', '연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권', '인사', '이전'].map(k => ({
         key: k, label: CHIP_LABEL[k] || k, active: filter === k,
         bg: filter === k ? '#FFCC00' : '#2a2c30',
         color: filter === k ? '#1c1d1f' : '#cdced0',
@@ -1321,6 +1359,9 @@ function App() {
     const lpSelProfile = (lpSel && profiles && profiles[lpSel]) || null;
     const lpSelCio = (lpSel && insights && insights.cios) ? insights.cios.find(c => c.inst === lpSel) : null;
     const lpSelReturns = (lpSel && insights && insights.assetReturns) ? insights.assetReturns.filter(r => r.inst === lpSel) : [];
+    const lpSelExecs = (lpSel && insights && insights.execs) ? insights.execs.filter(e => e.inst === lpSel) : [];
+    const lpSelAum = (lpSel && insights && insights.aums) ? insights.aums.find(x => x.inst === lpSel) : null;
+    const lpSelMove = (lpSel && insights && insights.relocations) ? insights.relocations.find(x => x.inst === lpSel) : null;
     const lpSelArticles = lpSel ? items.filter(i => i.inst === lpSel) : [];
     const lpSelGroup = lpSel
         ? (((roster || []).find(r => r.name === lpSel) || {}).group || (lpSelAllocRow && lpSelAllocRow.group) || '국내 LP')
@@ -1480,7 +1521,7 @@ function App() {
                         " ",
                         React.createElement("span", { style: { color: '#a6a8ac' } }, r.count)))))),
                 React.createElement(Navbar, { active: "category", ...navProps }))),
-            screen === 'korlp' && (lpSel ? (React.createElement(LpProfile, { name: lpSel, group: lpSelGroup, profile: lpSelProfile, alloc: lpSelAlloc, cio: lpSelCio, returns: lpSelReturns, articles: lpSelArticles, onBack: () => setLpSel(null), onOpenArticle: (id) => openItemFull(id) })) : (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
+            screen === 'korlp' && (lpSel ? (React.createElement(LpProfile, { name: lpSel, group: lpSelGroup, profile: lpSelProfile, alloc: lpSelAlloc, cio: lpSelCio, execs: lpSelExecs, aumNews: lpSelAum, move: lpSelMove, returns: lpSelReturns, articles: lpSelArticles, onBack: () => setLpSel(null), onOpenArticle: (id) => openItemFull(id) })) : (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },
                     React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
                     React.createElement("div", { style: { padding: '2px 20px 14px', borderBottom: '1px solid #efece4' } },
@@ -1600,6 +1641,49 @@ function App() {
                             c.date,
                             " \u00B7 ",
                             c.source)))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uCD94\uCD9C\uB41C CIO\u00B7\uC778\uC0AC \uC815\uBCF4\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, margin: '26px 0 10px' } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uB300\uCCB4\uD22C\uC790 \uC6B4\uC6A9\uC870\uC9C1 \uC778\uC0AC"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uBCF8\uBD80\uC7A5\u00B7\uC2E4\uC7A5\u00B7\uD300\uC7A5\uAE09")),
+                    insights && insights.execs && insights.execs.length ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, insights.execs.slice(0, 12).map((e, i) => (React.createElement("div", { key: e.key || i, onClick: () => openLp(e.inst), style: { padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
+                            React.createElement("span", { style: { font: '700 12.5px Pretendard', color: '#1c1d1f' } }, e.inst),
+                            React.createElement("span", { style: { font: '700 9.5px Pretendard', color: '#56585c', background: '#f0eee7', padding: '2px 8px', borderRadius: 5 } }, e.title),
+                            React.createElement("span", { style: { marginLeft: 'auto', color: '#cfccc4' } }, "\u203A")),
+                        React.createElement("div", { style: { font: '500 12px/1.5 Pretendard', color: '#3d3e42', marginTop: 5 } },
+                            e.person,
+                            " ",
+                            e.action),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                            e.date,
+                            " \u00B7 ",
+                            e.source)))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uCD5C\uADFC \uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uB41C \uBCF8\uBD80\uC7A5\u00B7\uC2E4\uC7A5\u00B7\uD300\uC7A5\uAE09 \uC778\uC0AC\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, margin: '26px 0 10px' } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC9C0\uBC29\uC774\uC804 \uC774\uC288"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uACF5\uC81C\uD68C\u00B7\uAD6D\uCC45\uC740\uD589\u00B7\uC5F0\uAE30\uAE08")),
+                    insights && insights.relocations && insights.relocations.length ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, insights.relocations.slice(0, 12).map((m, i) => (React.createElement("div", { key: m.inst + i, onClick: () => openLp(m.inst), style: { padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' } },
+                            React.createElement("span", { style: { font: '700 12.5px Pretendard', color: '#1c1d1f' } }, m.inst),
+                            React.createElement("span", { style: { font: '700 9px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 7px', borderRadius: 5 } }, m.stage),
+                            React.createElement("span", { style: { marginLeft: 'auto', color: '#cfccc4' } }, "\u203A")),
+                        React.createElement("div", { style: { font: '500 12px/1.5 Pretendard', color: '#3d3e42', marginTop: 5 } }, m.title),
+                        React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                            m.date,
+                            " \u00B7 ",
+                            m.source)))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uACF5\uC81C\uD68C\u00B7\uAD6D\uCC45\uC740\uD589 \uC9C0\uBC29\uC774\uC804 \uAD00\uB828 \uAE30\uC0AC\uB97C \uC0C1\uC2DC \uC218\uC9D1\uD569\uB2C8\uB2E4. \uC0C8 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, margin: '26px 0 10px' } },
+                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC6B4\uC6A9\uC790\uC0B0(AUM) \uCD5C\uC2E0\uD654"),
+                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uAE30\uC0AC \uC2A4\uD06C\uB9AC\uB2DD")),
+                    insights && insights.aums && insights.aums.length ? (React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, insights.aums.slice(0, 14).map((x, i) => (React.createElement("div", { key: x.inst + i, onClick: () => openLp(x.inst), style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: 'pointer' } },
+                            React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', flex: 1, minWidth: 0 } }, x.inst),
+                            React.createElement("span", { style: { font: '800 13.5px Pretendard', color: '#1c1d1f' } }, x.display),
+                            x.ref != null && x.jo != null && (React.createElement("span", { style: { font: '600 10px Pretendard', color: x.jo >= x.ref / 10000 ? '#1a7a4a' : '#c0392b' } },
+                                x.jo >= x.ref / 10000 ? '▲' : '▼',
+                                " \uACF5\uC2DC ",
+                                Math.round(x.ref / 10000),
+                                "\uC870")),
+                            React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc' } }, x.date))))),
+                        React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#b6b8bc', marginTop: 8 } }, "\u203B \uAE30\uC0AC \uBCF8\uBB38\uC5D0\uC11C \u2018\uC6B4\uC6A9\uC790\uC0B0\u00B7\uAE30\uAE08 \uADDC\uBAA8\u00B7\uC801\uB9BD\uAE08\u2019 \uBB38\uAD6C\uC640 \uD568\uAED8 \uC5B8\uAE09\uB41C \uC218\uCE58\uB9CC \uBC18\uC601\uD569\uB2C8\uB2E4. \uACF5\uC2DC \uD655\uC815\uCE58\uC640 \uB2E4\uB97C \uC218 \uC788\uC5B4 \uAE30\uAD00\uBCC4 \uCD5C\uC2E0 \uACF5\uC2DC\uCE58\uC640 \uD568\uAED8 \uD45C\uC2DC\uD569\uB2C8\uB2E4."))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uAE30\uC0AC\uC5D0\uC11C \uD655\uC778\uB41C \uC6B4\uC6A9\uC790\uC0B0 \uC218\uCE58\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4. \uAD00\uB828 \uAE30\uC0AC\uAC00 \uC62C\uB77C\uC624\uBA74 \uC790\uB3D9 \uBC18\uC601\uB429\uB2C8\uB2E4.")),
                     React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, margin: '26px 0 10px' } },
                         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uC790\uC0B0\uAD70\uBCC4 \uC218\uC775\uB960"),
                         React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uCD5C\uADFC \uAE30\uC0AC \uAE30\uC900")),

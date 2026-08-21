@@ -103,6 +103,24 @@ const QUERIES = [
   // (13) 국민연금 광역 — '해외' 키워드 없는 국내외 총괄 기사도 수집
   //      (예: "[단독] 248조로 불어난 국민연금 대체 투자" 유형의 단독 기사)
   '국민연금 (대체투자 OR 기금운용 OR 사모 OR 인프라 OR 부동산) when:7d',
+  // (14) 지방이전 이슈 — 공제회·국책은행·연기금의 본사/기금운용본부 지방이전.
+  //      운용인력 이탈·조직 재편으로 이어져 LP 커버리지에 직접 영향을 준다.
+  '(공제회 OR 연기금 OR 국책은행 OR 정책금융기관) (지방이전 OR 본사 이전) when:30d',
+  '(산업은행 OR 수출입은행 OR 기업은행 OR 신용보증기금 OR 기술보증기금) (부산 이전 OR 지방이전 OR 본점 이전) when:30d',
+  '(국민연금 OR 기금운용본부) (전주 OR 전북 OR 서울사무소) (이전 OR 인력 OR 이탈 OR 논란) when:30d',
+  '(교직원공제회 OR 행정공제회 OR 군인공제회 OR 과학기술인공제회 OR 노란우산 OR 중소기업중앙회 OR 새마을금고중앙회) (본사 이전 OR 지방 이전 OR 사옥 이전)',
+  '2차 공공기관 (이전 OR 이전지) (금융 OR 기금 OR 공제회 OR 연기금) when:30d',
+  '(혁신도시 OR 제2금융중심지 OR 금융중심지) (금융공기업 OR 기금 OR 공제회 OR 이전) when:30d',
+  '(공제회 OR 연기금 OR 국책은행) 이전 (운용인력 OR 인력 이탈 OR 반발 OR 노조) when:30d',
+  // (15) 대체투자 운용조직 실무 인사 — CIO 외 본부장·실장·팀장급까지 추적.
+  '(연기금 OR 공제회 OR 보험사 OR 중앙회) (대체투자본부장 OR 대체투자실장 OR 대체투자팀장 OR 해외투자팀장 OR 인프라팀장) (선임 OR 임명 OR 영입 OR 승진)',
+  '(국민연금 OR 한국투자공사 OR 교직원공제회 OR 행정공제회 OR 군인공제회 OR 새마을금고중앙회 OR 사학연금) (본부장 OR 실장 OR 팀장) (인사 OR 선임 OR 임명 OR 승진 OR 영입) when:30d',
+  '대체투자 (운용역 OR 심사역 OR 본부장 OR 실장 OR 팀장) (선임 OR 영입 OR 이동 OR 이직) when:30d',
+  '(증권사 OR 자산운용사) 대체투자 (본부장 OR 부문대표 OR 팀장) (영입 OR 선임) when:30d',
+  // (16) AUM·운용규모 스크리닝 — 기관 운용자산을 기사에서 자동 최신화.
+  '(국민연금 OR 한국투자공사 OR 교직원공제회 OR 행정공제회 OR 군인공제회 OR 과학기술인공제회 OR 경찰공제회 OR 새마을금고중앙회 OR 사학연금) (운용자산 OR 자산 규모 OR 기금 규모 OR AUM) (조원 OR 돌파 OR 증가)',
+  '(연기금 OR 공제회 OR 중앙회) 운용자산 조원 when:30d',
+  '(Blackstone OR KKR OR Apollo OR Carlyle OR Brookfield OR Ares OR "Blue Owl" OR EQT OR TPG) "assets under management" billion when:30d',
   // (12) Aviation — 항공기 리스·항공기금융 펀드/딜 (BBAM 등)
   '(BBAM OR Castlelake OR "Carlyle Aviation" OR "DAE Capital" OR Avolon OR AerCap OR "Air Lease") (fund OR aircraft OR leasing OR order) when:14d',
   'aircraft leasing fund OR aviation fund (close OR raise OR invest) when:14d',
@@ -228,14 +246,14 @@ const KOREAN_LPS = [
   [/건설공제조합|Construction Guarantee/i, '건설공제조합', '공제회'],
   [/교보생명보험|교보생명|Kyobo Life Insurance/i, '교보생명보험', '보험사'],
   [/하나생명보험|하나생명|Hana Life Insurance/i, '하나생명보험', '보험사'],
-  [/DB생명보험|DB생명|DB Life Insurance/i, 'DB생명보험', '보험사'],
+  [/(?<![A-Z])DB생명보험|(?<![A-Z])DB생명|(?<![A-Z])DB Life Insurance/i, 'DB생명보험', '보험사'],
   [/한화생명보험|한화생명|Hanwha Life Insurance/i, '한화생명보험', '보험사'],
   [/삼성생명보험|삼성생명|Samsung Life Insurance/i, '삼성생명보험', '보험사'],
   [/동양생명보험|동양생명|Tongyang Life Insurance/i, '동양생명보험', '보험사'],
   [/흥국생명보험|흥국생명|Heungkuk Life Insurance/i, '흥국생명보험', '보험사'],
   [/한화손해보험|한화손해|Hanwha General Insurance/i, '한화손해보험', '보험사'],
   [/MG손해보험|MG손해|MG Non-Life Insurance/i, 'MG손해보험', '보험사'],
-  [/DB손해보험|DB손해|DB Insurance/i, 'DB손해보험', '보험사'],
+  [/(?<![A-Z])DB손해보험|(?<![A-Z])DB손해|(?<![A-Z])DB Insurance/i, 'DB손해보험', '보험사'],
   [/농협손해보험|농협손해/i, '농협손해보험', '보험사'],
   [/롯데손해보험|롯데손해|Lotte Non-Life Insurance/i, '롯데손해보험', '보험사'],
   [/KB손해보험|KB손해|KB Insurance/i, 'KB손해보험', '보험사'],
@@ -388,6 +406,9 @@ const REGIONS = [
 const PEOPLE_RE = /인사|\bCIO\b|선임|영입|퇴임|사임|승진|내정|appoint|\bnames?\b|hire|steps? down/i;
 // 조직 개편·신설 등 "조직 변경" 신호 (인사 카테고리로 함께 분류)
 const ORG_RE = /조직\s?개편|조직\s?변경|직제\s?개편|조직\s?재편|본부\s?신설|실\s?신설|과\s?신설|팀\s?신설|기금운용과|운용역\s?증원|reorganiz|restructur/i;
+// 지방이전 이슈 — 공제회·국책은행·연기금의 본사/기금운용본부 이전.
+// '그 이전(before)' 오탐을 피하려고 '이전'은 반드시 이전 주체·행위어와 붙여서만 매칭.
+const MOVE_RE = /지방\s?이전|본사\s?이전|본점\s?이전|사옥\s?이전|청사\s?이전|이전\s?(?:추진|계획|확정|무산|백지화|철회|대상|기관|공공기관|논란|검토|압박|요구)|공공기관\s?(?:2차\s?)?(?:지방\s?)?이전|이전\s?공공기관|혁신도시\s?(?:이전|시즌2)|제2\s?금융중심지|(?:부산|전북|전주|대구|광주|울산|경북|경남|충북|충남|강원|제주)\s?(?:로\s?)?이전/;
 
 // ── 관련성 필터 (placement agent · 해외 대체투자 펀드 중심) ──
 // 통과 조건: (1) 대체투자 자산군 신호 ALT_RE  (2) 펀드·출자 맥락 FUND_RE
@@ -488,11 +509,101 @@ export function extractReturn(text) {
   if (/대체투자/.test(text)) return { asset: 'ALT', value: v };
   return null;
 }
+// ── 대체투자 운용조직 실무 인사 (CIO 아래 본부장·실장·팀장급) ──────
+// CIO 는 기관당 1명이라 별도 트랙(cios)으로 관리하고, 여기서는 실제 출자·심사를
+// 집행하는 본부장/실장/팀장 라인을 추적한다(placement agent 의 실무 카운터파트).
+const EXEC_TITLE = /(?:대체투자|해외투자|해외대체|기금운용|투자운용|운용전략|사모투자|인프라(?:투자)?|부동산(?:투자)?|증권운용|글로벌투자)\s?(?:본부장|부문장|실장|단장|팀장|부장)/;
+const EXEC_ACTION = /선임|임명|내정|취임|영입|승진|발탁|합류|이동|이직|사임|퇴임/;
+// 사람 이름 자리에 흔히 끼어드는 조직·업무 어휘(부서명 조각) — 이름으로 뽑지 않는다.
+const EXEC_NAME_BLOCK = /건설|전략|금융|기획|총괄|사업|정책|경영|관리|위원|센터|지원|담당|채권|주식|연금|기업|시장|리스크/;
+const badExecName = (n) => NAME_BLOCK.test(n) || EXEC_NAME_BLOCK.test(n);
+// 실무 인사 추출 → { inst, person, title, action } | null
+export function extractExec(text) {
+  const tm = text.match(EXEC_TITLE);
+  if (!tm) return null;
+  if (!EXEC_ACTION.test(text)) return null;
+  const title = tm[0].replace(/\s+/g, '');
+  const head = text.slice(0, tm.index + tm[0].length + 12);
+  const target = pickKoreanLpLast(head) || pickKoreanLpLast(text);
+  if (!target || target.instType === '해외 GP') return null;
+  let person = '';
+  // (a) "…본부장에 홍길동" (직함 뒤 이름)
+  let m = text.match(new RegExp(EXEC_TITLE.source + '\\s*(?:신임\\s*)?(?:에|로|으로)\\s*([가-힣]{2,4})'));
+  if (m && !badExecName(m[1])) person = m[1];
+  // (b) "홍길동 대체투자본부장" (이름 먼저) — 반드시 공백으로 끊겨야 한다.
+  //     공백을 허용하지 않으면 '건설인프라본부장' 같은 합성 부서명의 앞부분을
+  //     사람 이름으로 잘못 뽑는다.
+  if (!person) {
+    const m2 = text.match(new RegExp('(?:^|[\\s,·"\'\\(])([가-힣]{2,4})\\s+(?:신임\\s*)?' + EXEC_TITLE.source));
+    if (m2 && !badExecName(m2[1])) person = m2[1];
+  }
+  const action = (text.match(EXEC_ACTION) || [])[0] || '인사';
+  if (!person) return null;                      // 이름이 없으면 인사 카드로서 가치가 없음
+  return { inst: target.inst, instType: target.instType, person, title, action };
+}
+
+// ── AUM 자동 최신화 ─────────────────────────────────────
+// 기사 본문에서 "운용자산 000조원 / assets under management $000bn" 를 뽑아
+// 기관별 최신 AUM 으로 유지한다. 프로필의 정적 AUM 은 그대로 두고, 앱에서
+// "뉴스 기준" 값으로 함께 보여준다(출처·날짜 링크 포함 — 근거 없는 수치 금지).
+// 강한 단서만 인정 — '총자산·자산총액'은 재무제표 수치(자기자본·총자산)와 섞여
+// AUM 오인이 잦아 제외한다.
+const AUM_CUE = /운용자산|운용\s?규모|기금\s?규모|자산\s?규모|적립금|\bAUM\b|assets under management/i;
+// 미래 전망치·목표치는 현재 AUM 이 아니므로 배제 (예: "2049년 1849조원 전망").
+const AUM_PROJECTION = /전망|예상|추정|목표|계획|불어날|늘어날|줄어들|projected|expected|forecast/i;
+// 다른 주체의 금액(투자금·순이익·거래대금 등)을 AUM 으로 오인하지 않도록,
+// "기관명 + AUM 단서 + 수치"가 한 문장 안에 모두 있을 때만 값으로 인정한다.
+// 국내 기관은 조/억원 → 억원으로 정규화하고, 해외 GP 는 $bn/$tn 표기를 그대로 쓴다.
+export function extractAum(text, gpNames = []) {
+  const KO_NUM = '(\\d{1,4}(?:[.,]\\d+)?)\\s?조\\s?(\\d{1,5})?\\s?억?\\s?원';
+  const EN_NUM = '\\$\\s?([\\d.,]+)\\s?(trillion|billion|bn|tn)\\b';
+  const CUE = '(?:운용자산|운용\\s?규모|기금\\s?규모|자산\\s?규모|적립금|AUM|assets under management)';
+  // 단서와 수치가 실제로 한 구(句) 안에서 짝지어질 때만 인정한다.
+  //  (a) "운용자산은 345조원"  (b) "1849조원에 달하는 적립금"
+  const pairs = (num) => [
+    new RegExp(CUE + '[^\\d$]{0,12}' + num, 'i'),
+    new RegExp(num + '[^\\d]{0,12}?' + CUE, 'i'),
+  ];
+  const run = (num, build) => {
+    for (const re of pairs(num)) {
+      const m = text.match(re);
+      if (!m) continue;
+      const win = text.slice(Math.max(0, m.index - 40), m.index + m[0].length + 10);
+      if (AUM_PROJECTION.test(win)) continue;                 // 전망·목표치는 제외
+      const v = build(m);
+      if (!v) continue;
+      const lp = pickKoreanLpLast(win);                       // 수치와 같은 구절의 기관
+      const gp = gpNames.find((n) => win.includes(n)) || '';
+      const inst = lp ? lp.inst : gp;
+      if (!inst) continue;                                    // 귀속 기관이 불분명하면 버린다
+      return { ...v, inst, instType: lp ? lp.instType : '해외 GP' };
+    }
+    return null;
+  };
+  const ko = run(KO_NUM, (m) => {
+    const jo = parseFloat(m[1].replace(/,/g, ''));
+    const eok = m[2] ? parseInt(m[2], 10) : 0;
+    const amount = Math.round(jo * 10000 + eok);              // 억원
+    if (!(amount >= 10000 && amount <= 30000000)) return null;
+    return { amount, display: `${jo}조${eok ? ` ${eok}억` : ''}원`, unit: 'KRW' };
+  });
+  if (ko) return ko;
+  return run(EN_NUM, (m) => {
+    const v = parseFloat(m[1].replace(/,/g, ''));
+    const tn = /^t/i.test(m[2]);
+    if (!(v > 0 && v < 1000)) return null;
+    return { amount: null, display: `$${v}${tn ? 'T' : 'B'}`, unit: 'USD' };
+  });
+}
+
 // 수집 기사에서 insights(CIO·수익률) 빌드 — 기관별 최신 1건 유지.
-export function buildInsights(articles) {
+export function buildInsights(articles, refAum = null) {
   const ASSET_LABEL = { AV: '항공기금융', IN: '인프라', PC: 'Private Credit', RE: '부동산', PE: 'Private Equity', ALT: '대체투자 전체' };
   const cioByInst = new Map();
   const retByAsset = new Map();
+  const execByKey = new Map();
+  const aumByInst = new Map();
+  const moveByInst = new Map();
   const sorted = articles.slice().sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0)); // 최신 우선
   for (const a of sorted) {
     const text = `${a.ko || ''} ${a.body || ''}`;
@@ -511,9 +622,56 @@ export function buildInsights(articles) {
     if (r && !retByAsset.has(r.asset)) {
       retByAsset.set(r.asset, { asset: r.asset, label: ASSET_LABEL[r.asset] || r.asset, value: r.value, inst: a.instType !== '해외 GP' ? a.inst : '', source: a.source, url: a.url, date: a.date, ts: a.ts });
     }
+    // 실무 인사(본부장·실장·팀장) — 같은 인물+직함은 최신 1건만.
+    const ex = extractExec(text);
+    if (ex) {
+      const key = `${ex.inst}|${ex.person}|${ex.title}`;
+      if (!execByKey.has(key)) {
+        execByKey.set(key, { key, inst: ex.inst, group: grpName(ex.instType), person: ex.person, title: ex.title, action: ex.action, source: a.source, url: a.url, date: a.date, ts: a.ts });
+      }
+    }
+    // AUM — 기관별 최신 1건 (귀속 기관은 수치와 같은 문장에서 직접 판별)
+    const au = extractAum(text, a.instType === '해외 GP' && a.inst ? [a.inst] : []);
+    if (au && !aumByInst.has(au.inst)) {
+      const krw = au.unit === 'KRW';
+      // 프로필에 검증된 AUM 이 있으면 자릿수 대조 — 크게 벗어난 수치(다른 주체의
+      // 금액·전망치)는 버린다. 프로필 값이 없으면 그대로 '기사 인용'으로 남긴다.
+      const ref = krw && refAum ? refAum.get(au.inst) : null;
+      const sane = !ref || (au.amount >= ref * 0.4 && au.amount <= ref * 2.5);
+      if (sane && krw === (au.instType !== '해외 GP')) {   // 원화=국내 LP, 달러=해외 GP
+        aumByInst.set(au.inst, {
+          inst: au.inst,
+          group: au.instType === '해외 GP' ? 'Global GP' : grpName(au.instType),
+          amount: au.amount,                                  // 억원 (해외 GP 는 null)
+          jo: krw ? Math.round(au.amount / 1000) / 10 : null,  // 조원 — 앱 표기 단위
+          ref: ref || null,                                   // 대조에 쓴 공시 AUM(억원)
+          display: au.display, unit: au.unit,
+          source: a.source, url: a.url, gurl: a.gurl, date: a.date, ts: a.ts, title: a.ko,
+        });
+      }
+    }
+    // 지방이전 이슈 — 기관별 최신 1건 (운용인력·조직 영향 신호)
+    if (a.cat === '이전' && a.inst && a.instType !== '해외 GP' && !moveByInst.has(a.inst)) {
+      moveByInst.set(a.inst, { inst: a.inst, group: grpName(a.instType), stage: moveStage(text), title: a.ko, source: a.source, url: a.url, gurl: a.gurl, id: a.id, date: a.date, ts: a.ts });
+    }
   }
   const { date } = kstParts();
-  return { updatedAt: date, cios: [...cioByInst.values()], assetReturns: [...retByAsset.values()] };
+  return {
+    updatedAt: date,
+    cios: [...cioByInst.values()],
+    assetReturns: [...retByAsset.values()],
+    execs: [...execByKey.values()].slice(0, 40),
+    aums: [...aumByInst.values()],
+    relocations: [...moveByInst.values()].slice(0, 30),
+  };
+}
+// 지방이전 진행 단계 — 기사 표현에서 대략적 상태를 뽑는다(단정 대신 표현 그대로).
+function moveStage(text) {
+  if (/무산|백지화|철회|보류|중단/.test(text)) return '무산·보류';
+  if (/확정|의결|결정|고시|지정/.test(text)) return '이전 확정';
+  if (/반발|반대|노조|이탈|우려|논란/.test(text)) return '반발·논란';
+  if (/추진|검토|요구|압박|법안|공약/.test(text)) return '이전 추진';
+  return '관련 동향';
 }
 // instType → 업권 그룹(앱 표시용)
 function grpName(t) {
@@ -876,7 +1034,10 @@ export function isRelevant(raw) {
   const text = `${raw.title} ${raw.desc}`;
   const gp = isForeignGP(text), lp = isKoreanLP(text);
   // 잡음 제거 — 단, 추적 GP/LP 의 유상증자·자본확충 뉴스는 예외 통과.
-  if (EXCLUDE_RE.test(text) && !((gp || lp) && CAPITAL_RE.test(text))) return false;
+  // 잡음 예외: 추적 기관의 자본확충·지방이전·운용 사령탑/실무 인사 기사는
+  // EXCLUDE_RE(채용·실적 등 일반 잡음 키워드)에 스쳐도 통과시킨다.
+  const keep = (gp || lp) && (CAPITAL_RE.test(text) || MOVE_RE.test(text) || CIO_TITLE.test(text) || EXEC_TITLE.test(text));
+  if (EXCLUDE_RE.test(text) && !keep) return false;
   // 알려진 글로벌 GP·국내 LP 가 등장하면 — 이들은 본질적으로 대체투자 주체이므로
   // 자산군 키워드(ALT_RE)가 없어도 펀드·출자·시장·딜 맥락이면 해외대체투자 뉴스로
   // 폭넓게 수집한다(GP/LP 기사 누락 방지).
@@ -886,6 +1047,7 @@ export function isRelevant(raw) {
     // 정보이므로 자산군 키워드가 없어도 수집한다(예: 경찰공제회 신임 CIO 선임).
     return FUND_RE.test(text) || MARKET_RE.test(text) || ALT_RE.test(text)
         || PEOPLE_RE.test(text) || ORG_RE.test(text) || CIO_TITLE.test(text)
+        || EXEC_TITLE.test(text) || MOVE_RE.test(text) || AUM_CUE.test(text)
         || CAPITAL_RE.test(text);
   }
   // 기관 미식별 일반 뉴스는 엄격 기준: 대체투자 자산군 + 해외 맥락 + 펀드/시장 맥락.
@@ -908,6 +1070,8 @@ export function enrich(raw) {
   // 기관(국내 LP·해외 GP) 미식별 = 기관과 무관한 일반 대체투자 '마켓 뉴스'.
   let cat = instHit ? (instType === '해외 GP' ? 'GP' : 'LP') : '마켓';
   if (PEOPLE_RE.test(text) || ORG_RE.test(text)) cat = '인사';   // 조직/인사 변경
+  // 지방이전은 인사·조직보다 상위로 분류 — 국내 기관(LP) 기사에 한해 적용한다.
+  if (instHit && instType !== '해외 GP' && MOVE_RE.test(text)) cat = '이전';
   const { date, time, iso } = kstParts(raw.pub);
   const sentences = extractiveSummary(raw.desc || raw.title);
   return {
@@ -967,7 +1131,7 @@ async function main() {
   prev = prev.filter(p => {
     const txt = `${p.ko || ''} ${p.body || ''}`;
     if (p.pinned) return true;
-    if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
+    if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt) || MOVE_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
     return isRelevant({ title: p.ko || '', desc: p.body || '' });
   });
   if (before !== prev.length) console.log(`archive re-filtered: ${before} -> ${prev.length}`);
@@ -1103,9 +1267,22 @@ async function main() {
 
   // CIO·자산군 수익률 인사이트 자동 갱신(insights.json). 기존 값은 새 추출이
   // 있을 때만 갱신해, 일시적으로 기사가 없어도 최근 정보가 사라지지 않게 합니다.
-  let prevIns = { cios: [], assetReturns: [] };
+  let prevIns = { cios: [], assetReturns: [], execs: [], aums: [], relocations: [] };
   try { prevIns = JSON.parse(await readFile(new URL('../insights.json', import.meta.url), 'utf8')); } catch {}
-  const fresh = buildInsights(merged);
+  // 공시 기반 AUM(조원)을 억원으로 환산해 대조표를 만든다 — 기사에서 뽑은
+  // 수치가 자릿수부터 어긋나면(다른 주체의 금액) 버리기 위한 안전장치.
+  const refAum = new Map();
+  try {
+    const al = JSON.parse(await readFile(new URL('../allocations.json', import.meta.url), 'utf8'));
+    for (const i of al.institutions || []) if (i.aum != null) refAum.set(i.name, i.aum * 10000);
+  } catch {}
+  try {
+    const lp = JSON.parse(await readFile(new URL('../lp-profiles.json', import.meta.url), 'utf8'));
+    for (const [name, pr] of Object.entries(lp.profiles || {})) {
+      if (pr.aum != null && !refAum.has(name)) refAum.set(name, pr.aum * 10000);
+    }
+  } catch {}
+  const fresh = buildInsights(merged, refAum);
   const mergeBy = (key, prevArr, newArr) => {
     const map = new Map((prevArr || []).map(x => [x[key], x]));
     for (const n of newArr) { const old = map.get(n[key]); if (!old || (n.ts || '') >= (old.ts || '')) map.set(n[key], n); }
@@ -1115,9 +1292,12 @@ async function main() {
     updatedAt: fresh.updatedAt,
     cios: mergeBy('inst', prevIns.cios, fresh.cios),
     assetReturns: mergeBy('asset', prevIns.assetReturns, fresh.assetReturns),
+    execs: mergeBy('key', prevIns.execs, fresh.execs).slice(0, 40),
+    aums: mergeBy('inst', prevIns.aums, fresh.aums),
+    relocations: mergeBy('inst', prevIns.relocations, fresh.relocations).slice(0, 30),
   };
   await writeFile(new URL('../insights.json', import.meta.url), JSON.stringify(insights, null, 0));
-  console.log(`insights: ${insights.cios.length} CIO, ${insights.assetReturns.length} asset-returns`);
+  console.log(`insights: ${insights.cios.length} CIO, ${insights.execs.length} 실무인사, ${insights.aums.length} AUM, ${insights.relocations.length} 지방이전, ${insights.assetReturns.length} asset-returns`);
 
   // 펀드레이징 트래커(fundraising.json) — 모집·클로징 이벤트 자동 추출.
   const fr = buildFundraising(merged);
@@ -1175,9 +1355,34 @@ function selftest() {
   const lpArt = enrich({ title: '국민연금, 해외 인프라 펀드에 출자', desc: '국민연금 출자', link: 'http://x/2', pub: '', source: '더벨' });
   const ok4 = mktArt.cat === '마켓' && lpArt.cat === 'LP';
   console.log(`classify: market=${mktArt.cat} lp=${lpArt.cat}`);
+
+  // 지방이전 분류 — 국내 기관 + 이전 이슈 → cat '이전'
+  const mvArt = enrich({ title: '군인공제회 본사 이전 추진…운용인력 이탈 우려', desc: '공제회 지방이전 논의가 이어지고 있다', link: 'http://x/3', pub: '', source: '더벨' });
+  const mvRel = isRelevant({ title: '산업은행 부산 이전 법안 재발의…노조 반발', desc: '국책은행 지방이전을 둘러싼 논란' });
+  const noMove = MOVE_RE.test('이전에도 국민연금은 해외 인프라에 투자했다');   // '그 이전' 오탐 없어야 함
+  const ok5 = mvArt.cat === '이전' && mvArt.inst === '군인공제회' && mvRel === true && noMove === false;
+  console.log(`relocation: cat=${mvArt.cat} inst=${mvArt.inst} relevant=${mvRel} falsePositive=${noMove}`);
+
+  // 실무 인사(본부장·실장·팀장) 추출
+  const ex1 = extractExec('교직원공제회 대체투자본부장에 김철수 전 증권사 임원 선임');
+  const ex2 = extractExec('국민연금 해외 인프라 투자 확대');                    // 직함 없음 → null
+  const ex3 = extractExec('군인공제회, 건설인프라본부장 발탁 인사');              // 부서명 조각 → 이름 아님
+  const ok6 = ex1 && ex1.inst === '한국교직원공제회' && ex1.person === '김철수' && ex1.title === '대체투자본부장' && ex1.action === '선임' && ex2 === null && ex3 === null;
+  console.log(`exec: ${JSON.stringify(ex1)}`);
+
+  // AUM 추출 — 국내(조원) / 해외 GP($bn), 단서 없는 숫자는 배제
+  const au1 = extractAum('국민연금 운용자산 1200조원 돌파');
+  const au2 = extractAum('Blackstone reported $1.2 trillion in assets under management', ['Blackstone']);
+  const au3 = extractAum('국민연금이 미국 물류센터에 5조원을 투자했다');        // AUM 단서 없음 → null
+  const au4 = extractAum("KDB생명서 발 뺀 삼성생명…'345조 굴릴' 해외 운용사 찾나");   // 단서 없는 금액 → null
+  const ok7 = au1 && au1.amount === 12000000 && au1.unit === 'KRW' && au1.inst === '국민연금'
+    && au2 && au2.display === '$1.2T' && au2.unit === 'USD' && au2.inst === 'Blackstone'
+    && au3 === null && au4 === null;
+  console.log(`aum: ${JSON.stringify(au1)} ${JSON.stringify(au2)} noCue=${au3}`);
   console.log(`extract: cio1=${JSON.stringify(cio1)} cio2.status=${cio2 && cio2.status} ret1=${JSON.stringify(ret1)}`);
-  console.log((ok && ok2 && ok3 && ok4) ? '\nSELFTEST PASS' : '\nSELFTEST FAIL');
-  if (!(ok && ok2 && ok3 && ok4)) process.exit(1);
+  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7;
+  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7})`);
+  if (!all7) process.exit(1);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('collect-news.mjs')) {

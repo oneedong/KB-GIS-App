@@ -652,7 +652,7 @@ export function buildInsights(articles, refAum = null) {
     }
     // 지방이전 이슈 — 기관별 최신 1건 (운용인력·조직 영향 신호)
     if (a.cat === '이전' && a.inst && a.instType !== '해외 GP' && !moveByInst.has(a.inst)) {
-      moveByInst.set(a.inst, { inst: a.inst, group: grpName(a.instType), stage: moveStage(text), title: a.ko, source: a.source, url: a.url, gurl: a.gurl, id: a.id, date: a.date, ts: a.ts });
+      moveByInst.set(a.inst, { inst: a.inst, group: grpName(a.instType), stage: moveStage(`${a.ko || ''} ${(a.body || '').slice(0, 200)}`), title: a.ko, source: a.source, url: a.url, gurl: a.gurl, id: a.id, date: a.date, ts: a.ts });
     }
   }
   const { date } = kstParts();
@@ -665,12 +665,14 @@ export function buildInsights(articles, refAum = null) {
     relocations: [...moveByInst.values()].slice(0, 30),
   };
 }
-// 지방이전 진행 단계 — 기사 표현에서 대략적 상태를 뽑는다(단정 대신 표현 그대로).
+// 지방이전 진행 단계 — 기사 표현 그대로 요약한다(단정 금지).
+// 판정은 제목 + 본문 앞부분만 본다. 본문 전체를 보면 무관한 단락의 '결정·의결'
+// 같은 단어가 섞여 "반대 결의" 기사를 '이전 확정'으로 뒤집는 오판이 난다.
 function moveStage(text) {
-  if (/무산|백지화|철회|보류|중단/.test(text)) return '무산·보류';
-  if (/확정|의결|결정|고시|지정/.test(text)) return '이전 확정';
-  if (/반발|반대|노조|이탈|우려|논란/.test(text)) return '반발·논란';
-  if (/추진|검토|요구|압박|법안|공약/.test(text)) return '이전 추진';
+  if (/무산|백지화|철회|보류|중단|없던\s*일/.test(text)) return '무산·보류';
+  if (/반대|반발|저지|결사|노조|집회|갈등|이탈|우려|논란/.test(text)) return '반발·논란';
+  if (/이전\s*(?:확정|의결|결정|고시)|이전지\s*확정|이전\s*기관\s*(?:지정|선정)/.test(text)) return '이전 확정';
+  if (/추진|검토|요구|압박|촉구|유치|법안|공약|앞장|속도/.test(text)) return '이전 추진';
   return '관련 동향';
 }
 // instType → 업권 그룹(앱 표시용)

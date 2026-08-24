@@ -25,6 +25,9 @@ const ALLOC_API = './allocations.json';
 const INSIGHTS_API = './insights.json';
 // 데일리 시황 브리핑 (매일 08:00 KST, scripts/daily-brief.mjs 가 생성 — market.json)
 const MARKET_API = './market.json';
+// 일자별 시황 아카이브 — briefs/index.json 목록 + briefs/YYYYMMDD.json 본문
+const BRIEF_INDEX_API = './briefs/index.json';
+const BRIEF_API = (dateKey) => `./briefs/${dateKey}.json`;
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
 // Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
@@ -172,7 +175,7 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
 }
 
 // ─── 데일리 시황 표 (지수·환율 공통) ─────────────────────
-function BriefSection({ title, lines, rows }) {
+function BriefSection({ title, rows, digits }) {
   const list = rows || [];
   return (
     <div style={{marginTop:22}}>
@@ -185,7 +188,7 @@ function BriefSection({ title, lines, rows }) {
             <div key={x.name+i} style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
               <span style={{font:'600 12.5px Pretendard', color:'#1c1d1f', flex:1, minWidth:0}}>{x.name}</span>
               <span style={{font:'800 13.5px Pretendard', color:'#1c1d1f'}}>
-                {x.last == null ? '–' : x.last.toLocaleString('ko-KR', {minimumFractionDigits:2, maximumFractionDigits:2})}
+                {x.last == null ? '–' : x.last.toLocaleString('ko-KR', {minimumFractionDigits:2, maximumFractionDigits:(digits && !/원/.test(x.unit||'')) ? digits : 2})}
               </span>
               <span style={{font:'700 11.5px Pretendard', color:col, minWidth:64, textAlign:'right'}}>
                 {x.chgPct == null ? '–' : `${up ? '▲' : down ? '▼' : ''} ${Math.abs(x.chgPct).toFixed(2)}%`}
@@ -194,11 +197,65 @@ function BriefSection({ title, lines, rows }) {
           );
         })}
       </div>
-      {(lines && lines.length > 0) && (
-        <div style={{font:'500 11.5px/1.7 Pretendard', color:'#56585c', marginTop:9}}>
-          {lines.map((t, i) => <div key={i}>· {t}</div>)}
+    </div>
+  );
+}
+
+// ─── 환헤지 비용 · 스왑포인트 ─────────────────────────────
+// 스왑포인트는 '선물환율 − 현물환율'이고, 두 통화의 금리차에서 나온다.
+// 표와 함께 왜 그 값이 나오는지 계산식을 그대로 보여준다.
+function HedgeBlock({ hedge }) {
+  const [open, setOpen] = useState(false);
+  const legs = (hedge && hedge.legs) || [];
+  return (
+    <div style={{marginTop:22}}>
+      <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9, flexWrap:'wrap'}}>
+        <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>환헤지 비용 · 스왑포인트</div>
+        <span onClick={() => setOpen(o => !o)} style={{font:'600 9.5px Pretendard', color:'#1a5fa4', background:'#e6effa', padding:'2px 8px', borderRadius:5, cursor:'pointer'}}>
+          {open ? '설명 닫기' : '스왑포인트란? ▾'}
+        </span>
+      </div>
+
+      {open && (
+        <div style={{border:'1px solid #dde6f3', background:'#f6f9fe', borderRadius:13, padding:'13px 14px', marginBottom:10, font:'500 12px/1.75 Pretendard', color:'#3d3e42'}}>
+          <div style={{font:'700 12px Pretendard', color:'#1a5fa4', marginBottom:6}}>한 줄로</div>
+          <div>스왑포인트는 <b>선물환율 − 현물환율</b>임. 지금 환율과 나중에 바꿀 때 적용될 환율의 차이임.</div>
+          <div style={{font:'700 12px Pretendard', color:'#1a5fa4', margin:'10px 0 6px'}}>왜 그 값이 나오는가</div>
+          <div>원화를 1년 굴리면 한국 금리(예: 2.75%)를 받고, 달러를 굴리면 미국 금리(예: 3.60%)를 받음. 지금 원화를 달러로 바꿔 두면 <b>금리를 더 많이 받게 되므로</b>, 나중에 되돌릴 때 적용하는 환율을 그만큼 <b>깎아서</b> 이익을 상쇄함. 그래서 원화 금리가 더 낮으면 스왑포인트가 <b>음(−)</b>이 됨.</div>
+          <div style={{background:'#fff', border:'1px solid #e6ecf6', borderRadius:9, padding:'9px 11px', margin:'9px 0', font:'600 11.5px/1.7 Pretendard', color:'#1c1d1f'}}>
+            선물환율 = 현물환율 × (1 + 원화금리 × 일수/360) ÷ (1 + 외화금리 × 일수/360)<br/>
+            스왑포인트 = 선물환율 − 현물환율 ≈ 현물환율 × (원화금리 − 외화금리) × 일수/360
+          </div>
+          <div><b>환헤지 비용</b>은 이 스왑포인트를 연 단위로 환산한 값임. 원화 금리가 외화보다 낮으면 헤지할 때마다 그 차이만큼 비용이 나가고(−), 반대면 오히려 수취함(+). 해외 대체투자는 만기가 길어 <b>3개월·6개월 스왑을 계속 롤오버</b>하므로, 이 비용이 매 롤 시점의 금리차에 따라 바뀜.</div>
+          <div style={{font:'500 11px/1.7 Pretendard', color:'#7a7c80', marginTop:9}}>※ 여기 값은 위 금리평형 식으로 계산한 이론치임. 실제 시장 스왑포인트는 달러 수급·신용도 차이(베이시스) 때문에 이론치보다 더 불리하게 형성되는 경우가 많음.</div>
         </div>
       )}
+
+      {legs.length === 0 ? (
+        <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>금리·환율을 받지 못해 계산하지 못했음</div>
+      ) : legs.map(leg => (
+        <div key={leg.ccy} style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden', marginBottom:10}}>
+          <div style={{display:'flex', alignItems:'center', gap:8, background:'#f8f7f3', padding:'10px 13px', flexWrap:'wrap'}}>
+            <span style={{font:'800 13px Pretendard'}}>{leg.ccy}/KRW</span>
+            <span style={{font:'500 10.5px Pretendard', color:'#9a9ca0'}}>현물 {leg.spot.toLocaleString('ko-KR', {maximumFractionDigits:2})}원</span>
+            <span style={{marginLeft:'auto', font:'700 12px Pretendard', color:leg.annualPct < 0 ? '#c0392b' : '#1a5fa4'}}>
+              연 {leg.annualPct > 0 ? '+' : '−'}{Math.abs(leg.annualPct).toFixed(2)}% {leg.annualPct < 0 ? '비용' : '수취'}
+            </span>
+          </div>
+          <div style={{padding:'8px 13px', font:'500 10.5px Pretendard', color:'#9a9ca0', borderTop:'1px solid #f3f1ea'}}>
+            원화 {leg.krwRate.toFixed(2)}% − {leg.baseLabel} {leg.foreignRate.toFixed(2)}% = {leg.diffPct > 0 ? '+' : '−'}{Math.abs(leg.diffPct).toFixed(2)}%p
+          </div>
+          {leg.points.map((pt, i) => (
+            <div key={pt.tenor} style={{display:'flex', alignItems:'center', gap:10, padding:'10px 13px', borderTop:'1px solid #f3f1ea'}}>
+              <span style={{font:'600 12px Pretendard', color:'#1c1d1f', width:38}}>{pt.tenor}</span>
+              <span style={{font:'500 10.5px Pretendard', color:'#b6b8bc', flex:1}}>선물 {pt.forward.toLocaleString('ko-KR', {maximumFractionDigits:2})}원</span>
+              <span style={{font:'800 13px Pretendard', color:pt.point < 0 ? '#1a5fa4' : '#c0392b'}}>
+                {pt.point > 0 ? '+' : '−'}{Math.abs(pt.point).toFixed(2)}원
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -1224,6 +1281,9 @@ function App() {
   const [allocSel, setAllocSel]    = useState(null);
   const [insights, setInsights]    = useState(null);
   const [market, setMarket]        = useState(null);
+  const [briefIndex, setBriefIndex] = useState(null);
+  const [briefSel, setBriefSel]    = useState(null);   // 선택한 일자 (null = 최신)
+  const [briefCache, setBriefCache] = useState({});
   const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
   const [profiles, setProfiles]    = useState(null);   // 국내 LP 프로필(lp-profiles.json)
   const [profilesAt, setProfilesAt] = useState('');    // 프로필 일괄 갱신일
@@ -1307,6 +1367,23 @@ function App() {
       .then(d => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global))) setMarket(d); })
       .catch(() => {});
   }, []);
+
+  // Load 시황 아카이브 목록 (일자별).
+  useEffect(() => {
+    fetch(BRIEF_INDEX_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setBriefIndex(d); })
+      .catch(() => {});
+  }, []);
+
+  // 선택한 일자의 브리핑을 필요할 때만 받아 캐시한다.
+  useEffect(() => {
+    if (!briefSel || briefCache[briefSel] || (market && market.dateKey === briefSel)) return;
+    fetch(BRIEF_API(briefSel) + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && d.dateKey) setBriefCache(c => ({ ...c, [briefSel]: d })); })
+      .catch(() => {});
+  }, [briefSel, market]);
 
   // Load 국내 LP 전체 로스터 (업권별 기관 목록).
   useEffect(() => {
@@ -1467,10 +1544,11 @@ function App() {
   else if (isAsset)         feedFilterLabel = ASSET[filter].label;
   else if (isRegion)        feedFilterLabel = REGION[filter];
 
-  const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스', '이전': '지방이전' };
+  const CHIP_LABEL = { '인사': '조직·인사', '이전': '지방이전', '시황': '시황' };
   // key = 필터 내부 키, label = 표시용. 클릭 시 반드시 key 로 필터해야 한다
   // (라벨 '마켓 뉴스'/'조직·인사'를 필터에 넣으면 어떤 분기에도 안 걸려 0건).
-  const chips = ['전체','마켓','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사','이전'].map(k => ({
+  // '시황' 칩은 필터가 아니라 데일리 시황 탭으로 이동한다.
+  const chips = ['전체','시황','Global GP','연기금','공제회','중앙회','은행','보험·캐피탈','운용·증권','인사','이전'].map(k => ({
     key: k, label: CHIP_LABEL[k] || k, active: filter === k,
     bg: filter === k ? '#FFCC00' : '#2a2c30',
     color: filter === k ? '#1c1d1f' : '#cdced0',
@@ -1479,8 +1557,6 @@ function App() {
   // Category data
   const ICON   = { '연기금':'연금','공제회':'공제','중앙회':'중앙','은행':'은행','운용·증권':'운용','보험·캐피탈':'보험','해외 GP':'GP' };
   const SAMPLE = { '연기금':'국민연금 · KIC · 사학연금','공제회':'교직원 · 행정 · 군인공제회','중앙회':'농협 · 수협 · 새마을금고','은행':'산업 · 기업 · 수출입은행','운용·증권':'미래에셋 · 삼성 · KB','보험·캐피탈':'삼성생명 · 한화 · 현대해상','해외 GP':'Blackstone · Ares · KKR' };
-  // 기관과 무관한 대체투자 마켓 뉴스 수
-  const marketCount = items.filter(i => i.cat === '마켓').length;
   // 그룹별 기사 수 (인사·마켓 제외)
   const instsByGroup = {};
   items.forEach(i => { if (i.cat !== '인사' && i.cat !== '마켓') { const g = i.instGroup; (instsByGroup[g] = instsByGroup[g] || {}); instsByGroup[g][i.inst] = (instsByGroup[g][i.inst] || 0) + 1; } });
@@ -1531,6 +1607,11 @@ function App() {
     { label:'슬랙',     icon:'S', bg:'#f0eee7', fg:'#56585c' },
     { label:'팀즈',     icon:'T', bg:'#f0eee7', fg:'#56585c' },
   ];
+
+  // 화면에 그릴 브리핑: 선택 일자가 최신과 같으면 market, 아니면 캐시본.
+  const briefView = (!briefSel || (market && market.dateKey === briefSel))
+    ? market
+    : (briefCache[briefSel] || null);
 
   const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onGlobalGp:()=>goTab('gp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks'), onBrief:()=>goTab('brief') };
 
@@ -1599,7 +1680,7 @@ function App() {
             <div style={{height:isDesktop?14:0}}></div>
             <div style={{display:'flex', gap:7, padding:'0 18px 14px', whiteSpace:'nowrap', overflowX:'auto'}}>
               {chips.map(c => (
-                <div key={c.key} onClick={() => applyFilter(c.key)} style={{padding:'7px 13px', borderRadius:999, font:'600 12.5px Pretendard', flexShrink:0, cursor:'pointer', background:c.bg, color:c.color}}>{c.label}</div>
+                <div key={c.key} onClick={() => c.key === '시황' ? goTab('brief') : applyFilter(c.key)} style={{padding:'7px 13px', borderRadius:999, font:'600 12.5px Pretendard', flexShrink:0, cursor:'pointer', background:c.key === '시황' ? '#FFCC00' : c.bg, color:c.key === '시황' ? '#1c1d1f' : c.color}}>{c.label}</div>
               ))}
             </div>
           </div>
@@ -1678,14 +1759,14 @@ function App() {
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto', padding:18, width:'100%', maxWidth:900, margin:'0 auto', boxSizing:'border-box'}}>
-            {/* 마켓 뉴스 — 기관과 무관한 대체투자 시장·딜·동향 뉴스 */}
-            <div onClick={() => applyFilter('마켓')} style={{display:'flex', alignItems:'center', gap:13, border:'1px solid #ece9e2', borderRadius:14, padding:'14px 15px', marginBottom:18, cursor:'pointer', background:'linear-gradient(90deg,#fffaeb,#fff)'}}>
+            {/* 데일리 시황 — 매일 08:00 KST 전일 시장 정리 */}
+            <div onClick={() => goTab('brief')} style={{display:'flex', alignItems:'center', gap:13, border:'1px solid #ece9e2', borderRadius:14, padding:'14px 15px', marginBottom:18, cursor:'pointer', background:'linear-gradient(90deg,#fffaeb,#fff)'}}>
               <span style={{width:38, height:38, borderRadius:10, background:'#FFCC00', display:'flex', alignItems:'center', justifyContent:'center', font:'800 15px Pretendard', color:'#1c1d1f', flexShrink:0}}>📈</span>
               <div style={{flex:1}}>
-                <div style={{font:'700 14px Pretendard'}}>마켓 뉴스</div>
-                <div style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginTop:2}}>기관과 무관한 해외 대체투자 시장·딜·전망</div>
+                <div style={{font:'700 14px Pretendard'}}>데일리 시황</div>
+                <div style={{font:'500 10.5px Pretendard', color:'#9a9ca0', marginTop:2}}>증시·환율·금리·환헤지 — 매일 08:00 갱신</div>
               </div>
-              <span style={{font:'700 12px Pretendard', color:'#9a7d12', background:'#fff7d6', padding:'3px 10px', borderRadius:999}}>{marketCount}</span>
+              <span style={{font:'700 12px Pretendard', color:'#9a7d12', background:'#fff7d6', padding:'3px 10px', borderRadius:999}}>{market && market.updatedAt ? market.updatedAt : '–'}</span>
               <span style={{color:'#cfccc4'}}>›</span>
             </div>
             <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:10}}>국내 LP · 업권별 <span style={{fontWeight:500, letterSpacing:0}}>· 기관을 눌러 해당 기관 뉴스 보기{roster ? ` (전체 ${roster.length}개 기관)` : ''}</span></div>
@@ -2182,50 +2263,64 @@ function App() {
         </div>
       )}
 
-      {/* ── DAILY BRIEF (데일리 시황 — 매일 08:00 KST 자동 갱신) ── */}
-      {screen === 'brief' && (
+      {/* ── DAILY BRIEF (데일리 시황 — 매일 08:00 KST 자동 갱신, 일자별 누적) ── */}
+      {screen === 'brief' && (() => {
+        const b = briefView;                       // 선택한 일자의 브리핑 (기본 = 최신)
+        return (
         <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
           <div style={{flexShrink:0}}>
             <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
-            <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
+            <div style={{padding:'2px 20px 12px', borderBottom:'1px solid #efece4'}}>
               <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
-                <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>데일리 시황</div>
-                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 매일 08:00 KST 자동 갱신</span>
+                <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>{b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황'}</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 매일 08:00 KST</span>
               </div>
-              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>
-                {market ? `${market.asOf} 기준 · 전일 시장 정리` : '브리핑을 불러오는 중입니다'}
-              </div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>{b ? `${b.asOf} 기준` : '브리핑을 불러오는 중입니다'}</div>
+              {/* 일자별 목록 — 눌러서 과거 시황으로 이동 */}
+              {briefIndex && briefIndex.length > 0 && (
+                <div style={{display:'flex', gap:6, overflowX:'auto', marginTop:10, paddingBottom:2}}>
+                  {briefIndex.slice(0, 30).map(x => {
+                    const on = b && b.dateKey === x.dateKey;
+                    return (
+                      <div key={x.dateKey} onClick={() => setBriefSel(x.dateKey)}
+                           style={{padding:'6px 11px', borderRadius:999, flexShrink:0, cursor:'pointer', font:on?'700 11.5px Pretendard':'600 11.5px Pretendard', background:on?'#1c1d1f':'#f2f0ea', color:on?'#FFCC00':'#56585c'}}>
+                        {x.dateKey}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <div style={{flex:1, minHeight:0, overflowY:'auto'}}>
-            <div style={{padding:'16px 20px 30px', maxWidth:860, margin:'0 auto'}}>
-              {!market ? (
+            <div style={{padding:'16px 20px 30px', maxWidth:900, margin:'0 auto'}}>
+              {!b ? (
                 <div style={{padding:'70px 20px', textAlign:'center'}}>
                   <div style={{fontSize:28, color:'#d8d5cd'}}>▤</div>
                   <div style={{font:'600 14px Pretendard', color:'#56585c', marginTop:14}}>아직 브리핑이 없습니다</div>
-                  <div style={{font:'500 12px/1.6 Pretendard', color:'#a6a8ac', marginTop:6}}>매일 아침 08시(KST)에 전일 시장을 정리해 올립니다.<br/>첫 브리핑이 생성되면 자동으로 표시됩니다.</div>
+                  <div style={{font:'500 12px/1.6 Pretendard', color:'#a6a8ac', marginTop:6}}>매일 아침 08시(KST)에 전일 시장을 정리해 올립니다.</div>
                 </div>
               ) : (
                 <>
                   {/* 한줄 요약 */}
                   <div style={{background:'#1c1d1f', borderRadius:14, padding:'15px 16px'}}>
                     <div style={{font:'700 9.5px Pretendard', color:'#FFCC00', letterSpacing:'.06em', marginBottom:7}}>한줄 요약</div>
-                    <div style={{font:'650 14px/1.6 Pretendard', color:'#fff'}}>{market.summary}</div>
+                    <div style={{font:'650 14px/1.6 Pretendard', color:'#fff'}}>{b.summary}</div>
                   </div>
 
-                  <BriefSection title="국내증시" lines={market.krLines} rows={market.kr} />
-                  <BriefSection title="해외증시" lines={market.globalLines} rows={market.global} />
+                  <BriefSection title="국내증시" rows={b.kr} />
+                  <BriefSection title="해외증시" rows={b.global} />
 
                   {/* 주요이슈 */}
                   <div style={{marginTop:22}}>
                     <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>주요이슈</div>
-                    {(market.issues && market.issues.length) ? (
+                    {(b.issues && b.issues.length) ? (
                       <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                        {market.issues.map((it, i) => (
+                        {b.issues.map((it, i) => (
                           <a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
                              style={{display:'block', textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
                             <div style={{font:'650 13px/1.45 Pretendard', color:'#1c1d1f'}}>{it.title}</div>
-                            <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{it.source} · 기사 보기 ↗</div>
+                            <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{it.source} ↗</div>
                           </a>
                         ))}
                       </div>
@@ -2234,35 +2329,57 @@ function App() {
                     )}
                   </div>
 
-                  <BriefSection title="환율" lines={market.fxLines} rows={market.fx} />
+                  <BriefSection title="환율" rows={b.fx} digits={4} />
 
-                  {/* 금리 — SOFR/SONIA + 한·미 기준금리 */}
+                  {/* 무위험지표금리 — 통화별 테너 */}
                   <div style={{marginTop:22}}>
-                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>SOFR · SONIA 금리</div>
-                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                      <RateRow r={market.rates && market.rates.sofr} fallback="SOFR (미국 담보부 익일물)" first={true} />
-                      <RateRow r={market.rates && market.rates.sonia} fallback="SONIA (영국 무담보 익일물)" />
+                    <div style={{display:'flex', alignItems:'baseline', gap:8, marginBottom:9, flexWrap:'wrap'}}>
+                      <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em'}}>SOFR · SONIA · EURIBOR · TONA</div>
+                      <span style={{font:'500 9.5px Pretendard', color:'#9a9ca0'}}>실무에서 자주 쓰는 테너</span>
                     </div>
+                    {(b.tenorRates && b.tenorRates.length) ? (
+                      <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                        {Object.entries((b.tenorRates || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {})).map(([g, rows]) => (
+                          <div key={g} style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                            <div style={{font:'700 11px Pretendard', color:'#56585c', background:'#f8f7f3', padding:'8px 13px'}}>{g}</div>
+                            {rows.map((r, i) => (
+                              <div key={r.tenor+i} style={{display:'flex', alignItems:'center', gap:10, padding:'10px 13px', borderTop:'1px solid #f3f1ea'}}>
+                                <span style={{font:'600 12px Pretendard', color:'#1c1d1f', flex:1}}>{r.tenor}</span>
+                                <span style={{font:'800 13.5px Pretendard'}}>{r.rate.toFixed(3)}%</span>
+                                <span style={{font:'500 9.5px Pretendard', color:'#b6b8bc', minWidth:74, textAlign:'right'}}>{r.asOf}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>금리 데이터를 받지 못했음</div>
+                    )}
                   </div>
+
+                  {/* 한국·미국 기준금리 */}
                   <div style={{marginTop:18}}>
                     <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>한국 · 미국 기준금리</div>
                     <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
-                      <RateRow r={market.rates && market.rates.kr} fallback="한국 기준금리(한국은행)" first={true} />
-                      <RateRow r={market.rates && market.rates.us} fallback="미국 기준금리(FOMC 목표범위)" us={true} />
+                      <RateRow r={b.rates && b.rates.kr} fallback="한국 기준금리(한국은행)" first={true} />
+                      <RateRow r={b.rates && b.rates.us} fallback="미국 기준금리(FOMC 목표범위)" us={true} />
                     </div>
-                    {market.ust && market.ust.length > 0 && market.ust[0].last != null && (
+                    {b.ust && b.ust.length > 0 && b.ust[0].last != null && (
                       <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', marginTop:8}}>
-                        {market.ust[0].name} {market.ust[0].last.toFixed(2)}% ({market.ust[0].chg >= 0 ? '+' : '−'}{Math.abs(market.ust[0].chg * 100).toFixed(0)}bp)
+                        {b.ust[0].name} {b.ust[0].last.toFixed(2)}% ({b.ust[0].chg >= 0 ? '+' : '−'}{Math.abs(b.ust[0].chg * 100).toFixed(0)}bp)
                       </div>
                     )}
                   </div>
 
+                  {/* 환헤지 비용 · 스왑포인트 */}
+                  <HedgeBlock hedge={b.hedge} />
+
                   {/* 관찰 포인트 */}
                   <div style={{marginTop:22}}>
                     <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>관찰 포인트</div>
-                    {(market.watch && market.watch.length) ? (
+                    {(b.watch && b.watch.length) ? (
                       <div style={{display:'flex', flexDirection:'column', gap:8}}>
-                        {market.watch.map((w, i) => (
+                        {b.watch.map((w, i) => (
                           <div key={i} style={{display:'flex', gap:9, border:'1px solid #f6ecc8', background:'#fffaeb', borderRadius:12, padding:'11px 13px'}}>
                             <span style={{font:'700 11px Pretendard', color:'#9a7d12', flexShrink:0}}>{i + 1}</span>
                             <span style={{font:'600 12px/1.6 Pretendard', color:'#3d3e42'}}>{w}</span>
@@ -2270,17 +2387,17 @@ function App() {
                         ))}
                       </div>
                     ) : (
-                      <div style={{font:'500 11.5px/1.6 Pretendard', color:'#9a9ca0', border:'1px solid #ece9e2', borderRadius:12, padding:'12px 13px'}}>기준선을 넘는 특이 신호는 없었음 — 지수·환율 모두 평상 범위였음</div>
+                      <div style={{font:'500 11.5px/1.6 Pretendard', color:'#9a9ca0', border:'1px solid #ece9e2', borderRadius:12, padding:'12px 13px'}}>기준선을 넘는 특이 신호는 없었음</div>
                     )}
                   </div>
 
-                  {(market.errors && market.errors.length > 0) && (
+                  {(b.errors && b.errors.length > 0) && (
                     <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:16, background:'#f8f7f3', borderRadius:9, padding:'10px 12px'}}>
-                      ※ 이번 회차에 받지 못한 항목이 {market.errors.length}건 있음 — 값을 추정하지 않고 비워 뒀으며 다음 회차에 재수집함
+                      ※ 받지 못한 항목 {b.errors.length}건 — 값을 추정하지 않고 비워 뒀음
                     </div>
                   )}
                   <div style={{font:'500 10px/1.6 Pretendard', color:'#c2c4c8', marginTop:10}}>
-                    시세 Yahoo Finance·Stooq · SOFR/EFFR New York Fed · SONIA Bank of England · 기준금리 한국은행 · 이슈 구글 뉴스
+                    시세 Yahoo Finance·Stooq · SOFR/EFFR New York Fed · SONIA·정책금리 Bank of England · EURIBOR/€STR ECB · TONA 일본은행 · 기준금리 한국은행 · 이슈 구글 뉴스
                   </div>
                 </>
               )}
@@ -2288,7 +2405,8 @@ function App() {
           </div>
           <Navbar active="brief" {...navProps} />
         </div>
-      )}
+        );
+      })()}
 
       {/* ── BOOKMARKS ── */}
       {screen === 'bookmarks' && (

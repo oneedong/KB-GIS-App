@@ -30,8 +30,8 @@ jobs:
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          if ! git diff --quiet market.json; then
-            git add market.json
+          git add -A market.json briefs
+          if ! git diff --cached --quiet; then
             git commit -m "chore: 데일리 시황 갱신 [skip ci]"
             # 뉴스 수집 워크플로와 겹치면 리베이스 후 재시도 (푸시 경합 방지)
             for i in 1 2 3; do

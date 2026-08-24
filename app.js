@@ -33,6 +33,9 @@ const ALLOC_API = './allocations.json';
 const INSIGHTS_API = './insights.json';
 // 데일리 시황 브리핑 (매일 08:00 KST, scripts/daily-brief.mjs 가 생성 — market.json)
 const MARKET_API = './market.json';
+// 일자별 시황 아카이브 — briefs/index.json 목록 + briefs/YYYYMMDD.json 본문
+const BRIEF_INDEX_API = './briefs/index.json';
+const BRIEF_API = (dateKey) => `./briefs/${dateKey}.json`;
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
 // Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
@@ -171,7 +174,7 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
             React.createElement("span", { style: lbl(active === 'bookmarks') }, "\uBD81\uB9C8\uD06C"))));
 }
 // ─── 데일리 시황 표 (지수·환율 공통) ─────────────────────
-function BriefSection({ title, lines, rows }) {
+function BriefSection({ title, rows, digits }) {
     const list = rows || [];
     return (React.createElement("div", { style: { marginTop: 22 } },
         React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, title),
@@ -180,12 +183,81 @@ function BriefSection({ title, lines, rows }) {
             const col = up ? '#c0392b' : down ? '#1a5fa4' : '#7a7c80'; // 국내 관행: 상승 적색·하락 청색
             return (React.createElement("div", { key: x.name + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
                 React.createElement("span", { style: { font: '600 12.5px Pretendard', color: '#1c1d1f', flex: 1, minWidth: 0 } }, x.name),
-                React.createElement("span", { style: { font: '800 13.5px Pretendard', color: '#1c1d1f' } }, x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })),
+                React.createElement("span", { style: { font: '800 13.5px Pretendard', color: '#1c1d1f' } }, x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: (digits && !/원/.test(x.unit || '')) ? digits : 2 })),
                 React.createElement("span", { style: { font: '700 11.5px Pretendard', color: col, minWidth: 64, textAlign: 'right' } }, x.chgPct == null ? '–' : `${up ? '▲' : down ? '▼' : ''} ${Math.abs(x.chgPct).toFixed(2)}%`)));
-        })),
-        (lines && lines.length > 0) && (React.createElement("div", { style: { font: '500 11.5px/1.7 Pretendard', color: '#56585c', marginTop: 9 } }, lines.map((t, i) => React.createElement("div", { key: i },
-            "\u00B7 ",
-            t))))));
+        }))));
+}
+// ─── 환헤지 비용 · 스왑포인트 ─────────────────────────────
+// 스왑포인트는 '선물환율 − 현물환율'이고, 두 통화의 금리차에서 나온다.
+// 표와 함께 왜 그 값이 나오는지 계산식을 그대로 보여준다.
+function HedgeBlock({ hedge }) {
+    const [open, setOpen] = useState(false);
+    const legs = (hedge && hedge.legs) || [];
+    return (React.createElement("div", { style: { marginTop: 22 } },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, flexWrap: 'wrap' } },
+            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "\uD658\uD5E4\uC9C0 \uBE44\uC6A9 \u00B7 \uC2A4\uC651\uD3EC\uC778\uD2B8"),
+            React.createElement("span", { onClick: () => setOpen(o => !o), style: { font: '600 9.5px Pretendard', color: '#1a5fa4', background: '#e6effa', padding: '2px 8px', borderRadius: 5, cursor: 'pointer' } }, open ? '설명 닫기' : '스왑포인트란? ▾')),
+        open && (React.createElement("div", { style: { border: '1px solid #dde6f3', background: '#f6f9fe', borderRadius: 13, padding: '13px 14px', marginBottom: 10, font: '500 12px/1.75 Pretendard', color: '#3d3e42' } },
+            React.createElement("div", { style: { font: '700 12px Pretendard', color: '#1a5fa4', marginBottom: 6 } }, "\uD55C \uC904\uB85C"),
+            React.createElement("div", null,
+                "\uC2A4\uC651\uD3EC\uC778\uD2B8\uB294 ",
+                React.createElement("b", null, "\uC120\uBB3C\uD658\uC728 \u2212 \uD604\uBB3C\uD658\uC728"),
+                "\uC784. \uC9C0\uAE08 \uD658\uC728\uACFC \uB098\uC911\uC5D0 \uBC14\uAFC0 \uB54C \uC801\uC6A9\uB420 \uD658\uC728\uC758 \uCC28\uC774\uC784."),
+            React.createElement("div", { style: { font: '700 12px Pretendard', color: '#1a5fa4', margin: '10px 0 6px' } }, "\uC65C \uADF8 \uAC12\uC774 \uB098\uC624\uB294\uAC00"),
+            React.createElement("div", null,
+                "\uC6D0\uD654\uB97C 1\uB144 \uAD74\uB9AC\uBA74 \uD55C\uAD6D \uAE08\uB9AC(\uC608: 2.75%)\uB97C \uBC1B\uACE0, \uB2EC\uB7EC\uB97C \uAD74\uB9AC\uBA74 \uBBF8\uAD6D \uAE08\uB9AC(\uC608: 3.60%)\uB97C \uBC1B\uC74C. \uC9C0\uAE08 \uC6D0\uD654\uB97C \uB2EC\uB7EC\uB85C \uBC14\uAFD4 \uB450\uBA74 ",
+                React.createElement("b", null, "\uAE08\uB9AC\uB97C \uB354 \uB9CE\uC774 \uBC1B\uAC8C \uB418\uBBC0\uB85C"),
+                ", \uB098\uC911\uC5D0 \uB418\uB3CC\uB9B4 \uB54C \uC801\uC6A9\uD558\uB294 \uD658\uC728\uC744 \uADF8\uB9CC\uD07C ",
+                React.createElement("b", null, "\uAE4E\uC544\uC11C"),
+                " \uC774\uC775\uC744 \uC0C1\uC1C4\uD568. \uADF8\uB798\uC11C \uC6D0\uD654 \uAE08\uB9AC\uAC00 \uB354 \uB0AE\uC73C\uBA74 \uC2A4\uC651\uD3EC\uC778\uD2B8\uAC00 ",
+                React.createElement("b", null, "\uC74C(\u2212)"),
+                "\uC774 \uB428."),
+            React.createElement("div", { style: { background: '#fff', border: '1px solid #e6ecf6', borderRadius: 9, padding: '9px 11px', margin: '9px 0', font: '600 11.5px/1.7 Pretendard', color: '#1c1d1f' } },
+                "\uC120\uBB3C\uD658\uC728 = \uD604\uBB3C\uD658\uC728 \u00D7 (1 + \uC6D0\uD654\uAE08\uB9AC \u00D7 \uC77C\uC218/360) \u00F7 (1 + \uC678\uD654\uAE08\uB9AC \u00D7 \uC77C\uC218/360)",
+                React.createElement("br", null),
+                "\uC2A4\uC651\uD3EC\uC778\uD2B8 = \uC120\uBB3C\uD658\uC728 \u2212 \uD604\uBB3C\uD658\uC728 \u2248 \uD604\uBB3C\uD658\uC728 \u00D7 (\uC6D0\uD654\uAE08\uB9AC \u2212 \uC678\uD654\uAE08\uB9AC) \u00D7 \uC77C\uC218/360"),
+            React.createElement("div", null,
+                React.createElement("b", null, "\uD658\uD5E4\uC9C0 \uBE44\uC6A9"),
+                "\uC740 \uC774 \uC2A4\uC651\uD3EC\uC778\uD2B8\uB97C \uC5F0 \uB2E8\uC704\uB85C \uD658\uC0B0\uD55C \uAC12\uC784. \uC6D0\uD654 \uAE08\uB9AC\uAC00 \uC678\uD654\uBCF4\uB2E4 \uB0AE\uC73C\uBA74 \uD5E4\uC9C0\uD560 \uB54C\uB9C8\uB2E4 \uADF8 \uCC28\uC774\uB9CC\uD07C \uBE44\uC6A9\uC774 \uB098\uAC00\uACE0(\u2212), \uBC18\uB300\uBA74 \uC624\uD788\uB824 \uC218\uCDE8\uD568(+). \uD574\uC678 \uB300\uCCB4\uD22C\uC790\uB294 \uB9CC\uAE30\uAC00 \uAE38\uC5B4 ",
+                React.createElement("b", null, "3\uAC1C\uC6D4\u00B76\uAC1C\uC6D4 \uC2A4\uC651\uC744 \uACC4\uC18D \uB864\uC624\uBC84"),
+                "\uD558\uBBC0\uB85C, \uC774 \uBE44\uC6A9\uC774 \uB9E4 \uB864 \uC2DC\uC810\uC758 \uAE08\uB9AC\uCC28\uC5D0 \uB530\uB77C \uBC14\uB01C."),
+            React.createElement("div", { style: { font: '500 11px/1.7 Pretendard', color: '#7a7c80', marginTop: 9 } }, "\u203B \uC5EC\uAE30 \uAC12\uC740 \uC704 \uAE08\uB9AC\uD3C9\uD615 \uC2DD\uC73C\uB85C \uACC4\uC0B0\uD55C \uC774\uB860\uCE58\uC784. \uC2E4\uC81C \uC2DC\uC7A5 \uC2A4\uC651\uD3EC\uC778\uD2B8\uB294 \uB2EC\uB7EC \uC218\uAE09\u00B7\uC2E0\uC6A9\uB3C4 \uCC28\uC774(\uBCA0\uC774\uC2DC\uC2A4) \uB54C\uBB38\uC5D0 \uC774\uB860\uCE58\uBCF4\uB2E4 \uB354 \uBD88\uB9AC\uD558\uAC8C \uD615\uC131\uB418\uB294 \uACBD\uC6B0\uAC00 \uB9CE\uC74C."))),
+        legs.length === 0 ? (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uAE08\uB9AC\u00B7\uD658\uC728\uC744 \uBC1B\uC9C0 \uBABB\uD574 \uACC4\uC0B0\uD558\uC9C0 \uBABB\uD588\uC74C")) : legs.map(leg => (React.createElement("div", { key: leg.ccy, style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden', marginBottom: 10 } },
+            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, background: '#f8f7f3', padding: '10px 13px', flexWrap: 'wrap' } },
+                React.createElement("span", { style: { font: '800 13px Pretendard' } },
+                    leg.ccy,
+                    "/KRW"),
+                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0' } },
+                    "\uD604\uBB3C ",
+                    leg.spot.toLocaleString('ko-KR', { maximumFractionDigits: 2 }),
+                    "\uC6D0"),
+                React.createElement("span", { style: { marginLeft: 'auto', font: '700 12px Pretendard', color: leg.annualPct < 0 ? '#c0392b' : '#1a5fa4' } },
+                    "\uC5F0 ",
+                    leg.annualPct > 0 ? '+' : '−',
+                    Math.abs(leg.annualPct).toFixed(2),
+                    "% ",
+                    leg.annualPct < 0 ? '비용' : '수취')),
+            React.createElement("div", { style: { padding: '8px 13px', font: '500 10.5px Pretendard', color: '#9a9ca0', borderTop: '1px solid #f3f1ea' } },
+                "\uC6D0\uD654 ",
+                leg.krwRate.toFixed(2),
+                "% \u2212 ",
+                leg.baseLabel,
+                " ",
+                leg.foreignRate.toFixed(2),
+                "% = ",
+                leg.diffPct > 0 ? '+' : '−',
+                Math.abs(leg.diffPct).toFixed(2),
+                "%p"),
+            leg.points.map((pt, i) => (React.createElement("div", { key: pt.tenor, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderTop: '1px solid #f3f1ea' } },
+                React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', width: 38 } }, pt.tenor),
+                React.createElement("span", { style: { font: '500 10.5px Pretendard', color: '#b6b8bc', flex: 1 } },
+                    "\uC120\uBB3C ",
+                    pt.forward.toLocaleString('ko-KR', { maximumFractionDigits: 2 }),
+                    "\uC6D0"),
+                React.createElement("span", { style: { font: '800 13px Pretendard', color: pt.point < 0 ? '#1a5fa4' : '#c0392b' } },
+                    pt.point > 0 ? '+' : '−',
+                    Math.abs(pt.point).toFixed(2),
+                    "\uC6D0")))))))));
 }
 // 금리 한 줄 — 값이 없으면 만들어내지 않고 '수집 실패'로 비운다.
 function RateRow({ r, fallback, first, us }) {
@@ -1074,6 +1146,9 @@ function App() {
     const [allocSel, setAllocSel] = useState(null);
     const [insights, setInsights] = useState(null);
     const [market, setMarket] = useState(null);
+    const [briefIndex, setBriefIndex] = useState(null);
+    const [briefSel, setBriefSel] = useState(null); // 선택한 일자 (null = 최신)
+    const [briefCache, setBriefCache] = useState({});
     const [roster, setRoster] = useState(null); // 국내 LP 전체 로스터
     const [profiles, setProfiles] = useState(null); // 국내 LP 프로필(lp-profiles.json)
     const [profilesAt, setProfilesAt] = useState(''); // 프로필 일괄 갱신일
@@ -1159,6 +1234,24 @@ function App() {
             setMarket(d); })
             .catch(() => { });
     }, []);
+    // Load 시황 아카이브 목록 (일자별).
+    useEffect(() => {
+        fetch(BRIEF_INDEX_API + '?t=' + Date.now())
+            .then(r => r.json())
+            .then(d => { if (Array.isArray(d))
+            setBriefIndex(d); })
+            .catch(() => { });
+    }, []);
+    // 선택한 일자의 브리핑을 필요할 때만 받아 캐시한다.
+    useEffect(() => {
+        if (!briefSel || briefCache[briefSel] || (market && market.dateKey === briefSel))
+            return;
+        fetch(BRIEF_API(briefSel) + '?t=' + Date.now())
+            .then(r => r.json())
+            .then(d => { if (d && d.dateKey)
+            setBriefCache(c => ({ ...c, [briefSel]: d })); })
+            .catch(() => { });
+    }, [briefSel, market]);
     // Load 국내 LP 전체 로스터 (업권별 기관 목록).
     useEffect(() => {
         fetch(INSTITUTIONS_API + '?t=' + Date.now())
@@ -1341,10 +1434,11 @@ function App() {
         feedFilterLabel = ASSET[filter].label;
     else if (isRegion)
         feedFilterLabel = REGION[filter];
-    const CHIP_LABEL = { '인사': '조직·인사', '마켓': '마켓 뉴스', '이전': '지방이전' };
+    const CHIP_LABEL = { '인사': '조직·인사', '이전': '지방이전', '시황': '시황' };
     // key = 필터 내부 키, label = 표시용. 클릭 시 반드시 key 로 필터해야 한다
     // (라벨 '마켓 뉴스'/'조직·인사'를 필터에 넣으면 어떤 분기에도 안 걸려 0건).
-    const chips = ['전체', '마켓', 'Global GP', '연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권', '인사', '이전'].map(k => ({
+    // '시황' 칩은 필터가 아니라 데일리 시황 탭으로 이동한다.
+    const chips = ['전체', '시황', 'Global GP', '연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권', '인사', '이전'].map(k => ({
         key: k, label: CHIP_LABEL[k] || k, active: filter === k,
         bg: filter === k ? '#FFCC00' : '#2a2c30',
         color: filter === k ? '#1c1d1f' : '#cdced0',
@@ -1352,8 +1446,6 @@ function App() {
     // Category data
     const ICON = { '연기금': '연금', '공제회': '공제', '중앙회': '중앙', '은행': '은행', '운용·증권': '운용', '보험·캐피탈': '보험', '해외 GP': 'GP' };
     const SAMPLE = { '연기금': '국민연금 · KIC · 사학연금', '공제회': '교직원 · 행정 · 군인공제회', '중앙회': '농협 · 수협 · 새마을금고', '은행': '산업 · 기업 · 수출입은행', '운용·증권': '미래에셋 · 삼성 · KB', '보험·캐피탈': '삼성생명 · 한화 · 현대해상', '해외 GP': 'Blackstone · Ares · KKR' };
-    // 기관과 무관한 대체투자 마켓 뉴스 수
-    const marketCount = items.filter(i => i.cat === '마켓').length;
     // 그룹별 기사 수 (인사·마켓 제외)
     const instsByGroup = {};
     items.forEach(i => { if (i.cat !== '인사' && i.cat !== '마켓') {
@@ -1403,6 +1495,10 @@ function App() {
         { label: '슬랙', icon: 'S', bg: '#f0eee7', fg: '#56585c' },
         { label: '팀즈', icon: 'T', bg: '#f0eee7', fg: '#56585c' },
     ];
+    // 화면에 그릴 브리핑: 선택 일자가 최신과 같으면 market, 아니면 캐시본.
+    const briefView = (!briefSel || (market && market.dateKey === briefSel))
+        ? market
+        : (briefCache[briefSel] || null);
     const navProps = { homeNew: newCount, isDesktop, onHome: () => goTab('home'), onToday: () => goTab('today'), onCategory: () => goTab('category'), onKoreaLp: () => goTab('korlp'), onGlobalGp: () => goTab('gp'), onSearch: () => goTab('search'), onBookmarks: () => goTab('bookmarks'), onBrief: () => goTab('brief') };
     // Allocation screen derived data
     const allocRows = (alloc && alloc.institutions) || [];
@@ -1450,7 +1546,7 @@ function App() {
                                 "\u2303",
                                 React.createElement("div", { style: { position: 'absolute', top: 6, right: 7, width: 6, height: 6, borderRadius: '50%', background: '#FFCC00', border: '1.5px solid #1c1d1f' } }))))),
                     React.createElement("div", { style: { height: isDesktop ? 14 : 0 } }),
-                    React.createElement("div", { style: { display: 'flex', gap: 7, padding: '0 18px 14px', whiteSpace: 'nowrap', overflowX: 'auto' } }, chips.map(c => (React.createElement("div", { key: c.key, onClick: () => applyFilter(c.key), style: { padding: '7px 13px', borderRadius: 999, font: '600 12.5px Pretendard', flexShrink: 0, cursor: 'pointer', background: c.bg, color: c.color } }, c.label))))),
+                    React.createElement("div", { style: { display: 'flex', gap: 7, padding: '0 18px 14px', whiteSpace: 'nowrap', overflowX: 'auto' } }, chips.map(c => (React.createElement("div", { key: c.key, onClick: () => c.key === '시황' ? goTab('brief') : applyFilter(c.key), style: { padding: '7px 13px', borderRadius: 999, font: '600 12.5px Pretendard', flexShrink: 0, cursor: 'pointer', background: c.key === '시황' ? '#FFCC00' : c.bg, color: c.key === '시황' ? '#1c1d1f' : c.color } }, c.label))))),
                 React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', background: '#fff' } },
                     newCount > 0 && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', background: '#1c1d1f' } },
                         React.createElement("span", { style: { font: '600 12px Pretendard', color: '#FFCC00' } },
@@ -1513,12 +1609,12 @@ function App() {
                         React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uCE74\uD14C\uACE0\uB9AC"),
                         React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, "\uAE30\uAD00\u00B7\uC790\uC0B0\uAD70\u00B7\uC9C0\uC5ED\uBCC4\uB85C \uBE60\uB974\uAC8C \uBAA8\uC544\uBCF4\uAE30"))),
                 React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, width: '100%', maxWidth: 900, margin: '0 auto', boxSizing: 'border-box' } },
-                    React.createElement("div", { onClick: () => applyFilter('마켓'), style: { display: 'flex', alignItems: 'center', gap: 13, border: '1px solid #ece9e2', borderRadius: 14, padding: '14px 15px', marginBottom: 18, cursor: 'pointer', background: 'linear-gradient(90deg,#fffaeb,#fff)' } },
+                    React.createElement("div", { onClick: () => goTab('brief'), style: { display: 'flex', alignItems: 'center', gap: 13, border: '1px solid #ece9e2', borderRadius: 14, padding: '14px 15px', marginBottom: 18, cursor: 'pointer', background: 'linear-gradient(90deg,#fffaeb,#fff)' } },
                         React.createElement("span", { style: { width: 38, height: 38, borderRadius: 10, background: '#FFCC00', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 15px Pretendard', color: '#1c1d1f', flexShrink: 0 } }, "\uD83D\uDCC8"),
                         React.createElement("div", { style: { flex: 1 } },
-                            React.createElement("div", { style: { font: '700 14px Pretendard' } }, "\uB9C8\uCF13 \uB274\uC2A4"),
-                            React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uAE30\uAD00\uACFC \uBB34\uAD00\uD55C \uD574\uC678 \uB300\uCCB4\uD22C\uC790 \uC2DC\uC7A5\u00B7\uB51C\u00B7\uC804\uB9DD")),
-                        React.createElement("span", { style: { font: '700 12px Pretendard', color: '#9a7d12', background: '#fff7d6', padding: '3px 10px', borderRadius: 999 } }, marketCount),
+                            React.createElement("div", { style: { font: '700 14px Pretendard' } }, "\uB370\uC77C\uB9AC \uC2DC\uD669"),
+                            React.createElement("div", { style: { font: '500 10.5px Pretendard', color: '#9a9ca0', marginTop: 2 } }, "\uC99D\uC2DC\u00B7\uD658\uC728\u00B7\uAE08\uB9AC\u00B7\uD658\uD5E4\uC9C0 \u2014 \uB9E4\uC77C 08:00 \uAC31\uC2E0")),
+                        React.createElement("span", { style: { font: '700 12px Pretendard', color: '#9a7d12', background: '#fff7d6', padding: '3px 10px', borderRadius: 999 } }, market && market.updatedAt ? market.updatedAt : '–'),
                         React.createElement("span", { style: { color: '#cfccc4' } }, "\u203A")),
                     React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 10 } },
                         "\uAD6D\uB0B4 LP \u00B7 \uC5C5\uAD8C\uBCC4 ",
@@ -1848,64 +1944,76 @@ function App() {
                                     " \u00B7 ",
                                     item.source)))))))))),
                 React.createElement(Navbar, { active: "search", ...navProps }))),
-            screen === 'brief' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
-                React.createElement("div", { style: { flexShrink: 0 } },
-                    React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
-                    React.createElement("div", { style: { padding: '2px 20px 14px', borderBottom: '1px solid #efece4' } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
-                            React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, "\uB370\uC77C\uB9AC \uC2DC\uD669"),
-                            React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB9E4\uC77C 08:00 KST \uC790\uB3D9 \uAC31\uC2E0")),
-                        React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, market ? `${market.asOf} 기준 · 전일 시장 정리` : '브리핑을 불러오는 중입니다'))),
-                React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
-                    React.createElement("div", { style: { padding: '16px 20px 30px', maxWidth: 860, margin: '0 auto' } }, !market ? (React.createElement("div", { style: { padding: '70px 20px', textAlign: 'center' } },
-                        React.createElement("div", { style: { fontSize: 28, color: '#d8d5cd' } }, "\u25A4"),
-                        React.createElement("div", { style: { font: '600 14px Pretendard', color: '#56585c', marginTop: 14 } }, "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"),
-                        React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#a6a8ac', marginTop: 6 } },
-                            "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4.",
-                            React.createElement("br", null),
-                            "\uCCAB \uBE0C\uB9AC\uD551\uC774 \uC0DD\uC131\uB418\uBA74 \uC790\uB3D9\uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4."))) : (React.createElement(React.Fragment, null,
-                        React.createElement("div", { style: { background: '#1c1d1f', borderRadius: 14, padding: '15px 16px' } },
-                            React.createElement("div", { style: { font: '700 9.5px Pretendard', color: '#FFCC00', letterSpacing: '.06em', marginBottom: 7 } }, "\uD55C\uC904 \uC694\uC57D"),
-                            React.createElement("div", { style: { font: '650 14px/1.6 Pretendard', color: '#fff' } }, market.summary)),
-                        React.createElement(BriefSection, { title: "\uAD6D\uB0B4\uC99D\uC2DC", lines: market.krLines, rows: market.kr }),
-                        React.createElement(BriefSection, { title: "\uD574\uC678\uC99D\uC2DC", lines: market.globalLines, rows: market.global }),
-                        React.createElement("div", { style: { marginTop: 22 } },
-                            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uC8FC\uC694\uC774\uC288"),
-                            (market.issues && market.issues.length) ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, market.issues.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
-                                React.createElement("div", { style: { font: '650 13px/1.45 Pretendard', color: '#1c1d1f' } }, it.title),
-                                React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
-                                    it.source,
-                                    " \u00B7 \uAE30\uC0AC \uBCF4\uAE30 \u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uC218\uC9D1\uB41C \uC774\uC288\uAC00 \uC5C6\uC74C"))),
-                        React.createElement(BriefSection, { title: "\uD658\uC728", lines: market.fxLines, rows: market.fx }),
-                        React.createElement("div", { style: { marginTop: 22 } },
-                            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "SOFR \u00B7 SONIA \uAE08\uB9AC"),
-                            React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
-                                React.createElement(RateRow, { r: market.rates && market.rates.sofr, fallback: "SOFR (\uBBF8\uAD6D \uB2F4\uBCF4\uBD80 \uC775\uC77C\uBB3C)", first: true }),
-                                React.createElement(RateRow, { r: market.rates && market.rates.sonia, fallback: "SONIA (\uC601\uAD6D \uBB34\uB2F4\uBCF4 \uC775\uC77C\uBB3C)" }))),
-                        React.createElement("div", { style: { marginTop: 18 } },
-                            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uD55C\uAD6D \u00B7 \uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC"),
-                            React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
-                                React.createElement(RateRow, { r: market.rates && market.rates.kr, fallback: "\uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC(\uD55C\uAD6D\uC740\uD589)", first: true }),
-                                React.createElement(RateRow, { r: market.rates && market.rates.us, fallback: "\uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC(FOMC \uBAA9\uD45C\uBC94\uC704)", us: true })),
-                            market.ust && market.ust.length > 0 && market.ust[0].last != null && (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginTop: 8 } },
-                                market.ust[0].name,
-                                " ",
-                                market.ust[0].last.toFixed(2),
-                                "% (",
-                                market.ust[0].chg >= 0 ? '+' : '−',
-                                Math.abs(market.ust[0].chg * 100).toFixed(0),
-                                "bp)"))),
-                        React.createElement("div", { style: { marginTop: 22 } },
-                            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
-                            (market.watch && market.watch.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, market.watch.map((w, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 9, border: '1px solid #f6ecc8', background: '#fffaeb', borderRadius: 12, padding: '11px 13px' } },
-                                React.createElement("span", { style: { font: '700 11px Pretendard', color: '#9a7d12', flexShrink: 0 } }, i + 1),
-                                React.createElement("span", { style: { font: '600 12px/1.6 Pretendard', color: '#3d3e42' } }, w)))))) : (React.createElement("div", { style: { font: '500 11.5px/1.6 Pretendard', color: '#9a9ca0', border: '1px solid #ece9e2', borderRadius: 12, padding: '12px 13px' } }, "\uAE30\uC900\uC120\uC744 \uB118\uB294 \uD2B9\uC774 \uC2E0\uD638\uB294 \uC5C6\uC5C8\uC74C \u2014 \uC9C0\uC218\u00B7\uD658\uC728 \uBAA8\uB450 \uD3C9\uC0C1 \uBC94\uC704\uC600\uC74C"))),
-                        (market.errors && market.errors.length > 0) && (React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#b6b8bc', marginTop: 16, background: '#f8f7f3', borderRadius: 9, padding: '10px 12px' } },
-                            "\u203B \uC774\uBC88 \uD68C\uCC28\uC5D0 \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9\uC774 ",
-                            market.errors.length,
-                            "\uAC74 \uC788\uC74C \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC73C\uBA70 \uB2E4\uC74C \uD68C\uCC28\uC5D0 \uC7AC\uC218\uC9D1\uD568")),
-                        React.createElement("div", { style: { font: '500 10px/1.6 Pretendard', color: '#c2c4c8', marginTop: 10 } }, "\uC2DC\uC138 Yahoo Finance\u00B7Stooq \u00B7 SOFR/EFFR New York Fed \u00B7 SONIA Bank of England \u00B7 \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uC774\uC288 \uAD6C\uAE00 \uB274\uC2A4"))))),
-                React.createElement(Navbar, { active: "brief", ...navProps }))),
+            screen === 'brief' && (() => {
+                const b = briefView; // 선택한 일자의 브리핑 (기본 = 최신)
+                return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
+                    React.createElement("div", { style: { flexShrink: 0 } },
+                        React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
+                        React.createElement("div", { style: { padding: '2px 20px 12px', borderBottom: '1px solid #efece4' } },
+                            React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
+                                React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황'),
+                                React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB9E4\uC77C 08:00 KST")),
+                            React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, b ? `${b.asOf} 기준` : '브리핑을 불러오는 중입니다'),
+                            briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', marginTop: 10, paddingBottom: 2 } }, briefIndex.slice(0, 30).map(x => {
+                                const on = b && b.dateKey === x.dateKey;
+                                return (React.createElement("div", { key: x.dateKey, onClick: () => setBriefSel(x.dateKey), style: { padding: '6px 11px', borderRadius: 999, flexShrink: 0, cursor: 'pointer', font: on ? '700 11.5px Pretendard' : '600 11.5px Pretendard', background: on ? '#1c1d1f' : '#f2f0ea', color: on ? '#FFCC00' : '#56585c' } }, x.dateKey));
+                            }))))),
+                    React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+                        React.createElement("div", { style: { padding: '16px 20px 30px', maxWidth: 900, margin: '0 auto' } }, !b ? (React.createElement("div", { style: { padding: '70px 20px', textAlign: 'center' } },
+                            React.createElement("div", { style: { fontSize: 28, color: '#d8d5cd' } }, "\u25A4"),
+                            React.createElement("div", { style: { font: '600 14px Pretendard', color: '#56585c', marginTop: 14 } }, "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"),
+                            React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#a6a8ac', marginTop: 6 } }, "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4."))) : (React.createElement(React.Fragment, null,
+                            React.createElement("div", { style: { background: '#1c1d1f', borderRadius: 14, padding: '15px 16px' } },
+                                React.createElement("div", { style: { font: '700 9.5px Pretendard', color: '#FFCC00', letterSpacing: '.06em', marginBottom: 7 } }, "\uD55C\uC904 \uC694\uC57D"),
+                                React.createElement("div", { style: { font: '650 14px/1.6 Pretendard', color: '#fff' } }, b.summary)),
+                            React.createElement(BriefSection, { title: "\uAD6D\uB0B4\uC99D\uC2DC", rows: b.kr }),
+                            React.createElement(BriefSection, { title: "\uD574\uC678\uC99D\uC2DC", rows: b.global }),
+                            React.createElement("div", { style: { marginTop: 22 } },
+                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uC8FC\uC694\uC774\uC288"),
+                                (b.issues && b.issues.length) ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, b.issues.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
+                                    React.createElement("div", { style: { font: '650 13px/1.45 Pretendard', color: '#1c1d1f' } }, it.title),
+                                    React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
+                                        it.source,
+                                        " \u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uC218\uC9D1\uB41C \uC774\uC288\uAC00 \uC5C6\uC74C"))),
+                            React.createElement(BriefSection, { title: "\uD658\uC728", rows: b.fx, digits: 4 }),
+                            React.createElement("div", { style: { marginTop: 22 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, flexWrap: 'wrap' } },
+                                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA"),
+                                    React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0' } }, "\uC2E4\uBB34\uC5D0\uC11C \uC790\uC8FC \uC4F0\uB294 \uD14C\uB108")),
+                                (b.tenorRates && b.tenorRates.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, Object.entries((b.tenorRates || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {})).map(([g, rows]) => (React.createElement("div", { key: g, style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
+                                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#56585c', background: '#f8f7f3', padding: '8px 13px' } }, g),
+                                    rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderTop: '1px solid #f3f1ea' } },
+                                        React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', flex: 1 } }, r.tenor),
+                                        React.createElement("span", { style: { font: '800 13.5px Pretendard' } },
+                                            r.rate.toFixed(3),
+                                            "%"),
+                                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc', minWidth: 74, textAlign: 'right' } }, r.asOf))))))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C"))),
+                            React.createElement("div", { style: { marginTop: 18 } },
+                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uD55C\uAD6D \u00B7 \uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC"),
+                                React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
+                                    React.createElement(RateRow, { r: b.rates && b.rates.kr, fallback: "\uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC(\uD55C\uAD6D\uC740\uD589)", first: true }),
+                                    React.createElement(RateRow, { r: b.rates && b.rates.us, fallback: "\uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC(FOMC \uBAA9\uD45C\uBC94\uC704)", us: true })),
+                                b.ust && b.ust.length > 0 && b.ust[0].last != null && (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginTop: 8 } },
+                                    b.ust[0].name,
+                                    " ",
+                                    b.ust[0].last.toFixed(2),
+                                    "% (",
+                                    b.ust[0].chg >= 0 ? '+' : '−',
+                                    Math.abs(b.ust[0].chg * 100).toFixed(0),
+                                    "bp)"))),
+                            React.createElement(HedgeBlock, { hedge: b.hedge }),
+                            React.createElement("div", { style: { marginTop: 22 } },
+                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
+                                (b.watch && b.watch.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, b.watch.map((w, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 9, border: '1px solid #f6ecc8', background: '#fffaeb', borderRadius: 12, padding: '11px 13px' } },
+                                    React.createElement("span", { style: { font: '700 11px Pretendard', color: '#9a7d12', flexShrink: 0 } }, i + 1),
+                                    React.createElement("span", { style: { font: '600 12px/1.6 Pretendard', color: '#3d3e42' } }, w)))))) : (React.createElement("div", { style: { font: '500 11.5px/1.6 Pretendard', color: '#9a9ca0', border: '1px solid #ece9e2', borderRadius: 12, padding: '12px 13px' } }, "\uAE30\uC900\uC120\uC744 \uB118\uB294 \uD2B9\uC774 \uC2E0\uD638\uB294 \uC5C6\uC5C8\uC74C"))),
+                            (b.errors && b.errors.length > 0) && (React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#b6b8bc', marginTop: 16, background: '#f8f7f3', borderRadius: 9, padding: '10px 12px' } },
+                                "\u203B \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9 ",
+                                b.errors.length,
+                                "\uAC74 \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC74C")),
+                            React.createElement("div", { style: { font: '500 10px/1.6 Pretendard', color: '#c2c4c8', marginTop: 10 } }, "\uC2DC\uC138 Yahoo Finance\u00B7Stooq \u00B7 SOFR/EFFR New York Fed \u00B7 SONIA\u00B7\uC815\uCC45\uAE08\uB9AC Bank of England \u00B7 EURIBOR/\u20ACSTR ECB \u00B7 TONA \uC77C\uBCF8\uC740\uD589 \u00B7 \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uC774\uC288 \uAD6C\uAE00 \uB274\uC2A4"))))),
+                    React.createElement(Navbar, { active: "brief", ...navProps })));
+            })(),
             screen === 'bookmarks' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                 React.createElement("div", { style: { flexShrink: 0 } },
                     React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),

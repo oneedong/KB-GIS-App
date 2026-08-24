@@ -10,7 +10,7 @@
  * 원칙: 수치는 전부 실제 소스에서 받아온 값만 쓴다. 실패한 항목은 값을 만들지
  * 않고 '–' 로 비우고 errors 에 남긴다(추정치·기억에 의존한 수치 금지).
  */
-import { writeFile, readFile } from 'fs/promises';
+import { writeFile, readFile, mkdir } from 'fs/promises';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const errors = [];
@@ -30,6 +30,7 @@ const GL_INDEX = [
 ];
 const FX = [
   ['KRW=X', '달러/원', 'usdkrw', '원'],
+  ['EURKRW=X', '유로/원', 'eurkrw', '원'],
   ['EURUSD=X', '유로/달러', 'eurusd', ''],
   ['USDJPY=X', '달러/엔', 'usdjpy', '엔'],
   ['DX-Y.NYB', '달러인덱스', '', ''],
@@ -151,6 +152,13 @@ export function parseBoeCsv(csv) {
   if (!isFinite(v)) return null;
   return { rate: v, asOf: (last[0] || '').replace(/"/g, '').trim() };
 }
+// BoE 통계 DB 범용 조회 (SONIA=IUDSOIA, 정책금리=IUDBEDR 등)
+async function boeSeries(code, label) {
+  const from = (() => { const d = new Date(Date.now() - 40 * 86400000); return `${String(d.getDate()).padStart(2, '0')}/${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}/${d.getFullYear()}`; })();
+  const url = `https://www.bankofengland.co.uk/boeapps/iadb/fromshowcolumns.asp?csv.x=yes&Datefrom=${from}&Dateto=now&SeriesCodes=${code}&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N`;
+  try { return parseBoeCsv(await getText(url, 20000)); }
+  catch (e) { errors.push(`${label}: ${e.message}`); return null; }
+}
 async function sonia() {
   const from = (() => { const d = new Date(Date.now() - 30 * 86400000); return `${String(d.getDate()).padStart(2, '0')}/${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}/${d.getFullYear()}`; })();
   const url = `https://www.bankofengland.co.uk/boeapps/iadb/fromshowcolumns.asp?csv.x=yes&Datefrom=${from}&Dateto=now&SeriesCodes=IUDSOIA&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N`;
@@ -227,6 +235,102 @@ export function bokFromNews(items) {
   return null;
 }
 
+// ── SOFR 평균(30/90/180일) — 뉴욕 연준 SOFR Averages & Index ──
+// 실무에서 기간물 지표로 쓰는 값이라 O/N 과 함께 보여준다.
+export function parseSofrAverages(j) {
+  const r = ((j || {}).refRates || [])[0];
+  if (!r) return null;
+  const pick = (...keys) => { for (const k of keys) if (isFinite(r[k])) return r[k]; return null; };
+  const a30 = pick('average30day', 'average30Day', 'thirtyDayAverage');
+  const a90 = pick('average90day', 'average90Day', 'ninetyDayAverage');
+  const a180 = pick('average180day', 'average180Day', 'oneHundredEightyDayAverage');
+  if (a30 == null && a90 == null && a180 == null) return null;
+  return { asOf: r.effectiveDate || '', a30, a90, a180 };
+}
+async function sofrAverages() {
+  try { return parseSofrAverages(await getJson('https://markets.newyorkfed.org/api/rates/secured/sofrai/last/1.json')); }
+  catch (e) { errors.push(`SOFR 평균: ${e.message}`); return null; }
+}
+
+// ── ECB Data Portal (EURIBOR 테너별 · €STR) ────────────────
+export function parseEcbCsv(csv) {
+  const lines = String(csv).trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return null;
+  const head = lines[0].split(',').map((h) => h.replace(/"/g, '').trim().toUpperCase());
+  const vi = head.indexOf('OBS_VALUE'), ti = head.indexOf('TIME_PERIOD');
+  const row = lines[lines.length - 1].split(',');
+  const v = parseFloat((row[vi] || '').replace(/"/g, ''));
+  if (!isFinite(v)) return null;
+  return { rate: v, asOf: ti >= 0 ? (row[ti] || '').replace(/"/g, '').trim() : '' };
+}
+const ECB_SERIES = [
+  ['EURIBOR 1개월', 'FM/D.U2.EUR.RT.MM.EURIBOR1MD_.HSTA', '1M'],
+  ['EURIBOR 3개월', 'FM/D.U2.EUR.RT.MM.EURIBOR3MD_.HSTA', '3M'],
+  ['EURIBOR 6개월', 'FM/D.U2.EUR.RT.MM.EURIBOR6MD_.HSTA', '6M'],
+  ['EURIBOR 12개월', 'FM/D.U2.EUR.RT.MM.EURIBOR1YD_.HSTA', '12M'],
+];
+async function ecbSeries(path, label) {
+  try {
+    return parseEcbCsv(await getText(`https://data-api.ecb.europa.eu/service/data/${path}?lastNObservations=1&format=csvdata`, 20000));
+  } catch (e) { errors.push(`${label}: ${e.message}`); return null; }
+}
+async function euribor() {
+  const out = [];
+  for (const [label, path, tenor] of ECB_SERIES) {
+    const r = await ecbSeries(path, label);
+    if (r) out.push({ tenor, label, rate: r.rate, asOf: r.asOf });
+    await sleep(300);
+  }
+  return out;
+}
+
+// ── TONA (일본 무담보 콜 익일물) — 일본은행 일별 공표 ──────
+export function parseTona(html) {
+  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const i = text.search(/無担保コール|無担保コールO\/N|uncollateralized overnight/i);
+  if (i < 0) return null;
+  const m = text.slice(i, i + 200).match(/(▲|-|−)?\s?(\d\.\d{2,3})/);
+  if (!m) return null;
+  const v = parseFloat(m[2]) * (m[1] ? -1 : 1);
+  if (!(v >= -1 && v <= 10)) return null;
+  return { rate: v };
+}
+async function tona() {
+  // 최근 영업일부터 역순으로 일별 공표 페이지를 찾는다.
+  for (let back = 0; back < 7; back++) {
+    const d = new Date(Date.now() - back * 86400000);
+    const y = String(d.getUTCFullYear()).slice(2), mo = String(d.getUTCMonth() + 1).padStart(2, '0'), da = String(d.getUTCDate()).padStart(2, '0');
+    try {
+      const r = parseTona(await getText(`https://www3.boj.or.jp/market/jp/stat/md${y}${mo}${da}.htm`, 12000, 1));
+      if (r) return { ...r, asOf: `${d.getUTCFullYear()}.${mo}.${da}`, src: '일본은행' };
+    } catch {}
+  }
+  errors.push('TONA: 일본은행 일별 공표에서 값을 찾지 못함');
+  return null;
+}
+
+// ── 환헤지 비용 · 스왑포인트 ───────────────────────────────
+// 금리평형(covered interest parity)으로 산출한다.
+//   선물환율 = 현물환율 × (1 + i_KRW×d/360) / (1 + i_외화×d/360)
+//   스왑포인트 = 선물환율 − 현물환율  ≈  현물 × (i_KRW − i_외화) × d/360
+// KRW 금리가 외화 금리보다 낮으면 스왑포인트가 음(−)이고, 원화 투자자가 외화
+// 자산을 환헤지할 때 그 차이만큼 연 단위 비용이 발생한다.
+const HEDGE_TENORS = [['1M', 30], ['3M', 90], ['6M', 180], ['1Y', 360]];
+export function buildHedgeLeg(ccy, spot, krwRate, foreignRate, baseLabel) {
+  if (spot == null || krwRate == null || foreignRate == null) return null;
+  const diff = krwRate - foreignRate;                       // %p (원화금리 − 외화금리)
+  const points = HEDGE_TENORS.map(([tenor, days]) => {
+    const fwd = spot * (1 + krwRate / 100 * days / 360) / (1 + foreignRate / 100 * days / 360);
+    return { tenor, days, point: fwd - spot, forward: fwd };
+  });
+  return {
+    ccy, spot, krwRate, foreignRate, baseLabel,
+    diffPct: diff,
+    annualPct: diff,                                        // 연환산 헤지 손익(+수취 / −비용)
+    points,
+  };
+}
+
 // ── 주요 이슈 (구글 뉴스 RSS) ─────────────────────────────
 const ISSUE_QUERIES = [
   '코스피 마감 when:2d',
@@ -270,26 +374,6 @@ async function issues() {
 
 // ── 문장 생성 (음슴체) ────────────────────────────────────
 // 모든 문장은 위에서 받아온 수치만 사용한다.
-// 받침 유무에 따라 조사를 고른다 ('코스피은' 같은 어색한 문장 방지).
-export function josa(word, withBatchim, without) {
-  const c = String(word).trim().slice(-1).charCodeAt(0);
-  const hangul = c >= 0xac00 && c <= 0xd7a3;
-  const has = hangul ? (c - 0xac00) % 28 !== 0 : /[0-9a-zA-Z]/.test(String.fromCharCode(c));
-  return has ? withBatchim : without;
-}
-export function lineIndex(x) {
-  const t = josa(x.name, '은', '는');
-  if (x.last == null) return `${x.name}${t} 시세를 받지 못했음 — 다음 회차에 재수집함`;
-  const dir = x.chgPct > 0 ? '올랐음' : x.chgPct < 0 ? '내렸음' : '보합이었음';
-  return `${x.name}${t} ${fmtNum(x.last, 2)}로 전일 대비 ${fmtSigned(x.chgPct, 2, '%')} ${dir}`;
-}
-export function lineFx(x) {
-  const t = josa(x.name, '은', '는');
-  if (x.last == null) return `${x.name}${t} 시세를 받지 못했음`;
-  const digits = /원/.test(x.unit) ? 2 : 4;
-  const tone = x.name === '달러/원' ? (x.chg > 0 ? ' — 원화가 약세였음' : x.chg < 0 ? ' — 원화가 강세였음' : '') : '';
-  return `${x.name}${t} ${fmtNum(x.last, digits)}${x.unit}으로 ${fmtSigned(x.chg, digits, x.unit)} 움직였음${tone}`;
-}
 // 관찰 포인트 — 데이터가 실제로 만든 신호만 담는다(없으면 빈 배열).
 export function buildWatch(d) {
   const w = [];
@@ -331,29 +415,66 @@ export function buildSummary(d) {
 async function main() {
   if (process.argv.includes('--selftest')) return selftest();
   const now = kst();
-  const [kr, global, fx, ust, sofr, effr, so, bok, iss] = [
+  const [kr, global, fx, ust, sofr, sofrAvg, effr, so, boeBank, estr, eurib, jpTona, bok, iss] = [
     await quoteList(KR_INDEX),
     await quoteList(GL_INDEX),
     await quoteList(FX),
     await quoteList(UST),
     await nyFed('secured/sofr', 'SOFR'),
+    await sofrAverages(),
     await nyFed('unsecured/effr', 'EFFR'),
     await sonia(),
+    await boeSeries('IUDBEDR', '영국 정책금리'),
+    await ecbSeries('EST/B.EU000A2X2A25.WT', '€STR'),
+    await euribor(),
+    await tona(),
     await bokBaseRate(),
     await issues(),
   ];
   // 한국은행 페이지 파싱이 실패하면 금통위 보도에서 인용한다(값을 지어내지 않음).
   const bokRate = bok || bokFromNews(iss) || await bokRateNews();
 
-  // 앱이 그대로 쓰는 표시 문장까지 여기서 만든다(앱은 렌더만 담당).
+  // 테너별 금리표 — 실무에서 자주 쓰는 구간 위주.
+  const tenorRates = [];
+  if (sofr) tenorRates.push({ group: 'SOFR (USD)', tenor: 'O/N', rate: sofr.rate, asOf: sofr.asOf, src: 'New York Fed' });
+  if (sofrAvg) {
+    if (sofrAvg.a30 != null) tenorRates.push({ group: 'SOFR (USD)', tenor: '30일 평균', rate: sofrAvg.a30, asOf: sofrAvg.asOf, src: 'New York Fed' });
+    if (sofrAvg.a90 != null) tenorRates.push({ group: 'SOFR (USD)', tenor: '90일 평균', rate: sofrAvg.a90, asOf: sofrAvg.asOf, src: 'New York Fed' });
+    if (sofrAvg.a180 != null) tenorRates.push({ group: 'SOFR (USD)', tenor: '180일 평균', rate: sofrAvg.a180, asOf: sofrAvg.asOf, src: 'New York Fed' });
+  }
+  if (so) tenorRates.push({ group: 'SONIA (GBP)', tenor: 'O/N', rate: so.rate, asOf: so.asOf, src: 'Bank of England' });
+  if (boeBank) tenorRates.push({ group: 'SONIA (GBP)', tenor: '정책금리', rate: boeBank.rate, asOf: boeBank.asOf, src: 'Bank of England' });
+  if (estr) tenorRates.push({ group: 'EURIBOR·€STR (EUR)', tenor: '€STR O/N', rate: estr.rate, asOf: estr.asOf, src: 'ECB' });
+  for (const e of eurib) tenorRates.push({ group: 'EURIBOR·€STR (EUR)', tenor: e.tenor, rate: e.rate, asOf: e.asOf, src: 'ECB' });
+  if (jpTona) tenorRates.push({ group: 'TONA (JPY)', tenor: 'O/N', rate: jpTona.rate, asOf: jpTona.asOf, src: '일본은행' });
+
+  // 환헤지 비용·스왑포인트 — 원화 투자자 기준.
+  const spotOf = (n) => { const x = fx.find((f) => f.name === n); return x ? x.last : null; };
+  const eur3m = (eurib.find((e) => e.tenor === '3M') || {}).rate;
+  const usd3m = sofrAvg && sofrAvg.a90 != null ? sofrAvg.a90 : (sofr ? sofr.rate : null);
+  const krwRate = bokRate ? bokRate.rate : null;
+  const hedge = {
+    krwRate,
+    krwLabel: bokRate ? `한국 기준금리 ${bokRate.rate.toFixed(2)}%` : '',
+    legs: [
+      buildHedgeLeg('USD', spotOf('달러/원'), krwRate, usd3m, sofrAvg && sofrAvg.a90 != null ? 'SOFR 90일 평균' : 'SOFR O/N'),
+      buildHedgeLeg('EUR', spotOf('유로/원'), krwRate, eur3m != null ? eur3m : (estr ? estr.rate : null), eur3m != null ? 'EURIBOR 3개월' : '€STR O/N'),
+    ].filter(Boolean),
+  };
+
   const data = {
     asOf: `${now.ymd}(${now.dow}) ${now.hm} KST`,
     updatedAt: now.ymd,
+    dateKey: now.ymd.replace(/\./g, ''),
     ts: now.iso,
     kr, global, fx, ust,
+    tenorRates,
+    hedge,
     rates: {
       sofr: sofr ? { rate: sofr.rate, asOf: sofr.asOf, label: 'SOFR (미국 담보부 익일물)', src: 'New York Fed' } : null,
       sonia: so ? { rate: so.rate, asOf: so.asOf, label: 'SONIA (영국 무담보 익일물)', src: 'Bank of England' } : null,
+      estr: estr ? { rate: estr.rate, asOf: estr.asOf, label: '€STR (유로 무담보 익일물)', src: 'ECB' } : null,
+      tona: jpTona ? { rate: jpTona.rate, asOf: jpTona.asOf, label: 'TONA (일본 무담보 콜 익일물)', src: '일본은행' } : null,
       us: effr ? {
         effr: effr.rate,
         target: (effr.targetFrom != null && effr.targetTo != null) ? `${effr.targetFrom.toFixed(2)}~${effr.targetTo.toFixed(2)}%` : '',
@@ -364,14 +485,25 @@ async function main() {
     issues: iss,
     errors,
   };
-  data.krLines = kr.map(lineIndex);
-  data.globalLines = global.map(lineIndex);
-  data.fxLines = fx.map(lineFx);
   data.watch = buildWatch(data);
   data.summary = buildSummary(data);
 
   await writeFile(new URL('../market.json', import.meta.url), JSON.stringify(data, null, 0));
-  console.log(`market.json 갱신: 국내 ${kr.length} · 해외 ${global.length} · 환율 ${fx.length} · 이슈 ${iss.length} · 실패 ${errors.length}`);
+
+  // ── 일자별 아카이브 ──────────────────────────────────────
+  // briefs/YYYYMMDD.json 으로 쌓고 briefs/index.json 에 목록을 유지한다.
+  await mkdir(new URL('../briefs/', import.meta.url), { recursive: true });
+  await writeFile(new URL(`../briefs/${data.dateKey}.json`, import.meta.url), JSON.stringify(data, null, 0));
+  let index = [];
+  try { index = JSON.parse(await readFile(new URL('../briefs/index.json', import.meta.url), 'utf8')); } catch {}
+  if (!Array.isArray(index)) index = [];
+  index = index.filter((x) => x && x.dateKey !== data.dateKey);
+  index.unshift({ dateKey: data.dateKey, date: data.updatedAt, title: `${data.dateKey} 시황`, summary: data.summary, ts: data.ts });
+  index.sort((a, b) => (a.dateKey < b.dateKey ? 1 : -1));
+  index = index.slice(0, 120);
+  await writeFile(new URL('../briefs/index.json', import.meta.url), JSON.stringify(index, null, 0));
+
+  console.log(`market.json 갱신: 국내 ${kr.length} · 해외 ${global.length} · 환율 ${fx.length} · 금리 ${tenorRates.length} · 헤지 ${hedge.legs.length} · 이슈 ${iss.length} · 실패 ${errors.length}`);
   if (errors.length) console.warn('수집 실패 항목:', errors.join(' | '));
   console.log('요약:', data.summary);
 }
@@ -422,18 +554,33 @@ function selftest() {
     issues: [{ title: 'FOMC 의사록 공개' }],
   };
   const watch = buildWatch(d), summary = buildSummary(d);
-  const line = lineIndex(d.kr[0]), fxLine = lineFx(d.fx[0]);
-  // 음슴체 확인 — 모든 생성 문장이 '음/슴'으로 끝나야 한다.
-  const endsOk = [line, fxLine, summary, ...watch].every((t) => /(음|슴|함)$/.test(t.replace(/\s+$/, '')));
-  const josaOk = /코스피는/.test(line) && /달러\/원은/.test(fxLine);
-  const ok7 = watch.length >= 3 && endsOk && josaOk && /코스피 \+0\.82%/.test(summary) && /원화가 약세/.test(fxLine);
+  // 음슴체 확인 — 생성 문장은 모두 '음/슴/함'으로 끝나야 한다.
+  const endsOk = [summary, ...watch].every((t) => /(음|슴|함)$/.test(t.replace(/\s+$/, '')));
+  const ok7 = watch.length >= 3 && endsOk && /코스피 \+0\.82%/.test(summary);
 
-  console.log('index:', line);
-  console.log('fx   :', fxLine);
   console.log('watch:', watch.join('\n       '));
   console.log('요약 :', summary);
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8].join(',')})`);
+  // ECB CSV (EURIBOR·€STR)
+  const ecb = parseEcbCsv('KEY,FREQ,TIME_PERIOD,OBS_VALUE\n"FM.D...",D,2026-08-21,2.153');
+  const ok9 = ecb && ecb.rate === 2.153 && ecb.asOf === '2026-08-21';
+
+  // SOFR 평균(30/90/180일)
+  const avg = parseSofrAverages({ refRates: [{ effectiveDate: '2026-08-21', average30day: 3.61, average90day: 3.58, average180day: 3.55 }] });
+  const ok10 = avg && avg.a90 === 3.58 && avg.a180 === 3.55;
+
+  // TONA — 일본은행 표기의 ▲(마이너스)까지 해석
+  const tona1 = parseTona('<td>無担保コールＯ／Ｎ物レート</td><td>0.478</td>');
+  const tona2 = parseTona('<td>無担保コール</td><td>▲0.005</td>');
+  const ok11 = tona1 && tona1.rate === 0.478 && tona2 && tona2.rate === -0.005;
+
+  // 헤지 스왑포인트 — 원화금리가 낮으면 스왑포인트는 음(−)이고 헤지는 비용이다
+  const leg = buildHedgeLeg('USD', 1380, 2.75, 3.60, 'SOFR 90일 평균');
+  const p3m = leg.points.find((x) => x.tenor === '3M');
+  const ok12 = leg && Math.abs(leg.annualPct - (-0.85)) < 1e-9 && p3m.point < 0 && Math.abs(p3m.point - (-2.90)) < 0.2;
+  console.log('헤지 :', JSON.stringify({ diff: leg.annualPct.toFixed(2), points: leg.points.map((x) => [x.tenor, +x.point.toFixed(2)]) }));
+
+  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12].join(',')})`);
   if (!all) process.exit(1);
 }
 

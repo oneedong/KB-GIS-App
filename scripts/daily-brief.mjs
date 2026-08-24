@@ -552,23 +552,43 @@ async function llmSummary(facts) {
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 300 } }),
+        // 사고형 모델은 응답 토큰을 추론에 먼저 쓰므로 예산을 넉넉히 준다
+        // (부족하면 parts 가 비어 돌아와 매번 폴백으로 떨어진다).
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1200 } }),
         signal: AbortSignal.timeout(25000),
       });
-      if (!res.ok) continue;
+      if (!res.ok) { console.warn(`  [요약] ${model} HTTP ${res.status}`); continue; }
       const j = await res.json();
-      const t = ((((j.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
-      const line = t.trim().split('\n').filter(Boolean)[0] || '';
-      if (line.length > 10 && /(음|슴|함)[.。]?$/.test(line.trim())) return line.replace(/[.。]$/, '');
-    } catch { /* 다음 모델 시도 */ }
+      const parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
+      const t = parts.map((p) => p.text || '').join(' ');
+      const line = t.trim().split('\n').map((x) => x.trim()).filter(Boolean).pop() || '';
+      if (line.length > 10 && /(음|슴|함)[.。]?$/.test(line)) return line.replace(/[.。]$/, '');
+      console.warn(`  [요약] ${model} 형식 불일치 — finish=${(j.candidates || [{}])[0].finishReason || '?'} text="${t.slice(0, 60)}"`);
+    } catch (e) { console.warn(`  [요약] ${model} ${e.message}`); }
   }
   return null;
 }
 // 결정적 폴백 — 대표 헤드라인을 인용하고 수치를 덧붙인다(창작 없음).
-export function headlineSummary(issues, numbers) {
-  const pick = (issues || []).find((i) => /증시|코스피|뉴욕|나스닥|기술주|금리|환율/.test(i.title)) || (issues || [])[0];
-  if (!pick) return numbers ? `${numbers} 으로 마감했음` : '전일 시세를 받지 못해 요약을 만들지 못했음';
-  return `"${pick.title}"(${pick.source}) — ${numbers} 으로 마감했음`;
+export function headlineSummary(issues, numbers, lead) {
+  const list = issues || [];
+  if (!list.length) return numbers ? `${numbers} 으로 마감했음` : '전일 시세를 받지 못해 요약을 만들지 못했음';
+  // lead = { market:'국내'|'해외', dir:'하락'|'상승' } — 그날 지배적인 움직임.
+  const DOWN = /급락|하락|폭락|약세|내림|조정|충격|下落/, UP = /급등|상승|강세|반등|랠리|사상 최고/;
+  const KR = /코스피|코스닥|국내 증시|원화|서울 증시/, GL = /뉴욕|나스닥|다우|S&P|미국 증시|기술주|유럽 증시/;
+  const score = (t) => {
+    let sc = 0;
+    if (lead) {
+      if (lead.market === '국내' && KR.test(t)) sc += 3;
+      if (lead.market === '해외' && GL.test(t)) sc += 3;
+      if (lead.dir === '하락' && DOWN.test(t)) sc += 2;
+      if (lead.dir === '상승' && UP.test(t)) sc += 2;
+    }
+    if (/마감/.test(t)) sc += 1;
+    if (/선물|프리뷰|전망|예상/.test(t)) sc -= 2;        // 장 전 예측 기사보다 마감 기사를 우선
+    return sc;
+  };
+  const best = list.slice().sort((a, b) => score(b.title) - score(a.title))[0];
+  return `"${best.title}"(${best.source}) — ${numbers} 으로 마감했음`;
 }
 
 // ── 5년 일별 추이 (그래프용) ───────────────────────────────
@@ -683,7 +703,13 @@ async function main() {
   // 한줄 요약 — 수치 나열 대신 시황 뉴스에 근거해 쓴다.
   const numbers = buildSummary(data).replace(/ 으로 마감했음$/, '');
   const headlines = (iss || []).slice(0, 6).map((i) => `- ${i.title} (${i.source})`).join('\n');
-  data.summary = (await llmSummary({ numbers, headlines })) || headlineSummary(iss, numbers);
+  const krMove = (kr.find((x) => x.name === '코스피') || {}).chgPct;
+  const glMove = (global.find((x) => x.name === 'S&P 500') || {}).chgPct;
+  const lead = (krMove == null && glMove == null) ? null : {
+    market: Math.abs(krMove || 0) >= Math.abs(glMove || 0) ? '국내' : '해외',
+    dir: (Math.abs(krMove || 0) >= Math.abs(glMove || 0) ? (krMove || 0) : (glMove || 0)) < 0 ? '하락' : '상승',
+  };
+  data.summary = (await llmSummary({ numbers, headlines })) || headlineSummary(iss, numbers, lead);
   data.summarySource = (iss || []).slice(0, 3).map((i) => ({ title: i.title, source: i.source, url: i.url }));
 
   await writeFile(new URL('../market.json', import.meta.url), JSON.stringify(data, null, 0));
@@ -799,7 +825,12 @@ function selftest() {
   const ok16 = hist && hist.d.length === 1 && hist.c[0] === 3200.123;
 
   const hs = headlineSummary([{ title: '딥시크 충격에 기술주 급락', source: '연합뉴스' }], '코스피 −2.34% · 나스닥 −3.10%');
-  const ok17 = /딥시크/.test(hs) && /마감했음$/.test(hs);
+  const hs2 = headlineSummary([
+    { title: 'S&P500 선물, 조정 후 소폭 상승 전망', source: 'KB' },
+    { title: '코스피 3% 급락 마감…외국인 매도', source: '연합뉴스' },
+  ], '코스피 −3.23%', { market: '국내', dir: '하락' });
+  const ok17 = /딥시크/.test(hs) && /마감했음$/.test(hs) && /코스피 3% 급락/.test(hs2);
+  console.log('요약(지배적 움직임):', hs2);
   console.log('요약(폴백):', hs);
 
   const all = ok16 && ok17 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;

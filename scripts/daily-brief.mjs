@@ -59,10 +59,21 @@ export function kst(d = new Date()) {
     iso: d.toISOString(),
   };
 }
-async function getText(url, timeout = 15000) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: '*/*' }, signal: AbortSignal.timeout(timeout) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.text();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// 503/429 는 일시적 레이트리밋이므로 지수 백오프로 재시도한다.
+// (구글 뉴스 RSS 는 수집기와 동시에 돌면 곧잘 503 을 돌려준다)
+async function getText(url, timeout = 15000, tries = 3) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: '*/*' }, signal: AbortSignal.timeout(timeout) });
+      if (res.ok) return res.text();
+      lastErr = new Error(`HTTP ${res.status}`);
+      if (![429, 500, 502, 503, 504].includes(res.status)) break;   // 영구 오류는 재시도 무의미
+    } catch (e) { lastErr = e; }
+    if (i < tries - 1) await sleep(2000 * Math.pow(2, i));
+  }
+  throw lastErr || new Error('요청 실패');
 }
 async function getJson(url, timeout = 15000) { return JSON.parse(await getText(url, timeout)); }
 
@@ -157,19 +168,33 @@ export function parseBokBaseRate(html) {
   if (!(rate >= 0 && rate <= 10)) return null;
   return { rate, asOf: `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` };
 }
+const BOK_PAGES = [
+  'https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643',
+  'https://www.bok.or.kr/portal/singl/baseRate/progress.do?dataSeCd=01&menuNo=200656',
+];
 async function bokBaseRate() {
-  try {
-    const r = parseBokBaseRate(await getText('https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643', 20000));
-    if (r) return { ...r, src: '한국은행' };
-    errors.push('한국 기준금리: 한국은행 페이지에서 표를 찾지 못함');
-  } catch (e) { errors.push(`한국 기준금리: ${e.message}`); }
+  for (const url of BOK_PAGES) {
+    try {
+      const html = await getText(url, 20000);
+      const r = parseBokBaseRate(html);
+      if (r) return { ...r, src: '한국은행' };
+      errors.push(`한국 기준금리: 표를 찾지 못함 (${url.split('/').pop().split('?')[0]}, ${html.length}자)`);
+    } catch (e) { errors.push(`한국 기준금리(${url.split('/').pop().split('?')[0]}): ${e.message}`); }
+  }
   return null;
+}
+// 기준금리 전용 뉴스 조회 — 한국은행 페이지가 막혀도 보도 인용으로 채운다.
+async function bokRateNews() {
+  try {
+    const items = parseRss(await getText('https://news.google.com/rss/search?q=' + encodeURIComponent('한국은행 기준금리 연 (동결 OR 인상 OR 인하) when:60d') + '&hl=ko&gl=KR&ceid=KR:ko'));
+    return bokFromNews(items);
+  } catch (e) { errors.push(`기준금리 보도 인용: ${e.message}`); return null; }
 }
 // 폴백 — 금통위·기준금리 보도에서 '연 X.XX%' 를 인용한다(출처 링크 포함).
 // '3% 초읽기' 같은 정수 표기는 소수 둘째 자리 조건으로 걸러진다.
 export function bokFromNews(items) {
   for (const it of items || []) {
-    const t = `${it.title || ''}`;
+    const t = `${it.title || ''} ${it.desc || ''}`;
     if (!/한국은행|금통위|한은/.test(t)) continue;
     const m = t.match(/기준금리[^\d%]{0,14}?(\d\.\d{2})\s*%/);
     if (m) {
@@ -196,10 +221,11 @@ export function parseRss(xml) {
     let title = strip(pick('title'));
     const link = strip(pick('link'));
     const pub = strip(pick('pubDate'));
+    const desc = strip(pick('description'));
     let source = strip((b.match(/<source[^>]*>([\s\S]*?)<\/source>/i) || [])[1] || '');
     const dash = title.lastIndexOf(' - ');
     if (dash > 0) { if (!source) source = title.slice(dash + 3).trim(); title = title.slice(0, dash).trim(); }
-    if (title && link) items.push({ title, url: link, source: source || '출처 미상', ts: pub ? new Date(pub).toISOString() : '' });
+    if (title && link) items.push({ title, url: link, source: source || '출처 미상', desc, ts: pub ? new Date(pub).toISOString() : '' });
   }
   return items;
 }
@@ -215,6 +241,7 @@ async function issues() {
         out.push(it);
       }
     } catch (e) { errors.push(`이슈(${q}): ${e.message}`); }
+    await sleep(700);                       // 연속 호출 간 간격 — RSS 레이트리밋 회피
   }
   return out.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 8);
 }
@@ -294,7 +321,7 @@ async function main() {
     await issues(),
   ];
   // 한국은행 페이지 파싱이 실패하면 금통위 보도에서 인용한다(값을 지어내지 않음).
-  const bokRate = bok || bokFromNews(iss);
+  const bokRate = bok || bokFromNews(iss) || await bokRateNews();
 
   // 앱이 그대로 쓰는 표시 문장까지 여기서 만든다(앱은 렌더만 담당).
   const data = {

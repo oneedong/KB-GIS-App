@@ -263,22 +263,57 @@ export function parseEcbCsv(csv) {
   if (!isFinite(v)) return null;
   return { rate: v, asOf: ti >= 0 ? (row[ti] || '').replace(/"/g, '').trim() : '' };
 }
-const ECB_SERIES = [
-  ['EURIBOR 1개월', 'FM/D.U2.EUR.RT.MM.EURIBOR1MD_.HSTA', '1M'],
-  ['EURIBOR 3개월', 'FM/D.U2.EUR.RT.MM.EURIBOR3MD_.HSTA', '3M'],
-  ['EURIBOR 6개월', 'FM/D.U2.EUR.RT.MM.EURIBOR6MD_.HSTA', '6M'],
-  ['EURIBOR 12개월', 'FM/D.U2.EUR.RT.MM.EURIBOR1YD_.HSTA', '12M'],
+// EURIBOR 는 ECB API 에 일별 계열이 없다(월평균만 제공). 일별 공표 페이지를
+// 우선 쓰고, 실패하면 ECB 월평균으로 대체하되 '월평균'임을 라벨에 남긴다.
+const ECB_MONTHLY = [
+  ['EURIBOR 1개월', 'FM/M.U2.EUR.RT.MM.EURIBOR1MD_.HSTA', '1M'],
+  ['EURIBOR 3개월', 'FM/M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA', '3M'],
+  ['EURIBOR 6개월', 'FM/M.U2.EUR.RT.MM.EURIBOR6MD_.HSTA', '6M'],
+  ['EURIBOR 12개월', 'FM/M.U2.EUR.RT.MM.EURIBOR1YD_.HSTA', '12M'],
 ];
+const EURIBOR_TENORS = [
+  [/1\s*week/i, '1W'], [/2\s*weeks?/i, '2W'],
+  [/1\s*month/i, '1M'], [/3\s*months?/i, '3M'], [/6\s*months?/i, '6M'], [/12\s*months?/i, '12M'],
+];
+// 공표 페이지 텍스트에서 '테너 + 금리' 쌍만 뽑는다. 많이 쓰는 테너만 남긴다.
+export function parseEuriborPage(html) {
+  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const out = [];
+  const re = /Euribor\s*(\d{1,2})\s*(week|weeks|month|months)[^%\d-]{0,40}(-?\d\.\d{2,3})\s*%/gi;
+  for (const m of text.matchAll(re)) {
+    const label = `${m[1]} ${m[2]}`;
+    const hit = EURIBOR_TENORS.find(([re2]) => re2.test(label));
+    if (!hit) continue;
+    const rate = parseFloat(m[3]);
+    if (!(rate > -2 && rate < 15)) continue;
+    if (out.some((x) => x.tenor === hit[1])) continue;
+    out.push({ tenor: hit[1], rate });
+  }
+  const order = ['1W', '1M', '3M', '6M', '12M'];
+  return out.filter((x) => order.includes(x.tenor)).sort((a, b) => order.indexOf(a.tenor) - order.indexOf(b.tenor));
+}
 async function ecbSeries(path, label) {
   try {
     return parseEcbCsv(await getText(`https://data-api.ecb.europa.eu/service/data/${path}?lastNObservations=1&format=csvdata`, 20000));
   } catch (e) { errors.push(`${label}: ${e.message}`); return null; }
 }
+const EURIBOR_PAGES = [
+  'https://www.euribor-rates.eu/en/current-euribor-rates/',
+  'https://www.global-rates.com/en/interest-rates/euribor/',
+];
 async function euribor() {
+  for (const url of EURIBOR_PAGES) {
+    try {
+      const rows = parseEuriborPage(await getText(url, 20000));
+      if (rows.length) return rows.map((r) => ({ ...r, label: `EURIBOR ${r.tenor}`, asOf: kst().ymd, src: new URL(url).hostname }));
+      errors.push(`EURIBOR(${new URL(url).hostname}): 표를 찾지 못함`);
+    } catch (e) { errors.push(`EURIBOR(${new URL(url).hostname}): ${e.message}`); }
+  }
+  // 폴백 — ECB 월평균
   const out = [];
-  for (const [label, path, tenor] of ECB_SERIES) {
+  for (const [label, path, tenor] of ECB_MONTHLY) {
     const r = await ecbSeries(path, label);
-    if (r) out.push({ tenor, label, rate: r.rate, asOf: r.asOf });
+    if (r) out.push({ tenor: `${tenor} (월평균)`, label, rate: r.rate, asOf: r.asOf, src: 'ECB 월평균' });
     await sleep(300);
   }
   return out;
@@ -287,25 +322,31 @@ async function euribor() {
 // ── TONA (일본 무담보 콜 익일물) — 일본은행 일별 공표 ──────
 export function parseTona(html) {
   const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-  const i = text.search(/無担保コール|無担保コールO\/N|uncollateralized overnight/i);
+  // 일본은행 표기는 국문(無担保コールO/N物)과 영문(Uncollateralized Overnight)이 섞인다.
+  const i = text.search(/無担保コール|uncollateralized\s+overnight|call rate.{0,20}overnight/i);
   if (i < 0) return null;
-  const m = text.slice(i, i + 200).match(/(▲|-|−)?\s?(\d\.\d{2,3})/);
-  if (!m) return null;
-  const v = parseFloat(m[2]) * (m[1] ? -1 : 1);
-  if (!(v >= -1 && v <= 10)) return null;
-  return { rate: v };
+  const win = text.slice(i, i + 400);
+  // 표 형태면 날짜와 함께 여러 값이 오므로 마지막(최신) 값을 쓴다.
+  const nums = [...win.matchAll(/(▲|-|−)?\s?(\d\.\d{2,3})(?!\d)/g)]
+    .map((m) => parseFloat(m[2]) * (m[1] ? -1 : 1))
+    .filter((v) => v >= -1 && v <= 10);
+  if (!nums.length) return null;
+  return { rate: nums[nums.length - 1] };
 }
+const TONA_PAGES = [
+  'https://www.stat-search.boj.or.jp/ssi/mtshtml/fm08_d_1_en.html',   // BOJ 일별 콜금리 표(영문)
+  'https://www.stat-search.boj.or.jp/ssi/mtshtml/fm08_d_1.html',      // 동 국문
+  'https://www.boj.or.jp/en/statistics/market/short/mutan/index.htm',
+];
 async function tona() {
-  // 최근 영업일부터 역순으로 일별 공표 페이지를 찾는다.
-  for (let back = 0; back < 7; back++) {
-    const d = new Date(Date.now() - back * 86400000);
-    const y = String(d.getUTCFullYear()).slice(2), mo = String(d.getUTCMonth() + 1).padStart(2, '0'), da = String(d.getUTCDate()).padStart(2, '0');
+  for (const url of TONA_PAGES) {
     try {
-      const r = parseTona(await getText(`https://www3.boj.or.jp/market/jp/stat/md${y}${mo}${da}.htm`, 12000, 1));
-      if (r) return { ...r, asOf: `${d.getUTCFullYear()}.${mo}.${da}`, src: '일본은행' };
-    } catch {}
+      const html = await getText(url, 20000, 2);
+      const r = parseTona(html);
+      if (r) return { ...r, asOf: r.asOf || kst().ymd, src: '일본은행' };
+      errors.push(`TONA(${new URL(url).hostname}): 값을 찾지 못함 (${html.length}자)`);
+    } catch (e) { errors.push(`TONA(${new URL(url).hostname}): ${e.message}`); }
   }
-  errors.push('TONA: 일본은행 일별 공표에서 값을 찾지 못함');
   return null;
 }
 
@@ -560,6 +601,11 @@ function selftest() {
 
   console.log('watch:', watch.join('\n       '));
   console.log('요약 :', summary);
+  // EURIBOR 일별 공표 페이지 파싱
+  const eur = parseEuriborPage('<table><tr><td>Euribor 1 week</td><td>2.012 %</td></tr><tr><td>Euribor 1 month</td><td>2.045 %</td></tr><tr><td>Euribor 3 months</td><td>2.153 %</td></tr><tr><td>Euribor 6 months</td><td>2.244 %</td></tr><tr><td>Euribor 12 months</td><td>2.401 %</td></tr></table>');
+  const ok13 = eur.length === 5 && eur[0].tenor === '1W' && eur[2].tenor === '3M' && eur[2].rate === 2.153 && eur[4].tenor === '12M';
+  console.log('euribor:', JSON.stringify(eur.map(x => [x.tenor, x.rate])));
+
   // ECB CSV (EURIBOR·€STR)
   const ecb = parseEcbCsv('KEY,FREQ,TIME_PERIOD,OBS_VALUE\n"FM.D...",D,2026-08-21,2.153');
   const ok9 = ecb && ecb.rate === 2.153 && ecb.asOf === '2026-08-21';
@@ -579,8 +625,8 @@ function selftest() {
   const ok12 = leg && Math.abs(leg.annualPct - (-0.85)) < 1e-9 && p3m.point < 0 && Math.abs(p3m.point - (-2.90)) < 0.2;
   console.log('헤지 :', JSON.stringify({ diff: leg.annualPct.toFixed(2), points: leg.points.map((x) => [x.tenor, +x.point.toFixed(2)]) }));
 
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12].join(',')})`);
+  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13].join(',')})`);
   if (!all) process.exit(1);
 }
 

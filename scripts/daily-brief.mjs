@@ -333,26 +333,61 @@ export function parseTona(html) {
   if (!nums.length) return null;
   return { rate: nums[nums.length - 1] };
 }
-const TONA_PAGES = [
-  'https://www.stat-search.boj.or.jp/ssi/mtshtml/fm08_d_1_en.html',   // BOJ 일별 콜금리 표(영문)
-  'https://www.stat-search.boj.or.jp/ssi/mtshtml/fm08_d_1.html',      // 동 국문
-  'https://www.boj.or.jp/en/statistics/market/short/mutan/index.htm',
-];
+// TONA(무담보 콜 익일물)는 일본은행이 매 영업일 공표한다.
+// 1) 공표 인덱스에서 최신 데이터 파일 링크를 찾아 받고,
+// 2) 실패하면 BOJ 시계열 통계(mtshtml)에서 콜금리 계열을 훑는다.
+const TONA_INDEX = 'https://www.boj.or.jp/en/statistics/market/short/mutan/index.htm';
+export function pickTonaLinks(html, base) {
+  const out = [];
+  for (const m of String(html).matchAll(/href\s*=\s*["']([^"']+\.(?:csv|htm|html))["']/gi)) {
+    const href = m[1];
+    if (!/mutan|call/i.test(href)) continue;
+    if (/index\.htm/i.test(href)) continue;
+    try { out.push(new URL(href, base).toString()); } catch {}
+  }
+  return [...new Set(out)].slice(0, 6);
+}
+export function parseTonaCsv(text) {
+  // 공표 파일은 '일자, 평균金利, 최고, 최저 …' 형태. 마지막 데이터 행의 평균을 쓴다.
+  const rows = String(text).trim().split(/\r?\n/).filter((l) => /\d{4}[\/-]\d{1,2}[\/-]\d{1,2}|\d{8}/.test(l));
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const cells = rows[i].split(/[,\t]/).map((c) => c.replace(/"/g, '').trim());
+    for (const c of cells.slice(1)) {
+      const v = parseFloat(c);
+      if (isFinite(v) && v >= -1 && v <= 10 && /\d\.\d{2,3}/.test(c)) return { rate: v, asOf: cells[0] };
+    }
+  }
+  return null;
+}
 async function tona() {
-  for (const url of TONA_PAGES) {
+  // (1) 공표 인덱스 → 최신 데이터 파일
+  try {
+    const idx = await getText(TONA_INDEX, 20000, 2);
+    const links = pickTonaLinks(idx, TONA_INDEX);
+    console.log(`  [TONA] 공표 파일 후보 ${links.length}건: ${links.join(' | ')}`);
+    for (const link of links) {
+      try {
+        const body = await getText(link, 20000, 1);
+        const r = /\.csv$/i.test(link) ? parseTonaCsv(body) : (parseTona(body) || parseTonaCsv(body));
+        if (r) return { rate: r.rate, asOf: r.asOf || kst().ymd, src: '일본은행' };
+      } catch (e) { console.log(`  [TONA] ${link} 실패: ${e.message}`); }
+    }
+  } catch (e) { errors.push(`TONA 공표 인덱스: ${e.message}`); }
+
+  // (2) BOJ 시계열 통계에서 콜금리 계열 탐색 (fm08 은 환율이었음 — 제목으로 판별)
+  for (const code of ['fm01', 'fm02', 'fm03', 'fm04', 'fm05', 'fm06', 'fm07']) {
+    const url = `https://www.stat-search.boj.or.jp/ssi/mtshtml/${code}_d_1_en.html`;
     try {
-      const html = await getText(url, 20000, 2);
+      const html = await getText(url, 20000, 1);
+      const t = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      const isCall = /call rate|uncollateralized/i.test(t);
+      console.log(`  [TONA] ${code}: ${isCall ? '콜금리 계열' : '아님'} — ${t.slice(80, 190)}`);
+      if (!isCall) continue;
       const r = parseTona(html);
       if (r) return { ...r, asOf: r.asOf || kst().ymd, src: '일본은행' };
-      errors.push(`TONA(${new URL(url).hostname}): 값을 찾지 못함 (${html.length}자)`);
-      // 진단 — 페이지에서 콜금리 관련 문구 주변을 로그로 남겨 파서를 맞춘다.
-      const t = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-      const i = t.search(/コール|call rate|uncollateral/i);
-      console.log(`  [TONA 진단] ${url}`);
-      console.log(`   head: ${t.slice(0, 180)}`);
-      console.log(`   hit@${i}: ${i >= 0 ? t.slice(i, i + 220) : '(키워드 없음)'}`);
-    } catch (e) { errors.push(`TONA(${new URL(url).hostname}): ${e.message}`); }
+    } catch (e) { console.log(`  [TONA] ${code} 실패: ${e.message}`); }
   }
+  errors.push('TONA: 일본은행 공표에서 값을 찾지 못함');
   return null;
 }
 
@@ -625,14 +660,18 @@ function selftest() {
   const tona2 = parseTona('<td>無担保コール</td><td>▲0.005</td>');
   const ok11 = tona1 && tona1.rate === 0.478 && tona2 && tona2.rate === -0.005;
 
+  // TONA 공표 CSV — 마지막 행의 평균금리를 읽는다
+  const tonaCsv = parseTonaCsv('Date,Average,High,Low\n2026/08/21,0.477,0.480,0.470\n2026/08/22,0.478,0.481,0.472');
+  const ok14 = tonaCsv && tonaCsv.rate === 0.478 && tonaCsv.asOf === '2026/08/22';
+
   // 헤지 스왑포인트 — 원화금리가 낮으면 스왑포인트는 음(−)이고 헤지는 비용이다
   const leg = buildHedgeLeg('USD', 1380, 2.75, 3.60, 'SOFR 90일 평균');
   const p3m = leg.points.find((x) => x.tenor === '3M');
   const ok12 = leg && Math.abs(leg.annualPct - (-0.85)) < 1e-9 && p3m.point < 0 && Math.abs(p3m.point - (-2.90)) < 0.2;
   console.log('헤지 :', JSON.stringify({ diff: leg.annualPct.toFixed(2), points: leg.points.map((x) => [x.tenor, +x.point.toFixed(2)]) }));
 
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13].join(',')})`);
+  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14].join(',')})`);
   if (!all) process.exit(1);
 }
 

@@ -74,10 +74,13 @@ export function parseYahooChart(j) {
   const meta = r[0].meta || {};
   const closes = (((r[0].indicators || {}).quote || [])[0] || {}).close || [];
   const valid = closes.filter((c) => typeof c === 'number' && isFinite(c));
-  const last = num(meta.regularMarketPrice) != null ? meta.regularMarketPrice : valid[valid.length - 1];
-  let prev = num(meta.chartPreviousClose);
-  if (prev == null || prev === last) prev = valid.length >= 2 ? valid[valid.length - 2] : null;
-  if (last == null || prev == null) return null;
+  // 일봉 종가 계열에서 마지막 값과 그 직전 값을 쓴다.
+  // meta.chartPreviousClose 는 '요청 구간 시작 이전의 종가'라 구간을 10일로 잡으면
+  // 10일치 등락이 하루 등락으로 둔갑한다 — 절대 쓰지 않는다.
+  const last = valid.length ? valid[valid.length - 1] : num(meta.regularMarketPrice);
+  let prev = valid.length >= 2 ? valid[valid.length - 2] : null;
+  if (prev == null) prev = num(meta.previousClose);
+  if (last == null || prev == null || prev === 0) return null;
   return { last, prev, chg: last - prev, chgPct: (last - prev) / prev * 100, src: 'Yahoo Finance' };
 }
 export function parseStooqCsv(csv) {
@@ -92,7 +95,7 @@ export function parseStooqCsv(csv) {
 }
 async function quote(symbol, stooqSym) {
   try {
-    const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10d&interval=1d`);
+    const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1d`);
     const q = parseYahooChart(j);
     if (q) return q;
     throw new Error('빈 응답');
@@ -155,8 +158,26 @@ export function parseBokBaseRate(html) {
   return { rate, asOf: `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` };
 }
 async function bokBaseRate() {
-  try { return parseBokBaseRate(await getText('https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643', 20000)); }
-  catch (e) { errors.push(`한국 기준금리: ${e.message}`); return null; }
+  try {
+    const r = parseBokBaseRate(await getText('https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643', 20000));
+    if (r) return { ...r, src: '한국은행' };
+    errors.push('한국 기준금리: 한국은행 페이지에서 표를 찾지 못함');
+  } catch (e) { errors.push(`한국 기준금리: ${e.message}`); }
+  return null;
+}
+// 폴백 — 금통위·기준금리 보도에서 '연 X.XX%' 를 인용한다(출처 링크 포함).
+// '3% 초읽기' 같은 정수 표기는 소수 둘째 자리 조건으로 걸러진다.
+export function bokFromNews(items) {
+  for (const it of items || []) {
+    const t = `${it.title || ''}`;
+    if (!/한국은행|금통위|한은/.test(t)) continue;
+    const m = t.match(/기준금리[^\d%]{0,14}?(\d\.\d{2})\s*%/);
+    if (m) {
+      const rate = parseFloat(m[1]);
+      if (rate >= 0 && rate <= 10) return { rate, asOf: '', src: `${it.source} 보도 인용`, url: it.url };
+    }
+  }
+  return null;
 }
 
 // ── 주요 이슈 (구글 뉴스 RSS) ─────────────────────────────
@@ -272,6 +293,8 @@ async function main() {
     await bokBaseRate(),
     await issues(),
   ];
+  // 한국은행 페이지 파싱이 실패하면 금통위 보도에서 인용한다(값을 지어내지 않음).
+  const bokRate = bok || bokFromNews(iss);
 
   // 앱이 그대로 쓰는 표시 문장까지 여기서 만든다(앱은 렌더만 담당).
   const data = {
@@ -287,7 +310,7 @@ async function main() {
         target: (effr.targetFrom != null && effr.targetTo != null) ? `${effr.targetFrom.toFixed(2)}~${effr.targetTo.toFixed(2)}%` : '',
         asOf: effr.asOf, label: '미국 기준금리(FOMC 목표범위) · EFFR', src: 'New York Fed',
       } : null,
-      kr: bok ? { rate: bok.rate, asOf: bok.asOf, label: '한국 기준금리(한국은행)', src: '한국은행' } : null,
+      kr: bokRate ? { rate: bokRate.rate, asOf: bokRate.asOf, label: '한국 기준금리(한국은행)', src: bokRate.src || '한국은행', url: bokRate.url || '' } : null,
     },
     issues: iss,
     errors,
@@ -305,9 +328,11 @@ async function main() {
 }
 
 function selftest() {
-  const chart = { chart: { result: [{ meta: { regularMarketPrice: 3214.55, chartPreviousClose: 3188.42 }, indicators: { quote: [{ close: [3180.1, 3188.42, 3214.55] }] } }] } };
+  // chartPreviousClose(구간 시작 이전 종가)를 쓰면 10일치 등락이 하루 등락으로
+  // 둔갑한다 — 반드시 직전 일봉 종가(3188.42)와 비교해야 한다.
+  const chart = { chart: { result: [{ meta: { regularMarketPrice: 3214.55, chartPreviousClose: 2900.0, previousClose: 3188.42 }, indicators: { quote: [{ close: [3100.0, 3188.42, 3214.55] }] } }] } };
   const q = parseYahooChart(chart);
-  const ok1 = q && q.last === 3214.55 && Math.abs(q.chgPct - 0.8195) < 0.01;
+  const ok1 = q && q.last === 3214.55 && q.prev === 3188.42 && Math.abs(q.chgPct - 0.8195) < 0.01;
 
   const csv = 'Symbol,Date,Time,Open,High,Low,Close,Volume\n^SPX,2026-08-21,22:00:00,6100.00,6180,6090,6150.00,0';
   const st = parseStooqCsv(csv);
@@ -321,6 +346,12 @@ function selftest() {
 
   const bok = parseBokBaseRate('<table><tr><td>2026.05.29</td><td>2.25</td></tr><tr><td>2026.02.25</td><td>2.50</td></tr></table>');
   const ok5 = bok && bok.rate === 2.25 && bok.asOf === '2026.05.29';
+
+  const bokNews = bokFromNews([
+    { title: '한은 금통위, 기준금리 연 2.75%로 동결', source: '연합뉴스', url: 'https://x/1' },
+  ]);
+  const bokNoise = bokFromNews([{ title: '기준금리 3% 초읽기…영끌족 부담', source: '한국경제', url: 'https://x/2' }]);
+  const ok8 = bokNews && bokNews.rate === 2.75 && bokNoise === null;
 
   const rss = parseRss('<rss><channel><item><title>코스피 2% 급등 마감 - 한국경제</title><link>https://x/1</link><pubDate>Fri, 21 Aug 2026 08:00:00 GMT</pubDate><source>한국경제</source></item></channel></rss>');
   const ok6 = rss.length === 1 && rss[0].title === '코스피 2% 급등 마감' && rss[0].source === '한국경제';
@@ -343,8 +374,8 @@ function selftest() {
   console.log('fx   :', fxLine);
   console.log('watch:', watch.join('\n       '));
   console.log('요약 :', summary);
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7].join(',')})`);
+  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8].join(',')})`);
   if (!all) process.exit(1);
 }
 

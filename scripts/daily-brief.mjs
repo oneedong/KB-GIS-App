@@ -320,6 +320,20 @@ async function euribor() {
 }
 
 // ── TONA (일본 무담보 콜 익일물) — 일본은행 일별 공표 ──────
+// 시계열 표(전 기간 수록)에서 '날짜 + 값' 쌍을 모아 가장 최근 날짜의 값을 고른다.
+// 헤더 근처만 훑으면 표 정렬 방향에 따라 옛 값을 읽을 수 있어, 날짜로 판정한다.
+export function parseTonaTable(html) {
+  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const re = /(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(▲|-|−)?\s?(\d\.\d{2,3})(?!\d)/g;
+  let best = null;
+  for (const m of text.matchAll(re)) {
+    const key = +m[1] * 10000 + +m[2] * 100 + +m[3];
+    const v = parseFloat(m[5]) * (m[4] ? -1 : 1);
+    if (!(v >= -1 && v <= 10)) continue;
+    if (!best || key > best.key) best = { key, rate: v, asOf: `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` };
+  }
+  return best ? { rate: best.rate, asOf: best.asOf } : null;
+}
 export function parseTona(html) {
   const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
   // 일본은행 표기는 국문(無担保コールO/N物)과 영문(Uncollateralized Overnight)이 섞인다.
@@ -368,7 +382,7 @@ async function tona() {
     for (const link of links) {
       try {
         const body = await getText(link, 20000, 1);
-        const r = /\.csv$/i.test(link) ? parseTonaCsv(body) : (parseTona(body) || parseTonaCsv(body));
+        const r = /\.csv$/i.test(link) ? parseTonaCsv(body) : (parseTonaTable(body) || parseTona(body) || parseTonaCsv(body));
         if (r) return { rate: r.rate, asOf: r.asOf || kst().ymd, src: '일본은행' };
       } catch (e) { console.log(`  [TONA] ${link} 실패: ${e.message}`); }
     }
@@ -383,7 +397,7 @@ async function tona() {
       const isCall = /call rate|uncollateralized/i.test(t);
       console.log(`  [TONA] ${code}: ${isCall ? '콜금리 계열' : '아님'} — ${t.slice(80, 190)}`);
       if (!isCall) continue;
-      const r = parseTona(html);
+      const r = parseTonaTable(html) || parseTona(html);
       if (r) return { ...r, asOf: r.asOf || kst().ymd, src: '일본은행' };
     } catch (e) { console.log(`  [TONA] ${code} 실패: ${e.message}`); }
   }
@@ -660,6 +674,10 @@ function selftest() {
   const tona2 = parseTona('<td>無担保コール</td><td>▲0.005</td>');
   const ok11 = tona1 && tona1.rate === 0.478 && tona2 && tona2.rate === -0.005;
 
+  // 시계열 표에서는 날짜가 가장 최근인 행을 골라야 한다(정렬 방향과 무관하게)
+  const tonaTbl = parseTonaTable('<tr><td>1990/03/20</td><td>7.250</td></tr><tr><td>2026/08/21</td><td>0.478</td></tr><tr><td>2026/08/20</td><td>0.477</td></tr>');
+  const ok15 = tonaTbl && tonaTbl.rate === 0.478 && tonaTbl.asOf === '2026.08.21';
+
   // TONA 공표 CSV — 마지막 행의 평균금리를 읽는다
   const tonaCsv = parseTonaCsv('Date,Average,High,Low\n2026/08/21,0.477,0.480,0.470\n2026/08/22,0.478,0.481,0.472');
   const ok14 = tonaCsv && tonaCsv.rate === 0.478 && tonaCsv.asOf === '2026/08/22';
@@ -670,8 +688,8 @@ function selftest() {
   const ok12 = leg && Math.abs(leg.annualPct - (-0.85)) < 1e-9 && p3m.point < 0 && Math.abs(p3m.point - (-2.90)) < 0.2;
   console.log('헤지 :', JSON.stringify({ diff: leg.annualPct.toFixed(2), points: leg.points.map((x) => [x.tenor, +x.point.toFixed(2)]) }));
 
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14].join(',')})`);
+  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15].join(',')})`);
   if (!all) process.exit(1);
 }
 

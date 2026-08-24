@@ -23,6 +23,8 @@ const NEWS_API = './news.json';
 const ALLOC_API = './allocations.json';
 // CIO·자산군 수익률 인사이트 (수집기가 뉴스에서 자동 추출·갱신 — insights.json)
 const INSIGHTS_API = './insights.json';
+// 데일리 시황 브리핑 (매일 08:00 KST, scripts/daily-brief.mjs 가 생성 — market.json)
+const MARKET_API = './market.json';
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
 // Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
@@ -123,7 +125,7 @@ function grp(t) {
 // 기사만 사용하며, 브라우저에 남은 옛 가짜 기사는 isRealArticle 로 걸러집니다.
 
 // ─── Navbar ───────────────────────────────────────────────
-function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onGlobalGp, onSearch, onBookmarks }) {
+function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKoreaLp, onGlobalGp, onSearch, onBookmarks, onBrief }) {
   if (isDesktop) return null;          // 데스크톱은 좌측 사이드바를 사용
   const on = '#1c1d1f', off = '#b0b2b6';
   const tab = { display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flex:1, minWidth:0 };
@@ -136,6 +138,10 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
           {homeNew > 0 && <span style={{position:'absolute', top:-5, right:-11, minWidth:15, height:15, padding:'0 3px', boxSizing:'border-box', borderRadius:999, background:'#e8392f', color:'#fff', font:'700 9px Pretendard', display:'flex', alignItems:'center', justifyContent:'center'}}>{homeNew > 99 ? '99+' : homeNew}</span>}
         </div>
         <span style={lbl(active==='home')}>홈</span>
+      </div>
+      <div onClick={onBrief} style={tab}>
+        <span style={{fontSize:15, lineHeight:1, color:active==='brief'?on:off}}>▤</span>
+        <span style={lbl(active==='brief')}>시황</span>
       </div>
       <div onClick={onToday} style={tab}>
         <span style={{fontSize:16, lineHeight:1, color:active==='today'?on:off}}>◷</span>
@@ -160,6 +166,56 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
       <div onClick={onBookmarks} style={tab}>
         <span style={{fontSize:15, lineHeight:1, color:active==='bookmarks'?on:off}}>▢</span>
         <span style={lbl(active==='bookmarks')}>북마크</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── 데일리 시황 표 (지수·환율 공통) ─────────────────────
+function BriefSection({ title, lines, rows }) {
+  const list = rows || [];
+  return (
+    <div style={{marginTop:22}}>
+      <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>{title}</div>
+      <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+        {list.map((x, i) => {
+          const up = x.chgPct != null && x.chgPct > 0, down = x.chgPct != null && x.chgPct < 0;
+          const col = up ? '#c0392b' : down ? '#1a5fa4' : '#7a7c80';   // 국내 관행: 상승 적색·하락 청색
+          return (
+            <div key={x.name+i} style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+              <span style={{font:'600 12.5px Pretendard', color:'#1c1d1f', flex:1, minWidth:0}}>{x.name}</span>
+              <span style={{font:'800 13.5px Pretendard', color:'#1c1d1f'}}>
+                {x.last == null ? '–' : x.last.toLocaleString('ko-KR', {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </span>
+              <span style={{font:'700 11.5px Pretendard', color:col, minWidth:64, textAlign:'right'}}>
+                {x.chgPct == null ? '–' : `${up ? '▲' : down ? '▼' : ''} ${Math.abs(x.chgPct).toFixed(2)}%`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {(lines && lines.length > 0) && (
+        <div style={{font:'500 11.5px/1.7 Pretendard', color:'#56585c', marginTop:9}}>
+          {lines.map((t, i) => <div key={i}>· {t}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 금리 한 줄 — 값이 없으면 만들어내지 않고 '수집 실패'로 비운다.
+function RateRow({ r, fallback, first, us }) {
+  return (
+    <div style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:first?'none':'1px solid #f3f1ea'}}>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{font:'600 12.5px Pretendard', color:'#1c1d1f'}}>{(r && r.label) || fallback}</div>
+        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{r ? `${r.asOf || ''}${r.src ? ` · ${r.src}` : ''}` : '이번 회차 수집 실패 — 값을 비워 뒀음'}</div>
+      </div>
+      <div style={{textAlign:'right'}}>
+        <div style={{font:'800 14px Pretendard', color:r ? '#1c1d1f' : '#c2c4c8'}}>
+          {us && r && r.target ? r.target : (r && r.rate != null ? `${r.rate.toFixed(2)}%` : '–')}
+        </div>
+        {us && r && r.rate != null && <div style={{font:'500 9.5px Pretendard', color:'#9a9ca0', marginTop:2}}>EFFR {r.rate.toFixed(2)}%</div>}
       </div>
     </div>
   );
@@ -257,7 +313,7 @@ function TrendChart({ trend }) {
 // ─── Sidebar (desktop) ────────────────────────────────────
 function Sidebar({ active, homeNew, go, onRefresh }) {
   const items = [
-    ['home', '⌂', '홈'], ['today', '◷', '오늘'], ['category', '▦', '카테고리'],
+    ['home', '⌂', '홈'], ['brief', '▤', '데일리 시황'], ['today', '◷', '오늘'], ['category', '▦', '카테고리'],
     ['korlp', '★', 'Korea LP'], ['gp', '◆', 'Global GP'], ['search', '⌕', '검색'], ['bookmarks', '▢', '북마크'],
   ];
   return (
@@ -998,6 +1054,29 @@ function GpProfile({ name, profile, articles, frEvents, onBack, onOpenArticle })
             </div>
           )}
 
+          {/* 핵심 인물 (프로필에 등재된 경우) */}
+          {profile && profile.people && profile.people.length > 0 && (
+            <div style={{marginTop:12, border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+              {profile.people.map((pp, i) => (
+                <div key={pp.name+i} style={{padding:'12px 14px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                  <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap'}}>
+                    <span style={{font:'700 13.5px Pretendard', color:'#1c1d1f'}}>{pp.name}</span>
+                    <span style={{font:'700 9.5px Pretendard', color:'#56585c', background:'#f0eee7', padding:'3px 9px', borderRadius:6}}>{pp.title}</span>
+                  </div>
+                  {pp.note && <div style={{font:'500 11.5px/1.6 Pretendard', color:'#56585c', marginTop:7}}>{pp.note}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 커버리지 노트 (방한 일정 등) */}
+          {profile && profile.note && (
+            <div style={{marginTop:10, border:'1px solid #dde6f3', background:'#f6f9fe', borderRadius:11, padding:'11px 13px'}}>
+              <div style={{font:'700 10px Pretendard', color:'#1a5fa4', letterSpacing:'.04em', marginBottom:5}}>커버리지 노트</div>
+              <div style={{font:'600 12px/1.6 Pretendard', color:'#3d3e42'}}>{profile.note}</div>
+            </div>
+          )}
+
           {/* 플래그십 펀드 */}
           {profile && profile.flagship && (
             <div style={{marginTop:10, background:'#fffaeb', border:'1px solid #f6ecc8', borderRadius:11, padding:'12px 13px'}}>
@@ -1141,6 +1220,7 @@ function App() {
   const [alloc, setAlloc]          = useState(null);
   const [allocSel, setAllocSel]    = useState(null);
   const [insights, setInsights]    = useState(null);
+  const [market, setMarket]        = useState(null);
   const [roster, setRoster]        = useState(null);   // 국내 LP 전체 로스터
   const [profiles, setProfiles]    = useState(null);   // 국내 LP 프로필(lp-profiles.json)
   const [profilesAt, setProfilesAt] = useState('');    // 프로필 일괄 갱신일
@@ -1214,6 +1294,14 @@ function App() {
     fetch(INSIGHTS_API + '?t=' + Date.now())
       .then(r => r.json())
       .then(d => { if (d && (Array.isArray(d.cios) || Array.isArray(d.assetReturns))) setInsights(d); })
+      .catch(() => {});
+  }, []);
+
+  // Load 데일리 시황 브리핑 (매일 아침 08:00 KST 갱신).
+  useEffect(() => {
+    fetch(MARKET_API + '?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global))) setMarket(d); })
       .catch(() => {});
   }, []);
 
@@ -1441,7 +1529,7 @@ function App() {
     { label:'팀즈',     icon:'T', bg:'#f0eee7', fg:'#56585c' },
   ];
 
-  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onGlobalGp:()=>goTab('gp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks') };
+  const navProps = { homeNew:newCount, isDesktop, onHome:()=>goTab('home'), onToday:()=>goTab('today'), onCategory:()=>goTab('category'), onKoreaLp:()=>goTab('korlp'), onGlobalGp:()=>goTab('gp'), onSearch:()=>goTab('search'), onBookmarks:()=>goTab('bookmarks'), onBrief:()=>goTab('brief') };
 
   // Allocation screen derived data
   const allocRows = (alloc && alloc.institutions) || [];
@@ -2088,6 +2176,114 @@ function App() {
             )}
           </div>
           <Navbar active="search" {...navProps} />
+        </div>
+      )}
+
+      {/* ── DAILY BRIEF (데일리 시황 — 매일 08:00 KST 자동 갱신) ── */}
+      {screen === 'brief' && (
+        <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', background:'#fff'}}>
+          <div style={{flexShrink:0}}>
+            <div style={{height:'max(env(safe-area-inset-top), 8px)', flexShrink:0}}></div>
+            <div style={{padding:'2px 20px 14px', borderBottom:'1px solid #efece4'}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
+                <div style={{font:'800 20px Pretendard', letterSpacing:'-.02em'}}>데일리 시황</div>
+                <span style={{font:'500 9.5px Pretendard', color:'#1a7a4a', background:'#e4f5ea', padding:'2px 7px', borderRadius:5}}>● 매일 08:00 KST 자동 갱신</span>
+              </div>
+              <div style={{font:'500 11.5px Pretendard', color:'#9a9ca0', marginTop:3}}>
+                {market ? `${market.asOf} 기준 · 전일 시장 정리` : '브리핑을 불러오는 중입니다'}
+              </div>
+            </div>
+          </div>
+          <div style={{flex:1, minHeight:0, overflowY:'auto'}}>
+            <div style={{padding:'16px 20px 30px', maxWidth:860, margin:'0 auto'}}>
+              {!market ? (
+                <div style={{padding:'70px 20px', textAlign:'center'}}>
+                  <div style={{fontSize:28, color:'#d8d5cd'}}>▤</div>
+                  <div style={{font:'600 14px Pretendard', color:'#56585c', marginTop:14}}>아직 브리핑이 없습니다</div>
+                  <div style={{font:'500 12px/1.6 Pretendard', color:'#a6a8ac', marginTop:6}}>매일 아침 08시(KST)에 전일 시장을 정리해 올립니다.<br/>첫 브리핑이 생성되면 자동으로 표시됩니다.</div>
+                </div>
+              ) : (
+                <>
+                  {/* 한줄 요약 */}
+                  <div style={{background:'#1c1d1f', borderRadius:14, padding:'15px 16px'}}>
+                    <div style={{font:'700 9.5px Pretendard', color:'#FFCC00', letterSpacing:'.06em', marginBottom:7}}>한줄 요약</div>
+                    <div style={{font:'650 14px/1.6 Pretendard', color:'#fff'}}>{market.summary}</div>
+                  </div>
+
+                  <BriefSection title="국내증시" lines={market.krLines} rows={market.kr} />
+                  <BriefSection title="해외증시" lines={market.globalLines} rows={market.global} />
+
+                  {/* 주요이슈 */}
+                  <div style={{marginTop:22}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>주요이슈</div>
+                    {(market.issues && market.issues.length) ? (
+                      <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                        {market.issues.map((it, i) => (
+                          <a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
+                             style={{display:'block', textDecoration:'none', color:'inherit', padding:'12px 13px', borderTop:i?'1px solid #f3f1ea':'none'}}>
+                            <div style={{font:'650 13px/1.45 Pretendard', color:'#1c1d1f'}}>{it.title}</div>
+                            <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:5}}>{it.source} · 기사 보기 ↗</div>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{font:'500 11px/1.6 Pretendard', color:'#b6b8bc', border:'1px dashed #e3e0d8', borderRadius:13, padding:'14px'}}>수집된 이슈가 없음</div>
+                    )}
+                  </div>
+
+                  <BriefSection title="환율" lines={market.fxLines} rows={market.fx} />
+
+                  {/* 금리 — SOFR/SONIA + 한·미 기준금리 */}
+                  <div style={{marginTop:22}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>SOFR · SONIA 금리</div>
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      <RateRow r={market.rates && market.rates.sofr} fallback="SOFR (미국 담보부 익일물)" first={true} />
+                      <RateRow r={market.rates && market.rates.sonia} fallback="SONIA (영국 무담보 익일물)" />
+                    </div>
+                  </div>
+                  <div style={{marginTop:18}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>한국 · 미국 기준금리</div>
+                    <div style={{border:'1px solid #ece9e2', borderRadius:13, overflow:'hidden'}}>
+                      <RateRow r={market.rates && market.rates.kr} fallback="한국 기준금리(한국은행)" first={true} />
+                      <RateRow r={market.rates && market.rates.us} fallback="미국 기준금리(FOMC 목표범위)" us={true} />
+                    </div>
+                    {market.ust && market.ust.length > 0 && market.ust[0].last != null && (
+                      <div style={{font:'500 11px/1.6 Pretendard', color:'#9a9ca0', marginTop:8}}>
+                        {market.ust[0].name} {market.ust[0].last.toFixed(2)}% ({market.ust[0].chg >= 0 ? '+' : '−'}{Math.abs(market.ust[0].chg * 100).toFixed(0)}bp)
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 관찰 포인트 */}
+                  <div style={{marginTop:22}}>
+                    <div style={{font:'700 11px Pretendard', color:'#a6a8ac', letterSpacing:'.06em', marginBottom:9}}>관찰 포인트</div>
+                    {(market.watch && market.watch.length) ? (
+                      <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                        {market.watch.map((w, i) => (
+                          <div key={i} style={{display:'flex', gap:9, border:'1px solid #f6ecc8', background:'#fffaeb', borderRadius:12, padding:'11px 13px'}}>
+                            <span style={{font:'700 11px Pretendard', color:'#9a7d12', flexShrink:0}}>{i + 1}</span>
+                            <span style={{font:'600 12px/1.6 Pretendard', color:'#3d3e42'}}>{w}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{font:'500 11.5px/1.6 Pretendard', color:'#9a9ca0', border:'1px solid #ece9e2', borderRadius:12, padding:'12px 13px'}}>기준선을 넘는 특이 신호는 없었음 — 지수·환율 모두 평상 범위였음</div>
+                    )}
+                  </div>
+
+                  {(market.errors && market.errors.length > 0) && (
+                    <div style={{font:'500 10.5px/1.6 Pretendard', color:'#b6b8bc', marginTop:16, background:'#f8f7f3', borderRadius:9, padding:'10px 12px'}}>
+                      ※ 이번 회차에 받지 못한 항목이 {market.errors.length}건 있음 — 값을 추정하지 않고 비워 뒀으며 다음 회차에 재수집함
+                    </div>
+                  )}
+                  <div style={{font:'500 10px/1.6 Pretendard', color:'#c2c4c8', marginTop:10}}>
+                    시세 Yahoo Finance·Stooq · SOFR/EFFR New York Fed · SONIA Bank of England · 기준금리 한국은행 · 이슈 구글 뉴스
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <Navbar active="brief" {...navProps} />
         </div>
       )}
 

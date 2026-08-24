@@ -121,6 +121,9 @@ const QUERIES = [
   '(국민연금 OR 한국투자공사 OR 교직원공제회 OR 행정공제회 OR 군인공제회 OR 과학기술인공제회 OR 경찰공제회 OR 새마을금고중앙회 OR 사학연금) (운용자산 OR 자산 규모 OR 기금 규모 OR AUM) (조원 OR 돌파 OR 증가)',
   '(연기금 OR 공제회 OR 중앙회) 운용자산 조원 when:30d',
   '(Blackstone OR KKR OR Apollo OR Carlyle OR Brookfield OR Ares OR "Blue Owl" OR EQT OR TPG) "assets under management" billion when:30d',
+  // (17) 커버리지 GP — 방한·미팅 예정 운용사 뉴스 상시 추적
+  '("TwentyFour Asset Management" OR Vontobel) (ABS OR "asset backed" OR credit OR fund) when:30d',
+  'European ABS OR "asset backed finance" fund (launch OR close OR raise) when:14d',
   // (12) Aviation — 항공기 리스·항공기금융 펀드/딜 (BBAM 등)
   '(BBAM OR Castlelake OR "Carlyle Aviation" OR "DAE Capital" OR Avolon OR AerCap OR "Air Lease") (fund OR aircraft OR leasing OR order) when:14d',
   'aircraft leasing fund OR aviation fund (close OR raise OR invest) when:14d',
@@ -388,6 +391,10 @@ const FOREIGN_GPS = [
   [/\bMBK\b|엠비케이/i, 'MBK Partners', '해외 GP'],
   [/hillhouse|힐하우스/i, 'Hillhouse', '해외 GP'],
   [/affinity equity|어피니티|어피너티/i, 'Affinity Equity Partners', '해외 GP'],
+  // TwentyFour 를 Vontobel 보다 먼저 둔다 — 두 이름이 함께 나오는 기사에서
+  // 운용 주체(TwentyFour)로 귀속되도록 하기 위함.
+  [/twentyfour asset|twenty ?four\s?(?:am|asset)|트웬티포|24 ?asset management/i, 'TwentyFour Asset Management', '해외 GP'],
+  [/vontobel|본토벨|폰토벨/i, 'Vontobel', '해외 GP'],
 ];
 const INSTS = [...KOREAN_LPS, ...FOREIGN_GPS];
 

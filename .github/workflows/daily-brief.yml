@@ -1,0 +1,44 @@
+name: Daily market brief
+
+on:
+  schedule:
+    # 매일 08:00 KST (= 23:00 UTC 전일) — 전일 시장 마감 기준 브리핑
+    - cron: '0 23 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths: [ 'scripts/daily-brief.mjs', '.github/workflows/daily-brief.yml' ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build market brief
+        run: node scripts/daily-brief.mjs
+      - name: Commit brief
+        run: |
+          git config user.name  "kbgis-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git diff --quiet market.json; then
+            git add market.json
+            git commit -m "chore: 데일리 시황 갱신 [skip ci]"
+            # 뉴스 수집 워크플로와 겹치면 리베이스 후 재시도 (푸시 경합 방지)
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase origin main || exit 1
+              [ "$i" = "3" ] && exit 1
+            done
+          else
+            echo "No changes."
+          fi

@@ -160,7 +160,7 @@ async function sonia() {
 
 // ── 한국은행 기준금리 (한은 공시 페이지) ──────────────────
 // 표의 첫 행이 최근 변경일자·기준금리. 실패 시 값을 만들지 않고 비운다.
-export function parseBokBaseRate(html) {
+export function parseBokBaseRate(html, todayKey = null) {
   const text = String(html).replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
   // 한은 표는 연·월·일·금리가 각각 다른 칸이라 태그를 벗기면 줄바꿈으로 흩어진다.
   // 구분자를 점·년월일뿐 아니라 공백/줄바꿈까지 허용하고, '기준금리' 문구 이후
@@ -176,6 +176,9 @@ export function parseBokBaseRate(html) {
     if (!(rate >= 0 && rate <= 10)) continue;
     const key = year * 10000 + month * 100 + day;
     if (key > 21001231) continue;                                  // 비정상 연도 방어
+    // 페이지 상단의 조회일(오늘 날짜)이 변경일자로 잡히는 것을 막는다 —
+    // 기준금리 변경일은 과거 날짜다(금통위 당일 변경분은 다음 회차에 반영).
+    if (todayKey && key >= todayKey) continue;
     if (!best || key > best.key) best = { key, rate, asOf: `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}` };
   }
   return best ? { rate: best.rate, asOf: best.asOf } : null;
@@ -188,7 +191,9 @@ async function bokBaseRate() {
   for (const url of BOK_PAGES) {
     try {
       const html = await getText(url, 20000);
-      const r = parseBokBaseRate(html);
+      const t = kst();
+      const todayKey = parseInt(t.ymd.replace(/\./g, ''), 10);
+      const r = parseBokBaseRate(html, todayKey);
       if (r) return { ...r, src: '한국은행' };
       errors.push(`한국 기준금리: 표를 찾지 못함 (${url.split('/').pop().split('?')[0]}, ${html.length}자)`);
     } catch (e) { errors.push(`한국 기준금리(${url.split('/').pop().split('?')[0]}): ${e.message}`); }
@@ -391,8 +396,11 @@ function selftest() {
   const bok = parseBokBaseRate('<table><tr><td>2026.05.29</td><td>2.25</td></tr><tr><td>2026.02.25</td><td>2.50</td></tr></table>');
   // 연·월·일이 각각 다른 칸에 있는 실제 한은 표 구조 (가장 최근 행을 골라야 함)
   const bokCells = parseBokBaseRate('<h2>한국은행 기준금리</h2><table><tr><td>2026</td><td>02</td><td>25</td><td>2.50</td></tr><tr><td>2026</td><td>07</td><td>10</td><td>2.75</td></tr></table>');
+  // 페이지 상단 조회일(오늘)이 변경일자로 잡히면 안 된다 — 과거 변경일을 골라야 함
+  const bokToday = parseBokBaseRate('<h2>기준금리</h2><p>조회일 2026.08.24 기준 2.75</p><table><tr><td>2026.07.10</td><td>2.75</td></tr></table>', 20260824);
   const ok5 = bok && bok.rate === 2.25 && bok.asOf === '2026.05.29'
-    && bokCells && bokCells.rate === 2.75 && bokCells.asOf === '2026.07.10';
+    && bokCells && bokCells.rate === 2.75 && bokCells.asOf === '2026.07.10'
+    && bokToday && bokToday.asOf === '2026.07.10';
 
   const bokNews = bokFromNews([
     { title: '한은 금통위, 기준금리 연 2.75%로 동결', source: '연합뉴스', url: 'https://x/1', ts: '2026-08-14T00:00:00.000Z' },

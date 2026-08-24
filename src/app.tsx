@@ -205,11 +205,14 @@ function BriefSection({ title, lines, rows }) {
 
 // 금리 한 줄 — 값이 없으면 만들어내지 않고 '수집 실패'로 비운다.
 function RateRow({ r, fallback, first, us }) {
+  const href = r && r.url && /^https?:\/\//.test(r.url) ? r.url : undefined;
+  const Tag = href ? 'a' : 'div';
   return (
-    <div style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:first?'none':'1px solid #f3f1ea'}}>
+    <Tag {...(href ? { href, target:'_blank', rel:'noopener noreferrer' } : {})}
+         style={{display:'flex', alignItems:'center', gap:10, padding:'12px 13px', borderTop:first?'none':'1px solid #f3f1ea', textDecoration:'none', color:'inherit'}}>
       <div style={{flex:1, minWidth:0}}>
         <div style={{font:'600 12.5px Pretendard', color:'#1c1d1f'}}>{(r && r.label) || fallback}</div>
-        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{r ? `${r.asOf || ''}${r.src ? ` · ${r.src}` : ''}` : '이번 회차 수집 실패 — 값을 비워 뒀음'}</div>
+        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:3}}>{r ? `${r.asOf || ''}${r.src ? ` · ${r.src}` : ''}${href ? ' ↗' : ''}` : '이번 회차 수집 실패 — 값을 비워 뒀음'}</div>
       </div>
       <div style={{textAlign:'right'}}>
         <div style={{font:'800 14px Pretendard', color:r ? '#1c1d1f' : '#c2c4c8'}}>
@@ -217,7 +220,7 @@ function RateRow({ r, fallback, first, us }) {
         </div>
         {us && r && r.rate != null && <div style={{font:'500 9.5px Pretendard', color:'#9a9ca0', marginTop:2}}>EFFR {r.rate.toFixed(2)}%</div>}
       </div>
-    </div>
+    </Tag>
   );
 }
 

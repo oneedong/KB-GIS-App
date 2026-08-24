@@ -189,10 +189,12 @@ function BriefSection({ title, lines, rows }) {
 }
 // 금리 한 줄 — 값이 없으면 만들어내지 않고 '수집 실패'로 비운다.
 function RateRow({ r, fallback, first, us }) {
-    return (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderTop: first ? 'none' : '1px solid #f3f1ea' } },
+    const href = r && r.url && /^https?:\/\//.test(r.url) ? r.url : undefined;
+    const Tag = href ? 'a' : 'div';
+    return (React.createElement(Tag, { ...(href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {}), style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderTop: first ? 'none' : '1px solid #f3f1ea', textDecoration: 'none', color: 'inherit' } },
         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
             React.createElement("div", { style: { font: '600 12.5px Pretendard', color: '#1c1d1f' } }, (r && r.label) || fallback),
-            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 3 } }, r ? `${r.asOf || ''}${r.src ? ` · ${r.src}` : ''}` : '이번 회차 수집 실패 — 값을 비워 뒀음')),
+            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 3 } }, r ? `${r.asOf || ''}${r.src ? ` · ${r.src}` : ''}${href ? ' ↗' : ''}` : '이번 회차 수집 실패 — 값을 비워 뒀음')),
         React.createElement("div", { style: { textAlign: 'right' } },
             React.createElement("div", { style: { font: '800 14px Pretendard', color: r ? '#1c1d1f' : '#c2c4c8' } }, us && r && r.target ? r.target : (r && r.rate != null ? `${r.rate.toFixed(2)}%` : '–')),
             us && r && r.rate != null && React.createElement("div", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0', marginTop: 2 } },

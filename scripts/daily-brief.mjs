@@ -162,11 +162,23 @@ async function sonia() {
 // 표의 첫 행이 최근 변경일자·기준금리. 실패 시 값을 만들지 않고 비운다.
 export function parseBokBaseRate(html) {
   const text = String(html).replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
-  const m = text.match(/(\d{4})\s*[.년]\s*(\d{1,2})\s*[.월]\s*(\d{1,2})[^\d]{0,40}?(\d\.\d{2})/);
-  if (!m) return null;
-  const rate = parseFloat(m[4]);
-  if (!(rate >= 0 && rate <= 10)) return null;
-  return { rate, asOf: `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` };
+  // 한은 표는 연·월·일·금리가 각각 다른 칸이라 태그를 벗기면 줄바꿈으로 흩어진다.
+  // 구분자를 점·년월일뿐 아니라 공백/줄바꿈까지 허용하고, '기준금리' 문구 이후
+  // 구간에서만 찾은 뒤 날짜가 가장 최근인 행을 고른다.
+  const head = text.search(/기준금리/);
+  const scope = head >= 0 ? text.slice(head) : text;
+  const re = /(20\d{2})\s*[.년\-\/]?\s*(\d{1,2})\s*[.월\-\/]?\s*(\d{1,2})\s*일?\s*[^\d]{0,30}?(\d\.\d{2})(?!\d)/g;
+  let best = null;
+  for (const m of scope.matchAll(re)) {
+    const [, y, mo, d, r] = m;
+    const year = +y, month = +mo, day = +d, rate = parseFloat(r);
+    if (month < 1 || month > 12 || day < 1 || day > 31) continue;
+    if (!(rate >= 0 && rate <= 10)) continue;
+    const key = year * 10000 + month * 100 + day;
+    if (key > 21001231) continue;                                  // 비정상 연도 방어
+    if (!best || key > best.key) best = { key, rate, asOf: `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}` };
+  }
+  return best ? { rate: best.rate, asOf: best.asOf } : null;
 }
 const BOK_PAGES = [
   'https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643',
@@ -193,14 +205,19 @@ async function bokRateNews() {
 // 폴백 — 금통위·기준금리 보도에서 '연 X.XX%' 를 인용한다(출처 링크 포함).
 // '3% 초읽기' 같은 정수 표기는 소수 둘째 자리 조건으로 걸러진다.
 export function bokFromNews(items) {
-  for (const it of items || []) {
+  const sorted = (items || []).slice().sort((a, b) => ((a.ts || '') < (b.ts || '') ? 1 : -1));   // 최신 보도 우선
+  for (const it of sorted) {
     const t = `${it.title || ''} ${it.desc || ''}`;
     if (!/한국은행|금통위|한은/.test(t)) continue;
-    const m = t.match(/기준금리[^\d%]{0,14}?(\d\.\d{2})\s*%/);
-    if (m) {
-      const rate = parseFloat(m[1]);
-      if (rate >= 0 && rate <= 10) return { rate, asOf: '', src: `${it.source} 보도 인용`, url: it.url };
-    }
+    // '2.50%에서 2.75%로 인상' 같은 문장에서는 결과값(뒤의 값)을 써야 한다.
+    const m = t.match(/기준금리[^%]{0,40}?(\d\.\d{2})\s*%\s*로/)
+           || t.match(/(\d\.\d{2})\s*%\s*로\s*(?:인상|인하|조정|동결)/)
+           || t.match(/기준금리[^\d%]{0,14}?(?:연\s*)?(\d\.\d{2})\s*%/);
+    if (!m) continue;
+    const rate = parseFloat(m[1]);
+    if (!(rate >= 0 && rate <= 10)) continue;
+    const d = it.ts ? kst(new Date(it.ts)).ymd : '';
+    return { rate, asOf: d ? `${d} 보도` : '', src: `${it.source} 보도 인용`, url: it.url };
   }
   return null;
 }
@@ -372,13 +389,19 @@ function selftest() {
   const ok4 = boe && boe.rate === 4.185 && boe.asOf === '21 Aug 2026';
 
   const bok = parseBokBaseRate('<table><tr><td>2026.05.29</td><td>2.25</td></tr><tr><td>2026.02.25</td><td>2.50</td></tr></table>');
-  const ok5 = bok && bok.rate === 2.25 && bok.asOf === '2026.05.29';
+  // 연·월·일이 각각 다른 칸에 있는 실제 한은 표 구조 (가장 최근 행을 골라야 함)
+  const bokCells = parseBokBaseRate('<h2>한국은행 기준금리</h2><table><tr><td>2026</td><td>02</td><td>25</td><td>2.50</td></tr><tr><td>2026</td><td>07</td><td>10</td><td>2.75</td></tr></table>');
+  const ok5 = bok && bok.rate === 2.25 && bok.asOf === '2026.05.29'
+    && bokCells && bokCells.rate === 2.75 && bokCells.asOf === '2026.07.10';
 
   const bokNews = bokFromNews([
-    { title: '한은 금통위, 기준금리 연 2.75%로 동결', source: '연합뉴스', url: 'https://x/1' },
+    { title: '한은 금통위, 기준금리 연 2.75%로 동결', source: '연합뉴스', url: 'https://x/1', ts: '2026-08-14T00:00:00.000Z' },
+    { title: '한국은행 기준금리 연 2.50% 유지', source: '옛기사', url: 'https://x/0', ts: '2026-05-01T00:00:00.000Z' },
   ]);
+  // 인상 문장에서는 결과값(3.00%)을 써야 한다 — 기존값(2.75%)이 아니라
+  const bokHike = bokFromNews([{ title: '한은, 기준금리 2.75%에서 3.00%로 인상', source: '연합뉴스', url: 'https://x/3', ts: '2026-08-20T00:00:00.000Z' }]);
   const bokNoise = bokFromNews([{ title: '기준금리 3% 초읽기…영끌족 부담', source: '한국경제', url: 'https://x/2' }]);
-  const ok8 = bokNews && bokNews.rate === 2.75 && bokNoise === null;
+  const ok8 = bokNews && bokNews.rate === 2.75 && bokNoise === null && bokHike && bokHike.rate === 3.00;
 
   const rss = parseRss('<rss><channel><item><title>코스피 2% 급등 마감 - 한국경제</title><link>https://x/1</link><pubDate>Fri, 21 Aug 2026 08:00:00 GMT</pubDate><source>한국경제</source></item></channel></rss>');
   const ok6 = rss.length === 1 && rss[0].title === '코스피 2% 급등 마감' && rss[0].source === '한국경제';

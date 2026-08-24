@@ -33,9 +33,22 @@ const FX = [
   ['EURKRW=X', '유로/원', 'eurkrw', '원'],
   ['EURUSD=X', '유로/달러', 'eurusd', ''],
   ['USDJPY=X', '달러/엔', 'usdjpy', '엔'],
+  ['JPYKRW=X', '엔/원(100엔)', '', '원'],
   ['DX-Y.NYB', '달러인덱스', '', ''],
 ];
 const UST = [['^TNX', '미 국채 10년', '']];
+// 원자재 — 금·원유는 대체투자 심리와 인플레 경로를 같이 읽는 지표.
+const COMMODITY = [
+  ['GC=F', '금 (온스)', '', '$'],
+  ['SI=F', '은 (온스)', '', '$'],
+  ['CL=F', 'WTI 원유', '', '$'],
+  ['BZ=F', '브렌트유', '', '$'],
+];
+// 크립토 — 달러 기준(USD)
+const CRYPTO = [
+  ['BTC-USD', '비트코인', '', '$'],
+  ['ETH-USD', '이더리움', '', '$'],
+];
 
 // ── 유틸 ────────────────────────────────────────────────
 const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
@@ -122,7 +135,15 @@ async function quoteList(defs) {
   const out = [];
   for (const [sym, name, fallback, unit] of defs) {
     const q = await quote(sym, fallback);
-    out.push({ name, symbol: sym, unit: unit || '', last: q ? q.last : null, chg: q ? q.chg : null, chgPct: q ? q.chgPct : null, src: q ? q.src : '' });
+    // 엔/원은 시장 관행대로 100엔 기준으로 환산해 표기한다.
+    const k = /JPYKRW/.test(sym) ? 100 : 1;
+    out.push({
+      name, symbol: sym, unit: unit || '',
+      last: q ? q.last * k : null,
+      chg: q ? q.chg * k : null,
+      chgPct: q ? q.chgPct : null,
+      src: q ? q.src : '',
+    });
   }
   return out;
 }
@@ -507,15 +528,92 @@ export function buildSummary(d) {
   return `${parts.join(' · ')} 으로 마감했음`;
 }
 
+// ── 한줄 요약: 시황 뉴스에 근거해 작성 ──────────────────
+// 숫자만 나열하는 대신 "무엇 때문에 움직였는지"를 헤드라인에서 가져온다.
+// (선택) Gemini 키가 있으면 헤드라인+수치만 근거로 한 문장을 쓰게 하고,
+// 없거나 실패하면 헤드라인을 그대로 인용하는 결정적 폴백을 쓴다.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+async function llmSummary(facts) {
+  if (!GEMINI_API_KEY) return null;
+  const prompt = [
+    '아래는 오늘 아침 시황 브리핑의 실제 데이터다.',
+    '이 자료에 있는 내용만 근거로, 전일 시장을 설명하는 한국어 요약을 1~2문장으로 써라.',
+    '규칙:',
+    '- 반드시 "음/슴체"로 끝낼 것 (예: ~했음, ~였음).',
+    '- 지수 등락의 원인을 헤드라인에서 찾아 먼저 쓰고, 수치는 뒤에 짧게 붙일 것.',
+    '- 자료에 없는 사실·수치·고유명사를 절대 만들지 말 것.',
+    '- 따옴표나 머리기호 없이 문장만 출력할 것.',
+    '',
+    '[수치]', facts.numbers,
+    '', '[헤드라인]', facts.headlines,
+  ].join('\n');
+  for (const model of GEMINI_MODELS) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 300 } }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!res.ok) continue;
+      const j = await res.json();
+      const t = ((((j.candidates || [])[0] || {}).content || {}).parts || [{}])[0].text || '';
+      const line = t.trim().split('\n').filter(Boolean)[0] || '';
+      if (line.length > 10 && /(음|슴|함)[.。]?$/.test(line.trim())) return line.replace(/[.。]$/, '');
+    } catch { /* 다음 모델 시도 */ }
+  }
+  return null;
+}
+// 결정적 폴백 — 대표 헤드라인을 인용하고 수치를 덧붙인다(창작 없음).
+export function headlineSummary(issues, numbers) {
+  const pick = (issues || []).find((i) => /증시|코스피|뉴욕|나스닥|기술주|금리|환율/.test(i.title)) || (issues || [])[0];
+  if (!pick) return numbers ? `${numbers} 으로 마감했음` : '전일 시세를 받지 못해 요약을 만들지 못했음';
+  return `"${pick.title}"(${pick.source}) — ${numbers} 으로 마감했음`;
+}
+
+// ── 5년 일별 추이 (그래프용) ───────────────────────────────
+// 앱은 브라우저에서 시세 API 를 직접 못 부르므로(CORS), 여기서 미리 받아
+// history.json 으로 저장한다. 날짜(YYYYMMDD)와 종가만 담아 가볍게 유지한다.
+export function parseHistory(j) {
+  const r = ((j || {}).chart || {}).result;
+  if (!Array.isArray(r) || !r[0]) return null;
+  const ts = r[0].timestamp || [];
+  const closes = (((r[0].indicators || {}).quote || [])[0] || {}).close || [];
+  const d = [], c = [];
+  for (let i = 0; i < ts.length; i++) {
+    const v = closes[i];
+    if (typeof v !== 'number' || !isFinite(v)) continue;
+    const dt = new Date(ts[i] * 1000);
+    d.push(dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate());
+    c.push(Math.round(v * 1000) / 1000);
+  }
+  return d.length ? { d, c } : null;
+}
+async function history(defs) {
+  const series = {};
+  for (const [sym, name] of defs) {
+    try {
+      const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5y&interval=1d`, 25000);
+      const h = parseHistory(j);
+      if (h) { const k = /JPYKRW/.test(sym) ? 100 : 1; series[sym] = { name, d: h.d, c: k === 1 ? h.c : h.c.map((v) => Math.round(v * k * 1000) / 1000) }; }
+      else errors.push(`추이(${name}): 빈 응답`);
+    } catch (e) { errors.push(`추이(${name}): ${e.message}`); }
+    await sleep(200);
+  }
+  return series;
+}
+
 // ── 메인 ────────────────────────────────────────────────
 async function main() {
   if (process.argv.includes('--selftest')) return selftest();
   const now = kst();
-  const [kr, global, fx, ust, sofr, sofrAvg, effr, so, boeBank, estr, eurib, jpTona, bok, iss] = [
+  const [kr, global, fx, ust, commodity, crypto, sofr, sofrAvg, effr, so, boeBank, estr, eurib, jpTona, bok, iss] = [
     await quoteList(KR_INDEX),
     await quoteList(GL_INDEX),
     await quoteList(FX),
     await quoteList(UST),
+    await quoteList(COMMODITY),
+    await quoteList(CRYPTO),
     await nyFed('secured/sofr', 'SOFR'),
     await sofrAverages(),
     await nyFed('unsecured/effr', 'EFFR'),
@@ -563,7 +661,7 @@ async function main() {
     updatedAt: now.ymd,
     dateKey: now.ymd.replace(/\./g, ''),
     ts: now.iso,
-    kr, global, fx, ust,
+    kr, global, fx, ust, commodity, crypto,
     tenorRates,
     hedge,
     rates: {
@@ -582,9 +680,18 @@ async function main() {
     errors,
   };
   data.watch = buildWatch(data);
-  data.summary = buildSummary(data);
+  // 한줄 요약 — 수치 나열 대신 시황 뉴스에 근거해 쓴다.
+  const numbers = buildSummary(data).replace(/ 으로 마감했음$/, '');
+  const headlines = (iss || []).slice(0, 6).map((i) => `- ${i.title} (${i.source})`).join('\n');
+  data.summary = (await llmSummary({ numbers, headlines })) || headlineSummary(iss, numbers);
+  data.summarySource = (iss || []).slice(0, 3).map((i) => ({ title: i.title, source: i.source, url: i.url }));
 
   await writeFile(new URL('../market.json', import.meta.url), JSON.stringify(data, null, 0));
+
+  // 5년 일별 추이 — 앱의 지표 클릭 그래프용 (하루 1회 갱신)
+  const hist = await history([...KR_INDEX, ...GL_INDEX, ...FX, ...UST, ...COMMODITY, ...CRYPTO]);
+  await writeFile(new URL('../history.json', import.meta.url), JSON.stringify({ updatedAt: now.ymd, src: 'Yahoo Finance', series: hist }, null, 0));
+  console.log(`history.json: ${Object.keys(hist).length}개 계열`);
 
   // ── 일자별 아카이브 ──────────────────────────────────────
   // briefs/YYYYMMDD.json 으로 쌓고 briefs/index.json 에 목록을 유지한다.
@@ -599,7 +706,7 @@ async function main() {
   index = index.slice(0, 120);
   await writeFile(new URL('../briefs/index.json', import.meta.url), JSON.stringify(index, null, 0));
 
-  console.log(`market.json 갱신: 국내 ${kr.length} · 해외 ${global.length} · 환율 ${fx.length} · 금리 ${tenorRates.length} · 헤지 ${hedge.legs.length} · 이슈 ${iss.length} · 실패 ${errors.length}`);
+  console.log(`market.json 갱신: 국내 ${kr.length} · 해외 ${global.length} · 환율 ${fx.length} · 원자재 ${commodity.length} · 크립토 ${crypto.length} · 금리 ${tenorRates.length} · 헤지 ${hedge.legs.length} · 이슈 ${iss.length} · 실패 ${errors.length}`);
   if (errors.length) console.warn('수집 실패 항목:', errors.join(' | '));
   console.log('요약:', data.summary);
 }
@@ -688,8 +795,15 @@ function selftest() {
   const ok12 = leg && Math.abs(leg.annualPct - (-0.85)) < 1e-9 && p3m.point < 0 && Math.abs(p3m.point - (-2.90)) < 0.2;
   console.log('헤지 :', JSON.stringify({ diff: leg.annualPct.toFixed(2), points: leg.points.map((x) => [x.tenor, +x.point.toFixed(2)]) }));
 
-  const all = ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15].join(',')})`);
+  const hist = parseHistory({ chart: { result: [{ timestamp: [1755993600, 1756080000], indicators: { quote: [{ close: [3200.123456, null] }] } }] } });
+  const ok16 = hist && hist.d.length === 1 && hist.c[0] === 3200.123;
+
+  const hs = headlineSummary([{ title: '딥시크 충격에 기술주 급락', source: '연합뉴스' }], '코스피 −2.34% · 나스닥 −3.10%');
+  const ok17 = /딥시크/.test(hs) && /마감했음$/.test(hs);
+  console.log('요약(폴백):', hs);
+
+  const all = ok16 && ok17 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16, ok17].join(',')})`);
   if (!all) process.exit(1);
 }
 

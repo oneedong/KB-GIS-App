@@ -36,6 +36,8 @@ const MARKET_API = './market.json';
 // 일자별 시황 아카이브 — briefs/index.json 목록 + briefs/YYYYMMDD.json 본문
 const BRIEF_INDEX_API = './briefs/index.json';
 const BRIEF_API = (dateKey) => `./briefs/${dateKey}.json`;
+// 5년 일별 추이 (그래프용) — 수집기가 하루 1회 갱신
+const HISTORY_API = './history.json';
 // 국내 LP 기관 전체 로스터 (업권별 목록) — institutions.json
 const INSTITUTIONS_API = './institutions.json';
 // Placement agent 관점의 국내 LP 프로필 (설립연도·AUM·운용방식 등) — lp-profiles.json
@@ -173,18 +175,139 @@ function Navbar({ active, homeNew, isDesktop, onHome, onToday, onCategory, onKor
             React.createElement("span", { style: { fontSize: 15, lineHeight: 1, color: active === 'bookmarks' ? on : off } }, "\u25A2"),
             React.createElement("span", { style: lbl(active === 'bookmarks') }, "\uBD81\uB9C8\uD06C"))));
 }
-// ─── 데일리 시황 표 (지수·환율 공통) ─────────────────────
-function BriefSection({ title, rows, digits }) {
+// ─── 실시간 시세 (브라우저에서 직접 조회) ─────────────────
+// 지수·환율·원자재는 Yahoo 차트 API 가 CORS 를 막아 공개 프록시를 거치고,
+// 크립토는 CORS 가 열린 거래소 API 를 그대로 부른다.
+const LIVE_YAHOO = ['^KS11', '^KQ11', '^GSPC', '^IXIC', '^DJI', '^N225', 'KRW=X', 'GC=F', 'CL=F'];
+async function proxyJson(url) {
+    for (const p of CORS_PROXIES) {
+        if (p.kind !== 'html')
+            continue; // 리더 프록시는 JSON 을 망가뜨린다
+        try {
+            const r = await fetch(p.mk(url), { cache: 'no-store' });
+            if (!r.ok)
+                continue;
+            const t = await r.text();
+            const j = JSON.parse(t);
+            if (j)
+                return j;
+        }
+        catch { }
+    }
+    return null;
+}
+async function liveYahoo(symbol) {
+    const j = await proxyJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`);
+    const meta = (((j || {}).chart || {}).result || [{}])[0] || {};
+    const m = meta.meta || {};
+    const last = typeof m.regularMarketPrice === 'number' ? m.regularMarketPrice : null;
+    const prev = typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : (typeof m.previousClose === 'number' ? m.previousClose : null);
+    if (last == null || !prev)
+        return null;
+    const k = /JPYKRW/.test(symbol) ? 100 : 1;
+    return { last: last * k, chg: (last - prev) * k, chgPct: (last - prev) / prev * 100 };
+}
+// 크립토 — 바이낸스(24h 통계) → 실패 시 코인베이스 현물가
+async function liveCrypto() {
+    try {
+        const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%5D', { cache: 'no-store' });
+        if (r.ok) {
+            const arr = await r.json();
+            const out = {};
+            for (const x of arr) {
+                const sym = x.symbol === 'BTCUSDT' ? 'BTC-USD' : 'ETH-USD';
+                out[sym] = { last: parseFloat(x.lastPrice), chg: parseFloat(x.priceChange), chgPct: parseFloat(x.priceChangePercent), src: 'Binance' };
+            }
+            if (Object.keys(out).length)
+                return out;
+        }
+    }
+    catch { }
+    const out = {};
+    for (const [sym, id] of [['BTC-USD', 'BTC'], ['ETH-USD', 'ETH']]) {
+        try {
+            const r = await fetch(`https://api.coinbase.com/v2/prices/${id}-USD/spot`, { cache: 'no-store' });
+            if (!r.ok)
+                continue;
+            const j = await r.json();
+            const v = parseFloat(((j || {}).data || {}).amount);
+            if (isFinite(v))
+                out[sym] = { last: v, chg: null, chgPct: null, src: 'Coinbase' };
+        }
+        catch { }
+    }
+    return out;
+}
+// ─── 5년 추이 그래프 (history.json 의 일별 종가) ───────────
+function TrendModal({ series, name, unit, onClose }) {
+    const [range, setRange] = useState('1Y');
+    if (!series)
+        return null;
+    const N = { '1M': 22, '6M': 130, '1Y': 260, '5Y': 100000 }[range];
+    const d = series.d.slice(-N), c = series.c.slice(-N);
+    const W = 640, H = 220, PL = 46, PR = 12, PT = 14, PB = 26;
+    const min = Math.min(...c), max = Math.max(...c), span = (max - min) || 1;
+    const x = (i) => PL + (c.length <= 1 ? 0 : (W - PL - PR) * i / (c.length - 1));
+    const y = (v) => PT + (H - PT - PB) * (1 - (v - min) / span);
+    const path = c.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    const up = c.length > 1 && c[c.length - 1] >= c[0];
+    const col = up ? '#c0392b' : '#1a5fa4';
+    const fmtD = (n) => `${String(n).slice(2, 4)}.${String(n).slice(4, 6)}.${String(n).slice(6, 8)}`;
+    const fmtV = (v) => v.toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(v) < 10 ? 3 : 2 });
+    const chg = c.length > 1 ? (c[c.length - 1] - c[0]) / c[0] * 100 : 0;
+    return (React.createElement("div", { onClick: onClose, style: { position: 'fixed', inset: 0, background: 'rgba(20,20,22,.55)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 } },
+        React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { background: '#fff', borderRadius: 16, width: '100%', maxWidth: 720, padding: '16px 16px 12px', boxShadow: '0 18px 50px rgba(0,0,0,.28)' } },
+            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 } },
+                React.createElement("div", { style: { font: '800 16px Pretendard' } }, name),
+                React.createElement("div", { style: { font: '700 13px Pretendard', color: col } },
+                    fmtV(c[c.length - 1]),
+                    unit === '$' ? ' USD' : unit),
+                React.createElement("div", { style: { font: '600 11.5px Pretendard', color: col } },
+                    range,
+                    " ",
+                    chg >= 0 ? '▲' : '▼',
+                    " ",
+                    Math.abs(chg).toFixed(2),
+                    "%"),
+                React.createElement("div", { onClick: onClose, style: { marginLeft: 'auto', cursor: 'pointer', font: '600 12px Pretendard', color: '#9a9ca0', padding: '2px 6px' } }, "\u2715")),
+            React.createElement("div", { style: { display: 'flex', gap: 6, margin: '8px 0 6px' } }, ['1M', '6M', '1Y', '5Y'].map(r => (React.createElement("div", { key: r, onClick: () => setRange(r), style: { padding: '5px 11px', borderRadius: 999, cursor: 'pointer', font: range === r ? '700 11.5px Pretendard' : '600 11.5px Pretendard', background: range === r ? '#1c1d1f' : '#f2f0ea', color: range === r ? '#FFCC00' : '#56585c' } }, r)))),
+            React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, style: { width: '100%', height: 'auto', display: 'block' } },
+                [0, 0.5, 1].map(f => {
+                    const v = min + span * (1 - f), yy = PT + (H - PT - PB) * f;
+                    return (React.createElement("g", { key: f },
+                        React.createElement("line", { x1: PL, y1: yy, x2: W - PR, y2: yy, stroke: "#f0ede4", strokeWidth: "1" }),
+                        React.createElement("text", { x: PL - 6, y: yy + 3, textAnchor: "end", fontSize: "9", fill: "#9a9ca0", fontFamily: "Pretendard" }, fmtV(v))));
+                }),
+                React.createElement("path", { d: path, fill: "none", stroke: col, strokeWidth: "1.8", strokeLinejoin: "round" }),
+                [0, Math.floor((d.length - 1) / 2), d.length - 1].map((i, k) => (React.createElement("text", { key: k, x: x(i), y: H - 8, textAnchor: k === 0 ? 'start' : k === 2 ? 'end' : 'middle', fontSize: "9", fill: "#9a9ca0", fontFamily: "Pretendard" }, fmtD(d[i]))))),
+            React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 6 } },
+                "\uC77C\uBCC4 \uC885\uAC00 \u00B7 \uCD9C\uCC98 Yahoo Finance \u00B7 ",
+                d.length,
+                "\uAC70\uB798\uC77C"))));
+}
+// ─── 데일리 시황 표 (지수·환율·원자재·크립토 공통) ────────
+// 행을 누르면 5년 추이 그래프가 열린다. live 가 있으면 실시간 값으로 덮어쓴다.
+function BriefSection({ title, rows, digits, live, onPick, note }) {
     const list = rows || [];
-    return (React.createElement("div", { style: { marginTop: 22 } },
-        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, title),
-        React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, list.map((x, i) => {
+    return (React.createElement("div", { style: { marginTop: 20 } },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' } },
+            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, title),
+            note && React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0' } }, note)),
+        React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, list.map((x0, i) => {
+            const lv = live && live[x0.symbol];
+            const x = lv ? { ...x0, ...lv } : x0;
             const up = x.chgPct != null && x.chgPct > 0, down = x.chgPct != null && x.chgPct < 0;
-            const col = up ? '#c0392b' : down ? '#1a5fa4' : '#7a7c80'; // 국내 관행: 상승 적색·하락 청색
-            return (React.createElement("div", { key: x.name + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
-                React.createElement("span", { style: { font: '600 12.5px Pretendard', color: '#1c1d1f', flex: 1, minWidth: 0 } }, x.name),
-                React.createElement("span", { style: { font: '800 13.5px Pretendard', color: '#1c1d1f' } }, x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: (digits && !/원/.test(x.unit || '')) ? digits : 2 })),
-                React.createElement("span", { style: { font: '700 11.5px Pretendard', color: col, minWidth: 64, textAlign: 'right' } }, x.chgPct == null ? '–' : `${up ? '▲' : down ? '▼' : ''} ${Math.abs(x.chgPct).toFixed(2)}%`)));
+            const col = up ? '#c0392b' : down ? '#1a5fa4' : '#7a7c80'; // 상승 적색·하락 청색
+            const dg = x.unit === '$' ? (x.last != null && x.last < 10 ? 3 : 2) : (digits && !/원|엔/.test(x.unit || '') ? digits : 2);
+            return (React.createElement("div", { key: x.name + i, onClick: () => onPick && onPick(x0), style: { display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none', cursor: onPick ? 'pointer' : 'default' } },
+                React.createElement("span", { style: { font: '600 12.5px Pretendard', color: '#1c1d1f', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+                    x.name,
+                    lv && React.createElement("span", { style: { marginLeft: 5, width: 5, height: 5, borderRadius: 999, background: '#1a7a4a', display: 'inline-block', verticalAlign: 'middle' } })),
+                React.createElement("span", { style: { font: '800 13.5px Pretendard', color: '#1c1d1f', whiteSpace: 'nowrap' } },
+                    x.unit === '$' ? '$' : '',
+                    x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: dg, maximumFractionDigits: dg })),
+                React.createElement("span", { style: { font: '700 11.5px Pretendard', color: col, minWidth: 66, textAlign: 'right', whiteSpace: 'nowrap' } }, x.chgPct == null ? '–' : `${up ? '▲' : down ? '▼' : ''} ${Math.abs(x.chgPct).toFixed(2)}%`),
+                onPick && React.createElement("span", { style: { color: '#cfccc4', flexShrink: 0 } }, "\u203A")));
         }))));
 }
 // ─── 환헤지 비용 · 스왑포인트 ─────────────────────────────
@@ -1149,6 +1272,11 @@ function App() {
     const [briefIndex, setBriefIndex] = useState(null);
     const [briefSel, setBriefSel] = useState(null); // 선택한 일자 (null = 최신)
     const [briefCache, setBriefCache] = useState({});
+    const [histSeries, setHistSeries] = useState(null); // history.json 의 계열
+    const [trendSel, setTrendSel] = useState(null); // 그래프로 열어 둔 지표
+    const [liveQuotes, setLiveQuotes] = useState(null); // 실시간 시세 (심볼별)
+    const [liveAt, setLiveAt] = useState('');
+    const [liveBusy, setLiveBusy] = useState(false);
     const [roster, setRoster] = useState(null); // 국내 LP 전체 로스터
     const [profiles, setProfiles] = useState(null); // 국내 LP 프로필(lp-profiles.json)
     const [profilesAt, setProfilesAt] = useState(''); // 프로필 일괄 갱신일
@@ -1495,6 +1623,50 @@ function App() {
         { label: '슬랙', icon: 'S', bg: '#f0eee7', fg: '#56585c' },
         { label: '팀즈', icon: 'T', bg: '#f0eee7', fg: '#56585c' },
     ];
+    // 지표를 누르면 5년 추이를 연다 — history.json 은 이때 한 번만 받는다.
+    const openTrend = (row) => {
+        if (!row || !row.symbol)
+            return;
+        setTrendSel(row);
+        if (!histSeries) {
+            fetch(HISTORY_API + '?t=' + Date.now())
+                .then(r => r.json())
+                .then(d => { if (d && d.series)
+                setHistSeries(d.series); })
+                .catch(() => { });
+        }
+    };
+    // 실시간 시세 — 지수·환율·원자재는 프록시 경유, 크립토는 거래소 API 직접.
+    const refreshLive = React.useCallback(async () => {
+        setLiveBusy(true);
+        try {
+            const out = {};
+            const [ys, cs] = await Promise.all([
+                Promise.allSettled(LIVE_YAHOO.map(sym => liveYahoo(sym).then(v => [sym, v]))),
+                liveCrypto(),
+            ]);
+            for (const r of ys)
+                if (r.status === 'fulfilled' && r.value && r.value[1])
+                    out[r.value[0]] = r.value[1];
+            Object.assign(out, cs || {});
+            if (Object.keys(out).length) {
+                setLiveQuotes(out);
+                const n = new Date();
+                setLiveAt(`${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`);
+            }
+        }
+        finally {
+            setLiveBusy(false);
+        }
+    }, []);
+    // 시황 탭에 있는 동안 60초마다 실시간 시세를 갱신한다.
+    useEffect(() => {
+        if (screen !== 'brief')
+            return;
+        refreshLive();
+        const t = setInterval(refreshLive, 60000);
+        return () => clearInterval(t);
+    }, [screen, refreshLive]);
     // 화면에 그릴 브리핑: 선택 일자가 최신과 같으면 market, 아니면 캐시본.
     const briefView = (!briefSel || (market && market.dateKey === briefSel))
         ? market
@@ -1945,73 +2117,112 @@ function App() {
                                     item.source)))))))))),
                 React.createElement(Navbar, { active: "search", ...navProps }))),
             screen === 'brief' && (() => {
-                const b = briefView; // 선택한 일자의 브리핑 (기본 = 최신)
+                const b = briefView;
+                const isLatest = !!(b && market && b.dateKey === market.dateKey);
+                const lv = isLatest ? liveQuotes : null; // 과거 시황엔 실시간을 덮지 않는다
+                const col2 = { display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: isDesktop ? '0 22px' : 0, alignItems: 'start' };
                 return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },
                     React.createElement("div", { style: { flexShrink: 0 } },
                         React.createElement("div", { style: { height: 'max(env(safe-area-inset-top), 8px)', flexShrink: 0 } }),
                         React.createElement("div", { style: { padding: '2px 20px 12px', borderBottom: '1px solid #efece4' } },
-                            React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
-                                React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황'),
-                                React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB9E4\uC77C 08:00 KST")),
-                            React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, b ? `${b.asOf} 기준` : '브리핑을 불러오는 중입니다'),
-                            briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', marginTop: 10, paddingBottom: 2 } }, briefIndex.slice(0, 30).map(x => {
-                                const on = b && b.dateKey === x.dateKey;
-                                return (React.createElement("div", { key: x.dateKey, onClick: () => setBriefSel(x.dateKey), style: { padding: '6px 11px', borderRadius: 999, flexShrink: 0, cursor: 'pointer', font: on ? '700 11.5px Pretendard' : '600 11.5px Pretendard', background: on ? '#1c1d1f' : '#f2f0ea', color: on ? '#FFCC00' : '#56585c' } }, x.dateKey));
-                            }))))),
+                            React.createElement("div", { style: { maxWidth: 1120, margin: '0 auto' } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
+                                    React.createElement("div", { style: { font: '800 20px Pretendard', letterSpacing: '-.02em' } }, b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황'),
+                                    React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#1a7a4a', background: '#e4f5ea', padding: '2px 7px', borderRadius: 5 } }, "\u25CF \uB9E4\uC77C 08:00 KST"),
+                                    isLatest && (React.createElement("span", { onClick: refreshLive, style: { marginLeft: 'auto', font: '600 10px Pretendard', color: liveAt ? '#1a7a4a' : '#7a7c80', background: liveAt ? '#e4f5ea' : '#f2f0ea', padding: '3px 9px', borderRadius: 999, cursor: 'pointer' } }, liveBusy ? '실시간 조회 중…' : liveAt ? `● 실시간 ${liveAt} · 새로고침` : '실시간 조회 ⟳'))),
+                                React.createElement("div", { style: { font: '500 11.5px Pretendard', color: '#9a9ca0', marginTop: 3 } }, b ? `${b.asOf} 기준` : '브리핑을 불러오는 중입니다'),
+                                briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', marginTop: 10, paddingBottom: 2 } }, briefIndex.slice(0, 40).map(x => {
+                                    const on = b && b.dateKey === x.dateKey;
+                                    return (React.createElement("div", { key: x.dateKey, onClick: () => setBriefSel(x.dateKey), style: { padding: '6px 11px', borderRadius: 999, flexShrink: 0, cursor: 'pointer', font: on ? '700 11.5px Pretendard' : '600 11.5px Pretendard', background: on ? '#1c1d1f' : '#f2f0ea', color: on ? '#FFCC00' : '#56585c' } }, x.dateKey));
+                                })))))),
                     React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
-                        React.createElement("div", { style: { padding: '16px 20px 30px', maxWidth: 900, margin: '0 auto' } }, !b ? (React.createElement("div", { style: { padding: '70px 20px', textAlign: 'center' } },
+                        React.createElement("div", { style: { padding: isDesktop ? '18px 26px 34px' : '14px 18px 28px', maxWidth: 1120, margin: '0 auto' } }, !b ? (React.createElement("div", { style: { padding: '70px 20px', textAlign: 'center' } },
                             React.createElement("div", { style: { fontSize: 28, color: '#d8d5cd' } }, "\u25A4"),
                             React.createElement("div", { style: { font: '600 14px Pretendard', color: '#56585c', marginTop: 14 } }, "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"),
                             React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#a6a8ac', marginTop: 6 } }, "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4."))) : (React.createElement(React.Fragment, null,
-                            React.createElement("div", { style: { background: '#1c1d1f', borderRadius: 14, padding: '15px 16px' } },
+                            React.createElement("div", { style: { background: '#1c1d1f', borderRadius: 14, padding: isDesktop ? '17px 19px' : '15px 16px' } },
                                 React.createElement("div", { style: { font: '700 9.5px Pretendard', color: '#FFCC00', letterSpacing: '.06em', marginBottom: 7 } }, "\uD55C\uC904 \uC694\uC57D"),
-                                React.createElement("div", { style: { font: '650 14px/1.6 Pretendard', color: '#fff' } }, b.summary)),
-                            React.createElement(BriefSection, { title: "\uAD6D\uB0B4\uC99D\uC2DC", rows: b.kr }),
-                            React.createElement(BriefSection, { title: "\uD574\uC678\uC99D\uC2DC", rows: b.global }),
-                            React.createElement("div", { style: { marginTop: 22 } },
-                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uC8FC\uC694\uC774\uC288"),
-                                (b.issues && b.issues.length) ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } }, b.issues.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: i ? '1px solid #f3f1ea' : 'none' } },
+                                React.createElement("div", { style: { font: isDesktop ? '650 15px/1.65 Pretendard' : '650 14px/1.6 Pretendard', color: '#fff' } }, b.summary),
+                                b.summarySource && b.summarySource.length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 } }, b.summarySource.slice(0, 3).map((sx, i) => (React.createElement("a", { key: i, href: sx.url, target: "_blank", rel: "noopener noreferrer", style: { font: '600 9.5px Pretendard', color: '#cdced0', background: '#2c2e32', padding: '3px 8px', borderRadius: 999, textDecoration: 'none' } },
+                                    sx.source,
+                                    " \u2197")))))),
+                            React.createElement("div", { style: { marginTop: 14, border: '1px solid #f6ecc8', background: '#fffaeb', borderRadius: 13, padding: '13px 15px' } },
+                                React.createElement("div", { style: { font: '700 10.5px Pretendard', color: '#9a7d12', letterSpacing: '.04em', marginBottom: 8 } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
+                                (b.watch && b.watch.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 7 } }, b.watch.map((w, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 9, alignItems: 'flex-start' } },
+                                    React.createElement("span", { style: { width: 5, height: 5, borderRadius: 999, background: '#c4a93a', marginTop: 7, flexShrink: 0 } }),
+                                    React.createElement("span", { style: { font: '600 12px/1.65 Pretendard', color: '#3d3e42' } }, w)))))) : (React.createElement("div", { style: { font: '500 12px/1.6 Pretendard', color: '#9a9ca0' } }, "\uAE30\uC900\uC120\uC744 \uB118\uB294 \uD2B9\uC774 \uC2E0\uD638\uB294 \uC5C6\uC5C8\uC74C"))),
+                            React.createElement("div", { style: col2 },
+                                React.createElement(BriefSection, { title: "\uAD6D\uB0B4\uC99D\uC2DC", rows: b.kr, live: lv, onPick: openTrend, note: "\uB204\uB974\uBA74 5\uB144 \uCD94\uC774" }),
+                                React.createElement(BriefSection, { title: "\uD574\uC678\uC99D\uC2DC", rows: b.global, live: lv, onPick: openTrend }),
+                                React.createElement(BriefSection, { title: "\uD658\uC728", rows: b.fx, digits: 4, live: lv, onPick: openTrend }),
+                                React.createElement(BriefSection, { title: "\uC6D0\uC790\uC7AC", rows: b.commodity, live: lv, onPick: openTrend, note: "\uAE08\u00B7\uC740\u00B7\uC6D0\uC720 (USD)" }),
+                                React.createElement(BriefSection, { title: "\uD06C\uB9BD\uD1A0", rows: b.crypto, live: lv, onPick: openTrend, note: "USD \uAE30\uC900 \u00B7 \uC2E4\uC2DC\uAC04" }),
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: { marginTop: 20 } },
+                                        React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' } },
+                                            React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA"),
+                                            React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0' } }, "\uC2E4\uBB34\uC5D0\uC11C \uC790\uC8FC \uC4F0\uB294 \uD14C\uB108")),
+                                        (b.tenorRates && b.tenorRates.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, Object.entries((b.tenorRates || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {})).map(([g, rows]) => (React.createElement("div", { key: g, style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
+                                            React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 7, font: '700 11px Pretendard', color: '#56585c', background: '#f8f7f3', padding: '8px 13px' } },
+                                                React.createElement("span", null, g),
+                                                React.createElement("span", { style: { marginLeft: 'auto', font: '500 9px Pretendard', color: '#b6b8bc' } }, rows[0].src)),
+                                            rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 13px', borderTop: '1px solid #f3f1ea' } },
+                                                React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', flex: 1 } }, r.tenor),
+                                                React.createElement("span", { style: { font: '800 13.5px Pretendard' } },
+                                                    r.rate.toFixed(3),
+                                                    "%"),
+                                                React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc', minWidth: 72, textAlign: 'right' } }, r.asOf))))))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C"))),
+                                    React.createElement("div", { style: { marginTop: 18 } },
+                                        React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 8 } }, "\uD55C\uAD6D \u00B7 \uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC"),
+                                        React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
+                                            React.createElement(RateRow, { r: b.rates && b.rates.kr, fallback: "\uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC(\uD55C\uAD6D\uC740\uD589)", first: true }),
+                                            React.createElement(RateRow, { r: b.rates && b.rates.us, fallback: "\uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC(FOMC \uBAA9\uD45C\uBC94\uC704)", us: true })),
+                                        b.ust && b.ust.length > 0 && b.ust[0].last != null && (React.createElement("div", { onClick: () => openTrend(b.ust[0]), style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: 'pointer', font: '500 11px Pretendard', color: '#9a9ca0' } },
+                                            React.createElement("span", null,
+                                                b.ust[0].name,
+                                                " ",
+                                                b.ust[0].last.toFixed(2),
+                                                "% (",
+                                                b.ust[0].chg >= 0 ? '+' : '−',
+                                                Math.abs(b.ust[0].chg * 100).toFixed(0),
+                                                "bp)"),
+                                            React.createElement("span", { style: { color: '#cfccc4' } }, "\u203A"))))),
+                                React.createElement(HedgeBlock, { hedge: b.hedge })),
+                            React.createElement("div", { style: { marginTop: 24 } },
+                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 8 } }, "\uC8FC\uC694\uC774\uC288 \uB274\uC2A4"),
+                                (b.issues && b.issues.length) ? (React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden', ...(isDesktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr' } : {}) } }, b.issues.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '12px 13px', borderTop: '1px solid #f3f1ea' } },
                                     React.createElement("div", { style: { font: '650 13px/1.45 Pretendard', color: '#1c1d1f' } }, it.title),
                                     React.createElement("div", { style: { font: '500 10px Pretendard', color: '#b6b8bc', marginTop: 5 } },
                                         it.source,
                                         " \u2197")))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uC218\uC9D1\uB41C \uC774\uC288\uAC00 \uC5C6\uC74C"))),
-                            React.createElement(BriefSection, { title: "\uD658\uC728", rows: b.fx, digits: 4 }),
-                            React.createElement("div", { style: { marginTop: 22 } },
-                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, flexWrap: 'wrap' } },
-                                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em' } }, "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA"),
-                                    React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#9a9ca0' } }, "\uC2E4\uBB34\uC5D0\uC11C \uC790\uC8FC \uC4F0\uB294 \uD14C\uB108")),
-                                (b.tenorRates && b.tenorRates.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, Object.entries((b.tenorRates || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {})).map(([g, rows]) => (React.createElement("div", { key: g, style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
-                                    React.createElement("div", { style: { font: '700 11px Pretendard', color: '#56585c', background: '#f8f7f3', padding: '8px 13px' } }, g),
-                                    rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderTop: '1px solid #f3f1ea' } },
-                                        React.createElement("span", { style: { font: '600 12px Pretendard', color: '#1c1d1f', flex: 1 } }, r.tenor),
-                                        React.createElement("span", { style: { font: '800 13.5px Pretendard' } },
-                                            r.rate.toFixed(3),
-                                            "%"),
-                                        React.createElement("span", { style: { font: '500 9.5px Pretendard', color: '#b6b8bc', minWidth: 74, textAlign: 'right' } }, r.asOf))))))))) : (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#b6b8bc', border: '1px dashed #e3e0d8', borderRadius: 13, padding: '14px' } }, "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C"))),
-                            React.createElement("div", { style: { marginTop: 18 } },
-                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uD55C\uAD6D \u00B7 \uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC"),
-                                React.createElement("div", { style: { border: '1px solid #ece9e2', borderRadius: 13, overflow: 'hidden' } },
-                                    React.createElement(RateRow, { r: b.rates && b.rates.kr, fallback: "\uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC(\uD55C\uAD6D\uC740\uD589)", first: true }),
-                                    React.createElement(RateRow, { r: b.rates && b.rates.us, fallback: "\uBBF8\uAD6D \uAE30\uC900\uAE08\uB9AC(FOMC \uBAA9\uD45C\uBC94\uC704)", us: true })),
-                                b.ust && b.ust.length > 0 && b.ust[0].last != null && (React.createElement("div", { style: { font: '500 11px/1.6 Pretendard', color: '#9a9ca0', marginTop: 8 } },
-                                    b.ust[0].name,
-                                    " ",
-                                    b.ust[0].last.toFixed(2),
-                                    "% (",
-                                    b.ust[0].chg >= 0 ? '+' : '−',
-                                    Math.abs(b.ust[0].chg * 100).toFixed(0),
-                                    "bp)"))),
-                            React.createElement(HedgeBlock, { hedge: b.hedge }),
-                            React.createElement("div", { style: { marginTop: 22 } },
-                                React.createElement("div", { style: { font: '700 11px Pretendard', color: '#a6a8ac', letterSpacing: '.06em', marginBottom: 9 } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
-                                (b.watch && b.watch.length) ? (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, b.watch.map((w, i) => (React.createElement("div", { key: i, style: { display: 'flex', gap: 9, border: '1px solid #f6ecc8', background: '#fffaeb', borderRadius: 12, padding: '11px 13px' } },
-                                    React.createElement("span", { style: { font: '700 11px Pretendard', color: '#9a7d12', flexShrink: 0 } }, i + 1),
-                                    React.createElement("span", { style: { font: '600 12px/1.6 Pretendard', color: '#3d3e42' } }, w)))))) : (React.createElement("div", { style: { font: '500 11.5px/1.6 Pretendard', color: '#9a9ca0', border: '1px solid #ece9e2', borderRadius: 12, padding: '12px 13px' } }, "\uAE30\uC900\uC120\uC744 \uB118\uB294 \uD2B9\uC774 \uC2E0\uD638\uB294 \uC5C6\uC5C8\uC74C"))),
                             (b.errors && b.errors.length > 0) && (React.createElement("div", { style: { font: '500 10.5px/1.6 Pretendard', color: '#b6b8bc', marginTop: 16, background: '#f8f7f3', borderRadius: 9, padding: '10px 12px' } },
                                 "\u203B \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9 ",
                                 b.errors.length,
                                 "\uAC74 \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC74C")),
-                            React.createElement("div", { style: { font: '500 10px/1.6 Pretendard', color: '#c2c4c8', marginTop: 10 } }, "\uC2DC\uC138 Yahoo Finance\u00B7Stooq \u00B7 SOFR/EFFR New York Fed \u00B7 SONIA\u00B7\uC815\uCC45\uAE08\uB9AC Bank of England \u00B7 EURIBOR/\u20ACSTR ECB \u00B7 TONA \uC77C\uBCF8\uC740\uD589 \u00B7 \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uC774\uC288 \uAD6C\uAE00 \uB274\uC2A4"))))),
+                            React.createElement("div", { style: { marginTop: 14, border: '1px solid #ece9e2', borderRadius: 12, padding: '11px 13px' } },
+                                React.createElement("div", { style: { font: '700 10px Pretendard', color: '#a6a8ac', letterSpacing: '.05em', marginBottom: 6 } }, "\uCD9C\uCC98"),
+                                React.createElement("div", { style: { font: '500 10.5px/1.8 Pretendard', color: '#7a7c80' } },
+                                    "\uC9C0\uC218\u00B7\uD658\uC728\u00B7\uC6D0\uC790\uC7AC\u00B7\uCD94\uC774 \uADF8\uB798\uD504 ",
+                                    React.createElement("b", null, "Yahoo Finance"),
+                                    "(\uD3F4\uBC31 Stooq) \u00B7 \uD06C\uB9BD\uD1A0 ",
+                                    React.createElement("b", null, "Binance"),
+                                    "(\uD3F4\uBC31 Coinbase) \u00B7 SOFR/EFFR\u00B7FOMC \uBAA9\uD45C\uBC94\uC704 ",
+                                    React.createElement("b", null, "New York Fed"),
+                                    " \u00B7 SONIA\u00B7\uC601\uAD6D \uC815\uCC45\uAE08\uB9AC ",
+                                    React.createElement("b", null, "Bank of England"),
+                                    " \u00B7 \u20ACSTR ",
+                                    React.createElement("b", null, "ECB"),
+                                    " \u00B7 EURIBOR ",
+                                    React.createElement("b", null, "\uC77C\uBCC4 \uACF5\uD45C(euribor-rates.eu)"),
+                                    " \u00B7 TONA ",
+                                    React.createElement("b", null, "\uC77C\uBCF8\uC740\uD589"),
+                                    " \u00B7 \uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC ",
+                                    React.createElement("b", null, "\uD55C\uAD6D\uC740\uD589"),
+                                    " \u00B7 \uB274\uC2A4 ",
+                                    React.createElement("b", null, "\uAD6C\uAE00 \uB274\uC2A4"),
+                                    " \u00B7 \uD658\uD5E4\uC9C0\u00B7\uC2A4\uC651\uD3EC\uC778\uD2B8\uB294 \uC704 \uAE08\uB9AC\uB85C ",
+                                    React.createElement("b", null, "\uAE08\uB9AC\uD3C9\uD615 \uACC4\uC0B0"))))))),
+                    trendSel && (React.createElement(TrendModal, { series: histSeries && histSeries[trendSel.symbol], name: trendSel.name, unit: trendSel.unit, onClose: () => setTrendSel(null) })),
                     React.createElement(Navbar, { active: "brief", ...navProps })));
             })(),
             screen === 'bookmarks' && (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' } },

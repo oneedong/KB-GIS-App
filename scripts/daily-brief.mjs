@@ -345,6 +345,12 @@ async function tona() {
       const r = parseTona(html);
       if (r) return { ...r, asOf: r.asOf || kst().ymd, src: '일본은행' };
       errors.push(`TONA(${new URL(url).hostname}): 값을 찾지 못함 (${html.length}자)`);
+      // 진단 — 페이지에서 콜금리 관련 문구 주변을 로그로 남겨 파서를 맞춘다.
+      const t = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      const i = t.search(/コール|call rate|uncollateral/i);
+      console.log(`  [TONA 진단] ${url}`);
+      console.log(`   head: ${t.slice(0, 180)}`);
+      console.log(`   hit@${i}: ${i >= 0 ? t.slice(i, i + 220) : '(키워드 없음)'}`);
     } catch (e) { errors.push(`TONA(${new URL(url).hostname}): ${e.message}`); }
   }
   return null;
@@ -486,7 +492,7 @@ async function main() {
   if (so) tenorRates.push({ group: 'SONIA (GBP)', tenor: 'O/N', rate: so.rate, asOf: so.asOf, src: 'Bank of England' });
   if (boeBank) tenorRates.push({ group: 'SONIA (GBP)', tenor: '정책금리', rate: boeBank.rate, asOf: boeBank.asOf, src: 'Bank of England' });
   if (estr) tenorRates.push({ group: 'EURIBOR·€STR (EUR)', tenor: '€STR O/N', rate: estr.rate, asOf: estr.asOf, src: 'ECB' });
-  for (const e of eurib) tenorRates.push({ group: 'EURIBOR·€STR (EUR)', tenor: e.tenor, rate: e.rate, asOf: e.asOf, src: 'ECB' });
+  for (const e of eurib) tenorRates.push({ group: 'EURIBOR·€STR (EUR)', tenor: e.tenor, rate: e.rate, asOf: e.asOf, src: e.src || 'ECB' });
   if (jpTona) tenorRates.push({ group: 'TONA (JPY)', tenor: 'O/N', rate: jpTona.rate, asOf: jpTona.asOf, src: '일본은행' });
 
   // 환헤지 비용·스왑포인트 — 원화 투자자 기준.

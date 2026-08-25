@@ -233,49 +233,109 @@ async function liveCrypto() {
 // ─── 5년 추이 그래프 (history.json 의 일별 종가) ───────────
 function TrendModal({ series, name, unit, onClose }) {
   const [range, setRange] = useState('1Y');
+  const [hover, setHover] = useState(null);       // 손가락·커서로 고른 지점 인덱스
+  const svgRef = useRef(null);
   if (!series) return null;
   const N = { '1M': 22, '6M': 130, '1Y': 260, '5Y': 100000 }[range];
   const d = series.d.slice(-N), c = series.c.slice(-N);
-  const W = 640, H = 220, PL = 46, PR = 12, PT = 14, PB = 26;
+  // 화면을 크게 쓰기 위해 좌표계를 키웠다(모바일에서도 폭 100%로 늘어난다).
+  const W = 900, H = 380, PL = 62, PR = 16, PT = 18, PB = 34;
   const min = Math.min(...c), max = Math.max(...c), span = (max - min) || 1;
   const x = (i) => PL + (c.length <= 1 ? 0 : (W - PL - PR) * i / (c.length - 1));
   const y = (v) => PT + (H - PT - PB) * (1 - (v - min) / span);
   const path = c.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const area = `${path} L${x(c.length - 1).toFixed(1)},${H - PB} L${x(0).toFixed(1)},${H - PB} Z`;
   const up = c.length > 1 && c[c.length - 1] >= c[0];
   const col = up ? '#c0392b' : '#1a5fa4';
-  const fmtD = (n) => `${String(n).slice(2, 4)}.${String(n).slice(4, 6)}.${String(n).slice(6, 8)}`;
+  const fmtD = (n) => `${String(n).slice(0, 4)}.${String(n).slice(4, 6)}.${String(n).slice(6, 8)}`;
+  const fmtDs = (n) => `${String(n).slice(2, 4)}.${String(n).slice(4, 6)}.${String(n).slice(6, 8)}`;
   const fmtV = (v) => v.toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(v) < 10 ? 3 : 2 });
   const chg = c.length > 1 ? (c[c.length - 1] - c[0]) / c[0] * 100 : 0;
+
+  // 터치·마우스 위치 → 가장 가까운 거래일 인덱스
+  const pick = (e) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const cx = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX) - rect.left;
+    const vx = cx / rect.width * W;                              // 화면 px → viewBox 좌표
+    const t = (vx - PL) / Math.max(1, (W - PL - PR));
+    const i = Math.round(t * (c.length - 1));
+    setHover(Math.max(0, Math.min(c.length - 1, i)));
+  };
+  const hi = hover == null ? null : hover;
+  const hv = hi == null ? null : c[hi];
+  const hd = hi == null ? null : d[hi];
+  // 기준일(구간 시작) 대비 등락 — 특정 일자를 짚었을 때 같이 보여준다.
+  const hChg = hi == null || !c[0] ? null : (c[hi] - c[0]) / c[0] * 100;
+  const tipX = hi == null ? 0 : Math.min(Math.max(x(hi), PL + 62), W - PR - 62);
+
   return (
-    <div onClick={onClose} style={{position:'fixed', inset:0, background:'rgba(20,20,22,.55)', zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16}}>
-      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:16, width:'100%', maxWidth:720, padding:'16px 16px 12px', boxShadow:'0 18px 50px rgba(0,0,0,.28)'}}>
+    <div onClick={onClose} style={{position:'fixed', inset:0, background:'rgba(20,20,22,.55)', zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:12}}>
+      <div onClick={(e) => e.stopPropagation()} style={{background:'#fff', borderRadius:16, width:'100%', maxWidth:960, maxHeight:'92vh', overflowY:'auto', padding:'16px 16px 12px', boxShadow:'0 18px 50px rgba(0,0,0,.28)'}}>
         <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4}}>
-          <div style={{font:'800 16px Pretendard'}}>{name}</div>
-          <div style={{font:'700 13px Pretendard', color:col}}>{fmtV(c[c.length - 1])}{unit === '$' ? ' USD' : unit}</div>
-          <div style={{font:'600 11.5px Pretendard', color:col}}>{range} {chg >= 0 ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%</div>
-          <div onClick={onClose} style={{marginLeft:'auto', cursor:'pointer', font:'600 12px Pretendard', color:'#9a9ca0', padding:'2px 6px'}}>✕</div>
+          <div style={{font:'800 17px Pretendard'}}>{name}</div>
+          <div style={{font:'700 14px Pretendard', color:col}}>{fmtV(c[c.length - 1])}{unit === '$' ? ' USD' : unit}</div>
+          <div style={{font:'600 12px Pretendard', color:col}}>{range} {chg >= 0 ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%</div>
+          <div onClick={onClose} style={{marginLeft:'auto', cursor:'pointer', font:'600 13px Pretendard', color:'#9a9ca0', padding:'2px 8px'}}>✕</div>
         </div>
+
+        {/* 선택한 일자 — 손가락을 끌면 이 줄이 그 날짜 값으로 바뀐다 */}
+        <div style={{display:'flex', alignItems:'baseline', gap:10, minHeight:26, font:'600 13px Pretendard', color:'#3d3e42'}}>
+          {hi == null ? (
+            <span style={{font:'500 11.5px Pretendard', color:'#a6a8ac'}}>차트를 손가락으로 끌거나 마우스를 올리면 그 날짜의 값이 표시됩니다</span>
+          ) : (
+            <>
+              <span style={{font:'700 12.5px Pretendard', color:'#9a9ca0'}}>{fmtD(hd)}</span>
+              <span style={{font:'800 15px Pretendard', color:'#1c1d1f'}}>{fmtV(hv)}{unit === '$' ? ' USD' : unit}</span>
+              <span style={{font:'600 11.5px Pretendard', color:hChg >= 0 ? '#c0392b' : '#1a5fa4'}}>구간 시작 대비 {hChg >= 0 ? '+' : '−'}{Math.abs(hChg).toFixed(2)}%</span>
+            </>
+          )}
+        </div>
+
         <div style={{display:'flex', gap:6, margin:'8px 0 6px'}}>
           {['1M','6M','1Y','5Y'].map(r => (
-            <div key={r} onClick={() => setRange(r)} style={{padding:'5px 11px', borderRadius:999, cursor:'pointer', font:range===r?'700 11.5px Pretendard':'600 11.5px Pretendard', background:range===r?'#1c1d1f':'#f2f0ea', color:range===r?'#FFCC00':'#56585c'}}>{r}</div>
+            <div key={r} onClick={() => { setRange(r); setHover(null); }} style={{padding:'6px 13px', borderRadius:999, cursor:'pointer', font:range===r?'700 12px Pretendard':'600 12px Pretendard', background:range===r?'#1c1d1f':'#f2f0ea', color:range===r?'#FFCC00':'#56585c'}}>{r}</div>
           ))}
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', height:'auto', display:'block'}}>
-          {[0, 0.5, 1].map(f => {
+
+        <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} style={{width:'100%', height:'auto', display:'block', touchAction:'none', cursor:'crosshair'}}
+             onMouseMove={pick} onMouseLeave={() => setHover(null)}
+             onTouchStart={(e) => { e.preventDefault(); pick(e); }} onTouchMove={(e) => { e.preventDefault(); pick(e); }}>
+          <defs>
+            <linearGradient id="tmFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={col} stopOpacity="0.14" />
+              <stop offset="100%" stopColor={col} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0, 0.25, 0.5, 0.75, 1].map(f => {
             const v = min + span * (1 - f), yy = PT + (H - PT - PB) * f;
             return (
               <g key={f}>
                 <line x1={PL} y1={yy} x2={W - PR} y2={yy} stroke="#f0ede4" strokeWidth="1" />
-                <text x={PL - 6} y={yy + 3} textAnchor="end" fontSize="9" fill="#9a9ca0" fontFamily="Pretendard">{fmtV(v)}</text>
+                <text x={PL - 8} y={yy + 4} textAnchor="end" fontSize="11" fill="#9a9ca0" fontFamily="Pretendard">{fmtV(v)}</text>
               </g>
             );
           })}
-          <path d={path} fill="none" stroke={col} strokeWidth="1.8" strokeLinejoin="round" />
-          {[0, Math.floor((d.length - 1) / 2), d.length - 1].map((i, k) => (
-            <text key={k} x={x(i)} y={H - 8} textAnchor={k === 0 ? 'start' : k === 2 ? 'end' : 'middle'} fontSize="9" fill="#9a9ca0" fontFamily="Pretendard">{fmtD(d[i])}</text>
+          <path d={area} fill="url(#tmFill)" />
+          <path d={path} fill="none" stroke={col} strokeWidth="2" strokeLinejoin="round" />
+          {/* 선택 지점 표시 */}
+          {hi != null && (
+            <g>
+              <line x1={x(hi)} y1={PT} x2={x(hi)} y2={H - PB} stroke="#c9c6bd" strokeWidth="1" strokeDasharray="3 3" />
+              <circle cx={x(hi)} cy={y(hv)} r="5" fill="#fff" stroke={col} strokeWidth="2.4" />
+              <g transform={`translate(${tipX - 60}, ${Math.max(PT, y(hv) - 46)})`}>
+                <rect width="120" height="36" rx="8" fill="#1c1d1f" opacity="0.92" />
+                <text x="60" y="15" textAnchor="middle" fontSize="10.5" fill="#cdced0" fontFamily="Pretendard">{fmtD(hd)}</text>
+                <text x="60" y="29" textAnchor="middle" fontSize="12.5" fill="#fff" fontWeight="700" fontFamily="Pretendard">{fmtV(hv)}</text>
+              </g>
+            </g>
+          )}
+          {[0, Math.floor((d.length - 1) / 4), Math.floor((d.length - 1) / 2), Math.floor((d.length - 1) * 3 / 4), d.length - 1].map((i, k) => (
+            <text key={k} x={x(i)} y={H - 10} textAnchor={k === 0 ? 'start' : k === 4 ? 'end' : 'middle'} fontSize="11" fill="#9a9ca0" fontFamily="Pretendard">{fmtDs(d[i])}</text>
           ))}
         </svg>
-        <div style={{font:'500 10px Pretendard', color:'#b6b8bc', marginTop:6}}>일별 종가 · 출처 Yahoo Finance · {d.length}거래일</div>
+        <div style={{font:'500 10.5px Pretendard', color:'#b6b8bc', marginTop:6}}>일별 종가 · 출처 Yahoo Finance · {d.length}거래일</div>
       </div>
     </div>
   );
@@ -2478,13 +2538,6 @@ function App() {
                   <div style={{background:'#1c1d1f', borderRadius:14, padding: isDesktop ? '17px 19px' : '15px 16px'}}>
                     <div style={{font:'700 9.5px Pretendard', color:'#FFCC00', letterSpacing:'.06em', marginBottom:7}}>한줄 요약</div>
                     <div style={{font: isDesktop ? '650 15px/1.65 Pretendard' : '650 14px/1.6 Pretendard', color:'#fff'}}>{b.summary}</div>
-                    {b.summarySource && b.summarySource.length > 0 && (
-                      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:9}}>
-                        {b.summarySource.slice(0, 3).map((sx, i) => (
-                          <a key={i} href={sx.url} target="_blank" rel="noopener noreferrer" style={{font:'600 9.5px Pretendard', color:'#cdced0', background:'#2c2e32', padding:'3px 8px', borderRadius:999, textDecoration:'none'}}>{sx.source} ↗</a>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   {/* 관찰 포인트 — 한 박스 안에 점으로 */}

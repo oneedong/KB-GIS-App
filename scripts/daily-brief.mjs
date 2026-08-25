@@ -538,14 +538,17 @@ async function llmSummary(facts) {
   if (!GEMINI_API_KEY) return null;
   const prompt = [
     '아래는 오늘 아침 시황 브리핑의 실제 데이터다.',
-    '이 자료에 있는 내용만 근거로, 전일 시장을 설명하는 한국어 요약을 1~2문장으로 써라.',
+    '이 자료에 있는 내용만 근거로 정확히 2문장을 써라.',
     '규칙:',
+    '- 1문장: 국내증시(코스피·코스닥)가 오르내린 이유를 헤드라인에서 찾아 쓰고 등락률을 붙일 것.',
+    '- 2문장: 해외증시(S&P 500·나스닥 등)가 오르내린 이유를 헤드라인에서 찾아 쓰고 등락률을 붙일 것.',
     '- 반드시 "음/슴체"로 끝낼 것 (예: ~했음, ~였음).',
-    '- 지수 등락의 원인을 헤드라인에서 찾아 먼저 쓰고, 수치는 뒤에 짧게 붙일 것.',
-    '- 자료에 없는 사실·수치·고유명사를 절대 만들지 말 것.',
-    '- 따옴표나 머리기호 없이 문장만 출력할 것.',
+    '- 환율·스왑포인트는 언급하지 말 것.',
+    '- 언론사 이름, 따옴표, 머리기호, 출처 표기를 쓰지 말 것.',
+    '- 자료에 없는 사실·수치·고유명사를 절대 만들지 말 것. 이유를 알 수 없으면 등락률만 쓸 것.',
     '',
-    '[수치]', facts.numbers,
+    '[국내증시]', facts.krNumbers,
+    '[해외증시]', facts.glNumbers,
     '', '[헤드라인]', facts.headlines,
   ].join('\n');
   for (const model of GEMINI_MODELS) {
@@ -561,34 +564,59 @@ async function llmSummary(facts) {
       const j = await res.json();
       const parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
       const t = parts.map((p) => p.text || '').join(' ');
-      const line = t.trim().split('\n').map((x) => x.trim()).filter(Boolean).pop() || '';
+      // 여러 줄로 와도 한 문단으로 합치고, 따옴표·머리기호·출처 표기를 걷어낸다.
+      const line = t.replace(/\s+/g, ' ').replace(/^[-*·\s"'"']+/, '').replace(/\([^)]*(?:뉴스|일보|경제|타임스|투데이|미디어|방송)[^)]*\)/g, '').trim();
       if (line.length > 10 && /(음|슴|함)[.。]?$/.test(line)) return line.replace(/[.。]$/, '');
       console.warn(`  [요약] ${model} 형식 불일치 — finish=${(j.candidates || [{}])[0].finishReason || '?'} text="${t.slice(0, 60)}"`);
     } catch (e) { console.warn(`  [요약] ${model} ${e.message}`); }
   }
   return null;
 }
-// 결정적 폴백 — 대표 헤드라인을 인용하고 수치를 덧붙인다(창작 없음).
-export function headlineSummary(issues, numbers, lead) {
+// 받침 유무로 조사 선택 ('코스피은' 같은 어색한 문장 방지)
+function josa(word, withB, without) {
+  const c = String(word).trim().slice(-1).charCodeAt(0);
+  const hangul = c >= 0xac00 && c <= 0xd7a3;
+  const has = hangul ? (c - 0xac00) % 28 !== 0 : /[0-9a-zA-Z]/.test(String.fromCharCode(c));
+  return has ? withB : without;
+}
+// 헤드라인에서 '원인 구절'만 뽑는다. 명시적 인과 표현이 있을 때만 쓰고,
+// 없으면 빈 문자열을 돌려 등락률만 적는다(원인을 지어내지 않기 위함).
+export function causeFromHeadline(title) {
+  const t = String(title || '').replace(/^\[[^\]]*\]\s*/, '').trim();
+  const m = t.match(/^(?:뉴욕\s?증시|미국\s?증시|美\s?증시|국내\s?증시|코스피|코스닥|증시)?[,·\s]*(.{2,28}?)(에도|에는|에|으로|로|탓에|덕에|영향으로)\s*(?:코스피|코스닥|증시|뉴욕\s?증시|나스닥|다우|S&P|기술주|반등|하락|상승|급락|급등|약세|강세)/);
+  if (!m) return '';
+  const cause = `${m[1].trim()}${m[2]}`;
+  if (/^\d/.test(cause) || cause.length < 3) return '';
+  return cause;
+}
+// 지수 묶음 → "코스피는 −3.52%, 코스닥은 +1.75%로 마감했음"
+export function indexClause(rows, limit = 2) {
+  const list = (rows || []).filter((r) => r.chgPct != null).slice(0, limit);
+  if (!list.length) return '';
+  return list.map((r) => `${r.name}${josa(r.name, '은', '는')} ${fmtSigned(r.chgPct, 2, '%')}`).join(', ');
+}
+// 결정적 폴백 — 국내·해외 두 문장. 출처·환율은 넣지 않는다.
+export function headlineSummary(issues, kr, global) {
   const list = issues || [];
-  if (!list.length) return numbers ? `${numbers} 으로 마감했음` : '전일 시세를 받지 못해 요약을 만들지 못했음';
-  // lead = { market:'국내'|'해외', dir:'하락'|'상승' } — 그날 지배적인 움직임.
-  const DOWN = /급락|하락|폭락|약세|내림|조정|충격|下落/, UP = /급등|상승|강세|반등|랠리|사상 최고/;
-  const KR = /코스피|코스닥|국내 증시|원화|서울 증시/, GL = /뉴욕|나스닥|다우|S&P|미국 증시|기술주|유럽 증시/;
-  const score = (t) => {
-    let sc = 0;
-    if (lead) {
-      if (lead.market === '국내' && KR.test(t)) sc += 3;
-      if (lead.market === '해외' && GL.test(t)) sc += 3;
-      if (lead.dir === '하락' && DOWN.test(t)) sc += 2;
-      if (lead.dir === '상승' && UP.test(t)) sc += 2;
-    }
-    if (/마감/.test(t)) sc += 1;
-    if (/선물|프리뷰|전망|예상/.test(t)) sc -= 2;        // 장 전 예측 기사보다 마감 기사를 우선
-    return sc;
+  const KR = /코스피|코스닥|국내\s?증시|서울\s?증시/, GL = /뉴욕|나스닥|다우|S&P|미국\s?증시|美\s?증시|기술주|유럽\s?증시/;
+  const bestCause = (re) => {
+    const cands = list.filter((i) => re.test(i.title) && !/선물|프리뷰|전망|예상/.test(i.title));
+    for (const c of cands) { const x = causeFromHeadline(c.title); if (x) return x; }
+    return '';
   };
-  const best = list.slice().sort((a, b) => score(b.title) - score(a.title))[0];
-  return `"${best.title}"(${best.source}) — ${numbers} 으로 마감했음`;
+  const parts = [];
+  const krClause = indexClause(kr);
+  if (krClause) {
+    const c = bestCause(KR);
+    parts.push(`${c ? c + ' ' : ''}${krClause}로 마감했음`);
+  }
+  const glClause = indexClause(global);
+  if (glClause) {
+    const c = bestCause(GL);
+    parts.push(`${c ? c + ' ' : ''}${glClause}로 마감했음`);
+  }
+  if (!parts.length) return '전일 시세를 받지 못해 요약을 만들지 못했음';
+  return parts.join('. ');
 }
 
 // ── 5년 일별 추이 (그래프용) ───────────────────────────────
@@ -701,16 +729,10 @@ async function main() {
   };
   data.watch = buildWatch(data);
   // 한줄 요약 — 수치 나열 대신 시황 뉴스에 근거해 쓴다.
-  const numbers = buildSummary(data).replace(/ 으로 마감했음$/, '');
-  const headlines = (iss || []).slice(0, 6).map((i) => `- ${i.title} (${i.source})`).join('\n');
-  const krMove = (kr.find((x) => x.name === '코스피') || {}).chgPct;
-  const glMove = (global.find((x) => x.name === 'S&P 500') || {}).chgPct;
-  const lead = (krMove == null && glMove == null) ? null : {
-    market: Math.abs(krMove || 0) >= Math.abs(glMove || 0) ? '국내' : '해외',
-    dir: (Math.abs(krMove || 0) >= Math.abs(glMove || 0) ? (krMove || 0) : (glMove || 0)) < 0 ? '하락' : '상승',
-  };
-  data.summary = (await llmSummary({ numbers, headlines })) || headlineSummary(iss, numbers, lead);
-  data.summarySource = (iss || []).slice(0, 3).map((i) => ({ title: i.title, source: i.source, url: i.url }));
+  const headlines = (iss || []).slice(0, 8).map((i) => `- ${i.title}`).join('\n');
+  const krNumbers = indexClause(kr, 3) || '수치 없음';
+  const glNumbers = indexClause(global, 4) || '수치 없음';
+  data.summary = (await llmSummary({ krNumbers, glNumbers, headlines })) || headlineSummary(iss, kr, global);
 
   await writeFile(new URL('../market.json', import.meta.url), JSON.stringify(data, null, 0));
 
@@ -824,17 +846,24 @@ function selftest() {
   const hist = parseHistory({ chart: { result: [{ timestamp: [1755993600, 1756080000], indicators: { quote: [{ close: [3200.123456, null] }] } }] } });
   const ok16 = hist && hist.d.length === 1 && hist.c[0] === 3200.123;
 
-  const hs = headlineSummary([{ title: '딥시크 충격에 기술주 급락', source: '연합뉴스' }], '코스피 −2.34% · 나스닥 −3.10%');
-  const hs2 = headlineSummary([
-    { title: 'S&P500 선물, 조정 후 소폭 상승 전망', source: 'KB' },
-    { title: '코스피 3% 급락 마감…외국인 매도', source: '연합뉴스' },
-  ], '코스피 −3.23%', { market: '국내', dir: '하락' });
-  const ok17 = /딥시크/.test(hs) && /마감했음$/.test(hs) && /코스피 3% 급락/.test(hs2);
-  console.log('요약(지배적 움직임):', hs2);
+  const KRROWS = [{ name: '코스피', chgPct: -3.52 }, { name: '코스닥', chgPct: 1.75 }];
+  const GLROWS = [{ name: 'S&P 500', chgPct: 0.43 }, { name: '나스닥', chgPct: 0.61 }];
+  const hs = headlineSummary([
+    { title: '삼성 약세에 코스피 하락… 장중 6775.23까지 내려', source: '천지일보' },
+    { title: '뉴욕증시, 국채금리 부담에도 반등...다우 0.98% 상승', source: '연합뉴스' },
+  ], KRROWS, GLROWS);
+  // 출처·환율은 빼고, 국내·해외 원인이 각각 들어가야 한다
+  const ok17 = /삼성 약세에 코스피는 −3\.52%, 코스닥은 \+1\.75%로 마감했음/.test(hs)
+    && /국채금리 부담에도 S&P 500은 \+0\.43%/.test(hs)
+    && !/천지일보|연합뉴스/.test(hs);
+  // 원인이 명시되지 않은 헤드라인이면 등락률만 적는다(원인 창작 금지)
+  const hs3 = headlineSummary([{ title: '코스피 마감 시황', source: 'x' }], KRROWS, GLROWS);
+  const ok18 = /^코스피는 −3\.52%/.test(hs3);
   console.log('요약(폴백):', hs);
+  console.log('요약(원인없음):', hs3);
 
-  const all = ok16 && ok17 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16, ok17].join(',')})`);
+  const all = ok16 && ok17 && ok18 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16, ok17, ok18].join(',')})`);
   if (!all) process.exit(1);
 }
 

@@ -219,7 +219,7 @@ const BOK_PAGES = [
 async function bokBaseRate() {
   for (const url of BOK_PAGES) {
     try {
-      const html = await getText(url, 20000);
+      const html = await getText(url, 30000);
       const t = kst();
       const todayKey = parseInt(t.ymd.replace(/\./g, ''), 10);
       const r = parseBokBaseRate(html, todayKey);
@@ -533,7 +533,9 @@ export function buildSummary(d) {
 // (선택) Gemini 키가 있으면 헤드라인+수치만 근거로 한 문장을 쓰게 하고,
 // 없거나 실패하면 헤드라인을 그대로 인용하는 결정적 폴백을 쓴다.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+// 2.0/1.5 계열은 404(폐기)로 돌아온다. 현행 모델만 두고, 429(레이트리밋)는
+// 뉴스 수집기와 키를 공유해 자주 나므로 짧게 물러났다가 다시 시도한다.
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 async function llmSummary(facts) {
   if (!GEMINI_API_KEY) return null;
   const prompt = [
@@ -552,6 +554,7 @@ async function llmSummary(facts) {
     '', '[헤드라인]', facts.headlines,
   ].join('\n');
   for (const model of GEMINI_MODELS) {
+   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -560,7 +563,8 @@ async function llmSummary(facts) {
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1200 } }),
         signal: AbortSignal.timeout(25000),
       });
-      if (!res.ok) { console.warn(`  [요약] ${model} HTTP ${res.status}`); continue; }
+      if (res.status === 429 && attempt < 2) { console.warn(`  [요약] ${model} 429 — ${(attempt + 1) * 8}초 후 재시도`); await sleep((attempt + 1) * 8000); continue; }
+      if (!res.ok) { console.warn(`  [요약] ${model} HTTP ${res.status}`); break; }
       const j = await res.json();
       const parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
       const t = parts.map((p) => p.text || '').join(' ');
@@ -568,7 +572,9 @@ async function llmSummary(facts) {
       const line = t.replace(/\s+/g, ' ').replace(/^[-*·\s"'"']+/, '').replace(/\([^)]*(?:뉴스|일보|경제|타임스|투데이|미디어|방송)[^)]*\)/g, '').trim();
       if (line.length > 10 && /(음|슴|함)[.。]?$/.test(line)) return line.replace(/[.。]$/, '');
       console.warn(`  [요약] ${model} 형식 불일치 — finish=${(j.candidates || [{}])[0].finishReason || '?'} text="${t.slice(0, 60)}"`);
-    } catch (e) { console.warn(`  [요약] ${model} ${e.message}`); }
+      break;
+    } catch (e) { console.warn(`  [요약] ${model} ${e.message}`); break; }
+   }
   }
   return null;
 }
@@ -583,7 +589,7 @@ function josa(word, withB, without) {
 // 없으면 빈 문자열을 돌려 등락률만 적는다(원인을 지어내지 않기 위함).
 export function causeFromHeadline(title) {
   const t = String(title || '').replace(/^\[[^\]]*\]\s*/, '').trim();
-  const m = t.match(/^(?:뉴욕\s?증시|미국\s?증시|美\s?증시|국내\s?증시|코스피|코스닥|증시)?[,·\s]*(.{2,28}?)(에도|에는|에|으로|로|탓에|덕에|영향으로)\s*(?:코스피|코스닥|증시|뉴욕\s?증시|나스닥|다우|S&P|기술주|반등|하락|상승|급락|급등|약세|강세)/);
+  const m = t.match(/^(?:뉴욕\s?증시|미국\s?증시|美\s?증시|국내\s?증시|코스피|코스닥|증시)?[,·\s]*(.{2,28}?)(에도|에는|에|으로|로|탓에|덕에|영향으로|\s속에|\s속)\s*(?:코스피|코스닥|증시|뉴욕\s?증시|나스닥|다우|S&P|기술주|혼조|반등|하락|상승|급락|급등|약세|강세|보합|마감|출발|숨고르기)/);
   if (!m) return '';
   const cause = `${m[1].trim()}${m[2]}`;
   if (/^\d/.test(cause) || cause.length < 3) return '';
@@ -600,7 +606,7 @@ export function headlineSummary(issues, kr, global) {
   const list = issues || [];
   const KR = /코스피|코스닥|국내\s?증시|서울\s?증시/, GL = /뉴욕|나스닥|다우|S&P|미국\s?증시|美\s?증시|기술주|유럽\s?증시/;
   const bestCause = (re) => {
-    const cands = list.filter((i) => re.test(i.title) && !/선물|프리뷰|전망|예상/.test(i.title));
+    const cands = list.filter((i) => re.test(i.title) && !/선물|프리뷰|전망|예상|분수령|달렸다|관건/.test(i.title));
     for (const c of cands) { const x = causeFromHeadline(c.title); if (x) return x; }
     return '';
   };
@@ -858,7 +864,11 @@ function selftest() {
     && !/천지일보|연합뉴스/.test(hs);
   // 원인이 명시되지 않은 헤드라인이면 등락률만 적는다(원인 창작 금지)
   const hs3 = headlineSummary([{ title: '코스피 마감 시황', source: 'x' }], KRROWS, GLROWS);
-  const ok18 = /^코스피는 −3\.52%/.test(hs3);
+  const ok18 = /^코스피는 −3\.52%/.test(hs3)
+    // 실제 헤드라인 어법: '기술주 하락세에 혼조 마감' 처럼 결과어가 '혼조/마감'이어도 원인을 뽑아야 한다
+    && causeFromHeadline('뉴욕증시, 기술주 하락세에 혼조 마감…나스닥·S&P500↓') === '기술주 하락세에'
+    // 전망성 헤드라인에서는 원인을 만들지 않는다
+    && causeFromHeadline('코스피 7000 안착, 6000 붕괴 분수령… 엔비디아·잭슨홀·금통위에 달렸다') === '';
   console.log('요약(폴백):', hs);
   console.log('요약(원인없음):', hs3);
 

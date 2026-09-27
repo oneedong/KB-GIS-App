@@ -20,15 +20,15 @@ const HIGHLIGHT = {
   WebkitBoxDecorationBreak: 'clone',
 };
 
-function FeedItem({ item, onOpen, onBookmark, isNew, selected }) {
+function FeedItem({ item, onOpen, onPress, onBookmark, isNew, selected }) {
   return (
-    <div onClick={onOpen} style={{ display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' }}>
+    <div onClick={onOpen} onPointerDown={onPress} style={{ display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: F(600, 12.5), color: KB.gray, minWidth: 0 }}>
           {isNew && <span title="새 기사" style={{ width: 6, height: 6, borderRadius: 3, background: KB.yellow, flexShrink: 0 }}></span>}
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.instLabel}</span>
-          <span style={{ color: KB.faint }}>·</span>
-          <span style={{ font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' }}>{item.assetLabel}</span>
+          {item.assetLabel && <span style={{ color: KB.faint }}>·</span>}
+          {item.assetLabel && <span style={{ font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' }}>{item.assetLabel}</span>}
         </div>
         <div style={{ font: F(600, 16, 1.45), color: KB.ink, marginTop: 6, letterSpacing: '-.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.ko}</div>
         {item.tko && <div style={{ font: F(500, 14.5, 1.45), color: KB.ko, marginTop: 4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.tko}</div>}
@@ -80,12 +80,14 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const [st, setSt] = React.useState({ id: null, body: '', ko: null, loading: false, dead: false, src: '' });
   const [lang, setLang] = React.useState('both');   // 영문 기사: both(한영 병기) | ko | en
   const [openTerm, setOpenTerm] = React.useState(null);
+  const [retryOf, setRetryOf] = React.useState({ id: null, n: 0 });   // 본문 다시 불러오기(기사별)
+  const retry = sel && retryOf.id === sel.id ? retryOf.n : 0;
   const scrollRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!sel) return undefined;
     setOpenTerm(null);
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    if (scrollRef.current && !retry) scrollRef.current.scrollTop = 0;
     setSt({ id: sel.id, body: '', ko: null, loading: true, dead: false, src: '' });
     const ctrl = new AbortController();
     let off = false;
@@ -97,7 +99,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
       })
       .catch(() => { if (!off) setSt((s) => ({ ...s, loading: false })); });
     return () => { off = true; ctrl.abort(); };
-  }, [sel ? sel.id : null]);
+  }, [sel ? sel.id : null, retry]);
 
   if (!sel) {
     return (
@@ -108,8 +110,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   }
 
   const mine = st.id === sel.id;
-  const lead = cleanBody(sel.body || '');
-  const fetched = mine ? st.body : '';
+  const lead0 = cleanBody(sel.body || '');
+  const lead = lead0 && titleOk(sel.ko, lead0) ? lead0 : '';     // 제목과 무관한 리드(매체 소개문 등)는 쓰지 않는다
+  const fetched = mine ? nm(st.body) : '';
   const text = fetched && fetched.length >= lead.length * 0.8 ? fetched : (lead || fetched);
   const isFull = !!fetched && fetched.length > Math.max(420, lead.length + 40);
   const loading = mine ? st.loading : true;
@@ -125,7 +128,8 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const terms = findTerms(`${sel.ko} ${text}`, 8);
   const when = fmtDate(itemMs(sel)) + (sel.time ? ' ' + sel.time : '');
 
-  const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? ko.p[pi] : '');
+  // 번역문에 섞여 나온 한자 표기("伦敦(런던)")는 괄호 속 한글만 남긴다
+  const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? nm(String(ko.p[pi] || '').replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '');
   const koNode = (pi, sub) => {
     const t = koOf(pi);
     if (!t) return null;
@@ -177,7 +181,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             {sel.cat !== '마켓' && sel.inst && (
               <span onClick={() => onOpenInst && onOpenInst(sel)} style={{ font: F(600, 13), color: KB.gray, cursor: onOpenInst ? 'pointer' : 'default' }}>{sel.inst}</span>
             )}
-            <span style={{ font: F(500, 13), color: KB.mute }}>{sel.assetLabel} · {sel.regionLabel}</span>
+            <span style={{ font: F(500, 13), color: KB.mute }}>{[sel.assetLabel, sel.regionLabel].filter(Boolean).join(' · ')}</span>
           </div>
           <h1 style={{ font: F(700, desktop ? 26 : 23, 1.4), color: KB.ink, letterSpacing: '-.025em', margin: '12px 0 0', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{sel.ko}</h1>
           {sel.tko && <div style={{ font: F(600, isEn ? 19 : 17, 1.45), color: KB.ko, marginTop: 8, wordBreak: 'keep-all' }}>{sel.tko}</div>}
@@ -210,7 +214,10 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             : loading ? <BodySkeleton />
             : (mine && st.dead)
               ? <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>원문 기사가 삭제되어 더 이상 볼 수 없습니다. 다음 수집 때 목록에서 빠집니다.</div>
-              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>언론사 보안 정책(유료·접근 제한)으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.</div>}
+              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>
+                  언론사 보안 정책(유료·접근 제한)으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.
+                  {realUrl && <span onClick={() => setRetryOf({ id: sel.id, n: retry + 1 })} role="button" style={{ display: 'inline-block', marginLeft: 6, font: F(600, 13.5), color: KB.gray, textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' }}>다시 시도</span>}
+                </div>}
 
           {!loading && paragraphs.length > 0 && !isFull && realUrl && (
             <div style={{ font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 }}>
@@ -223,7 +230,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             <Btn kind="secondary" icon="share" onClick={onShare} style={{ flex: viewUrl ? '0 0 auto' : 1, width: viewUrl ? 'auto' : '100%' }}>공유</Btn>
           </div>
           <div style={{ font: F(400, 12, 1.7), color: KB.mute, marginTop: 12 }}>
-            본문 출처 {sel.source}. 광고·관련기사·기자 정보·사진 설명 등 기사 내용과 무관한 부분은 자동으로 제외했습니다. 핵심 문장 표시는 금액·출자·인수 같은 표현을 기준으로 고른 참고용입니다.
+            {paragraphs.length
+              ? `본문 출처 ${sel.source}. 광고·관련기사·기자 정보·사진 설명 등 기사 내용과 무관한 부분은 자동으로 제외했습니다. 핵심 문장 표시는 금액·출자·인수 같은 표현을 기준으로 고른 참고용입니다.`
+              : `출처 ${sel.source}`}
           </div>
 
           {deals && deals.length > 0 && (

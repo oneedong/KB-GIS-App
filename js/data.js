@@ -29,6 +29,15 @@ const ASSET = {
     IN: { label: 'Infrastructure', en: 'Infrastructure' },
     AV: { label: 'Aviation', en: 'Aviation' },
 };
+// 자산군 판별어(수집기와 같은 규칙). 수집기는 단서가 없으면 PE 로 두므로, 화면에서는 단서가 실제로 있을 때만 자산군을 표시한다.
+const ASSET_KW = {
+    AV: /항공기|aircraft|aviation|항공\s?금융|aircraft leasing|항공기\s?리스|aircraft finance/i,
+    IN: /인프라|infrastructure|재생에너지|renewable|태양광|풍력|발전소|data\s?cent|데이터센터|통신탑|toll road|공항|항만/i,
+    PC: /사모대출|private credit|direct lending|다이렉트 렌딩|메자닌|mezzanine|private debt|사모채권|선순위 대출/i,
+    RE: /부동산|real estate|오피스|office|물류|logistics|호텔|hotel|리테일|retail|멀티패밀리|multifamily|임대주택/i,
+    PE: /사모펀드|사모투자|private equity|바이아웃|buyout|세컨더리|secondar|\bPE\b|PEF|growth equity|벤처|venture|경영권/i,
+};
+const assetKnown = (it) => { const re = ASSET_KW[it.asset]; return !!re && re.test(`${it.ko || ''} ${it.en || ''} ${String(it.body || '').slice(0, 400)}`); };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
 const CAT_LABEL = { LP: '국내 LP', GP: '해외 GP', '인사': '인사', '마켓': '시장', '이전': '지방이전' };
 const GROUPS = ['연기금', '공제회', '중앙회', '은행', '보험·캐피탈', '운용·증권'];
@@ -69,6 +78,8 @@ function cleanBody(s) {
         .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
+// 한글로 음역된 해외 기관·인명 → 영문 원어 (한국 기관·한국인 이름은 그대로)
+const nm = (s) => (s && typeof ArticleClean !== 'undefined' && ArticleClean.enNames ? ArticleClean.enNames(s) : s);
 function isRealArticle(a) {
     return !!(a && a.url && /^https?:\/\//i.test(a.url) && !/(^|\/\/)kbgis\.app/i.test(a.url));
 }

@@ -19,14 +19,14 @@ const HIGHLIGHT = {
     boxDecorationBreak: 'clone',
     WebkitBoxDecorationBreak: 'clone',
 };
-function FeedItem({ item, onOpen, onBookmark, isNew, selected }) {
-    return (React.createElement("div", { onClick: onOpen, style: { display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' } },
+function FeedItem({ item, onOpen, onPress, onBookmark, isNew, selected }) {
+    return (React.createElement("div", { onClick: onOpen, onPointerDown: onPress, style: { display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' } },
         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, font: F(600, 12.5), color: KB.gray, minWidth: 0 } },
                 isNew && React.createElement("span", { title: "\uC0C8 \uAE30\uC0AC", style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow, flexShrink: 0 } }),
                 React.createElement("span", { style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.instLabel),
-                React.createElement("span", { style: { color: KB.faint } }, "\u00B7"),
-                React.createElement("span", { style: { font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' } }, item.assetLabel)),
+                item.assetLabel && React.createElement("span", { style: { color: KB.faint } }, "\u00B7"),
+                item.assetLabel && React.createElement("span", { style: { font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' } }, item.assetLabel)),
             React.createElement("div", { style: { font: F(600, 16, 1.45), color: KB.ink, marginTop: 6, letterSpacing: '-.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.ko),
             item.tko && React.createElement("div", { style: { font: F(500, 14.5, 1.45), color: KB.ko, marginTop: 4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.tko),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, font: F(500, 12), color: KB.mute, minWidth: 0 } },
@@ -58,12 +58,14 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     const [st, setSt] = React.useState({ id: null, body: '', ko: null, loading: false, dead: false, src: '' });
     const [lang, setLang] = React.useState('both'); // 영문 기사: both(한영 병기) | ko | en
     const [openTerm, setOpenTerm] = React.useState(null);
+    const [retryOf, setRetryOf] = React.useState({ id: null, n: 0 }); // 본문 다시 불러오기(기사별)
+    const retry = sel && retryOf.id === sel.id ? retryOf.n : 0;
     const scrollRef = React.useRef(null);
     React.useEffect(() => {
         if (!sel)
             return undefined;
         setOpenTerm(null);
-        if (scrollRef.current)
+        if (scrollRef.current && !retry)
             scrollRef.current.scrollTop = 0;
         setSt({ id: sel.id, body: '', ko: null, loading: true, dead: false, src: '' });
         const ctrl = new AbortController();
@@ -79,14 +81,15 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             .catch(() => { if (!off)
             setSt((s) => ({ ...s, loading: false })); });
         return () => { off = true; ctrl.abort(); };
-    }, [sel ? sel.id : null]);
+    }, [sel ? sel.id : null, retry]);
     if (!sel) {
         return (React.createElement("div", { style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: KB.band } },
             React.createElement(Empty, { icon: "book", title: "\uC67C\uCABD \uBAA9\uB85D\uC5D0\uC11C \uAE30\uC0AC\uB97C \uC120\uD0DD\uD558\uC138\uC694", desc: "\uAE30\uC0AC \uC804\uBB38\uACFC \uD575\uC2EC \uBB38\uC7A5, \uC6A9\uC5B4 \uC124\uBA85\uC744 \uD568\uAED8 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4." })));
     }
     const mine = st.id === sel.id;
-    const lead = cleanBody(sel.body || '');
-    const fetched = mine ? st.body : '';
+    const lead0 = cleanBody(sel.body || '');
+    const lead = lead0 && titleOk(sel.ko, lead0) ? lead0 : ''; // 제목과 무관한 리드(매체 소개문 등)는 쓰지 않는다
+    const fetched = mine ? nm(st.body) : '';
     const text = fetched && fetched.length >= lead.length * 0.8 ? fetched : (lead || fetched);
     const isFull = !!fetched && fetched.length > Math.max(420, lead.length + 40);
     const loading = mine ? st.loading : true;
@@ -101,7 +104,8 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     const viewUrl = sel.gurl && /^https?:\/\//i.test(sel.gurl) ? sel.gurl : realUrl;
     const terms = findTerms(`${sel.ko} ${text}`, 8);
     const when = fmtDate(itemMs(sel)) + (sel.time ? ' ' + sel.time : '');
-    const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? ko.p[pi] : '');
+    // 번역문에 섞여 나온 한자 표기("伦敦(런던)")는 괄호 속 한글만 남긴다
+    const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? nm(String(ko.p[pi] || '').replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '');
     const koNode = (pi, sub) => {
         const t = koOf(pi);
         if (!t)
@@ -149,10 +153,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
                     React.createElement(Tag, { tone: "dark" }, sel.catLabel),
                     sel.cat !== '마켓' && sel.inst && (React.createElement("span", { onClick: () => onOpenInst && onOpenInst(sel), style: { font: F(600, 13), color: KB.gray, cursor: onOpenInst ? 'pointer' : 'default' } }, sel.inst)),
-                    React.createElement("span", { style: { font: F(500, 13), color: KB.mute } },
-                        sel.assetLabel,
-                        " \u00B7 ",
-                        sel.regionLabel)),
+                    React.createElement("span", { style: { font: F(500, 13), color: KB.mute } }, [sel.assetLabel, sel.regionLabel].filter(Boolean).join(' · '))),
                 React.createElement("h1", { style: { font: F(700, desktop ? 26 : 23, 1.4), color: KB.ink, letterSpacing: '-.025em', margin: '12px 0 0', wordBreak: 'keep-all', overflowWrap: 'anywhere' } }, sel.ko),
                 sel.tko && React.createElement("div", { style: { font: F(600, isEn ? 19 : 17, 1.45), color: KB.ko, marginTop: 8, wordBreak: 'keep-all' } }, sel.tko),
                 React.createElement("div", { style: { font: F(500, 13), color: KB.mute, marginTop: 12, paddingBottom: 18, borderBottom: `1px solid ${KB.line}` } },
@@ -181,15 +182,16 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                     : loading ? React.createElement(BodySkeleton, null)
                         : (mine && st.dead)
                             ? React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 } }, "\uC6D0\uBB38 \uAE30\uC0AC\uAC00 \uC0AD\uC81C\uB418\uC5B4 \uB354 \uC774\uC0C1 \uBCFC \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC74C \uC218\uC9D1 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uBE60\uC9D1\uB2C8\uB2E4.")
-                            : React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 } }, "\uC5B8\uB860\uC0AC \uBCF4\uC548 \uC815\uCC45(\uC720\uB8CC\u00B7\uC811\uADFC \uC81C\uD55C)\uC73C\uB85C \uBCF8\uBB38\uC744 \uAC00\uC838\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC544\uB798 \u2018\uC6D0\uBB38 \uBCF4\uAE30\u2019\uB85C \uD655\uC778\uD558\uC138\uC694."),
+                            : React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 } },
+                                "\uC5B8\uB860\uC0AC \uBCF4\uC548 \uC815\uCC45(\uC720\uB8CC\u00B7\uC811\uADFC \uC81C\uD55C)\uC73C\uB85C \uBCF8\uBB38\uC744 \uAC00\uC838\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC544\uB798 \u2018\uC6D0\uBB38 \uBCF4\uAE30\u2019\uB85C \uD655\uC778\uD558\uC138\uC694.",
+                                realUrl && React.createElement("span", { onClick: () => setRetryOf({ id: sel.id, n: retry + 1 }), role: "button", style: { display: 'inline-block', marginLeft: 6, font: F(600, 13.5), color: KB.gray, textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' } }, "\uB2E4\uC2DC \uC2DC\uB3C4")),
                 !loading && paragraphs.length > 0 && !isFull && realUrl && (React.createElement("div", { style: { font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 } }, sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '언론사 보안 정책(유료·접근 제한)으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.')),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     viewUrl && React.createElement(Btn, { href: viewUrl, icon: "external", full: true }, "\uC6D0\uBB38 \uBCF4\uAE30"),
                     React.createElement(Btn, { kind: "secondary", icon: "share", onClick: onShare, style: { flex: viewUrl ? '0 0 auto' : 1, width: viewUrl ? 'auto' : '100%' } }, "\uACF5\uC720")),
-                React.createElement("div", { style: { font: F(400, 12, 1.7), color: KB.mute, marginTop: 12 } },
-                    "\uBCF8\uBB38 \uCD9C\uCC98 ",
-                    sel.source,
-                    ". \uAD11\uACE0\u00B7\uAD00\uB828\uAE30\uC0AC\u00B7\uAE30\uC790 \uC815\uBCF4\u00B7\uC0AC\uC9C4 \uC124\uBA85 \uB4F1 \uAE30\uC0AC \uB0B4\uC6A9\uACFC \uBB34\uAD00\uD55C \uBD80\uBD84\uC740 \uC790\uB3D9\uC73C\uB85C \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4. \uD575\uC2EC \uBB38\uC7A5 \uD45C\uC2DC\uB294 \uAE08\uC561\u00B7\uCD9C\uC790\u00B7\uC778\uC218 \uAC19\uC740 \uD45C\uD604\uC744 \uAE30\uC900\uC73C\uB85C \uACE0\uB978 \uCC38\uACE0\uC6A9\uC785\uB2C8\uB2E4."),
+                React.createElement("div", { style: { font: F(400, 12, 1.7), color: KB.mute, marginTop: 12 } }, paragraphs.length
+                    ? `본문 출처 ${sel.source}. 광고·관련기사·기자 정보·사진 설명 등 기사 내용과 무관한 부분은 자동으로 제외했습니다. 핵심 문장 표시는 금액·출자·인수 같은 표현을 기준으로 고른 참고용입니다.`
+                    : `출처 ${sel.source}`),
                 deals && deals.length > 0 && (React.createElement("div", { style: { marginTop: 34 } },
                     React.createElement("div", { style: { font: F(700, 17), color: KB.ink, paddingBottom: 10, borderBottom: `2px solid ${KB.ink}` } }, "\uC774 \uAE30\uC0AC\uC758 \uD22C\uC790\uB0B4\uC5ED"),
                     clusterDeals(deals).map((c, i) => React.createElement(DealRow, { key: c.key + i, c: c, first: true, showInst: true, onInst: onOpenInst ? (e) => onOpenInst(e) : null })))),

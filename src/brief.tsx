@@ -304,7 +304,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
   const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg }}>
-      <TopBar big title={b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황'} sub={b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다'}
+      <TopBar big title={b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황'} sub={b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다'}
         right={isLatest && (
           <div onClick={onRefreshLive} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub }}>
             {liveAt && <span style={{ width: 6, height: 6, borderRadius: 3, background: KB.pos }}></span>}
@@ -333,7 +333,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
               <Section first title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
                 {top ? (
                   <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>
-                    <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{top.title}</div>
+                    <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(top.title)}</div>
                     <div style={{ font: F(500, 12.5), color: KB.sub, marginTop: 6 }}>{top.source}</div>
                   </a>
                 ) : <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>}
@@ -342,7 +342,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                   <a key={i} href={w.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
                     <span style={{ width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 }}></span>
                     <span style={{ flex: 1 }}>
-                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{w.title}</span>
+                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{nm(w.title)}</span>
                       <span style={{ display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 }}>{w.source}</span>
                     </span>
                   </a>
@@ -390,7 +390,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                   <div style={desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {}}>
                     {rest.map((it, i) => (
                       <a key={i} href={it.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` }}>
-                        <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{it.title}</div>
+                        <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{nm(it.title)}</div>
                         <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{it.source}</div>
                       </a>
                     ))}
@@ -410,6 +410,8 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
   );
 }
 
+// '20260927' → '9월 27일'
+const briefDay = (k) => { const m = String(k || '').match(/^(\d{4})(\d{2})(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : String(k || ''); };
 // 홈 상단 요약 카드 — 오늘의 시황 한눈에
 function BriefDigest({ market, onOpen }) {
   if (!market || !Array.isArray(market.kr)) return null;
@@ -419,7 +421,7 @@ function BriefDigest({ market, onOpen }) {
     <div onClick={onOpen} style={{ margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 12, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ font: F(700, 14.5), color: KB.ink }}>오늘의 시황</span>
-        <span style={{ font: F(500, 12), color: KB.mute }}>{market.dateKey}</span>
+        <span style={{ font: F(500, 12), color: KB.mute }}>{briefDay(market.dateKey)}</span>
         <span style={{ marginLeft: 'auto', color: KB.faint }}><Ico n="chevron" size={17} sw={2} /></span>
       </div>
       <div style={{ font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(marketHeadlines(market.issues)[0] || {}).title || market.summary}</div>

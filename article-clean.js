@@ -124,7 +124,11 @@
   function clean(input, opts) {
     const title = (opts && opts.title) || '';
     let paras = Array.isArray(input) ? input.slice() : String(input || '').split(/\n+/);
+    // 말줄임으로 잘린 요약(og:description) 뒤에 다른 글이 붙어 온 경우(“…관련 투자 기..  한국 남자 농구…”) 그 자리에서 나눈다
+    paras = paras.flatMap((p) => String(p || '').split(/(?<=[가-힣A-Za-z0-9]\.\.|…)[ \t ]{2,}(?=\S)/));
     paras = paras.map((p) => String(p || '').replace(/\r/g, '').replace(/[ \t ]+/g, ' ').trim()).filter(Boolean);
+    // 잘린 요약 단락(끝이 '..'·'…')은 뒤에 본문이 이어지면 버린다 — 본문과 중복이거나 다른 기사로 넘어가는 경계다
+    paras = paras.filter((p, i) => !(i < paras.length - 1 && /(?:[가-힣A-Za-z0-9]\.\.|…)$/.test(p)));
 
     const out = [];
     const seen = [];
@@ -216,5 +220,94 @@
     return blocks;
   }
 
-  return { clean, cleanText, paragraphsFromNode, isSentencey };
+  // ── 제목-본문 일치 검사 ──
+  // 프록시·리디렉트 문제로 다른 기사(예: 국민연금 기사 자리에 북한 DMZ 기사)가 본문으로 들어오는 것을
+  // 막는다. 제목의 핵심 단어(국문 2자 이상 어간, 영문 3자 이상, 숫자)가 본문 앞부분에 충분히 나와야 한다.
+  const STOP_KO = /^(?:관련|기자|뉴스|단독|종합|속보|오늘|내년|올해|지난|이번|위해|대한|통해|위한|것으로|있다|했다|한다|밝혔다|전망|확대|추진|검토|규모|최대|최고|사상|첫|새|더)$/;
+  const STOP_EN = new Set('the and for with from into over after amid about than that this its their his her new has have will are was were been more most first says said report reports update updated exclusive news how why what who inc ltd llc plc group'.split(' '));
+  function titleTokens(title) {
+    const t = String(title || '').replace(/\[[^\]]{0,20}\]|【[^】]{0,20}】/g, ' ');
+    const out = new Set();
+    for (const w of t.match(/[가-힣]{2,}/g) || []) {
+      const stem = w.replace(/(?:으로부터|로부터|에서는|에게서|으로|에서|에게|까지|부터|이다|이며|하고|하며|했다|한다|은|는|이|가|을|를|의|에|로|와|과|도|만|서)$/, '');
+      if (stem.length >= 2 && !STOP_KO.test(stem)) out.add(stem.slice(0, 4));
+    }
+    for (const w of t.match(/[A-Za-z][A-Za-z0-9&'’-]{2,}/g) || []) {
+      const lw = w.toLowerCase().replace(/['’]s$/, '');
+      if (!STOP_EN.has(lw)) out.add(lw);
+    }
+    for (const w of t.match(/\d[\d.,]*/g) || []) if (w.replace(/\D/g, '').length >= 2) out.add(w.replace(/[.,]$/, ''));
+    return [...out];
+  }
+  // ── 해외 기관·인명은 영문 원어로 ─────────────────────────────
+  // 국내 언론·번역문이 한글로 음역한 해외 운용사·기관·인물 이름을 원래 영문 표기로 되돌린다.
+  // (한국 기관·한국인 이름은 그대로.) 긴 이름을 먼저 둔다. 오탐이 없도록 금융 맥락에서
+  // 사실상 한 가지 뜻으로만 쓰이는 표기만 넣었다.
+  const EN_NAMES = [
+    // 인물
+    [/스티븐\s?슈워?츠먼/g, 'Stephen Schwarzman'], [/슈워?츠먼/g, 'Schwarzman'], [/존\s?그레이(?=\s|[은는이가을를의와과도,·]|$)/g, 'Jon Gray'],
+    [/래리\s?핑크/g, 'Larry Fink'], [/헨리\s?크래비스/g, 'Henry Kravis'], [/마크\s?로완/g, 'Marc Rowan'], [/브루스\s?플랫/g, 'Bruce Flatt'],
+    [/데이비드\s?루벤스타인/g, 'David Rubenstein'], [/조(?:셉)?\s?바라타/g, 'Joe Baratta'], [/바라타(?=\s|[은는이가을를의와과도,·]|$)/g, 'Baratta'],
+    [/제롬\s?파월/g, 'Jerome Powell'], [/파월(?=\s?(?:의장|연준|Fed)|[은는이가을를의와과도,·]|\s|$)/g, 'Powell'],
+    [/도널드\s?트럼프/g, 'Donald Trump'], [/트럼프/g, 'Trump'], [/스콧\s?베센트/g, 'Scott Bessent'], [/베센트/g, 'Bessent'],
+    [/워런\s?버핏/g, 'Warren Buffett'], [/일론\s?머스크/g, 'Elon Musk'], [/젠슨\s?황/g, 'Jensen Huang'], [/칼\s?아이칸/g, 'Carl Icahn'],
+    [/일함\s?알리예프/g, 'Ilham Aliyev'],
+    // 운용사·기관
+    [/블랙스톤/g, 'Blackstone'], [/블랙록/g, 'BlackRock'], [/골드만\s?삭스/g, 'Goldman Sachs'], [/모건\s?스탠리/g, 'Morgan Stanley'],
+    [/(?:JP|제이피)\s?모[건간]\s?체이스/g, 'JPMorgan Chase'], [/(?:JP|제이피)\s?모[건간]/g, 'JPMorgan'],
+    [/아폴로\s?글로벌(?:\s?매니지먼트)?/g, 'Apollo Global Management'], [/아폴로/g, 'Apollo'], [/칼라일(?:\s?그룹)?/g, 'Carlyle'],
+    [/브룩필드\s?(?:자산운용|에셋\s?매니지먼트)/g, 'Brookfield Asset Management'], [/브룩필드/g, 'Brookfield'],
+    [/베인\s?캐피[탈털]\s?벤처스/g, 'Bain Capital Ventures'], [/베인\s?캐피[탈털]/g, 'Bain Capital'], [/어드벤트\s?인터내셔널/g, 'Advent International'],
+    [/퍼미라/g, 'Permira'], [/워버그\s?핀커스/g, 'Warburg Pincus'], [/실버\s?레이크/g, 'Silver Lake'], [/토마\s?브라보/g, 'Thoma Bravo'],
+    [/제너럴\s?애틀랜틱/g, 'General Atlantic'], [/헬먼\s?(?:앤드?|&)\s?프리드먼/g, 'Hellman & Friedman'], [/오크트리(?:\s?캐피[탈털])?/g, 'Oaktree'],
+    [/식스\s?스트리트/g, 'Sixth Street'], [/블루\s?아울/g, 'Blue Owl'], [/골럽\s?캐피[탈털]/g, 'Golub Capital'], [/핌코/g, 'PIMCO'],
+    [/스톤피크/g, 'Stonepeak'], [/디지털\s?브리지/g, 'DigitalBridge'], [/맥쿼리\s?자산운용/g, 'Macquarie Asset Management'], [/맥쿼리/g, 'Macquarie'],
+    [/스타우드\s?캐피[탈털]/g, 'Starwood Capital'], [/누빈/g, 'Nuveen'], [/아르?디안/g, 'Ardian'], [/(?<![가-힣A-Za-z])파트너스\s?그룹/g, 'Partners Group'],
+    [/해밀턴\s?레인/g, 'Hamilton Lane'], [/스텝스톤/g, 'StepStone'], [/하버베스트/g, 'HarbourVest'], [/판테온/g, 'Pantheon'],
+    [/렉싱턴\s?파트너스/g, 'Lexington Partners'], [/콜러\s?캐피[탈털]/g, 'Coller Capital'], [/(?:뉴|노이)버거\s?버먼/g, 'Neuberger Berman'],
+    [/론스타/g, 'Lone Star'], [/서버러스/g, 'Cerberus'], [/포트리스/g, 'Fortress'], [/티시먼\s?스파이어/g, 'Tishman Speyer'],
+    [/아레스\s?매니지먼트/g, 'Ares Management'], [/(?<![가-힣])아레스(?=\s|[은는이가을를의와과도,·]|$)/g, 'Ares'], [/아팩스|에이펙스\s?파트너스/g, 'Apax'], [/신벤/g, 'Cinven'],
+    [/인베스코/g, 'Invesco'], [/피델리티/g, 'Fidelity'], [/뱅가드/g, 'Vanguard'], [/알리안츠/g, 'Allianz'], [/슈로더/g, 'Schroders'],
+    [/노무라/g, 'Nomura'], [/소프트뱅크/g, 'SoftBank'], [/캘퍼스/g, 'CalPERS'], [/캘스타스/g, 'CalSTRS'], [/테마섹/g, 'Temasek'], [/무바달라/g, 'Mubadala'],
+    [/싱가포르투자청/g, 'GIC'], [/아부다비투자청/g, 'ADIA'], [/캐나다연금투자위원회|CPP\s?인베스트먼츠?/g, 'CPP Investments'],
+    [/온타리오\s?교원연금/g, "Ontario Teachers'"], [/세쿼이아(?:\s?캐피[탈털])?/g, 'Sequoia'], [/앤드리슨\s?호로위츠/g, 'Andreessen Horowitz'],
+    [/뱅크\s?오브\s?아메리카/g, 'Bank of America'], [/도이(?:치|체)\s?(?:뱅크|방크)/g, 'Deutsche Bank'], [/바클레이즈/g, 'Barclays'],
+    [/BNP\s?파리바/g, 'BNP Paribas'], [/미즈호/g, 'Mizuho'], [/엔비디아/g, 'Nvidia'], [/마이크로소프트/g, 'Microsoft'],
+    [/클리프워터/g, 'Cliffwater'], [/액티스/g, 'Actis'], [/콕스\s?캐피[털탈]/g, 'Cox Capital'], [/사바\s?캐피[털탈]/g, 'Saba Capital'], [/온도\s?파이낸스/g, 'Ondo Finance'],
+    [/HPS\s?코퍼레이트\s?렌딩\s?펀드/g, 'HPS Corporate Lending Fund'], [/릴라이언스\s?월드와이드/g, 'Reliance Worldwide'], [/오스탈/g, 'Austal'], [/메리어트/g, 'Marriott'], [/쉐라톤/g, 'Sheraton'],
+    [/오라클/g, 'Oracle'], [/구글/g, 'Google'], [/아마존/g, 'Amazon'], [/오픈\s?AI/g, 'OpenAI'], [/존슨\s?(?:앤드?|&)\s?존슨/g, 'Johnson & Johnson'], [/나스닥/g, 'Nasdaq'],
+    [/블룸버그/g, 'Bloomberg'], [/로이터/g, 'Reuters'], [/파이낸셜\s?타임스/g, 'Financial Times'], [/월스트리트저널/g, 'Wall Street Journal'],
+  ];
+  // 영문으로 바꾼 이름 바로 뒤에 조사가 아닌 한글 단어가 붙으면 띄어 쓴다(예: Macquarie자산운용 → Macquarie 자산운용)
+  const PARTICLE = /^(?:으로|에서|에게|까지|부터|께서|처럼|보다|이나|이랑|라고|은|는|이|가|을|를|의|와|과|도|에|로|만|나|랑|측)/;
+  function enNames(s) {
+    if (!s || !/[가-힣]/.test(s)) return s;
+    let t = String(s);
+    for (const [re, en] of EN_NAMES) {
+      re.lastIndex = 0;
+      if (!re.test(t)) continue;
+      re.lastIndex = 0;
+      t = t.replace(re, (m, ...args) => {
+        const str = args[args.length - 1], off = args[args.length - 2];
+        const rest = str.slice(off + m.length);
+        return /^[가-힣]/.test(rest) && !PARTICLE.test(rest) ? en + ' ' : en;
+      });
+    }
+    return t;
+  }
+
+  function matchesTitle(title, text) {
+    title = enNames(title); text = enNames(String(text || '').slice(0, 3000));
+    const toks = titleTokens(title);
+    if (toks.length < 2) return true;                         // 판단할 단서가 부족하면 통과
+    const body = String(text || '').slice(0, 3000).toLowerCase();
+    let hits = 0;
+    for (const k of toks) if (body.includes(k.toLowerCase())) hits++;
+    // 짧은 리드(부제·요약): 제목 핵심어가 하나라도 있으면 통과. 하나도 없으면 매체 소개문 등 엉뚱한 글이다(“…프리미엄 뉴스를 제공합니다”)
+    if (body.length < 400) return hits >= 1 || toks.length < 3;
+    const subjectHit = body.includes(toks[0].toLowerCase());   // 제목 첫 단어(대개 주체 기관)
+    return hits >= 3 || hits / toks.length >= 0.34 || (hits >= 2 && subjectHit);
+  }
+
+  return { clean, cleanText, paragraphsFromNode, isSentencey, matchesTitle, titleTokens, enNames };
 });

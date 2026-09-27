@@ -262,7 +262,7 @@ async function geminiRaw(prompt, maxTok) {
   }
   return null;
 }
-const TR_RULES = '해외대체투자(사모펀드·사모대출·인프라·부동산·항공기금융) 전문 기자처럼 자연스러운 한국어로 옮긴다. 사실·숫자·통화 단위는 그대로 두고 금액은 "$5bn → 50억 달러"처럼 한국식으로 쓴다. 운용사·기관 이름은 국내 언론 관행대로 한글로 쓰고(예: Blackstone → 블랙스톤, KKR 은 KKR), 업계 용어는 국내 통용 표현(LP·GP, 펀드레이징, 캐피탈콜, 세컨더리, 사모대출 등)을 쓴다. 뜻을 더하거나 빼지 않는다.';
+const TR_RULES = '해외대체투자(사모펀드·사모대출·인프라·부동산·항공기금융) 전문 기자처럼 자연스러운 한국어로 옮긴다. 사실·숫자·통화 단위는 그대로 두고 금액은 "$5bn → 50억 달러"처럼 한국식으로 쓴다. 사람·회사·운용사·기관·펀드·상품 이름은 한글로 음역하지 말고 원문의 영문 표기를 그대로 쓴다(예: Blackstone, KKR, Apollo, Stephen Schwarzman, CalPERS, Blackstone Real Estate Partners X — "블랙스톤"처럼 쓰지 않는다). 단, 한국 기관·한국 기업·한국인은 한글 공식 명칭을 쓴다(예: National Pension Service → 국민연금, Korea Investment Corp → 한국투자공사, Lee Kyu-hong → 이규홍). 국가·도시 등 지명은 한글로 쓴다. 업계 용어는 국내 통용 표현(LP·GP, 펀드레이징, 캐피탈콜, 세컨더리, 사모대출 등)을 쓴다. 뜻을 더하거나 빼지 않는다.';
 const parseJsonArr = (text) => { const m = String(text || '').match(/\[[\s\S]*\]/); try { const v = JSON.parse(m ? m[0] : text); return Array.isArray(v) ? v : null; } catch { return null; } };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 // 영문 제목 여러 개 → 한국어 제목 배열(같은 순서)
@@ -277,11 +277,13 @@ async function translateParas(title, paras) {
   const out = parseJsonArr(await llmRaw(prompt, 8192));
   return out && out.length === paras.length ? out.map((x) => String(x || '').trim()) : null;
 }
-// 본문이 바뀌면 번역을 다시 하도록 원문 문단의 짧은 지문을 함께 저장한다
+// 본문이 바뀌면 번역을 다시 하도록 원문 문단의 짧은 지문을 함께 저장한다.
+// TV(번역 규칙 버전)가 바뀌면 최근 기사의 제목·본문 번역을 새 규칙으로 다시 한다.
+const TV = 2;                                  // 2: 해외 인명·기관명은 영문 유지
 function parasHash(paras) {
   let h = 0; const s = paras.join('\n');
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return (h >>> 0).toString(36) + ':' + paras.length;
+  return 'v' + TV + ':' + (h >>> 0).toString(36) + ':' + paras.length;
 }
 export function enParas(body) {
   return String(body || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
@@ -293,7 +295,7 @@ const FRX_BUDGET = 40;
 async function extractFundLLM(a) {
   const body = String(a.body || '').slice(0, 3500);
   const prompt = `You extract private-markets fundraising facts from a news article. Use ONLY facts stated in the text; leave a field "" if not stated. Output ONLY JSON:
-{"fund":"official fund name exactly as written (e.g. \"Blackstone Real Estate Partners X\", \"KKR Global Infrastructure Investors V\"); \"\" if no specific fund is named","manager":"fund manager / GP name","stage":"one of: launch, first_close, interim_close, final_close, close, none","amount":"amount raised at this stage as written (e.g. $5.2bn)","target":"fundraising target as written","hardcap":"hard cap as written","date":"YYYY-MM-DD date the close/launch happened if the text states it, else \"\"","strategy":"one of: Private Equity, Infrastructure, Real Estate, Private Credit, Secondaries, Venture Capital, Aviation, Other"}
+{"fund":"official fund name in English (Latin script) exactly as the fund is officially called; if the article is in Korean and gives only a Korean name, keep it as written; never translate an English name into Korean (e.g. \"Blackstone Real Estate Partners X\", \"KKR Global Infrastructure Investors V\"); \"\" if no specific fund is named","manager":"the firm that manages and is raising THIS fund (not other firms merely mentioned, e.g. the manager of a fund being bought in a tender offer)","stage":"one of: launch, first_close, interim_close, final_close, close, none (use none if the article is not about raising capital for a fund, e.g. tender offers, secondary share purchases, deals, earnings)","amount":"amount raised at this stage as written (e.g. $5.2bn)","target":"fundraising target as written","hardcap":"hard cap as written","date":"YYYY-MM-DD date the close/launch happened if the text states it, else \"\"","strategy":"one of: Private Equity, Infrastructure, Real Estate, Private Credit, Secondaries, Venture Capital, Aviation, Other"}
 Article date: ${a.ts ? a.ts.slice(0, 10) : ''}
 TITLE: ${a.ko}
 TEXT: ${body}`;
@@ -330,12 +332,12 @@ async function translatePass(list) {
   const cut = new Date(Date.now() - TR_DAYS * 86400000).toISOString();
   const en = list.filter((a) => a.lang === 'en' && (a.ts || '') >= cut).sort((x, y) => (x.ts < y.ts ? 1 : -1));
   let titles = 0, bodies = 0, calls = 0;
-  const needT = en.filter((a) => !a.tko);
+  const needT = en.filter((a) => !a.tko || a.tv !== TV);
   for (let i = 0; i < needT.length && calls < TITLE_CALLS * (claudeOn() ? 4 : 1) && !llmDone(); i += TITLE_BATCH) {
     const chunk = needT.slice(i, i + TITLE_BATCH);
     const out = await translateTitles(chunk.map((a) => a.ko));
     calls++;
-    if (out) chunk.forEach((a, k) => { if (out[k] && /[가-힣]/.test(out[k])) { a.tko = out[k]; titles++; } });
+    if (out) chunk.forEach((a, k) => { if (out[k] && /[가-힣]/.test(out[k])) { a.tko = AC.enNames(out[k]); a.tv = TV; titles++; } });
     await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   let bcalls = 0;
@@ -350,7 +352,7 @@ async function translatePass(list) {
     if (a.bodyKo && a.bodyKo.h === h) continue;
     const out = await translateParas(a.tko || a.ko, paras);
     bcalls++;
-    if (out) { a.bodyKo = { h, n: paras.length, p: out }; bodies++; }
+    if (out) { a.bodyKo = { h, n: paras.length, p: out.map((x) => AC.enNames(x.replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1'))) }; bodies++; }   // "伦敦(런던)" 같은 한자 섞임 정리
     await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   return { titles, bodies };
@@ -493,6 +495,7 @@ const KOREAN_LPS = [
 // 해외 글로벌 운용사(Global GP). 약칭 충돌을 피하려고 짧은 이름엔 \b 경계 사용.
 const FOREIGN_GPS = [
   [/blackstone|블랙스톤/i, 'Blackstone', '해외 GP'],
+  [/goldman sachs (?:alternatives|asset management)|goldman sachs|골드만\s?삭스/i, 'Goldman Sachs', '해외 GP'],
   [/\bKKR\b/i, 'KKR', '해외 GP'],
   [/apollo (?:global|management)|아폴로/i, 'Apollo', '해외 GP'],
   [/carlyle|칼라일/i, 'Carlyle', '해외 GP'],
@@ -884,6 +887,7 @@ const DEAL_KINDS = [
   // 세컨더리 '거래'만 — "세컨더리 운용사 인수"처럼 수식어로만 쓰인 경우는 인수로 본다
   ['세컨더리', /continuation (?:fund|vehicle)|컨티뉴에이션|\bGP-led\b|\bLP-led\b|tender offer|세컨더리\s*(?:거래|매각|매입|딜|인수|투자|펀드에)|secondar(?:y|ies)\s+(?:deal|sale|transaction|stake|purchase|buy)/i],
   ['펀드 출자', /출자|약정|커밋|\bcommit(?:s|ted|ment)?\b|\banchor|앵커|투자\s*확약/i],
+  ['매각', /\b(?:exits?|exited|sells?|sold|divests?|offloads?)\b[^.]{0,25}\bstake\b|지분\s*(?:전량\s*)?(?:매각|처분)/i],   // "exits stake in …"는 인수가 아니라 매각
   ['인수', /인수|매입|사들(?:여|였|인|이)|\bacquir(?:e|es|ed|ing)\b|\bbuys?\b|\bbought\b|take[- ]private|\bstake in\b/i],
   ['매각', /매각|엑시트|\bexit(?:s|ed)?\b|\bsells?\b|\bsold\b|divest/i],
   ['대출·크레딧', /대출|리파이낸싱|브릿지\s*론|메자닌|\bfinancing\b|\bloans?\b|\blending\b|refinanc/i],
@@ -903,6 +907,8 @@ const NON_EVENT_RE = new RegExp([
   'insider|shares? (?:sold|bought)|price target|\\bstock\\b|rejects?|scraps?|abandon|calls? off|outlook|webinar',
   // 임원 거취 ("PE chief … in talks to exit", "executive prepares exit")
   '\\b(?:chief|executive|head|ceo|cio|cfo|coo|partner|president|chair(?:man|woman)?|founder|managing director)\\b[^.]{0,50}\\b(?:exit|exits|leave|leaves|leaving|depart(?:s|ure)?|step(?:s|ping)? down|retire(?:s|ment)?|resign(?:s|ation)?)\\b',
+  // 인물 이름 + Exit("… With Baratta Exit", "Dealmakers") — 사람의 퇴장이지 자산 매각이 아니다
+  '\\bdealmakers?\\b|\\b[A-Z][a-z]+(?:’s|\'s)?\\s+(?:exit|departure)\\b(?![^.]{0,20}\\b(?:from|of|stake|deal|sale)\\b)',
   '\\bpromot(?:es|ed|ion|ions)\\b|\\bappoint(?:s|ed|ment)\\b|\\bhires?\\b|\\bhired\\b|\\bnames?\\b[^.]{0,40}\\b(?:head|chief|ceo|cio|partner|president)\\b',
   // 신용등급·시장 논평·주식 리서치
   '\\b(?:fitch|moody\'?s|kbra|dbrs|s&p global ratings)\\b|\\b(?:upgrade[sd]?|downgrade[sd]?|affirm(?:s|ed)?)\\b',
@@ -1073,12 +1079,12 @@ export function buildInvestments(articles, prevItems = []) {
 export const FR_ORDER = ['모집 중', '1차 클로즈', '중간 클로즈', '클로즈', '파이널 클로즈'];
 const FR_STAGES = [
   ['파이널 클로즈', /파이널\s*클로(?:즈|징)|최종\s*클로(?:즈|징)|최종\s*결성|결성\s*(?:완료|마무리)|final\s*clos|hard[- ]?cap|하드캡/i],
-  ['중간 클로즈', /(?:중간|2차|3차|두\s*번째)\s*클로(?:즈|징)|interim\s*clos|second\s*clos|third\s*clos/i],
+  ['중간 클로즈', /(?:중간|2차|3차|두\s*번째)\s*클로(?:즈|징)|interim\s*clos|second\s*clos|third\s*clos|\bsurpass(?:es|ed)?\b(?!.{0,40}\bfinal)/i],
   ['1차 클로즈', /1차\s*클로(?:즈|징)|퍼스트\s*클로(?:즈|징)|첫\s*클로(?:즈|징)|first\s*clos/i],
-  ['클로즈', /클로(?:즈|징)|결성(?:했|을|식|한)|\bclose[sd]?\b|\bclosing\b|\braised\b|\bsurpass(?:es|ed)?\b|\btops?\b.{0,20}\btarget\b|\bhits?\b.{0,20}\btarget\b/i],
+  ['클로즈', /클로(?:즈|징)|결성(?:했|을|식|한)|\bclose[sd]?\b|\bclosing\b|\braised\b|\btops?\b.{0,20}\btarget\b|\bhits?\b.{0,20}\btarget\b/i],
   ['모집 중', /모집|조성(?:\s*중|한다|에\s*나서|\s*추진)|목표(?:로|액)|타깃|\btarget(?:ing|s)?\b|\braising\b|\blaunch(?:es|ed)?\b|\bseeks?\b|출범|\bmarket(?:ing|s)?\b.{0,15}\bfund\b/i],
 ];
-const FR_EXCLUDE = /환매|redemption|상장폐지|withdrawal|\bETF\b|mutual fund|pension fund|sovereign wealth fund|hedge fund|index fund|\bmuni|closed-end|\blisted\b|dividend|distribution (?:declar|rate)|\bNAV\b|share class|\bprofit\b|\breports?\b|위탁사로\s*선정|위탁운용사|딜\s*클로징|출자\s*사업/i;
+const FR_EXCLUDE = /환매|redemption|상장폐지|withdrawal|\bETF\b|mutual fund|pension fund|sovereign wealth fund|hedge fund|index fund|\bmuni|closed-end|\blisted\b|dividend|distribution (?:declar|rate)|\bNAV\b|share class|\bprofit\b|\breports?\b|위탁사로\s*선정|위탁운용사|딜\s*클로징|출자\s*사업|tender offer|공개\s*매수|share (?:sale|buyback)|stock|commentary|\breview\b|\bQ[1-4]\s*20\d\d/i;
 // 펀드 이름 — 영문 "…Partners IX / Fund XI / Fund 5", 국문 "…3호"
 const ORDINALS = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12 };
 const ROMAN = { I: 1, V: 5, X: 10, L: 50 };
@@ -1092,27 +1098,38 @@ export function fundNameOf(title, gp) {
     if (/^(?:Fund|Partners|Capital|Equity|Credit|Ventures)\s/i.test(name) && gp) return `${gp} ${name}`;
     if (name && !/^(?:The|A|An)\s/.test(name) && name.split(' ').length >= 2) return name;
   }
-  m = t.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|\d{1,2}(?:st|nd|rd|th))\s+(?:flagship\s+|debut\s+|new\s+)?((?:(?:secondaries|secondary|buyout|growth|infrastructure|infra|credit|debt|lending|real estate|property|venture|opportunities|opportunity|energy|climate|impact|european|europe|asia|asian|global|core|value-add|logistics|special situations)\s+){0,3})fund\b/i);
+  m = t.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|\d{1,2}(?:st|nd|rd|th))\s+(?:flagship\s+|debut\s+|new\s+)?((?:(?:secondaries|secondary|buyout|growth|infrastructure|infra|credit|debt|lending|real estate|property|venture|opportunities|opportunity|energy|climate|impact|european|europe|asia|asian|global|core|value-add|logistics|special situations|pe|private equity)\s+){0,3})fund\b/i);
   if (m && gp) {
     const n = ORDINALS[m[1].toLowerCase()] || parseInt(m[1], 10);
-    const kind = m[2].trim().replace(/\b(?:flagship|new|debut)\b/gi, '').trim();
-    return `${gp} ${kind ? kind.replace(/\b\w/g, (c) => c.toUpperCase()) + ' ' : ''}Fund ${n}`.replace(/\s+/g, ' ');
+    // 서수만 알 때는 공식명처럼 지어내지 않고 'N호 펀드'로 표기한다
+    return `${gp} ${n}호 펀드`;
   }
   m = t.match(/([가-힣A-Za-z0-9·]{2,20}(?:\s?[가-힣A-Za-z0-9·]{1,12}){0,2}\s?\d{1,2}호)/);
   if (m) return m[1].replace(/\s+/g, ' ').trim();
   return '';
 }
 // 운용사 — 추적 GP 가 아니면 영문 제목 맨 앞 주어("Connect Ventures hits…")를 운용사로 본다
+// 운용사(펀드를 모집하는 주체) — 제목의 '주어'만 인정한다. 제목 어딘가에 언급된 GP 를 붙이면
+// "Cox Capital, 블랙스톤 펀드 지분 공개매수"처럼 대상 펀드의 운용사로 잘못 귀속된다.
+function canonGp(name) {
+  const g = gpsIn(String(name || ''))[0];
+  return g ? g.inst : String(name || '').replace(/,?\s+(?:Inc\.?|LLC|L\.P\.|LP|Ltd\.?|plc|AG|SA|GmbH)$/i, '').trim();
+}
 function sponsorOf(a) {
-  const g = gpsIn(a.ko || '')[0];
-  if (g) return g.inst;
-  if (a.cat === 'GP' && a.inst) return a.inst;
-  const lp = lpsIn(a.ko || '')[0];                                  // 국내 운용사가 조성하는 펀드("신한자산운용, 1조 사모펀드 조성")
+  const title = String(a.ko || '');
+  const g = gpsIn(title)[0];
+  if (g && g.idx <= 2) return g.inst;                                   // 제목 맨 앞의 추적 GP = 주어
+  const lp = lpsIn(title)[0];                                           // 국내 운용사가 조성하는 펀드("신한자산운용, 1조 사모펀드 조성")
   if (lp && lp.idx <= 1 && ['자산운용사', '증권사'].includes(lp.instType)) return lp.inst;
-  const m = String(a.ko || '').match(/^((?:[^\s]+\s+){1,5}?)(?:closes|closed|raises|raised|hits|holds|reaches|surpasses|tops|launches|launched|to launch|targets|seeks|eyes|nears|wraps|completes|announces|expands|unveils)\b/i);
-  if (!m) return '';
-  const words = m[1].trim().replace(/(?:'s|’s)$/, '').split(/\s+/).filter((w) => !/^(?:GmbH|Ltd|LLC|Inc\.?|AG|SA|plc)$/i.test(w));
-  return words.length && words.every((w) => /^[A-Z0-9&]/.test(w)) ? words.join(' ') : '';
+  const m = title.match(/^((?:[^\s]+\s+){1,5}?)(?:closes|closed|raises|raised|hits|holds|reaches|surpasses|tops|launches|launched|to launch|targets|seeks|eyes|nears|wraps|completes|announces|expands|unveils)\b/i);
+  if (m) {
+    const words = m[1].trim().replace(/(?:'s|’s)$/, '').split(/\s+/).filter((w) => !/^(?:GmbH|Ltd|LLC|Inc\.?|AG|SA|plc)$/i.test(w));
+    while (words.length > 1 && /[’']$/.test(words[0])) words.shift();          // "Dallas’ Crow Holdings" → Crow Holdings
+    if (words.length && words.every((w) => /^[A-Z0-9&]/.test(w))) return canonGp(words.join(' '));
+  }
+  const ko = title.match(/^([^,…·\s][^,…]{1,24}),\s/);                  // "운용사명, …" 형식의 국문 제목
+  if (ko) { const gk = gpsIn(ko[1])[0]; if (gk) return gk.inst; }
+  return '';
 }
 const FR_AMT = /(?:US\$|A\$|\$|€|£|¥|₩)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|T|B|M)\b|[\d,.]+\s?조\s?(?:[\d,]+\s?억)?\s?원?|[\d,.]+\s?억\s?(?:원|달러|유로|엔)?/i;
 export function extractFundraising(a) {
@@ -1128,9 +1145,25 @@ export function extractFundraising(a) {
   if (size && target && size === target && hit[0] === '모집 중') size = '';
   return { stage: hit[0], size, target };
 }
+const title0 = (a) => String(a.ko || '');
 const FRX_STAGE = { launch: '모집 중', first_close: '1차 클로즈', interim_close: '중간 클로즈', final_close: '파이널 클로즈', close: '클로즈' };
 const STRAT_ASSET = { 'Private Equity': 'PE', Infrastructure: 'IN', 'Real Estate': 'RE', 'Private Credit': 'PC', Aviation: 'AV' };
-const normFund = (f) => String(f || '').toLowerCase().replace(/\b(?:fund|l\.?p\.?|scsp|the)\b/g, '').replace(/[^0-9a-z가-힣]/g, '');
+const ROMAN_N = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20 };
+// 펀드명 핵심부 — 운용사 이름·일반어(fund/partners/capital/L.P.)를 빼고 로마 숫자·'N호'를 숫자로 통일
+// 국문 음역 펀드명("웨스트 스트리트 캐피털 파트너스 9호")을 영문 펀드명과 맞대기 위한 낱말표
+const KO_FUND_WORDS = [[/웨스트/g, 'west'], [/이스트/g, 'east'], [/스트리트/g, 'street'], [/캐피[털탈]/g, 'capital'], [/파트너스/g, 'partners'], [/아시아/g, 'asia'],
+  [/에[쿼퀴]티/g, 'equity'], [/인프라스트럭처|인프라/g, 'infrastructure'], [/리얼\s?에스테이트/g, 'real estate'], [/크레디?트|크레딧/g, 'credit'], [/오퍼튜니티즈?/g, 'opportunities'],
+  [/글로벌/g, 'global'], [/세컨더리즈?/g, 'secondaries'], [/그로스/g, 'growth'], [/벤처스/g, 'ventures'], [/인컴/g, 'income'], [/인베스터스/g, 'investors'], [/펀드/g, 'fund'], [/스트래티직/g, 'strategic']];
+function fundCore(f, gp) {
+  let t = AC.enNames(String(f || ''));
+  for (const [re, w] of KO_FUND_WORDS) t = t.replace(re, ' ' + w + ' ');
+  t = t.toLowerCase().replace(/(\d+)\s*호/g, ' $1 ');
+  for (const w of AC.enNames(String(gp || '')).toLowerCase().split(/\s+/)) if (w.length > 1) t = t.replace(new RegExp(`\\b${w.replace(/[^a-z0-9]/g, '')}\\b`, 'g'), ' ');
+  t = t.replace(/\b(?:fund|funds|partners|capital|ventures|management|investments|investors|group|l\.?p\.?|scsp|the|and|of)\b/g, ' ');
+  t = t.replace(/\b([ivxl]{1,5})\b/g, (m) => (ROMAN_N[m] != null ? String(ROMAN_N[m]) : m));
+  return t.replace(/[^0-9a-z가-힣]/g, '');
+}
+const normFund = (f) => fundCore(f, '');
 const normAmt = (x) => String(x || '').toLowerCase().replace(/\s+/g, '').replace(/us\$/, '$').replace(/billion/, 'bn').replace(/million/, 'm');
 // 본문에서 펀드명 찾기(LLM 결과가 없을 때): 운용사 이름이 나온 문장 안의 "…Fund IV / Partners X"
 function fundNameFromBody(body, gp) {
@@ -1143,6 +1176,63 @@ function fundNameFromBody(body, gp) {
   }
   return '';
 }
+// 금액 문자열 → 미화 백만 달러(대략). 서로 다른 통화·표기('¥612bn' vs '$4B', '117억달러' vs '$11.7B')를 비교하기 위함
+const FX_USD = { '$': 1, usd: 1, 'us$': 1, 'a$': 0.66, aud: 0.66, 'c$': 0.73, cad: 0.73, '€': 1.08, eur: 1.08, '유로': 1.08, '£': 1.27, gbp: 1.27, '파운드': 1.27, '¥': 0.0067, jpy: 0.0067, '엔': 0.0067, '₩': 0.00072, krw: 0.00072, '원': 0.00072, '₹': 0.012, rs: 0.012, inr: 0.012, '루피': 0.012, r: 0.055, zar: 0.055, '₦': 0.00065, n: 0.00065, ngn: 0.00065, '나이라': 0.00065, '달러': 1 };
+export function usdMn(str) {
+  const t = String(str || '').replace(/,/g, '').trim();
+  if (!t) return 0;
+  let m = t.match(/([\d.]+)\s*조\s*(?:([\d.]+)\s*억)?\s*(원|달러|유로|엔)?/);
+  if (m) { const v = (+m[1] * 1e12 + (m[2] ? +m[2] * 1e8 : 0)); return v * (FX_USD[m[3] || '원'] || FX_USD['원']) / 1e6; }
+  m = t.match(/([\d.]+)\s*억\s*(원|달러|유로|엔|파운드|루피)?/);
+  if (m) return +m[1] * 1e8 * (FX_USD[m[2] || '원'] || FX_USD['원']) / 1e6;
+  m = t.match(/(us\$|a\$|c\$|\$|€|£|¥|₩|₹|₦|\brs\.?|\busd|\beur|\bgbp|\bjpy|\binr|\bngn|\bzar|\bR(?=\d)|\bN(?=\d))?\s*([\d.]+)\s*(trillion|tn|billion|bn|b|million|mn|m|crore|cr|lakh)?\b/i);
+  if (!m || !m[2]) return 0;
+  const cur = (m[1] || '$').toLowerCase().replace('.', '');
+  const unit = (m[3] || '').toLowerCase();
+  const mult = /^(?:trillion|tn)$/.test(unit) ? 1e12 : /^(?:billion|bn|b)$/.test(unit) ? 1e9 : /^(?:million|mn|m)$/.test(unit) ? 1e6 : /^(?:crore|cr)$/.test(unit) ? 1e7 : unit === 'lakh' ? 1e5 : 1;
+  const fx = FX_USD[cur] != null ? FX_USD[cur] : 1;
+  return +m[2] * mult * fx / 1e6;
+}
+// 국문 금액 '96억달러' → '$9.6bn' (펀드 금액 표기를 영문 기사와 맞춘다)
+function fmtFundAmt(s) {
+  const t = String(s || '').replace(/\s+/g, '');
+  const m = t.match(/^(?:약)?([\d,.]+)억(달러|유로)(?:이상)?$/);
+  if (!m) return String(s || '').trim();
+  const v = parseFloat(m[1].replace(/,/g, '')) / 10;           // 억 → bn
+  const sym = m[2] === '달러' ? '$' : '€';
+  return v >= 1 ? `${sym}${+v.toFixed(2)}bn` : `${sym}${Math.round(v * 1000)}m`;
+}
+// 운용사 판정 보조: LP가 앵커·출자한 기사("Hashed anchors … fund")의 주어는 운용사가 아니다
+const ANCHOR_RE = /\b(?:anchors?|anchored|backs|backed|commits?\s+(?:to|\$|€|£)|invests?\s+(?:\$[\d.]+\w*\s+)?in)\b/i;
+function managedBy(body) {
+  const m = String(body || '').match(/\b(?:managed|run|operated|sponsored|advised)\s+by\s+((?:[A-Z][\w&.'’-]*\s?){1,5})/);
+  return m ? m[1].trim().replace(/\s+(?:and|The|which|who|in|a)$/i, '').replace(/[.,]$/, '') : '';
+}
+// 파이널 클로즈 '임박'(nears/on the cusp/…)은 아직 모집 중
+const NEAR_RE = /\bnears?\b|\bnearing\b|approach(?:es|ing)\b|on the cusp|clos(?:es|ing) in on|poised to|set to (?:close|hold)|임박|앞두/i;
+// 펀드명(LLM·본문 추출)이 그 운용사와 같은 문맥에 나오는지 — 다른 회사 펀드를 잘못 붙이는 것을 막는다
+function fundNearGp(a, fund, gp) {
+  if (!fund || !gp) return true;
+  const f = fund.toLowerCase();
+  if (String(a.ko || '').toLowerCase().includes(f)) return true;
+  const body = AC.enNames(String(a.body || ''));
+  const i = body.toLowerCase().indexOf(f);
+  if (i < 0) return true;                                                      // 표기가 달라 본문에서 못 찾으면 판단 보류
+  const g = AC.enNames(gp).toLowerCase().split(/\s+/)[0];
+  const win = body.slice(Math.max(0, i - 350), i + f.length + 350).toLowerCase();
+  return f.includes(g) || win.includes(g);
+}
+// 제목 기반 전략(LLM 결과가 없을 때)
+function stratFromTitle(t) {
+  t = String(t || '');
+  if (/secondar|세컨더리|continuation|컨티뉴에이션|GP-led/i.test(t)) return 'Secondaries';
+  if (/infra|인프라|energy|transition|digital infrastructure|data cent/i.test(t)) return 'Infrastructure';
+  if (/real estate|property|logistics|부동산|물류|office/i.test(t)) return 'Real Estate';
+  if (/credit|debt|lending|loan|대출|크레딧/i.test(t)) return 'Private Credit';
+  if (/venture|벤처|seed|series [a-d]\b/i.test(t)) return 'Venture Capital';
+  if (/buyout|private equity|사모펀드|바이아웃|growth/i.test(t)) return 'Private Equity';
+  return '';
+}
 export function buildFundraising(articles, prevItems = []) {
   const map = new Map();
   const inArchive = new Set(articles.map((a) => a.id));
@@ -1152,21 +1242,40 @@ export function buildFundraising(articles, prevItems = []) {
     if (!fr) return null;
     const x = a.frx || null;
     if (x && x.stage === 'none') return null;                                  // 본문상 모집·클로즈 소식이 아님
-    const gp = sponsorOf(a) || (x && x.manager) || '';
-    const fund = (x && x.fund) || fundNameOf(a.ko, gp) || fundNameFromBody(a.body, gp);
-    const stage = (x && FRX_STAGE[x.stage]) || fr.stage;
-    const size = (x && x.amount) || fr.size;
-    const target = (x && x.target) || fr.target;
+    // 운용사: 본문을 읽고 뽑은 운용사(LLM) > 제목의 주어. 펀드명이 다른 운용사 이름으로 시작하면 그 운용사로 바로잡는다.
+    let gp = (x && x.manager ? canonGp(x.manager) : '') || sponsorOf(a) || '';
+    const mb = managedBy(a.body);
+    if (ANCHOR_RE.test(title0(a))) gp = mb ? canonGp(mb) : '';               // 앵커 LP ≠ 운용사 → 본문의 "managed by …"
+    else if (!gp && mb) gp = canonGp(mb);
+    let fund = (x && x.fund) || fundNameOf(a.ko, gp) || fundNameFromBody(a.body, gp);
+    if (fund && !fundNearGp(a, fund, gp)) fund = '';                          // 다른 회사 펀드명을 붙이지 않는다
+    if (fund && /^(?:Fund|Partners|Strategic\s+Fund)\b/i.test(fund.trim())) fund = `${(x && x.manager && !/[가-힣]/.test(x.manager) ? x.manager : gp)} ${fund.trim()}`;   // "Fund XI" → "Bain Capital Ventures Fund XI"
+    if (fund && (/^series\s+\w+$/i.test(fund.trim()) || fundCore(fund, gp).length < 1)) fund = '';   // "Series 12"(트랜치)·운용사명뿐인 이름
+    if (fund) {
+      const inFund = gpsIn(fund)[0];
+      if (inFund && inFund.idx === 0 && inFund.inst !== gp) gp = inFund.inst;   // 펀드명이 다른 추적 GP 이름으로 시작
+    }
+    // 운용사 자리에 펀드 이름이 들어간 경우(“Maple Fund”, “BXPM Fund”) → 제목의 추적 GP 로
+    if ((!gp || /\bfund\b|펀드$/i.test(gp)) && gpsIn(a.ko || '')[0]) gp = gpsIn(a.ko || '')[0].inst;
+    const tHit = FR_STAGES.find(([, re]) => re.test(title0(a)));
+    let stage = (x && FRX_STAGE[x.stage]) || fr.stage;
+    if (stage === '모집 중' && tHit && tHit[0] !== '모집 중' && !/target|seek|launch|목표|모집/i.test(title0(a))) stage = tHit[0];   // 제목이 '모았다'인데 LLM이 launch로 본 경우
+    let size = fmtFundAmt((x && x.amount) || fr.size);
+    let target = fmtFundAmt((x && x.target) || fr.target);
+    if (stage !== '모집 중' && NEAR_RE.test(title0(a))) { target = target || size; size = ''; stage = '모집 중'; }   // 클로즈 '임박'
+    const usd = usdMn(size || target);
+    if (usd && usd < 20) return null;                                           // 소형(2,000만 달러 미만) 펀드는 제외
     const asset = (x && STRAT_ASSET[x.strategy]) || a.asset;
-    const strategy = (x && x.strategy && x.strategy !== 'Other') ? x.strategy : '';
+    const strategy = (x && x.strategy && x.strategy !== 'Other') ? x.strategy : stratFromTitle(title0(a));
     // 일자: 본문에 적힌 실제 일자 > 기사 날짜
     const evTs = x && x.date ? `${x.date}T00:00:00.000Z` : a.ts;
     const base = gp || '?';
     // 공식 펀드명이 충분히 고유하면 운용사 표기 차이(Goldman Sachs / Goldman Sachs Alternatives)와 무관하게 한 펀드로 본다.
     // 이름 없는 보도는 단계·금액이 같을 때만 묶는다.
-    const fundKey = fund && normFund(fund).length >= 12 ? `F|${normFund(fund)}` : base + '|' + (fund ? normFund(fund) : `~${asset}|${stage}|${normAmt(size)}`);
+    const core = fund ? fundCore(fund, gp) : '';
+    const fundKey = core.length >= 12 ? `F|${core}` : base + '|' + (core || `~${asset}|${stage}|${normAmt(size)}`);
     const key = fundKey + '|' + stage + '|' + String(a.ko).replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 24);
-    return { key, fundKey, gp, fund, asset, strategy, stage, size, target, hardcap: (x && x.hardcap) || '', dated: !!(x && x.date), title: a.ko, tko: a.tko || '', id: a.id, url: a.url, gurl: a.gurl, date: a.date, ts: evTs, pubTs: a.ts, source: a.source, lang: a.lang };
+    return { key, fundKey, gp, fund, asset, strategy, stage, size, sizeLlm: !!(x && x.amount && x.fund && fund), target, hardcap: (x && x.hardcap) || '', dated: !!(x && x.date), title: a.ko, tko: a.tko || '', id: a.id, url: a.url, gurl: a.gurl, date: a.date, ts: evTs, pubTs: a.ts, source: a.source, lang: a.lang };
   };
   for (const a of articles) { const e = mk(a); if (e) map.set(e.key, e); }
   for (const p of prevItems || []) {
@@ -1184,32 +1293,84 @@ export function buildFundraising(articles, prevItems = []) {
   for (const e of items.slice().reverse()) {
     if (!e.gp) continue;
     const f = funds.get(e.fundKey) || { fundKey: e.fundKey, gp: e.gp, fund: e.fund, asset: e.asset, strategy: '', target: '', hardcap: '', stages: {}, dropped: [], lastTs: '' };
-    if (!f.fund && e.fund) f.fund = e.fund;
+    if (e.fund && (!f.fund || (/[가-힣]/.test(f.fund) && !/[가-힣]/.test(e.fund)) || (!/[가-힣]/.test(e.fund) && e.fund.length > f.fund.length && e.fund.includes(f.fund.split(' ').pop())))) f.fund = e.fund;   // 영문 공식명·더 온전한 이름 우선
     if (e.gp && e.gp.length < f.gp.length && f.gp.startsWith(e.gp)) f.gp = e.gp;
     if (!f.strategy && e.strategy) f.strategy = e.strategy;
     if (!f.target && e.target) f.target = e.target;
     if (!f.hardcap && e.hardcap) f.hardcap = e.hardcap;
     const st = f.stages[e.stage];
-    const rec = { stage: e.stage, ts: e.ts, dated: e.dated, size: e.size, id: e.id, url: e.url, gurl: e.gurl, title: e.title, tko: e.tko, source: e.source, reports: 1 };
+    const rec = { stage: e.stage, ts: e.ts, dated: e.dated, size: e.size, sizeLlm: e.sizeLlm, id: e.id, url: e.url, gurl: e.gurl, title: e.title, tko: e.tko, source: e.source, reports: 1 };
     if (!st) f.stages[e.stage] = rec;
     else {
       st.reports++;
-      if (!st.size && e.size) st.size = e.size;
+      if ((!st.size && e.size) || (e.sizeLlm && !st.sizeLlm && e.size)) { st.size = e.size; st.sizeLlm = e.sizeLlm; }   // 펀드명과 함께 본문에서 읽은 금액 우선
       // 실제 일자가 적힌 보도가 있으면 그 날짜를 우선, 아니면 가장 이른 보도일
       if ((e.dated && !st.dated) || (e.dated === st.dated && e.ts < st.ts)) Object.assign(st, { ts: e.ts, dated: e.dated, id: e.id, url: e.url, gurl: e.gurl, title: e.title, tko: e.tko, source: e.source });
     }
     if ((e.pubTs || e.ts) > f.lastTs) f.lastTs = e.pubTs || e.ts;
     funds.set(e.fundKey, f);
   }
+  // a 의 보도를 b 로 합치고 a 를 지운다
+  const alias = {};                                                             // 합쳐진 펀드 키 → 남은 펀드 키
+  const mergeFund = (a, b) => {
+    alias[a.fundKey] = b.fundKey;
+    for (const [k, st] of Object.entries(a.stages)) {
+      const cur = b.stages[k];
+      if (!cur || (st.dated && !cur.dated) || (st.dated === cur.dated && st.ts < cur.ts)) b.stages[k] = { ...st, size: (cur && cur.sizeLlm && !st.sizeLlm ? cur.size : st.size) || (cur && cur.size) || '', reports: (st.reports || 1) + (cur ? cur.reports : 0) };
+      else { cur.reports += st.reports || 1; if ((!cur.size && st.size) || (st.sizeLlm && !cur.sizeLlm && st.size)) { cur.size = st.size; cur.sizeLlm = st.sizeLlm; } }
+    }
+    if (a.fund && (!b.fund || (/[가-힣]/.test(b.fund) && !/[가-힣]/.test(a.fund)))) b.fund = a.fund;
+    b.target = b.target || a.target; b.hardcap = b.hardcap || a.hardcap; b.strategy = b.strategy || a.strategy;
+    if (a.lastTs > b.lastTs) b.lastTs = a.lastTs;
+    funds.delete(a.fundKey);
+  };
+  // 이름 변형 병합: 같은 운용사에서 한 펀드명 핵심부가 다른 것에 포함되면(숫자 없는 쪽만) 같은 펀드로 본다
+  //   "BXPM Fund" ⊂ "BXPM – Blackstone Private Markets Fund", "Seahawk Maritime Credit Fund" ⊂ "… Fund I"
+  const fl = [...funds.values()].filter((f) => f.fund);
+  for (const a of fl) {
+    const ca = fundCore(a.fund, a.gp);
+    if (!ca || /\d/.test(ca) || !funds.has(a.fundKey)) continue;
+    const b = fl.find((o) => o !== a && o.gp === a.gp && funds.has(o.fundKey) && fundCore(o.fund, o.gp).includes(ca));
+    if (!b) continue;
+    mergeFund(a, b);
+    if (a.fund.length > b.fund.length && !/[가-힣]/.test(a.fund)) b.fund = a.fund;
+  }
+  // 운용사 자리에 펀드 이름이 들어간 경우("Nigeria Infrastructure Debt Fund" 가 GP) → 그 이름의 펀드를 가진 운용사로
+  for (const f of [...funds.values()]) {
+    if (!funds.has(f.fundKey) || !/\bfund\b|펀드$/i.test(f.gp)) continue;
+    const o = [...funds.values()].find((o) => o !== f && o.fund && o.gp !== f.gp && normFund(o.fund) === normFund(f.gp));
+    if (o) mergeFund(f, o);
+  }
+  // 펀드명 없는 보도 합치기 — 같은 운용사에서 2주 안에 나온 이름 있는 펀드가 하나뿐이면 그 펀드의 보도로 본다.
+  // 이름 없는 보도끼리는 자산군이 같고 금액이 (통화 환산 후) 10% 안이거나 한쪽이 비어 있으면 같은 펀드로 본다.
+  const near = (x, y, d = 14) => Math.abs(Date.parse(x) - Date.parse(y)) <= d * 86400000;
+  const tsOf = (f) => Object.values(f.stages).map((st) => st.ts);
+  const within = (x, y) => tsOf(x).some((a) => tsOf(y).some((b) => near(a, b)));
+  const amtOf = (f) => { const v = Object.values(f.stages).map((st) => usdMn(st.size)).filter(Boolean); return v.length ? Math.max(...v) : 0; };
+  for (const u of [...funds.values()]) {
+    if (u.fund || !funds.has(u.fundKey)) continue;
+    const named = [...funds.values()].filter((o) => o !== u && o.fund && o.gp === u.gp && within(u, o));
+    if (named.length === 1) { mergeFund(u, named[0]); continue; }
+    if (named.length) continue;
+    const ua = amtOf(u);
+    const twin = [...funds.values()].find((o) => o !== u && !o.fund && o.gp === u.gp && o.asset === u.asset && within(u, o)
+      && (!ua || !amtOf(o) || Math.abs(ua - amtOf(o)) / Math.max(ua, amtOf(o)) <= 0.1));
+    if (twin) mergeFund(u, twin);
+  }
   // 시간 순서 검증: 뒤 단계보다 늦게 보도된 앞 단계(예: 클로즈 뒤의 '모집 개시')는 같은 펀드의
   // 사건일 수 없으므로(재탕 기사·다른 빈티지) 타임라인에서 빼고 따로 표시한다.
   const fundList = [...funds.values()].map((f) => {
+    // 파이널 클로즈 전후 1주 안의 일반 '클로즈' 보도는 같은 사건 → 파이널 클로즈에 합친다
+    const fin = f.stages['파이널 클로즈'], gen = f.stages['클로즈'];
+    if (fin && gen && near(fin.ts, gen.ts, 7)) { fin.reports += gen.reports || 1; if (!fin.size && gen.size) fin.size = gen.size; delete f.stages['클로즈']; }
     let stages = FR_ORDER.filter((k) => f.stages[k]).map((k) => f.stages[k]);
     const kept = [];
     for (let i = stages.length - 1; i >= 0; i--) {
       const s = stages[i];
       const later = kept[0];
-      if (later && s.ts.slice(0, 10) > later.ts.slice(0, 10)) { f.dropped.push({ stage: s.stage, ts: s.ts, title: s.title, source: s.source }); continue; }
+      // 뒤 단계보다 늦은 앞 단계는 모순. '모집 중'은 클로즈와 같은 날이어도(마감 보도를 '조성'으로 쓴 기사) 뺀다
+      const bad = later && (s.ts.slice(0, 10) > later.ts.slice(0, 10) || (s.stage === '모집 중' && s.ts.slice(0, 10) >= later.ts.slice(0, 10)));
+      if (bad) { f.dropped.push({ stage: s.stage, ts: s.ts, title: s.title, source: s.source }); continue; }
       kept.unshift(s);
     }
     stages = kept;
@@ -1217,8 +1378,11 @@ export function buildFundraising(articles, prevItems = []) {
     const final = stages.find((s) => s.stage === '파이널 클로즈');
     return { ...f, stages, status, finalSize: final ? final.size : '', finalTs: final ? final.ts : '' };
   }).sort((x, y) => (x.lastTs < y.lastTs ? 1 : -1));
+  // 보도 목록도 최종 펀드의 운용사·펀드명으로 맞추고, 운용사를 못 정한 보도는 뺀다
+  const resolve = (k) => { let n = 0; while (alias[k] && n++ < 20) k = alias[k]; return k; };
+  const outItems = items.map((e) => { const f = funds.get(resolve(e.fundKey)); return f ? { ...e, fundKey: f.fundKey, gp: f.gp, fund: f.fund || e.fund } : e; }).filter((e) => e.gp);
   const { date } = kstParts();
-  return { updatedAt: date, count: items.length, fundCount: fundList.length, namedCount: fundList.filter((f) => f.fund).length, items, funds: fundList };
+  return { updatedAt: date, count: outItems.length, fundCount: fundList.length, namedCount: fundList.filter((f) => f.fund).length, items: outItems, funds: fundList };
 }
 
 function extractMetric(text) {
@@ -1834,12 +1998,12 @@ async function main() {
   // 최신 기사를 먼저 해석·크롤링합니다 — 피드 상단(사용자가 먼저 여는 기사)이
   // 실제 URL·본문을 갖도록 하여, 예산 안에서 우선순위를 둔다.
   all.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
-  let fetchBudget = 260, fetched = 0, summarized = 0, resolved = 0;
+  let fetchBudget = 260, fetched = 0, summarized = 0, resolved = 0, mismatched = 0;
   let readerBudget = 70, readerHits = 0;               // jina 리더 폴백 예산(회당)
   const toFetch = [];                                  // 이번 회차에 본문을 새로 받을 기사
   for (const a of all) {
     const old = prevById.get(a.id);
-    if (old && old.tko) a.tko = old.tko;                // 번역은 재수집돼도 유지
+    if (old && old.tko) { a.tko = old.tko; if (old.tv) a.tv = old.tv; }   // 번역은 재수집돼도 유지
     if (old && old.bodyKo) a.bodyKo = old.bodyKo;
     if (old && old.frx) a.frx = old.frx;
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
@@ -1883,6 +2047,7 @@ async function main() {
       const alt = await fetchViaReader(a.url);
       if (alt && alt.length > (text || '').length + 100) { text = alt; readerHits++; }
     }
+    if (text && !AC.matchesTitle(a.ko, text)) { mismatched++; text = ''; }   // 다른 기사 본문이 딸려온 경우 버림
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);
@@ -1891,7 +2056,7 @@ async function main() {
       fetched++;
     }
   });
-  console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched} (reader fallback: ${readerHits})`);
+  console.log(`urls resolved: ${resolved}, article bodies fetched: ${fetched} (reader fallback: ${readerHits}, title-mismatch dropped: ${mismatched})`);
 
   // ── 아카이브 링크 검증 패스 ────────────────────────────────
   // 이번 회차에 재수집되지 않은 보관분도 회당 40건씩(최신순) 링크 생존을
@@ -1915,7 +2080,7 @@ async function main() {
   if (gPending.length) console.log(`archive google links resolved: ${gResolved}/${gPending.length}`);
   const recheck = prev
     .filter(p => !allIds.has(p.id) && !p.pinned && !p.linkDead && realUrl(p))
-    .filter(p => !p.linkOk || (!p.paywalled && (p.body || '').length < 400 && (p.upgradeTries || 0) < 3))
+    .filter(p => !p.linkOk || (!p.paywalled && !p.bodyMismatch && (p.body || '').length < 400 && (p.upgradeTries || 0) < 3))
     .slice(0, 120);
   await pool(recheck, 5, async (p) => {
     const chk = await fetchArticleText(p.url, p.ko);
@@ -1924,6 +2089,7 @@ async function main() {
     if (!p.linkOk) { p.linkOk = true; verifiedOk++; }
     if (chk.paywalled) p.paywalled = true;
     p.upgradeTries = (p.upgradeTries || 0) + 1;
+    if (chk.text && !AC.matchesTitle(p.ko, chk.text)) { p.bodyMismatch = true; return; }
     if (chk.text && chk.text.length > (p.body || '').length + 120) {   // 더 충실한 본문이면 교체
       p.body = chk.text; p.ai = extractiveSummary(chk.text); p.fetched = true; upgraded++;
     }
@@ -1956,7 +2122,7 @@ async function main() {
     merged.length = 0; merged.push(...kept); }
   // 저장 직전 전체 아카이브 위생 패스 — 이번 회차에 재수집되지 않은 보관분에도
   // 최신 위젯/푸터 필터를 소급 적용한다(필터가 개선될 때마다 과거분도 정화).
-  let sanitized = 0;
+  let sanitized = 0, mismatchArchived = 0;
   for (const a of merged) {
     if (a.body && (a.body.match(/\uFFFD/g) || []).length > 20) {
       // 인코딩이 깨진 채 저장된 본문 — 버리고 다음 회차에 올바른 인코딩으로 재수집
@@ -1967,6 +2133,8 @@ async function main() {
       const c = AC.clean(stripSiteFooter(a.body).split(/\n+/), { title: a.ko }).paragraphs.join('\n\n');
       if (c !== a.body) { a.body = c; sanitized++; }
       if (a.fetched && c.length < 120) a.fetched = false;   // 정리 후 본문이 사라지면 재크롤 대상
+      // 제목과 무관한 본문(다른 기사가 딸려온 경우)은 버린다 — 잘못된 내용을 보여 주느니 원문 링크만
+      if (a.body && !AC.matchesTitle(a.ko, a.body)) { a.body = ''; a.fetched = false; a.bodyMismatch = true; delete a.bodyKo; sanitized++; mismatchArchived++; }
     }
     if (Array.isArray(a.ai) && a.ai.length) {
       const cl = a.ai.map(l => stripSiteFooter(String(l)))
@@ -1975,7 +2143,7 @@ async function main() {
       a.ai = cl.length ? cl : [a.ko];
     }
   }
-  if (sanitized) console.log(`archive sanitized: ${sanitized} bodies re-cleaned`);
+  if (sanitized) console.log(`archive sanitized: ${sanitized} bodies re-cleaned (title-mismatch removed: ${mismatchArchived})`);
   // 목록(news.json)은 리드만, 전문은 bodies/ 로 분리 저장. 이후 인사이트·투자내역
   // 추출은 전문이 담긴 merged 를 그대로 쓴다.
   // 예전 방식(본문을 한글로 덮어쓴 번역)은 영문 원문으로 되돌리고 한글은 별도 필드로

@@ -23,7 +23,7 @@ function DealRow({ c, onOpen, showInst, onInst, first, compact }) {
           {pending && <span style={{ font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap' }}>{e.status}</span>}
           <span style={{ marginLeft: 'auto', font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap', paddingLeft: 6 }}>{shortWhen(e)}</span>
         </div>
-        <div style={{ font: F(500, 14, 1.45), color: KB.ink2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</div>
+        <div style={{ font: F(500, 14, 1.45), color: KB.ink2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nm(e.title)}</div>
       </div>
     );
   }
@@ -44,7 +44,7 @@ function DealRow({ c, onOpen, showInst, onInst, first, compact }) {
           {e.counterpart && <span style={{ font: F(500, 13), color: KB.sub }}>{e.role === 'LP' ? '운용사 ' : 'LP '}{e.counterpart}</span>}
         </div>
       )}
-      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</div>
+      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{nm(e.title)}</div>
       <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>
         {e.source}{c.items.length > 1 ? ` 외 ${c.items.length - 1}건 보도` : ''}
       </div>
@@ -116,7 +116,7 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
 function MiniArticle({ a, onOpen, first }) {
   return (
     <div onClick={() => onOpen(a.id)} style={{ padding: '13px 0', borderTop: first ? 'none' : `1px solid ${KB.line2}`, cursor: 'pointer' }}>
-      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{a.ko}</div>
+      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{nm(a.ko)}</div>
       <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>
         {a.source} · {shortWhen(a)}{a.cat === '인사' ? ' · 인사' : a.cat === '이전' ? ' · 지방이전' : ''}
       </div>
@@ -129,7 +129,7 @@ function RecentActivity({ articles, onOpen }) {
   const now = Date.now();
   const n30 = articles.filter((a) => now - itemMs(a) < 30 * 86400000).length;
   const mix = {};
-  articles.forEach((a) => { mix[a.asset] = (mix[a.asset] || 0) + 1; });
+  articles.forEach((a) => { if (a.asset) mix[a.asset] = (mix[a.asset] || 0) + 1; });
   const mixList = Object.entries(mix).sort((a, b) => b[1] - a[1]);
   if (!articles.length) return <Empty compact icon="clock" title="최근 3개월 기사 없음" desc="새 기사가 수집되면 자동으로 반영됩니다." />;
   return (
@@ -319,7 +319,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
             <ExtLink key={e.key || i} first={i === 0} href={e.url}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ font: F(700, 15), color: KB.ink }}>{e.person}</span>
-                <span style={{ font: F(500, 13.5), color: KB.sub }}>{e.title}</span>
+                <span style={{ font: F(500, 13.5), color: KB.sub }}>{nm(e.title)}</span>
                 <Tag tone="outline">{e.action}</Tag>
               </div>
               <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{e.date} · {e.source}</div>
@@ -332,7 +332,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
         <Section title="지방이전">
           <ExtLink first href={move.url}>
             <Tag tone="outline">{move.stage}</Tag>
-            <div style={{ font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 8 }}>{move.title}</div>
+            <div style={{ font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 8 }}>{nm(move.title)}</div>
             <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{move.date} · {move.source}</div>
           </ExtLink>
         </Section>
@@ -423,7 +423,7 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
                 {f.size && <span style={{ font: F(700, 14), color: KB.gray }}>{f.size}</span>}
                 <span style={{ marginLeft: 'auto', font: F(500, 12), color: KB.mute }}>{f.date}</span>
               </div>
-              <div style={{ font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 6 }}>{f.title}</div>
+              <div style={{ font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 6 }}>{nm(f.title)}</div>
             </div>
           ))}
         </Section>
@@ -435,7 +435,7 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
             <div key={pp.name + i} style={{ padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ font: F(700, 15.5), color: KB.ink }}>{pp.name}</span>
-                <span style={{ font: F(500, 13), color: KB.sub }}>{pp.title}</span>
+                <span style={{ font: F(500, 13), color: KB.sub }}>{nm(pp.title)}</span>
               </div>
               {pp.note && <div style={{ font: F(400, 13.5, 1.65), color: KB.sub, marginTop: 6 }}>{pp.note}</div>}
             </div>
@@ -557,7 +557,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
           <ListRow key={e.key || i} first={i === 0} chevron onClick={() => onOpenLp(e.inst)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ font: F(700, 15), color: KB.ink }}>{e.inst}</span>
-              <span style={{ font: F(500, 13.5), color: KB.sub }}>{e.title}</span>
+              <span style={{ font: F(500, 13.5), color: KB.sub }}>{nm(e.title)}</span>
             </div>
             <div style={{ font: F(500, 13.5), color: KB.ink2, marginTop: 5 }}>{e.person} {e.action}</div>
             <div style={{ font: F(500, 12), color: KB.mute, marginTop: 4 }}>{e.date} · {e.source}</div>
@@ -572,7 +572,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
               <span style={{ font: F(700, 15), color: KB.ink }}>{m.inst}</span>
               <Tag tone="outline">{m.stage}</Tag>
             </div>
-            <div style={{ font: F(500, 13.5, 1.5), color: KB.ink2, marginTop: 5 }}>{m.title}</div>
+            <div style={{ font: F(500, 13.5, 1.5), color: KB.ink2, marginTop: 5 }}>{nm(m.title)}</div>
             <div style={{ font: F(500, 12), color: KB.mute, marginTop: 4 }}>{m.date} · {m.source}</div>
           </ListRow>
         )) : <Empty compact title="수집된 지방이전 이슈가 없습니다" />}
@@ -641,7 +641,7 @@ function FundTimeline({ f, onOpenStage }) {
                 {s && <span style={{ font: F(600, 13), color: KB.sub }}>{frDate(s)}{s.dated ? '' : ' 보도'}</span>}
                 {s && s.size && <span style={{ font: F(700, 13.5), color: KB.gray }}>{s.size}</span>}
               </div>
-              {s && <div style={{ font: F(500, 12.5, 1.45), color: KB.mute, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.source}{s.reports > 1 ? ` 외 ${s.reports - 1}건` : ''} · {s.tko || s.title}</div>}
+              {s && <div style={{ font: F(500, 12.5, 1.45), color: KB.mute, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.source}{s.reports > 1 ? ` 외 ${s.reports - 1}건` : ''} · {nm(s.tko || s.title)}</div>}
             </div>
           </div>
         );
@@ -678,20 +678,22 @@ function FundCard({ f, onOpenStage, onGp, first }) {
 function FundLine({ f, onOpenStage, first }) {
   const [open, setOpen] = React.useState(false);
   const ls = lastStage(f);
+  // 모집 중 펀드의 '금액'이 목표액과 같으면 모은 돈처럼 보이지 않게 따로 표시하지 않는다
+  const amt = ls && ls.size && !(f.status === '모집 중' && f.target && ls.size === f.target) ? ls.size : '';
+  const meta = [f.fund ? stratOf(f) : '', ls ? `${FR_LABEL[ls.stage]} ${frDate(ls)}` : '', f.target ? `목표 ${f.target}` : ''].filter(Boolean).join(' · ');
   return (
     <div style={{ borderTop: first ? 'none' : `1px solid ${KB.line2}` }}>
-      <div onClick={() => setOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', cursor: 'pointer' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: F(600, 15, 1.4), color: f.fund ? KB.ink : KB.ink2, wordBreak: 'keep-all' }}>{fundTitle(f)}<Unnamed f={f} /></div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 3, font: F(500, 12.5), color: KB.mute }}>
-            <span>{stratOf(f)}</span>
-            {ls && <span>{FR_LABEL[ls.stage]} {frDate(ls)}</span>}
-            {f.target && <span>목표 {f.target}</span>}
-          </div>
+      <div onClick={() => setOpen((o) => !o)} style={{ padding: '12px 0', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          {/* 운용사 카드 안이므로 이름 없는 펀드는 운용사명을 되풀이하지 않고 전략으로 부른다 */}
+          <div style={{ flex: 1, minWidth: 0, font: F(600, 15, 1.45), color: f.fund ? KB.ink : KB.ink2, wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{f.fund || `${stratOf(f)} 펀드`}<Unnamed f={f} /></div>
+          <span style={{ color: KB.faint, transform: open ? 'rotate(180deg)' : 'none', display: 'flex', marginTop: 2 }}><Ico n="down" size={16} sw={2} /></span>
         </div>
-        {ls && ls.size && <span style={{ font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' }}>{ls.size}</span>}
-        <Tag tone={frTone(f.status)}>{f.status === '모집 중' ? '모집 중' : f.status.replace(' 클로즈', '')}</Tag>
-        <span style={{ color: KB.faint, transform: open ? 'rotate(180deg)' : 'none', display: 'flex' }}><Ico n="down" size={16} sw={2} /></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+          <Tag tone={frTone(f.status)}>{f.status}</Tag>
+          {amt && <span style={{ font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' }}>{amt}</span>}
+          {meta && <span style={{ font: F(500, 12.5, 1.5), color: KB.mute }}>{meta}</span>}
+        </div>
       </div>
       {open && <div style={{ paddingBottom: 12 }}><FundTimeline f={f} onOpenStage={onOpenStage} /></div>}
     </div>
@@ -797,8 +799,8 @@ function FundraisingView({ data, onOpen, onGp }) {
                 <span style={{ marginLeft: 'auto', font: F(500, 12), color: KB.mute }}>{fmtDate(itemMs({ ts: f.pubTs || f.ts }))}</span>
               </div>
               {f.fund && <div style={{ font: F(600, 13.5), color: KB.gray, marginTop: 6 }}>{f.fund}</div>}
-              <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 }}>{f.title}</div>
-              {f.tko && <div style={{ font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 }}>{f.tko}</div>}
+              <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 }}>{nm(f.title)}</div>
+              {f.tko && <div style={{ font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 }}>{nm(f.tko)}</div>}
               <div style={{ font: F(500, 12), color: KB.mute, marginTop: 4 }}>{f.source}</div>
             </div>
           ))}

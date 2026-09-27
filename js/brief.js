@@ -308,7 +308,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
     const col = (children) => React.createElement("div", { style: { minWidth: 0 } }, children);
     const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
-        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${b.dateKey} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
+        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
                 liveAt && React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.pos } }),
                 liveBusy ? '조회 중…' : liveAt ? `실시간 ${liveAt}` : '실시간 조회')) }),
         briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { flexShrink: 0, background: KB.bg, borderBottom: `1px solid ${KB.line}` } },
@@ -328,13 +328,13 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
             React.createElement("div", { style: { maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 } }, !b ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." }) : (React.createElement(React.Fragment, null,
                 React.createElement(Section, { first: true, title: "\uD55C\uC904 \uC694\uC57D", sub: "\uC2DC\uC7A5\uC744 \uC6C0\uC9C1\uC778 \uD575\uC2EC \uB274\uC2A4" },
                     top ? (React.createElement("a", { href: top.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } },
-                        React.createElement("div", { style: { font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' } }, top.title),
+                        React.createElement("div", { style: { font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' } }, nm(top.title)),
                         React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 6 } }, top.source))) : React.createElement("div", { style: { font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } }, b.summary),
                     React.createElement("div", { style: { font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
                     points.length ? points.map((w, i) => (React.createElement("a", { key: i, href: w.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
                         React.createElement("span", { style: { width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 } }),
                         React.createElement("span", { style: { flex: 1 } },
-                            React.createElement("span", { style: { display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' } }, w.title),
+                            React.createElement("span", { style: { display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' } }, nm(w.title)),
                             React.createElement("span", { style: { display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 } }, w.source))))) : (b.watch && b.watch.length ? b.watch.map((w, i) => React.createElement("div", { key: i, style: { font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' } },
                         "\u00B7 ",
                         w)) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC218\uC9D1\uB41C \uD575\uC2EC \uB274\uC2A4\uAC00 \uC5C6\uC74C"))),
@@ -370,7 +370,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                             React.createElement(HedgeBlock, { hedge: b.hedge }))))),
                 React.createElement(Section, { title: "\uADF8 \uBC16\uC758 \uC2DC\uD669 \uB274\uC2A4" },
                     rest.length ? (React.createElement("div", { style: desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {} }, rest.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` } },
-                        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, it.title),
+                        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(it.title)),
                         React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC704 \uD575\uC2EC \uB274\uC2A4 \uC678 \uCD94\uAC00 \uAE30\uC0AC \uC5C6\uC74C"),
                     (b.errors && b.errors.length > 0) && React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 12 } },
                         "\u203B \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9 ",
@@ -378,6 +378,8 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                         "\uAC74 \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC74C"),
                     React.createElement("div", { style: { font: F(400, 12, 1.8), color: KB.mute, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${KB.line}` } }, "\uCD9C\uCC98 \u00B7 \uC9C0\uC218\u00B7\uD658\uC728\u00B7\uC6D0\uC790\uC7AC\u00B7\uCD94\uC774 Yahoo Finance(\uD3F4\uBC31 Stooq) \u00B7 \uD06C\uB9BD\uD1A0 Binance(\uD3F4\uBC31 Coinbase) \u00B7 SOFR/EFFR\u00B7FOMC New York Fed \u00B7 SONIA\u00B7\uC601\uAD6D \uC815\uCC45\uAE08\uB9AC Bank of England \u00B7 \u20ACSTR ECB \u00B7 EURIBOR \uC77C\uBCC4 \uACF5\uD45C \u00B7 TONA \uC77C\uBCF8\uC740\uD589 \u00B7 \uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uB274\uC2A4 \uAD6C\uAE00 \uB274\uC2A4 \u00B7 \uD658\uD5E4\uC9C0\uB294 \uC704 \uAE08\uB9AC\uB85C \uAE08\uB9AC\uD3C9\uD615 \uACC4\uC0B0"))))))));
 }
+// '20260927' → '9월 27일'
+const briefDay = (k) => { const m = String(k || '').match(/^(\d{4})(\d{2})(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : String(k || ''); };
 // 홈 상단 요약 카드 — 오늘의 시황 한눈에
 function BriefDigest({ market, onOpen }) {
     if (!market || !Array.isArray(market.kr))
@@ -387,7 +389,7 @@ function BriefDigest({ market, onOpen }) {
     return (React.createElement("div", { onClick: onOpen, style: { margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 12, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' } },
         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
             React.createElement("span", { style: { font: F(700, 14.5), color: KB.ink } }, "\uC624\uB298\uC758 \uC2DC\uD669"),
-            React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, market.dateKey),
+            React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, briefDay(market.dateKey)),
             React.createElement("span", { style: { marginLeft: 'auto', color: KB.faint } },
                 React.createElement(Ico, { n: "chevron", size: 17, sw: 2 }))),
         React.createElement("div", { style: { font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, (marketHeadlines(market.issues)[0] || {}).title || market.summary),

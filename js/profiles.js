@@ -21,7 +21,7 @@ function DealRow({ c, onOpen, showInst, onInst, first, compact }) {
                 e.amount && React.createElement("span", { style: { font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' } }, e.amount),
                 pending && React.createElement("span", { style: { font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap' } }, e.status),
                 React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap', paddingLeft: 6 } }, shortWhen(e))),
-            React.createElement("div", { style: { font: F(500, 14, 1.45), color: KB.ink2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, e.title)));
+            React.createElement("div", { style: { font: F(500, 14, 1.45), color: KB.ink2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, nm(e.title))));
     }
     return (React.createElement("div", { onClick: () => onOpen && onOpen(e), style: { padding: '14px 0', borderTop: first ? 'none' : `1px solid ${KB.line2}`, cursor: onOpen ? 'pointer' : 'default' } },
         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
@@ -38,7 +38,7 @@ function DealRow({ c, onOpen, showInst, onInst, first, compact }) {
             e.counterpart && React.createElement("span", { style: { font: F(500, 13), color: KB.sub } },
                 e.role === 'LP' ? '운용사 ' : 'LP ',
                 e.counterpart))),
-        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, e.title),
+        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, nm(e.title)),
         React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } },
             e.source,
             c.items.length > 1 ? ` 외 ${c.items.length - 1}건 보도` : '')));
@@ -107,7 +107,7 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
 // ─── 기사 한 줄(프로필 안) ────────────────────────────────────
 function MiniArticle({ a, onOpen, first }) {
     return (React.createElement("div", { onClick: () => onOpen(a.id), style: { padding: '13px 0', borderTop: first ? 'none' : `1px solid ${KB.line2}`, cursor: 'pointer' } },
-        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, a.ko),
+        React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(a.ko)),
         React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } },
             a.source,
             " \u00B7 ",
@@ -119,7 +119,8 @@ function RecentActivity({ articles, onOpen }) {
     const now = Date.now();
     const n30 = articles.filter((a) => now - itemMs(a) < 30 * 86400000).length;
     const mix = {};
-    articles.forEach((a) => { mix[a.asset] = (mix[a.asset] || 0) + 1; });
+    articles.forEach((a) => { if (a.asset)
+        mix[a.asset] = (mix[a.asset] || 0) + 1; });
     const mixList = Object.entries(mix).sort((a, b) => b[1] - a[1]);
     if (!articles.length)
         return React.createElement(Empty, { compact: true, icon: "clock", title: "\uCD5C\uADFC 3\uAC1C\uC6D4 \uAE30\uC0AC \uC5C6\uC74C", desc: "\uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9\uC73C\uB85C \uBC18\uC601\uB429\uB2C8\uB2E4." });
@@ -244,7 +245,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
         execs && execs.length > 0 && (React.createElement(Section, { title: "\uC6B4\uC6A9\uC870\uC9C1 \uC778\uC0AC", sub: "\uBCF8\uBD80\uC7A5\u00B7\uC2E4\uC7A5\u00B7\uD300\uC7A5 \u00B7 \uAE30\uC0AC \uC790\uB3D9 \uCD94\uCD9C" }, execs.map((e, i) => (React.createElement(ExtLink, { key: e.key || i, first: i === 0, href: e.url },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
                 React.createElement("span", { style: { font: F(700, 15), color: KB.ink } }, e.person),
-                React.createElement("span", { style: { font: F(500, 13.5), color: KB.sub } }, e.title),
+                React.createElement("span", { style: { font: F(500, 13.5), color: KB.sub } }, nm(e.title)),
                 React.createElement(Tag, { tone: "outline" }, e.action)),
             React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } },
                 e.date,
@@ -253,7 +254,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
         move && (React.createElement(Section, { title: "\uC9C0\uBC29\uC774\uC804" },
             React.createElement(ExtLink, { first: true, href: move.url },
                 React.createElement(Tag, { tone: "outline" }, move.stage),
-                React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 8 } }, move.title),
+                React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 8 } }, nm(move.title)),
                 React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } },
                     move.date,
                     " \u00B7 ",
@@ -300,12 +301,12 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
                 React.createElement(Tag, { tone: /파이널|클로즈/.test(f.stage) ? 'yellow' : 'outline' }, f.stage),
                 f.size && React.createElement("span", { style: { font: F(700, 14), color: KB.gray } }, f.size),
                 React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 12), color: KB.mute } }, f.date)),
-            React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 6 } }, f.title)))))),
+            React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink, marginTop: 6 } }, nm(f.title))))))),
         ((p.people && p.people.length) || p.note) && (React.createElement(Section, { title: "\uD575\uC2EC \uC778\uBB3C \u00B7 \uCEE4\uBC84\uB9AC\uC9C0" },
             (p.people || []).map((pp, i) => (React.createElement("div", { key: pp.name + i, style: { padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
                     React.createElement("span", { style: { font: F(700, 15.5), color: KB.ink } }, pp.name),
-                    React.createElement("span", { style: { font: F(500, 13), color: KB.sub } }, pp.title)),
+                    React.createElement("span", { style: { font: F(500, 13), color: KB.sub } }, nm(pp.title))),
                 pp.note && React.createElement("div", { style: { font: F(400, 13.5, 1.65), color: KB.sub, marginTop: 6 } }, pp.note)))),
             p.note && (React.createElement("div", { style: { marginTop: p.people && p.people.length ? 10 : 0, padding: '13px 15px', background: KB.yellowTint, borderRadius: 10 } },
                 React.createElement("div", { style: { font: F(700, 12.5), color: KB.gray, marginBottom: 5 } }, "\uCEE4\uBC84\uB9AC\uC9C0 \uB178\uD2B8"),
@@ -384,7 +385,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
         React.createElement(Section, { title: "\uB300\uCCB4\uD22C\uC790 \uC6B4\uC6A9\uC870\uC9C1 \uC778\uC0AC", sub: "\uBCF8\uBD80\uC7A5\u00B7\uC2E4\uC7A5\u00B7\uD300\uC7A5" }, (ins.execs || []).length ? ins.execs.slice(0, 15).map((e, i) => (React.createElement(ListRow, { key: e.key || i, first: i === 0, chevron: true, onClick: () => onOpenLp(e.inst) },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
                 React.createElement("span", { style: { font: F(700, 15), color: KB.ink } }, e.inst),
-                React.createElement("span", { style: { font: F(500, 13.5), color: KB.sub } }, e.title)),
+                React.createElement("span", { style: { font: F(500, 13.5), color: KB.sub } }, nm(e.title))),
             React.createElement("div", { style: { font: F(500, 13.5), color: KB.ink2, marginTop: 5 } },
                 e.person,
                 " ",
@@ -397,7 +398,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
                 React.createElement("span", { style: { font: F(700, 15), color: KB.ink } }, m.inst),
                 React.createElement(Tag, { tone: "outline" }, m.stage)),
-            React.createElement("div", { style: { font: F(500, 13.5, 1.5), color: KB.ink2, marginTop: 5 } }, m.title),
+            React.createElement("div", { style: { font: F(500, 13.5, 1.5), color: KB.ink2, marginTop: 5 } }, nm(m.title)),
             React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 4 } },
                 m.date,
                 " \u00B7 ",
@@ -457,7 +458,7 @@ function FundTimeline({ f, onOpenStage }) {
                         s.source,
                         s.reports > 1 ? ` 외 ${s.reports - 1}건` : '',
                         " \u00B7 ",
-                        s.tko || s.title))));
+                        nm(s.tko || s.title)))));
         }),
         f.dropped && f.dropped.length > 0 && (React.createElement("div", { style: { font: F(500, 12, 1.55), color: KB.mute, marginTop: 6, padding: '8px 10px', background: KB.band, borderRadius: 8 } },
             "\uC2DC\uAC04 \uC21C\uC11C\uAC00 \uB9DE\uC9C0 \uC54A\uB294 \uBCF4\uB3C4 ",
@@ -485,25 +486,21 @@ function FundCard({ f, onOpenStage, onGp, first }) {
 function FundLine({ f, onOpenStage, first }) {
     const [open, setOpen] = React.useState(false);
     const ls = lastStage(f);
+    // 모집 중 펀드의 '금액'이 목표액과 같으면 모은 돈처럼 보이지 않게 따로 표시하지 않는다
+    const amt = ls && ls.size && !(f.status === '모집 중' && f.target && ls.size === f.target) ? ls.size : '';
+    const meta = [f.fund ? stratOf(f) : '', ls ? `${FR_LABEL[ls.stage]} ${frDate(ls)}` : '', f.target ? `목표 ${f.target}` : ''].filter(Boolean).join(' · ');
     return (React.createElement("div", { style: { borderTop: first ? 'none' : `1px solid ${KB.line2}` } },
-        React.createElement("div", { onClick: () => setOpen((o) => !o), style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', cursor: 'pointer' } },
-            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                React.createElement("div", { style: { font: F(600, 15, 1.4), color: f.fund ? KB.ink : KB.ink2, wordBreak: 'keep-all' } },
-                    fundTitle(f),
+        React.createElement("div", { onClick: () => setOpen((o) => !o), style: { padding: '12px 0', cursor: 'pointer' } },
+            React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', gap: 8 } },
+                React.createElement("div", { style: { flex: 1, minWidth: 0, font: F(600, 15, 1.45), color: f.fund ? KB.ink : KB.ink2, wordBreak: 'keep-all', overflowWrap: 'anywhere' } },
+                    f.fund || `${stratOf(f)} 펀드`,
                     React.createElement(Unnamed, { f: f })),
-                React.createElement("div", { style: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 3, font: F(500, 12.5), color: KB.mute } },
-                    React.createElement("span", null, stratOf(f)),
-                    ls && React.createElement("span", null,
-                        FR_LABEL[ls.stage],
-                        " ",
-                        frDate(ls)),
-                    f.target && React.createElement("span", null,
-                        "\uBAA9\uD45C ",
-                        f.target))),
-            ls && ls.size && React.createElement("span", { style: { font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' } }, ls.size),
-            React.createElement(Tag, { tone: frTone(f.status) }, f.status === '모집 중' ? '모집 중' : f.status.replace(' 클로즈', '')),
-            React.createElement("span", { style: { color: KB.faint, transform: open ? 'rotate(180deg)' : 'none', display: 'flex' } },
-                React.createElement(Ico, { n: "down", size: 16, sw: 2 }))),
+                React.createElement("span", { style: { color: KB.faint, transform: open ? 'rotate(180deg)' : 'none', display: 'flex', marginTop: 2 } },
+                    React.createElement(Ico, { n: "down", size: 16, sw: 2 }))),
+            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 } },
+                React.createElement(Tag, { tone: frTone(f.status) }, f.status),
+                amt && React.createElement("span", { style: { font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' } }, amt),
+                meta && React.createElement("span", { style: { font: F(500, 12.5, 1.5), color: KB.mute } }, meta))),
         open && React.createElement("div", { style: { paddingBottom: 12 } },
             React.createElement(FundTimeline, { f: f, onOpenStage: onOpenStage }))));
 }
@@ -590,8 +587,8 @@ function FundraisingView({ data, onOpen, onGp }) {
                         f.size && React.createElement("span", { style: { font: F(700, 14), color: KB.gray } }, f.size),
                         React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 12), color: KB.mute } }, fmtDate(itemMs({ ts: f.pubTs || f.ts })))),
                     f.fund && React.createElement("div", { style: { font: F(600, 13.5), color: KB.gray, marginTop: 6 } }, f.fund),
-                    React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 } }, f.title),
-                    f.tko && React.createElement("div", { style: { font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 } }, f.tko),
+                    React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 } }, nm(f.title)),
+                    f.tko && React.createElement("div", { style: { font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 } }, nm(f.tko)),
                     React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 4 } }, f.source)))),
                 React.createElement("div", { style: { font: F(400, 12, 1.7), color: KB.mute, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${KB.line}` } }, "\uACF5\uC2DD \uD380\uB4DC\uBA85\u00B7\uB2E8\uACC4\u00B7\uAE08\uC561\u00B7\uC77C\uC790\uB294 \uAE30\uC0AC \uBCF8\uBB38\uC5D0 \uC801\uD78C \uB0B4\uC6A9\uC5D0\uC11C \uBF51\uC2B5\uB2C8\uB2E4(\uBCF8\uBB38\uC5D0 \uC5C6\uB294 \uAC12\uC740 \uBE44\uC6CC \uB460). \uB2E8\uACC4 \uC77C\uC790\uB294 \uBCF8\uBB38\uC5D0 \uC2E4\uC81C \uB0A0\uC9DC\uAC00 \uC788\uC73C\uBA74 \uADF8 \uB0A0\uC9DC, \uC5C6\uC73C\uBA74 \uCCAB \uBCF4\uB3C4\uC77C(\u2018\uBCF4\uB3C4\u2019 \uD45C\uC2DC)\uC785\uB2C8\uB2E4. \uC2DC\uAC04 \uC21C\uC11C\uAC00 \uB9DE\uC9C0 \uC54A\uB294 \uBCF4\uB3C4\uB294 \uD0C0\uC784\uB77C\uC778\uC5D0\uC11C \uC81C\uC678\uD569\uB2C8\uB2E4. 3\uC2DC\uAC04\uB9C8\uB2E4 \uAC31\uC2E0\u00B7\uB204\uC801\uB429\uB2C8\uB2E4.")))));
 }

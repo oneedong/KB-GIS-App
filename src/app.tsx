@@ -149,7 +149,7 @@ function App() {
 
   useEffect(() => { store.set('bookmarks', bm); }, [bm]);
   useEffect(() => { store.set('read', read); }, [read]);
-  useEffect(() => { store.set('articles', articles.slice(0, 600)); }, [articles]);
+  useEffect(() => { store.set('articles', articles.slice(0, 600)); prefetchBodies(articles); }, [articles]);
   useEffect(() => { if (seen) store.set('seen', seen); }, [seen]);
   useEffect(() => {
     if (seen === null && articles.length) { const m = {}; articles.forEach((a) => { m[a.id] = true; }); setSeen(m); }
@@ -220,13 +220,15 @@ function App() {
 
   // ─── 파생 데이터 ─────────────────────────────────────────
   const items = useMemo(() => articles.map((it) => {
-    const a = ASSET[it.asset] || ASSET.PE;
+    const known = assetKnown(it);
+    const a = known ? ASSET[it.asset] : null;
     const inst = clean(it.inst) || '';
     return {
       ...it,
-      ko: clean(it.ko), en: clean(it.en), source: clean(it.source), inst,
-      body: it.body || '',
-      assetLabel: a.label,
+      ko: nm(clean(it.ko)), en: clean(it.en), tko: nm(it.tko), source: clean(it.source), inst,
+      body: nm(it.body || ''),
+      asset: known ? it.asset : '',
+      assetLabel: a ? a.label : '',
       regionLabel: REGION[it.region] || '글로벌',
       catLabel: CAT_LABEL[it.cat] || '시장',
       instGroup: grp(it.instType),
@@ -318,7 +320,7 @@ function App() {
       const k = dayKeyOf(itemMs(item));
       if (!opts.flat && k !== last) { out.push(<DayHeader key={'d' + k} label={dayLabel(itemMs(item))} count={counts[k]} />); last = k; }
       out.push(<FeedItem key={item.id} item={item} isNew={!!(seen && !seen[item.id])} selected={isDesktop && sel && sel.id === item.id}
-        onOpen={() => openArticle(item.id)} onBookmark={(e) => toggleBm(item.id, e)} />);
+        onOpen={() => openArticle(item.id)} onPress={() => fetchArchiveBody(item)} onBookmark={(e) => toggleBm(item.id, e)} />);
     });
     if (!opts.all && list.length > shown.length) {
       out.push(<div key="more" onClick={() => setLimit((n) => n + PAGE)} style={{ textAlign: 'center', padding: '18px 0 22px', font: F(600, 14), color: KB.sub, cursor: 'pointer' }}>기사 {Math.min(PAGE, list.length - shown.length)}건 더 보기</div>);
@@ -451,7 +453,9 @@ function App() {
   const gpNames = gpProfiles ? Object.keys(gpProfiles) : [];
   // AUM(달러 환산, 십억 달러) 큰 순 — 프로필 AUM 이 없으면 기사 기준 AUM
   const aumB = (txt) => {
-    const m = String(txt || '').replace(/,/g, '').match(/([$€£])?\s*([\d.]+)\s*([TtBbMm])/);
+    const t = String(txt || '').replace(/,/g, '');
+    // "전체 ~$12T · 대체 ~$600B" 처럼 대체투자 AUM 이 따로 있으면 그것으로 줄 세운다(대체투자 운용사 목록이므로)
+    const m = t.match(/대체\s*~?\s*([$€£])?\s*([\d.]+)\s*([TtBbMm])/) || t.match(/([$€£])?\s*([\d.]+)\s*([TtBbMm])/);
     if (!m) return null;
     const v = parseFloat(m[2]) * ({ t: 1000, b: 1, m: 0.001 }[m[3].toLowerCase()]);
     return v * ({ '€': 1.08, '£': 1.27 }[m[1]] || 1);
@@ -461,8 +465,10 @@ function App() {
     const p = gpProfiles[n] || {};
     const news = ((insights && insights.aums) || []).find((x) => x.inst === n);
     const aum = aumB(p.aum) != null ? aumB(p.aum) : (news ? aumB(news.display) : null);
-    return { name: n, p, aum, arts: (artsByInst[n] || []).length, deals: d.length };
-  }).sort((a, b) => (b.aum == null ? -1 : b.aum) - (a.aum == null ? -1 : a.aum) || b.arts - a.arts), [gpProfiles, dealsByInst, artsByInst, insights]);
+    // 대체투자 AUM 을 알 수 없는 종합운용사(전체 AUM 만 공개: PIMCO·PGIM 등)는 대체 전업사 뒤에 둔다
+    const grp = aum == null ? 2 : (/전체/.test(p.aum || '') && !/대체/.test(p.aum || '') ? 1 : 0);
+    return { name: n, p, aum, grp, arts: (artsByInst[n] || []).length, deals: d.length };
+  }).sort((a, b) => a.grp - b.grp || (b.aum || 0) - (a.aum || 0) || b.arts - a.arts), [gpProfiles, dealsByInst, artsByInst, insights]);
   const gpDeals = invItems.filter((e) => e.role === 'GP');
   const gpScreen = (() => {
     if (gpSel) {
@@ -480,7 +486,7 @@ function App() {
     const frItems = (fundraising && fundraising.items) || [];
     return (
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
-        <TopBar big title="Global GP" sub={`해외 운용사 ${gpNames.length}곳 · AUM 순 · 프로필 ${gpProfilesAt || '-'} 기준`} border={false} />
+        <TopBar big title="Global GP" sub={`해외 운용사 ${gpNames.length}곳 · 대체투자 AUM 순 · 프로필 ${gpProfilesAt || '-'} 기준`} border={false} />
         <Tabs items={[['list', '운용사', gpNames.length], ['deals', '딜', gpDeals.length]]} value={gpTab === 'fr' ? 'list' : gpTab} onChange={setGpTab} />
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div style={{ maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
@@ -522,7 +528,7 @@ function App() {
                         {f.size && <span style={{ font: F(700, 14), color: KB.gray }}>{f.size}</span>}
                         <span style={{ marginLeft: 'auto', font: F(500, 12), color: KB.mute }}>{f.date}</span>
                       </div>
-                      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 }}>{f.title}</div>
+                      <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 }}>{nm(f.title)}</div>
                       <div style={{ font: F(500, 12), color: KB.mute, marginTop: 4 }}>{f.source}</div>
                     </div>
                   ))}
@@ -621,11 +627,13 @@ function App() {
 
   // 검색 — 기사·기관·용어를 한 번에
   const q = query.trim().toLowerCase();
+  const qn = (nm(query.trim()) || '').toLowerCase();       // '블랙스톤'으로 찾아도 Blackstone 기사가 나오게
+  const hitQ = (s) => { const t = String(s || '').toLowerCase(); return t.includes(q) || (qn !== q && t.includes(qn)); };
   const searchScreen = (() => {
-    const arts = q ? items.filter((i) => `${i.ko} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel}`.toLowerCase().includes(q)) : [];
+    const arts = q ? items.filter((i) => hitQ(`${i.ko} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel}`)) : [];
     const insts = q ? [
       ...(roster || []).filter((r) => r.name.toLowerCase().includes(q)).map((r) => ({ inst: r.name, role: 'LP', sub: r.group })),
-      ...gpNames.filter((n) => n.toLowerCase().includes(q)).map((n) => ({ inst: n, role: 'GP', sub: 'Global GP' })),
+      ...gpNames.filter((n) => hitQ(n)).map((n) => ({ inst: n, role: 'GP', sub: 'Global GP' })),
     ].slice(0, 8) : [];
     const terms = q ? GLOSSARY.filter((g) => `${g.term} ${g.en}`.toLowerCase().includes(q) || g.aliases.test(query.trim())).slice(0, 6) : [];
     const recent = items.filter((i) => read[i.id]).slice(0, 5);

@@ -140,13 +140,14 @@ async function fetchBodyViaProxies(url, signal, title) {
   let sawDead = false;
   const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
   const attempt = async (p) => {
-    const r = await Promise.race([fetch(p.mk(url), { signal }), timeout(9000)]);
+    const r = await Promise.race([fetch(p.mk(url), { signal }), timeout(7000)]);
     if (!r.ok) throw new Error('http');
     const raw = p.kind === 'text'
-      ? await Promise.race([r.text(), timeout(6000)])
-      : decodeBytes(await Promise.race([r.arrayBuffer(), timeout(6000)]), r.headers.get('content-type'));
+      ? await Promise.race([r.text(), timeout(5000)])
+      : decodeBytes(await Promise.race([r.arrayBuffer(), timeout(5000)]), r.headers.get('content-type'));
     const body = p.kind === 'text' ? parseReaderText(raw) : parseArticleHtml(raw, title);
-    if (body && body.length > 120) return body;
+    // 프록시가 다른 페이지(메인·다른 기사)를 돌려준 경우를 걸러낸다 — 제목 핵심어가 본문에 있어야 한다
+    if (body && body.length > 120 && titleOk(title, body)) return body;
     if (DEAD_PAGE_RE.test(String(raw).slice(0, 8000))) sawDead = true;
     throw new Error('empty');
   };
@@ -160,26 +161,40 @@ async function fetchBodyViaProxies(url, signal, title) {
 }
 
 // 기사 전문 로드 — 캐시 → bodies/ → 프록시 순
+// 제목-본문 일치 검사(수집기와 같은 규칙)
+const titleOk = (title, body) => (typeof ArticleClean === 'undefined' || !ArticleClean.matchesTitle) ? true : ArticleClean.matchesTitle(title, body);
+
 // 영문 기사 번역(수집기가 문단 단위로 저장): { n: 번역된 앞 문단 수, p: [한국어 문단…] }
 const koCache = {};
+// 수집기가 저장해 둔 본문 파일 — 같은 기사를 동시에 두 번 받지 않도록 진행 중 요청을 공유한다
+const archivePending = {};
+function fetchArchiveBody(sel) {
+  if (!sel || !sel.b) return Promise.resolve(null);
+  if (!archivePending[sel.id]) {
+    archivePending[sel.id] = fetch(`./bodies/${sel.id}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      .then((j) => {
+        if (!j || !j.body) { delete archivePending[sel.id]; return null; }
+        const b = j.ko ? String(j.body).trim() : cleanBodyText(j.body, sel.ko);
+        if (!titleOk(sel.ko, b)) return null;                                     // 제목과 무관한 본문은 쓰지 않음
+        bodyCache[sel.id] = b;
+        if (j.ko && Array.isArray(j.ko.p)) koCache[sel.id] = j.ko;
+        return b;
+      });
+  }
+  return archivePending[sel.id];
+}
+// 목록이 뜨면 위쪽 기사들의 본문 파일을 미리 받아 둔다(탭하면 바로 열림)
+function prefetchBodies(list, n = 24) {
+  const run = () => (list || []).filter((a) => a.b && !bodyCache[a.id]).slice(0, n).forEach((a, i) => setTimeout(() => fetchArchiveBody(a), i * 120));
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 3000 }); else setTimeout(run, 1200);
+}
 async function loadArticleBody(sel, signal) {
   if (bodyCache[sel.id] && (!sel.tr || koCache[sel.id])) return { body: bodyCache[sel.id], ko: koCache[sel.id] || null, src: 'cache' };
   const stored = !sel.tr && bodyStore.get(sel.id);
-  if (stored) { bodyCache[sel.id] = stored; return { body: stored, src: 'cache' }; }
+  if (stored && titleOk(sel.ko, stored)) { bodyCache[sel.id] = stored; return { body: stored, src: 'cache' }; }
   if (sel.b) {
-    try {
-      const r = await fetch(`./bodies/${sel.id}.json`, { signal });
-      if (r.ok) {
-        const j = await r.json();
-        if (j && j.body) {
-          // 번역이 있는 기사는 문단 짝이 어긋나지 않게 수집기가 정제한 문단 그대로 쓴다
-          const b = j.ko ? String(j.body).trim() : cleanBodyText(j.body, sel.ko);
-          bodyCache[sel.id] = b;
-          if (j.ko && Array.isArray(j.ko.p)) koCache[sel.id] = j.ko;
-          return { body: b, ko: koCache[sel.id] || null, src: 'archive' };
-        }
-      }
-    } catch { /* 프록시로 */ }
+    const b = await fetchArchiveBody(sel);
+    if (b) return { body: b, ko: koCache[sel.id] || null, src: 'archive' };
   }
   if (!sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url)) return { body: '', src: '' };
   const r = await fetchBodyViaProxies(sel.url, signal, sel.ko);

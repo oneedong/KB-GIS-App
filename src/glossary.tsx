@@ -29,11 +29,11 @@ const GLOSSARY = [
   { id: 'lp', cat: 'fund', term: 'LP (유한책임투자자)', en: 'Limited Partner', aliases: /\bLPs?\b|유한\s*책임\s*(?:사원|투자자)/,
     short: '펀드에 돈을 대는 투자자. 연기금·공제회·보험사 등이 여기에 해당해요.',
     body: '펀드에 자금을 약정하지만 운용에는 관여하지 않는 투자자예요. 손실 책임이 출자한 금액까지로 한정되기 때문에 ‘유한책임’이라고 불러요. 국내 기관이 해외 펀드에 들어가면 그 펀드의 LP가 됩니다.',
-    ex: '교직원공제회가 블랙스톤 부동산 펀드에 1억 달러를 약정하면, 교직원공제회는 그 펀드의 LP예요.',
+    ex: '교직원공제회가 Blackstone 부동산 펀드에 1억 달러를 약정하면, 교직원공제회는 그 펀드의 LP예요.',
     dia: 'structure', rel: ['gp', 'commitment', 'capital_call'] },
   { id: 'gp', cat: 'fund', term: 'GP (운용사)', en: 'General Partner', aliases: /\bGPs?\b(?![-\s]*(?:led|주도|지분|stake))|무한\s*책임\s*사원/,
     short: '펀드를 만들고 투자처를 골라 운용하는 회사예요.',
-    body: '펀드를 설립해 돈을 모으고, 투자 대상을 찾아 사고·관리하고·팔아서 수익을 돌려주는 역할이에요. 블랙스톤·KKR·아폴로 같은 회사가 대표적이에요. GP도 보통 펀드 약정액의 1~3%를 직접 넣어(GP 커밋) LP와 이해관계를 맞춰요.',
+    body: '펀드를 설립해 돈을 모으고, 투자 대상을 찾아 사고·관리하고·팔아서 수익을 돌려주는 역할이에요. Blackstone·KKR·Apollo 같은 회사가 대표적이에요. GP도 보통 펀드 약정액의 1~3%를 직접 넣어(GP 커밋) LP와 이해관계를 맞춰요.',
     ex: 'KKR이 인프라 펀드를 조성해 전 세계 연기금에서 자금을 모으면 KKR이 GP, 연기금들이 LP예요.',
     dia: 'structure', rel: ['lp', 'mgmt_fee', 'carry'] },
   { id: 'blind', cat: 'fund', term: '블라인드펀드', en: 'Blind Pool Fund', aliases: /블라인드\s*(?:펀드|PEF)?|blind[- ]pool/,
@@ -79,7 +79,7 @@ const GLOSSARY = [
   { id: 'closing', cat: 'fund', term: '클로징 (1차·파이널)', en: 'First / Final Close', aliases: /(?:퍼스트|1차|파이널|최종|중간)\s*클로(?:징|즈)|클로징|first close|final close|interim close/,
     short: '펀드 모집을 단계별로 마감하는 것이에요.',
     body: '펀드는 한 번에 다 모으지 않고, 첫 투자자들이 모이면 1차 클로징을 해서 운용을 시작해요. 이후 투자자를 더 받아 마지막으로 모집을 끝내는 게 파이널 클로징이에요. 파이널 클로징 금액이 그 펀드의 최종 규모예요.',
-    ex: '“블랙스톤, 부동산 펀드 300억 달러로 파이널 클로징” = 모집을 300억 달러로 끝냈다는 뜻이에요.',
+    ex: '“Blackstone, 부동산 펀드 300억 달러로 파이널 클로징” = 모집을 300억 달러로 끝냈다는 뜻이에요.',
     dia: 'lifecycle', rel: ['hard_cap', 'commitment'] },
   { id: 'hard_cap', cat: 'fund', term: '하드캡', en: 'Hard Cap', aliases: /하드\s*캡|hard[- ]cap/,
     short: '펀드가 받을 수 있는 최대 모집 한도예요.',
@@ -123,7 +123,7 @@ const GLOSSARY = [
     rel: ['lpa', 'keyman'] },
   { id: 'lpa', cat: 'fund', term: 'LPA · PPM', en: 'LPA / PPM', aliases: /\bLPA\b|\bPPM\b|조합\s*규약|투자\s*설명서/,
     short: 'LPA는 펀드 계약서, PPM은 투자 설명서예요.',
-    body: 'PPM(사모 투자설명서)은 GP가 전략·과거 성과·리스크를 설명하는 문서이고, LPA(유한책임조합 계약)는 보수·분배·의사결정 등 권리와 의무를 정한 본 계약이에요. LP는 PPM으로 검토하고 LPA로 약정해요.',
+    body: 'PPM(사모 투자설명서)은 GP가 전략·과거 성과·리스크를 설명하는 문서이고, LPA(Limited Partnership Agreement · 조합 계약)는 보수·분배·의사결정 등 권리와 의무를 정한 본 계약이에요. LP는 PPM으로 검토하고 LPA로 약정해요.',
     ex: '출자 심사 때 PPM으로 전략을 보고, 법무 검토는 LPA와 사이드레터를 중심으로 해요.',
     rel: ['side_letter', 'keyman'] },
   { id: 'mandate', cat: 'fund', term: '위탁운용사 선정 (출자사업)', en: 'Mandate / RFP', aliases: /위탁\s*운용사|출자\s*사업|운용사\s*선정|mandates?\b/,
@@ -139,7 +139,7 @@ const GLOSSARY = [
   { id: 'evergreen', cat: 'fund', term: '에버그린·반개방형 펀드', en: 'Evergreen / Semi-liquid Fund', aliases: /에버그린|evergreen|semi[- ]liquid|반개방형|인터벌\s*펀드|interval fund/,
     short: '만기 없이 계속 돈을 받고, 정기적으로 일부 환매도 해 주는 펀드예요.',
     body: '일반 사모펀드는 10년 동안 돈이 묶이지만, 에버그린 펀드는 매달·분기마다 신규 자금을 받고 일정 한도(예: 분기 5%) 안에서 환매를 허용해요. 개인 부유층(프라이빗 웰스) 자금을 모으는 데 많이 써요. 환매 요청이 몰리면 한도 때문에 돈을 늦게 받을 수 있어요.',
-    ex: '블랙스톤의 BREIT·BCRED가 대표적인 반개방형 상품이에요.',
+    ex: 'Blackstone의 BREIT·BCRED가 대표적인 반개방형 상품이에요.',
     rel: ['nav', 'blind'] },
   { id: 'coinvest', cat: 'strategy', term: '공동투자 (코인베스트)', en: 'Co-investment', aliases: /코인베스트|공동\s*투자|co-?invest(?:ment)?s?/,
     short: 'LP가 펀드와 함께 특정 딜에 직접 추가로 투자하는 것이에요.',
@@ -149,12 +149,12 @@ const GLOSSARY = [
   { id: 'fof', cat: 'strategy', term: '재간접 (펀드오브펀드)', en: 'Fund of Funds', aliases: /펀드\s*오브\s*펀드|재간접|fund of funds|\bFoFs?\b/,
     short: '여러 펀드에 나눠 투자하는 펀드예요.',
     body: '한 운용사가 여러 GP의 펀드를 골라 담아 분산 효과를 줘요. 작은 기관도 여러 해외 펀드에 접근할 수 있지만, 보수를 두 번(재간접 운용사 + 하위 펀드) 내는 단점이 있어요.',
-    ex: '국내 기관이 해밀턴레인·스텝스톤 같은 운용사의 재간접 펀드를 통해 여러 사모펀드에 투자해요.',
+    ex: '국내 기관이 Hamilton Lane·StepStone 같은 운용사의 재간접 펀드를 통해 여러 사모펀드에 투자해요.',
     rel: ['secondary', 'blind'] },
   { id: 'gp_stakes', cat: 'strategy', term: 'GP 지분투자', en: 'GP Stakes', aliases: /GP\s*지분|GP[- ]stakes?/,
     short: '펀드가 아니라 운용사(GP) 회사 자체의 지분을 사는 투자예요.',
     body: '운용사의 소수 지분을 사서 그 회사가 받는 관리보수·성과보수 일부를 나눠 받아요. 여러 펀드에서 나오는 보수가 꾸준해 채권처럼 안정적인 현금흐름을 기대할 수 있어요.',
-    ex: '블루아울이 중견 사모펀드 운용사 지분 15%를 사서 보수 수익을 나눠 받는 식이에요.',
+    ex: 'Blue Owl이 중견 사모펀드 운용사 지분 15%를 사서 보수 수익을 나눠 받는 식이에요.',
     rel: ['gp', 'mgmt_fee'] },
 
   // ── 성과 지표 ──
@@ -213,7 +213,7 @@ const GLOSSARY = [
   { id: 'take_private', cat: 'strategy', term: '테이크 프라이빗 (상장사 인수)', en: 'Take-private', aliases: /테이크\s*프라이빗|take[- ]private|자진\s*상장\s*폐지/,
     short: '상장사를 사들여 상장을 폐지하고 비상장으로 운영하는 거래예요.',
     body: '사모펀드가 주주들에게 프리미엄을 얹어 주식을 사고 상장을 폐지해요. 분기 실적 압박 없이 구조조정·장기 투자를 할 수 있다는 장점이 있어요.',
-    ex: '블랙스톤이 상장 리츠를 주당 30% 프리미엄에 인수해 상장 폐지하는 경우예요.',
+    ex: 'Blackstone이 상장 리츠를 주당 30% 프리미엄에 인수해 상장 폐지하는 경우예요.',
     rel: ['buyout'] },
   { id: 'distressed', cat: 'strategy', term: '스페셜 시추에이션 · 디스트레스드', en: 'Special Situations / Distressed', aliases: /스페셜\s*시추에이션|디스트레스드|distressed|special situations?/,
     short: '재무적으로 어려운 기업·자산에 싸게 투자해 회복 과정에서 수익을 내는 전략이에요.',
@@ -230,7 +230,7 @@ const GLOSSARY = [
   { id: 'direct_lending', cat: 'credit', term: '다이렉트 렌딩', en: 'Direct Lending', aliases: /다이렉트\s*렌딩|direct lending/,
     short: '사모대출 중에서도 중견기업에 선순위로 직접 빌려주는 가장 대표적인 형태예요.',
     body: '은행·채권시장을 거치지 않고 펀드가 기업과 직접 대출 조건을 협상해요. 주로 사모펀드가 인수한 중견기업(미들마켓)이 대상이고, 담보 순위가 높은 선순위 대출이라 손실 위험이 비교적 낮아요.',
-    ex: '골럽캐피탈·아레스 같은 운용사가 대표적인 다이렉트 렌딩 GP예요.',
+    ex: 'Golub Capital·Ares 같은 운용사가 대표적인 다이렉트 렌딩 GP예요.',
     rel: ['private_credit', 'unitranche'] },
   { id: 'unitranche', cat: 'credit', term: '유니트랜치', en: 'Unitranche', aliases: /유니\s*트랜치|unitranche/,
     short: '선순위와 후순위 대출을 하나로 합친 단일 대출이에요.',
@@ -301,7 +301,7 @@ const GLOSSARY = [
     rel: ['infra', 'core_opp'] },
   { id: 'lease', cat: 'real', term: '항공기 리스 (운용·금융리스)', en: 'Operating / Finance Lease', aliases: /운용\s*리스|금융\s*리스|오퍼레이팅\s*리스|operating leases?|finance leases?|세일\s*앤\s*리스백|sale[- ]and[- ]leaseback/,
     short: '항공사가 비행기를 사지 않고 빌려 쓰는 계약이에요.',
-    body: '운용리스는 리스사(렌터)가 비행기를 소유하고 항공사가 몇 년 빌려 쓰는 방식으로, 잔존가치(나중 중고 가격) 위험을 리스사가 져요. 금융리스는 사실상 할부 구매로, 계약이 끝나면 항공사가 소유해요. 투자자는 리스료와 항공기 매각 가치로 수익을 내요.',
+    body: '운용리스는 리스사(임대인·lessor)가 비행기를 소유하고 항공사가 몇 년 빌려 쓰는 방식으로, 잔존가치(나중 중고 가격) 위험을 리스사가 져요. 금융리스는 사실상 할부 구매로, 계약이 끝나면 항공사가 소유해요. 투자자는 리스료와 항공기 매각 가치로 수익을 내요.',
     ex: '리스사가 A321neo를 사서 항공사에 12년간 월 리스료를 받고 빌려주는 게 운용리스예요.',
     dia: 'lease', rel: ['abf', 'ltv'] },
   { id: 'reit', cat: 'real', term: '리츠', en: 'REITs', aliases: /리츠|\bREITs?\b/,
@@ -340,7 +340,7 @@ function findTerms(text, limit = 8) {
 // ─── 개념 도식 (SVG, 모바일 폭 360 기준 좌표) ───────────────────
 // 글자 크기가 폰에서 그대로 읽히도록 좌표계를 휴대폰 폭에 맞췄다.
 const D = {
-  box: KB.band, line: '#D5D7DC', ink: KB.ink, sub: KB.sub, y: KB.yellow, yt: KB.yellowTint, g: KB.gray,
+  box: KB.band, line: '#D5D7DC', ink: KB.ink, sub: KB.sub, faint: '#9A9CA2', y: KB.yellow, yt: KB.yellowTint, g: KB.gray,
 };
 function Arrow({ id }) {
   return (
@@ -357,41 +357,62 @@ const Ln = (x1, y1, x2, y2, id, o = {}) => <line x1={x1} y1={y1} x2={x2} y2={y2}
 
 const DIAGRAMS = {
   // 1) 펀드 구조
-  structure: { title: '사모펀드의 기본 구조', cap: 'LP는 돈을 대고, GP는 운용한다. 회수한 돈은 약속한 순서(워터폴)대로 돌아온다.', render: (k) => (
-    <svg viewBox="0 0 360 300" width="100%">
+  structure: { title: '사모펀드의 기본 구조', cap: 'LP는 돈을 대고(①), GP는 운용한다(②). 투자한 자산을 팔아 회수하면(③·④) 약속한 순서(워터폴)대로 LP에게 분배한다(⑤).', render: (k) => (
+    <svg viewBox="0 0 360 312" width="100%">
       <Arrow id={k} />
-      {Box(20, 14, 150, 58, { f: D.yt, s: D.y })}{T(95, 38, 'LP (투자자)', { w: 700 })}{T(95, 57, '연기금·공제회·보험사', { size: 10.5, c: D.sub })}
-      {Box(190, 14, 150, 58)}{T(265, 38, 'GP (운용사)', { w: 700 })}{T(265, 57, '블랙스톤·KKR 등', { size: 10.5, c: D.sub })}
-      {Ln(95, 72, 150, 118, k)}{T(92, 101, '① 약정·캐피탈콜', { size: 10.5, c: D.g, a: 'end' })}
-      {Ln(265, 72, 210, 118, k)}{T(272, 101, '② 운용·의사결정', { size: 10.5, c: D.g, a: 'start' })}
-      {Box(110, 120, 140, 50, { f: '#fff', s: D.g, sw: 1.5 })}{T(180, 142, '펀드', { w: 700, size: 13 })}{T(180, 160, '(유한책임조합)', { size: 10.5, c: D.sub })}
-      {Ln(180, 170, 180, 206, k)}{T(188, 192, '③ 투자', { size: 10.5, c: D.g, a: 'start' })}
-      {Box(30, 208, 90, 40)}{T(75, 233, '기업 A', { size: 11.5 })}
-      {Box(135, 208, 90, 40)}{T(180, 233, '부동산 B', { size: 11.5 })}
-      {Box(240, 208, 90, 40)}{T(285, 233, '인프라 C', { size: 11.5 })}
-      {T(180, 272, '④ 회수·분배 → LP(원금+수익) · GP(성과보수)', { size: 11, c: D.g, w: 600 })}
-      {T(180, 290, 'GP는 매년 관리보수(약정의 1.5~2%)도 받는다', { size: 10.5, c: D.sub })}
+      {Box(16, 14, 140, 58, { f: D.yt, s: D.y })}{T(86, 38, 'LP (투자자)', { w: 700 })}{T(86, 57, '연기금·공제회·보험사', { size: 10.5, c: D.sub })}
+      {Box(204, 14, 140, 58)}{T(274, 38, 'GP (운용사)', { w: 700 })}{T(274, 57, 'Blackstone·KKR 등', { size: 10.5, c: D.sub })}
+      {Ln(98, 72, 140, 120, k)}{T(124, 92, '① 약정·캐피탈콜', { size: 10.5, c: D.g, a: 'start' })}
+      {Ln(262, 72, 220, 120, k)}{T(250, 110, '② 운용·투자 결정', { size: 10.5, c: D.g, a: 'start' })}
+      <path d={`M110 150 H40 V76`} fill="none" stroke={D.y} strokeWidth="2" strokeDasharray="5 3" markerEnd={`url(#${k})`} />
+      {T(46, 112, '⑤ 분배', { size: 10.5, c: D.g, w: 700, a: 'start' })}
+      {Box(110, 122, 140, 52, { f: '#fff', s: D.g, sw: 1.5 })}{T(180, 144, '펀드', { w: 700, size: 13 })}{T(180, 163, 'Limited Partnership', { size: 10.5, c: D.sub })}
+      {Ln(162, 174, 162, 210, k)}{T(155, 197, '③ 투자', { size: 10.5, c: D.g, a: 'end' })}
+      {Ln(198, 210, 198, 176, k)}{T(205, 197, '④ 회수(매각·배당)', { size: 10.5, c: D.g, a: 'start' })}
+      {Box(22, 212, 98, 40)}{T(71, 237, '기업 A', { size: 11.5 })}
+      {Box(131, 212, 98, 40)}{T(180, 237, '부동산 B', { size: 11.5 })}
+      {Box(240, 212, 98, 40)}{T(289, 237, '인프라 C', { size: 11.5 })}
+      {T(180, 278, '분배 순서: LP 원금 → 우선수익 → GP 성과보수(캐리)', { size: 10.5, c: D.g, w: 600 })}
+      {T(180, 297, 'GP는 관리보수(연 1.5~2%)를 받고 약정의 1~3%를 직접 출자', { size: 10, c: D.sub })}
     </svg>) },
 
-  // 2) 자금 흐름 + J커브
-  flow: { title: '캐피탈콜·분배와 J커브', cap: '초기엔 돈이 나가기만 해서(막대 아래) 누적 현금흐름이 마이너스, 회수가 시작되면 J 모양으로 반등한다. (가상의 예시)', render: (k) => {
-    const calls = [-22, -25, -20, -13, -6, -3, 0, 0, 0, 0];
-    const dists = [0, 0, 3, 8, 15, 24, 30, 28, 20, 12];
-    let cum = 0; const pts = [];
-    const X = (i) => 44 + i * 30, Y = (v) => 150 - v * 1.55;
-    calls.forEach((c, i) => { cum += c + dists[i]; pts.push(`${X(i) + 9},${Y(cum)}`); });
+  // 2) 자금 흐름 + J커브 — 약정 100 기준 가상의 예시(총 납입 95, 총 분배 150)
+  flow: { title: '캐피탈콜·분배와 J커브', cap: '막대는 해마다 오간 돈(아래 파랑: LP가 낸 캐피탈콜, 위 노랑: 돌려받은 분배), 검은 선은 그 누적 합계예요. 투자 초기엔 돈이 나가기만 해 누적이 마이너스로 파였다가, 회수가 시작되면 J 모양으로 올라와 0을 넘어서요. (약정 100 기준 가상의 예시)', render: (k) => {
+    const calls = [-22, -25, -20, -13, -8, -4, -2, -1, 0, 0];
+    const dists = [0, 0, 3, 8, 15, 24, 30, 30, 24, 16];
+    const Z = 126, S = 1.3;                        // 0선 위치 · 1단위당 픽셀
+    const X = (i) => 62 + i * 29;                  // 연차 중심
+    const Y = (v) => Z - v * S;
+    let cum = 0; const cums = calls.map((c, i) => (cum += c + dists[i]));
+    const low = cums.indexOf(Math.min(...cums));
+    const be = cums.findIndex((v) => v > 0);       // 누적이 처음 0을 넘는 해
+    const bx = X(be - 1) + 29 * (-cums[be - 1] / (cums[be] - cums[be - 1]));
+    const pts = cums.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+    const tick = (v) => <g key={'y' + v}>
+      <line x1="46" y1={Y(v)} x2="348" y2={Y(v)} stroke={v === 0 ? D.g : D.line} strokeWidth={v === 0 ? 1.2 : 1} strokeDasharray={v === 0 ? undefined : '3 3'} />
+      {T(40, Y(v) + 4, v > 0 ? '+' + v : v === 0 ? '0' : '−' + (-v), { size: 10, c: D.sub, a: 'end' })}
+    </g>;
     return (
-      <svg viewBox="0 0 360 270" width="100%">
-        {Ln(34, 150, 348, 150, null, { c: D.line, w: 1 })}
-        {calls.map((c, i) => <rect key={'c' + i} x={X(i)} y={150} width={9} height={-c * 1.55} fill="#9DB6E8" />)}
-        {dists.map((d, i) => <rect key={'d' + i} x={X(i) + 10} y={150 - d * 1.55} width={9} height={d * 1.55} fill={D.y} />)}
-        <polyline points={pts.join(' ')} fill="none" stroke={D.ink} strokeWidth="2.2" strokeLinejoin="round" />
-        {pts.map((p, i) => { const [x, y] = p.split(','); return <circle key={i} cx={x} cy={y} r="2.6" fill={D.ink} />; })}
-        {calls.map((_, i) => <text key={'t' + i} x={X(i) + 9} y={262} fontSize="10" fill={D.sub} textAnchor="middle" fontFamily="Pretendard">{i + 1}년</text>)}
-        <rect x="40" y="10" width="10" height="10" fill="#9DB6E8" />{T(56, 19, '캐피탈콜(납입)', { size: 10.5, a: 'start', c: D.sub })}
-        <rect x="148" y="10" width="10" height="10" fill={D.y} />{T(164, 19, '분배(회수)', { size: 10.5, a: 'start', c: D.sub })}
-        <line x1="236" y1="15" x2="256" y2="15" stroke={D.ink} strokeWidth="2.2" />{T(262, 19, '누적 순현금', { size: 10.5, a: 'start', c: D.sub })}
-        {T(120, 244, '← J커브 바닥', { size: 10.5, c: D.g, w: 600 })}
+      <svg viewBox="0 0 360 300" width="100%">
+        <rect x="16" y="10" width="11" height="11" rx="2" fill="#9DB6E8" />{T(32, 20, '캐피탈콜(납입)', { size: 10.5, a: 'start', c: D.sub })}
+        <rect x="122" y="10" width="11" height="11" rx="2" fill={D.y} />{T(138, 20, '분배(회수)', { size: 10.5, a: 'start', c: D.sub })}
+        <line x1="210" y1="15.5" x2="228" y2="15.5" stroke={D.ink} strokeWidth="2.4" />{T(233, 20, 'LP 누적 순현금흐름', { size: 10.5, a: 'start', c: D.sub })}
+        {[50, -50].map(tick)}
+        <line x1={(X(4) + X(5)) / 2} y1="36" x2={(X(4) + X(5)) / 2} y2="200" stroke={D.line} strokeWidth="1" />
+        {T((X(0) + X(4)) / 2, 44, '투자기간 · 돈이 나감', { size: 10, c: D.faint })}
+        {T((X(5) + X(9)) / 2, 44, '회수기간 · 돈이 돌아옴', { size: 10, c: D.faint })}
+        {calls.map((c, i) => c < 0 && <rect key={'c' + i} x={X(i) - 7} y={Z} width={14} height={-c * S} rx="1.5" fill="#9DB6E8" />)}
+        {dists.map((d, i) => d > 0 && <rect key={'d' + i} x={X(i) - 7} y={Y(d)} width={14} height={d * S} rx="1.5" fill={D.y} />)}
+        {tick(0)}
+        <polyline points={pts} fill="none" stroke={D.ink} strokeWidth="2.4" strokeLinejoin="round" />
+        {cums.map((v, i) => <circle key={i} cx={X(i)} cy={Y(v)} r={i === low ? 4 : 2.8} fill={i === low ? D.ink : '#fff'} stroke={D.ink} strokeWidth="1.8" />)}
+        {T(X(low) + 10, Y(cums[low]) + 16, `바닥 −${-cums[low]} (${low + 1}년차)`, { size: 10.5, w: 700, a: 'start' })}
+        <circle cx={bx} cy={Z} r="4.5" fill={D.y} stroke={D.ink} strokeWidth="1.8" />
+        {T(348, Z + 34, `누적 0 돌파 (${be}~${be + 1}년차)`, { size: 10.5, w: 700, a: 'end' })}
+        {T(X(9) + 8, Y(cums[9]) + 4, `+${cums[9]}`, { size: 10.5, w: 700, a: 'start' })}
+        {calls.map((_, i) => <g key={'x' + i}>{T(X(i), 250, `${i + 1}년`, { size: 10, c: D.sub })}</g>)}
+        {T(180, 272, `총 납입 ${-calls.reduce((a, b) => a + b, 0)} · 총 분배 ${dists.reduce((a, b) => a + b, 0)} → 최종 누적 +${cums[9]} (DPI ${(dists.reduce((a, b) => a + b, 0) / -calls.reduce((a, b) => a + b, 0)).toFixed(2)}배)`, { size: 10.5, c: D.g, w: 600 })}
+        {T(180, 290, '초기 마이너스는 관리보수·투자 집행 때문 — 성과가 나빠서가 아니다', { size: 10, c: D.sub })}
       </svg>);
   } },
 
@@ -421,8 +442,8 @@ const DIAGRAMS = {
       <Arrow id={k} />
       {[
         ['보통주 (에쿼티)', '가장 마지막에 받음 · 상승 여력 무제한', '20%+', '#fff', D.g],
-        ['우선주 · 메자닌', '전환사채 · 우선주', '13~16%', D.box, D.line],
-        ['후순위 대출', '선순위 다음으로 상환', '11~13%', D.box, D.line],
+        ['우선주 (Preferred Equity)', '대출보다 뒤, 보통주보다 먼저', '13~16%', D.box, D.line],
+        ['후순위·메자닌 대출', '선순위 다음 상환 · 전환권이 붙기도', '11~13%', D.box, D.line],
         ['선순위 대출', '가장 먼저 상환 · 담보 1순위', 'SOFR+5%', D.yt, D.y],
       ].map(([h, d, r, f, s], i) => (
         <g key={i}>
@@ -526,23 +547,33 @@ const DIAGRAMS = {
       {T(180, 274, 'ABF 펀드는 주로 선순위·메자닌에 투자하거나 풀을 직접 매입', { size: 10.5, c: D.sub })}
     </svg>) },
 
-  // 9) 펀드 생애주기
-  lifecycle: { title: '펀드 생애주기 (예시)', cap: '모집 → 투자기간(신규 투자) → 회수기간(가치 제고·매각) → 만기·연장. 실제 기간은 펀드마다 다르다.', render: (k) => (
-    <svg viewBox="0 0 360 190" width="100%">
-      <Arrow id={k} />
-      {Ln(20, 118, 346, 118, k, { w: 1.6 })}
-      {[[20, 50, '모집', '1~2년', D.box], [70, 150, '투자기간', '4~5년', D.yt], [220, 100, '회수기간', '5년 안팎', D.box], [320, 26, '연장', '+1~2년', '#fff']].map(([x, w, h, d, f], i) => (
-        <g key={i}>
-          <rect x={x} y={62} width={w} height={40} rx={4} fill={f} stroke={i === 1 ? D.y : D.line} />
-          {T(x + w / 2, 80, h, { w: 700, size: i === 3 ? 10.5 : 12 })}{T(x + w / 2, 95, d, { size: 9.5, c: D.sub })}
-        </g>
-      ))}
-      {[[20, '1차 클로징'], [70, '파이널 클로징'], [220, '투자기간 종료'], [320, '만기']].map(([x, s], i) => (
-        <g key={i}>{Ln(x, 112, x, 124, null, { c: D.g })}{T(x, 142, s, { size: 10, c: D.g, a: i === 0 ? 'start' : i === 3 ? 'end' : 'middle' })}</g>
-      ))}
-      {T(20, 40, '캐피탈콜 집중', { a: 'start', size: 10.5, c: D.sub })}{T(346, 40, '분배 집중', { a: 'end', size: 10.5, c: D.sub })}
-      {T(180, 176, '0년 ─────────── 10년 ───', { size: 10, c: D.faint })}
-    </svg>) },
+  // 9) 펀드 생애주기 — 0년 = 1차 클로징. 투자기간은 1차 클로징부터 시작해 모집 기간과 겹친다.
+  lifecycle: { title: '펀드 생애주기 (예시)', cap: '1차 클로징과 함께 투자기간이 시작되고, 모집은 파이널 클로징까지 1년 남짓 이어진다. 투자기간(신규 투자) → 회수기간(가치 제고·매각) → 만기, 필요하면 LP 동의로 연장. 실제 기간은 펀드마다 다르다.', render: (k) => {
+    const X = (yr) => 45 + yr * 25;              // 0년 = 1차 클로징
+    const bar = (a, b, y, h, f, s, t, d, i) => (
+      <g key={i}>
+        <rect x={X(a)} y={y} width={X(b) - X(a)} height={h} rx={4} fill={f} stroke={s} />
+        {T((X(a) + X(b)) / 2, y + (d ? 16 : h / 2 + 4), t, { w: 700, size: X(b) - X(a) < 60 ? 10.5 : 12 })}
+        {d && T((X(a) + X(b)) / 2, y + 31, d, { size: 9.5, c: D.sub })}
+      </g>);
+    return (
+      <svg viewBox="0 0 360 186" width="100%">
+        <Arrow id={k} />
+        {[0, 1.25].map((v) => <line key={v} x1={X(v)} y1={50} x2={X(v)} y2={134} stroke={D.faint} strokeWidth="1" strokeDasharray="3 3" />)}
+        {bar(-1, 1.25, 20, 30, D.box, D.line, '모집', null, 'f')}
+        {T(X(1.25) + 8, 39, '1차 → 파이널 클로징, 보통 12~18개월', { size: 10, c: D.sub, a: 'start' })}
+        {bar(0, 5, 60, 40, D.yt, D.y, '투자기간', '신규 투자 · 4~6년', 'i')}
+        {bar(5, 10, 60, 40, D.box, D.line, '회수기간', '가치 제고·매각', 'h')}
+        {bar(10, 12, 60, 40, '#fff', D.line, '연장', '+1~2년', 'e')}
+        {T(X(2.5), 118, '캐피탈콜이 몰림', { size: 10, c: D.g })}{T(X(7.5), 118, '분배가 몰림', { size: 10, c: D.g })}
+        {Ln(20, 134, 346, 134, k, { w: 1.6 })}
+        {[0, 1.25, 5, 10].map((v) => <g key={'t' + v}>{Ln(X(v), 128, X(v), 140, null, { c: D.g })}</g>)}
+        {T(X(0), 156, '1차 클로징', { size: 10, c: D.ink, w: 600 })}
+        {T(X(1.25) + 2, 173, '파이널 클로징', { size: 10, c: D.ink, w: 600, a: 'start' })}
+        {T(X(5), 156, '투자기간 종료 (5년)', { size: 10, c: D.ink, w: 600 })}
+        {T(X(10), 156, '만기 (10년)', { size: 10, c: D.ink, w: 600 })}
+      </svg>);
+  } },
 
   // 10) 환헤지
   hedge: { title: '환헤지와 스왑포인트', cap: '원화 금리가 달러 금리보다 낮으면 미래 환율(선물환)이 현물보다 낮게 정해져, 헤지할 때 그 차이만큼 비용이 된다. (가상의 숫자)', render: (k) => (

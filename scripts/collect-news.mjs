@@ -186,7 +186,9 @@ const QUERIES = [
 // 만듭니다. 모델명은 시간이 지나며 폐기되므로 후보를 순서대로 시도하고, 처음
 // 성공한 모델을 이후에 재사용합니다(GEMINI_MODEL 로 직접 지정 가능).
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'].filter(Boolean);
+// 번역은 모델별 무료 한도가 따로 잡히므로, 한 모델이 한도(429)에 걸리면 다음 모델로 넘어간다.
+const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'].filter(Boolean);
+const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
 const TITLE_BATCH = 30, TITLE_CALLS = 8, BODY_CALLS = 20, LLM_GAP_MS = 6500;
@@ -195,7 +197,8 @@ let LLM_BLOCKED = false;                         // 429(한도 초과)를 받으
 // Gemini 호출(모델 폴백 포함) → 응답 텍스트. 실패 시 null.
 async function llmRaw(prompt, maxTok) {
   if (!GEMINI_API_KEY || LLM_BLOCKED) return null;
-  const models = WORKING_MODEL ? [WORKING_MODEL] : MODEL_CANDIDATES;
+  const models = [WORKING_MODEL, ...MODEL_CANDIDATES].filter((m, i, a) => m && a.indexOf(m) === i && !EXHAUSTED.has(m));
+  if (!models.length) { LLM_BLOCKED = true; return null; }
   for (const model of models) {
     try {
       const gen = { temperature: 0.2, maxOutputTokens: maxTok };
@@ -206,7 +209,12 @@ async function llmRaw(prompt, maxTok) {
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: gen }) }
       );
       if (res.status === 404 || res.status === 400) { console.warn(`gemini model ${model} unavailable (${res.status}), trying next`); continue; }
-      if (res.status === 429) { console.warn(`gemini ${model} 429 — 이번 회차 번역 중단`); LLM_BLOCKED = true; return null; }
+      if (res.status === 429) {
+        console.warn(`gemini ${model} 429 — 다음 모델로`);
+        EXHAUSTED.add(model); if (WORKING_MODEL === model) WORKING_MODEL = '';
+        if (MODEL_CANDIDATES.every((m) => EXHAUSTED.has(m))) { LLM_BLOCKED = true; return null; }
+        continue;
+      }
       if (!res.ok) { console.warn(`gemini ${model} HTTP ${res.status}`); return null; }
       const j = await res.json();
       const text = (((j.candidates || [])[0] || {}).content || {}).parts?.[0]?.text || '';

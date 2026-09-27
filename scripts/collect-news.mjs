@@ -180,7 +180,7 @@ const QUERIES = [
   '(해외 OR 글로벌) 사모대출 (펀드 OR 투자) (출자 OR 약정 OR 선정) when:14d',
   '(미국 OR 유럽 OR 영국 OR 독일 OR 호주 OR 일본) (오피스 OR 물류센터 OR 데이터센터 OR 호텔) (국내 투자자 OR 국내 기관 OR 한국 투자자) when:30d',
 ];
-// (23) 운용사별 펀드레이징 — 넓은 검색어(OR 묶음)는 검색 결과 30건 안에서 다른 기사에 밀려
+// (23) 운용사별 펀드레이징(최근 90일 = 보관 창) — 넓은 검색어(OR 묶음)는 검색 결과 30건 안에서 다른 기사에 밀려
 //      개별 운용사의 클로징 소식을 놓친다(예: Carlyle Infrastructure Credit Fund II 23억 달러 파이널 클로즈).
 //      추적 운용사마다 검색어를 따로 둔다. 이름이 흔한 단어인 곳은 정식 명칭으로 찾는다.
 const GP_QUERY_NAMES = ['Blackstone', 'KKR', '"Apollo Global"', 'Carlyle', '"Ares Management"', 'Brookfield', 'BlackRock', '"Goldman Sachs Alternatives"',
@@ -194,7 +194,7 @@ const GP_QUERY_NAMES = ['Blackstone', 'KKR', '"Apollo Global"', 'Carlyle', '"Are
   '"Affinity Equity"', '"Copenhagen Infrastructure"', 'Antares', '"Churchill Asset"', 'Hayfin', 'Arcmont', 'Pemberton', '"Morgan Stanley Investment Management"',
   '"J.P. Morgan Asset Management"', 'Castlelake', '"Carlyle Aviation"', 'Harbourvest', '"Adams Street"', 'Blackstone Infrastructure', '"Brookfield Infrastructure"'];
 for (const n of GP_QUERY_NAMES) {
-  QUERIES.push(`${n} (fund OR vehicle OR strategy) (closes OR closed OR "final close" OR "first close" OR raises OR raised OR secures OR launches OR targets OR "hard cap") when:45d`);
+  QUERIES.push(`${n} (fund OR vehicle OR strategy) (closes OR closed OR "final close" OR "first close" OR raises OR raised OR secures OR launches OR targets OR "hard cap") when:90d`);
 }
 // (24) 대체투자 전문지 — 사이트별 최신 기사(펀드레이징·딜·LP 소식이 집중되는 매체)
 const TRADE_SITES = ['altassets.net', 'alternativeswatch.com', 'alternativecreditinvestor.com', 'irei.com', 'privateequitywire.co.uk', 'pehub.com',
@@ -2279,7 +2279,8 @@ async function main() {
       const sk = storyKey(a); const sc = storyCount.get(sk) || 0;
       if (sc >= 3 && !a.pinned && String(a.body || "").length < 400) continue;
       storyCount.set(sk, sc + 1);
-      if (a.lang === 'en' && !a.translated) { if (en >= EN_MAX) continue; en++; }
+      // 펀드레이징 기사는 영문 상한과 무관하게 보관(운용사별 펀드 이력이 끊기지 않게)
+      if (a.lang === 'en' && !a.translated && !extractFundraising(a)) { if (en >= EN_MAX) continue; en++; }
       kept.push(a);
     }
     merged.length = 0; merged.push(...kept); }

@@ -275,7 +275,7 @@ async function geminiRaw(prompt, maxTok) {
       const call = (g) => fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: g }) }
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: g }), signal: AbortSignal.timeout(90000) }   // 응답이 멈추면 회차 전체가 멈추지 않게
       );
       let res = await call(gen);
       if (res.status === 400 && gen.thinkingConfig) { delete gen.thinkingConfig; res = await call(gen); }   // 추론 끄기를 지원하지 않는 모델

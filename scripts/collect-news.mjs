@@ -187,7 +187,8 @@ const QUERIES = [
 // 성공한 모델을 이후에 재사용합니다(GEMINI_MODEL 로 직접 지정 가능).
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 // 번역은 모델별 무료 한도가 따로 잡히므로, 한 모델이 한도(429)에 걸리면 다음 모델로 넘어간다.
-const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'].filter(Boolean);
+// '-latest' 별칭은 구글이 현행 모델로 계속 연결해 주므로 모델 폐기(404)에 강하다.
+const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'].filter(Boolean);
 const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
@@ -202,13 +203,15 @@ async function llmRaw(prompt, maxTok) {
   for (const model of models) {
     try {
       const gen = { temperature: 0.2, maxOutputTokens: maxTok };
-      if (/2\.5-flash/.test(model)) gen.thinkingConfig = { thinkingBudget: 0 };   // 추론 토큰 없이 번역만
-      const res = await fetch(
+      if (/flash/.test(model)) gen.thinkingConfig = { thinkingBudget: 0 };   // 추론 토큰 없이 번역만
+      const call = (g) => fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: gen }) }
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: g }) }
       );
-      if (res.status === 404 || res.status === 400) { console.warn(`gemini model ${model} unavailable (${res.status}), trying next`); continue; }
+      let res = await call(gen);
+      if (res.status === 400 && gen.thinkingConfig) { delete gen.thinkingConfig; res = await call(gen); }   // 추론 끄기를 지원하지 않는 모델
+      if (res.status === 404 || res.status === 400) { console.warn(`gemini model ${model} unavailable (${res.status}), trying next`); EXHAUSTED.add(model); if (MODEL_CANDIDATES.every((m) => EXHAUSTED.has(m))) { LLM_BLOCKED = true; return null; } continue; }
       if (res.status === 429) {
         console.warn(`gemini ${model} 429 — 다음 모델로`);
         EXHAUSTED.add(model); if (WORKING_MODEL === model) WORKING_MODEL = '';
@@ -1705,6 +1708,8 @@ async function main() {
   const toFetch = [];                                  // 이번 회차에 본문을 새로 받을 기사
   for (const a of all) {
     const old = prevById.get(a.id);
+    if (old && old.tko) a.tko = old.tko;                // 번역은 재수집돼도 유지
+    if (old && old.bodyKo) a.bodyKo = old.bodyKo;
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
     if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
     if (old && old.linkOk) a.linkOk = true;             // 링크 검증 결과 승계
@@ -1717,8 +1722,6 @@ async function main() {
         .map(l => l.length > 180 ? l.slice(0, 178).trimEnd() + '…' : l);
       a.ai = oldAi.length ? oldAi : a.ai;
       if (old.aiSource) a.aiSource = old.aiSource;
-      if (old.tko) a.tko = old.tko;
-      if (old.bodyKo) a.bodyKo = old.bodyKo;
       continue;
     }
     if (fetchBudget <= 0) continue;

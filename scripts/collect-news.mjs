@@ -1855,7 +1855,7 @@ export function parseFeed(xml) {
 const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
 const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
 // 기사 링크가 상시 깨져 있는(존재하지 않는 링크 안내) 저품질 매체 차단 목록.
-const SOURCE_BLOCK_RE = /마일드경제|todaymild|marketbeat|kalkine|indexbox|tickerreport|etfdailynews|americanbankingnews|defenseworld/i;   // 깨진 링크·자동 생성 주식 기사 매체
+const SOURCE_BLOCK_RE = /마일드경제|todaymild|marketbeat|kalkine|indexbox|stock traders daily|tickerreport|etfdailynews|americanbankingnews|defenseworld/i;   // 깨진 링크·자동 생성 주식 기사 매체
 // 대체투자 맥락과 무관하게 항상 잡음인 제목 — 증권 공시(Form 4·13D)·주식 매매/보유 변동·밸류에이션 지표 페이지,
 // 뮤추얼펀드 분기 코멘터리·분배금 공시, 집단소송 광고, 회사 소개 페이지, 시장조사 보고서, 애널리스트 의견
 const HARD_NOISE_RE = new RegExp([
@@ -1863,7 +1863,7 @@ const HARD_NOISE_RE = new RegExp([
   '[\\d,]{4,} shares\\b|\\bshares (?:in|of) .{0,80}\\b(?:acquired|purchased|sold|bought|trimmed|boosted|raised|cut) by\\b|\\b(?:sells?|buys?|acquires?|purchases?|trims?|boosts?) (?:[\\d,]+ )?shares of\\b',
   '\\bshort interest\\b|stock price, news, quote|share price, .{0,20}stock news|\\b(?:enterprise value|price) to (?:revenue|ebitda|ebit|book|earnings|sales)\\b|\\bsees (?:large|unusual) (?:volume|options)|52-week (?:low|high)',
   '\\b(?:q[1-4]|quarterly|annual|monthly)(?: 20\\d\\d)? (?:commentary|distributions?|distribution schedule)\\b|\\bdeclares? (?:\\w+ ){0,3}distributions?\\b|\\bdistribution schedule\\b',
-  '\\bclass action\\b|securities (?:fraud|litigation)|investor counsel|encourages? .{0,40}investors? to (?:inquire|contact)',
+  '\\bprecision trading\\b|\\brisk zones\\b|\\betf \\([a-z]{2,6}\\)|\\bclass action\\b|securities (?:fraud|litigation)|investor counsel|encourages? .{0,40}investors? to (?:inquire|contact)',
   '^[^:]{2,60}: [\\w .,-]{0,30}(?:private equity|venture capital|investment|growth equity) firm (?:backing|investing|focused|specializing)',
   '\\bmarket (?:size|share|forecast|report)\\b.{0,40}\\b20[3-4]\\d\\b|\\bmuseum\\b|\\bchurch\\b|\\bcharity\\b',
   '\\b(?:price target|analyst rating|(?:upgrades?|downgrades?|reiterates?) (?:\\w+ )?(?:rating|to (?:buy|sell|hold|overweight|underweight)))\\b',

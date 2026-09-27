@@ -196,6 +196,13 @@ const GP_QUERY_NAMES = ['Blackstone', 'KKR', '"Apollo Global"', 'Carlyle', '"Are
 for (const n of GP_QUERY_NAMES) {
   QUERIES.push(`${n} (fund OR vehicle OR strategy) (closes OR closed OR "final close" OR "first close" OR raises OR raised OR secures OR launches OR targets OR "hard cap") when:90d`);
 }
+// (23-2) 대형 운용사 일반 동향 — 펀드 결성 외 파트너십·플랫폼·대형 딜(예: 엔비디아와 5,000억 달러 AI 인프라 금융 플랫폼)
+for (const n of ['Blackstone', 'KKR', '"Apollo Global"', 'Carlyle', '"Ares Management"', 'Brookfield', 'BlackRock', '"Goldman Sachs Alternatives"', 'EQT', 'CVC',
+  'TPG', '"Blue Owl"', '"Partners Group"', 'Macquarie', 'Ardian', '"Bain Capital"', 'Stonepeak', '"Global Infrastructure Partners"', '"Sixth Street"', 'Oaktree']) {
+  QUERIES.push(`${n} (partnership OR platform OR acquire OR acquisition OR stake OR financing OR "joint venture" OR invests) when:10d`);
+}
+for (const n of ['블랙스톤', 'KKR', '아폴로', '칼라일', '브룩필드', '블랙록', '아레스', '맥쿼리', 'EQT', '골드만삭스 PE'])
+  QUERIES.push(`${n} (펀드 OR 인수 OR 매각 OR 투자 OR 출자 OR 협력 OR 플랫폼) when:14d`);
 // (24) 대체투자 전문지 — 사이트별 최신 기사(펀드레이징·딜·LP 소식이 집중되는 매체)
 const TRADE_SITES = ['altassets.net', 'alternativeswatch.com', 'alternativecreditinvestor.com', 'irei.com', 'privateequitywire.co.uk', 'pehub.com',
   'infrastructureinvestor.com', 'privatedebtinvestor.com', 'secondariesinvestor.com', 'privateequityinternational.com', 'perenews.com',

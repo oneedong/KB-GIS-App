@@ -1125,7 +1125,9 @@ export function buildFundraising(articles, prevItems = []) {
     // 일자: 본문에 적힌 실제 일자 > 기사 날짜
     const evTs = x && x.date ? `${x.date}T00:00:00.000Z` : a.ts;
     const base = gp || '?';
-    const fundKey = base + '|' + (fund ? normFund(fund) : `~${asset}|${stage}|${normAmt(size)}`);   // 이름 없는 보도는 단계·금액이 같을 때만 묶는다
+    // 공식 펀드명이 충분히 고유하면 운용사 표기 차이(Goldman Sachs / Goldman Sachs Alternatives)와 무관하게 한 펀드로 본다.
+    // 이름 없는 보도는 단계·금액이 같을 때만 묶는다.
+    const fundKey = fund && normFund(fund).length >= 12 ? `F|${normFund(fund)}` : base + '|' + (fund ? normFund(fund) : `~${asset}|${stage}|${normAmt(size)}`);
     const key = fundKey + '|' + stage + '|' + String(a.ko).replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 24);
     return { key, fundKey, gp, fund, asset, strategy, stage, size, target, hardcap: (x && x.hardcap) || '', dated: !!(x && x.date), title: a.ko, tko: a.tko || '', id: a.id, url: a.url, gurl: a.gurl, date: a.date, ts: evTs, pubTs: a.ts, source: a.source, lang: a.lang };
   };
@@ -1146,6 +1148,7 @@ export function buildFundraising(articles, prevItems = []) {
     if (!e.gp) continue;
     const f = funds.get(e.fundKey) || { fundKey: e.fundKey, gp: e.gp, fund: e.fund, asset: e.asset, strategy: '', target: '', hardcap: '', stages: {}, dropped: [], lastTs: '' };
     if (!f.fund && e.fund) f.fund = e.fund;
+    if (e.gp && e.gp.length < f.gp.length && f.gp.startsWith(e.gp)) f.gp = e.gp;
     if (!f.strategy && e.strategy) f.strategy = e.strategy;
     if (!f.target && e.target) f.target = e.target;
     if (!f.hardcap && e.hardcap) f.hardcap = e.hardcap;

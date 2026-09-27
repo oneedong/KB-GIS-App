@@ -24,8 +24,8 @@ const store = {
     catch (e) { /* 저장 공간 부족 등 */ } },
 };
 // ─── 내비게이션 ──────────────────────────────────────────────
-const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
-const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
+const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
+const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
 const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연기금'], ['공제회', '공제회'], ['중앙회', '중앙회'], ['은행', '은행'], ['보험·캐피탈', '보험·캐피탈'], ['운용·증권', '운용·증권'], ['인사', '인사'], ['이전', '지방이전']];
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
@@ -35,7 +35,7 @@ function BottomNav({ active, onGo, badge }) {
         const on = active === k;
         return (React.createElement("div", { key: k, onClick: () => onGo(k), role: "button", "aria-label": label, style: { flex: 1, height: 58, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer', color: on ? KB.ink : KB.mute, position: 'relative' } },
             React.createElement(Ico, { n: ic, size: 23, sw: on ? 2.1 : 1.6 }),
-            React.createElement("span", { style: { font: on ? F(700, 11) : F(500, 11), whiteSpace: 'nowrap' } }, label),
+            React.createElement("span", { style: { font: on ? F(700, 10.5) : F(500, 10.5), whiteSpace: 'nowrap', letterSpacing: '-.02em' } }, label),
             k === 'home' && badge > 0 && React.createElement("span", { style: { ...badgeStyle, position: 'absolute', top: 6, left: '50%', marginLeft: 5 } }, badge > 99 ? '99+' : badge)));
     })));
 }
@@ -397,25 +397,6 @@ function App() {
                 React.createElement("span", { onClick: () => setFilter('전체'), style: { marginLeft: 'auto', font: F(600, 13), color: KB.gray, cursor: 'pointer' } }, "\uD544\uD130 \uD574\uC81C"))),
             filter === '전체' && (React.createElement("div", { style: { paddingBottom: 6 } },
                 React.createElement(BriefDigest, { market: market, onOpen: () => setScreen('brief') }),
-                invItems.length > 0 && (() => {
-                    const cl = clusterDeals(invItems.filter((e) => e.overseas).slice(0, 60)).slice(0, 4);
-                    return (React.createElement("div", { style: { margin: '12px 16px 0', padding: '4px 16px 6px', border: `1px solid ${KB.line}`, borderRadius: 12 } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', padding: '12px 0 4px' } },
-                            React.createElement("span", { style: { font: F(700, 14.5), color: KB.ink } }, "\uCD5C\uADFC \uD574\uC678 \uB51C\u00B7\uCD9C\uC790"),
-                            React.createElement("span", { style: { marginLeft: 'auto' } },
-                                React.createElement(More, { onClick: () => setScreen('deals') }, "\uD22C\uC790\uB0B4\uC5ED"))),
-                        cl.map((c, i) => React.createElement(DealRow, { key: c.key + i, c: c, first: i === 0, compact: true, onOpen: openDeal }))));
-                })(),
-                (() => {
-                    const g = termOfDay();
-                    return (React.createElement("div", { onClick: () => openTerm(g.id), style: { margin: '12px 16px 0', padding: '14px 16px', borderRadius: 12, background: KB.band, cursor: 'pointer' } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-                            React.createElement("span", { style: { font: F(700, 12.5), color: KB.gray } }, "\uC624\uB298\uC758 \uC6A9\uC5B4"),
-                            React.createElement("span", { style: { marginLeft: 'auto' } },
-                                React.createElement(More, { onClick: (e) => { e.stopPropagation(); openLearn(); } }, "\uC6A9\uC5B4\u00B7\uAC1C\uB150"))),
-                        React.createElement("div", { style: { font: F(700, 16), color: KB.ink, marginTop: 6 } }, g.term),
-                        React.createElement("div", { style: { font: F(400, 13.5, 1.6), color: KB.ink2, marginTop: 4 } }, g.short)));
-                })(),
                 React.createElement("div", { style: { height: 14 } }))),
             newCount > 0 && filter === '전체' && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', padding: '12px 20px', borderTop: `1px solid ${KB.line}` } },
                 React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow, marginRight: 8 } }),
@@ -473,10 +454,21 @@ function App() {
     })();
     // Global GP
     const gpNames = gpProfiles ? Object.keys(gpProfiles) : [];
+    // AUM(달러 환산, 십억 달러) 큰 순 — 프로필 AUM 이 없으면 기사 기준 AUM
+    const aumB = (txt) => {
+        const m = String(txt || '').replace(/,/g, '').match(/([$€£])?\s*([\d.]+)\s*([TtBbMm])/);
+        if (!m)
+            return null;
+        const v = parseFloat(m[2]) * ({ t: 1000, b: 1, m: 0.001 }[m[3].toLowerCase()]);
+        return v * ({ '€': 1.08, '£': 1.27 }[m[1]] || 1);
+    };
     const gpRows = useMemo(() => gpNames.map((n) => {
         const d = dealsByInst[n] || [];
-        return { name: n, p: gpProfiles[n] || {}, arts: (artsByInst[n] || []).length, deals: d.length };
-    }).sort((a, b) => (b.deals * 3 + b.arts) - (a.deals * 3 + a.arts) || gpNames.indexOf(a.name) - gpNames.indexOf(b.name)), [gpProfiles, dealsByInst, artsByInst]);
+        const p = gpProfiles[n] || {};
+        const news = ((insights && insights.aums) || []).find((x) => x.inst === n);
+        const aum = aumB(p.aum) != null ? aumB(p.aum) : (news ? aumB(news.display) : null);
+        return { name: n, p, aum, arts: (artsByInst[n] || []).length, deals: d.length };
+    }).sort((a, b) => (b.aum == null ? -1 : b.aum) - (a.aum == null ? -1 : a.aum) || b.arts - a.arts), [gpProfiles, dealsByInst, artsByInst, insights]);
     const gpDeals = invItems.filter((e) => e.role === 'GP');
     const gpScreen = (() => {
         if (gpSel) {
@@ -488,8 +480,8 @@ function App() {
         const rows = gpRows.filter((r) => !ql || r.name.toLowerCase().includes(ql));
         const frItems = (fundraising && fundraising.items) || [];
         return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
-            React.createElement(TopBar, { big: true, title: "Global GP", sub: `해외 운용사 ${gpNames.length}곳 · 프로필 ${gpProfilesAt || '-'} 기준 · 딜 자동 갱신`, border: false }),
-            React.createElement(Tabs, { items: [['list', '운용사', gpNames.length], ['deals', '딜·펀드', gpDeals.length], ['fr', '펀드레이징', frItems.length]], value: gpTab, onChange: setGpTab }),
+            React.createElement(TopBar, { big: true, title: "Global GP", sub: `해외 운용사 ${gpNames.length}곳 · AUM 순 · 프로필 ${gpProfilesAt || '-'} 기준`, border: false }),
+            React.createElement(Tabs, { items: [['list', '운용사', gpNames.length], ['deals', '딜', gpDeals.length]], value: gpTab === 'fr' ? 'list' : gpTab, onChange: setGpTab }),
             React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
                 React.createElement("div", { style: { maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' } },
                     gpTab === 'list' && (React.createElement(React.Fragment, null,
@@ -497,9 +489,10 @@ function App() {
                         React.createElement("div", { style: { height: 6 } }),
                         !gpProfiles ? React.createElement(Empty, { compact: true, title: "\uC6B4\uC6A9\uC0AC \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" }) : rows.map((r, i) => (React.createElement(ListRow, { key: r.name, first: i === 0, chevron: true, onClick: () => setGpSel(r.name) },
                             React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8 } },
-                                React.createElement("span", { style: { font: F(600, 15.5), color: KB.ink } }, r.name),
-                                r.p.aum && React.createElement("span", { style: { font: F(500, 12.5), color: KB.sub } }, r.p.aum)),
-                            React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, marginTop: 4 } }, [(r.p.strengths || []).slice(0, 3).map((s) => (s.k && ASSET[s.k] ? ASSET[s.k].label : s.label)).filter(Boolean).join('·'), r.arts ? `기사 ${r.arts}` : '', r.deals ? `딜 ${r.deals}` : ''].filter(Boolean).join(' · '))))))),
+                                React.createElement("span", { style: { font: F(700, 13), color: r.aum != null ? KB.gray : KB.faint, width: 22 } }, r.aum != null ? gpRows.indexOf(r) + 1 : '–'),
+                                React.createElement("span", { style: { font: F(600, 15.5), color: KB.ink, flex: 1, minWidth: 0 } }, r.name),
+                                React.createElement("span", { style: { font: F(700, 14), color: KB.ink } }, r.p.aum || '–')),
+                            React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, marginTop: 4, paddingLeft: 30 } }, [(r.p.strengths || []).slice(0, 3).map((s) => (s.k && ASSET[s.k] ? ASSET[s.k].label : s.label)).filter(Boolean).join('·'), r.arts ? `기사 ${r.arts}` : '', r.deals ? `딜 ${r.deals}` : ''].filter(Boolean).join(' · '))))))),
                     gpTab === 'deals' && (React.createElement(React.Fragment, null,
                         React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 12 } },
                             React.createElement(Chip, { active: dealView === 'date', onClick: () => setDealView('date') }, "\uCD5C\uC2E0\uC21C"),
@@ -538,7 +531,7 @@ function App() {
                 React.createElement(Shortcut, { icon: "briefcase", label: "\uD22C\uC790\uB0B4\uC5ED", note: invItems.length, onClick: () => setScreen('deals') }),
                 React.createElement(Shortcut, { icon: "book", label: "\uC6A9\uC5B4\u00B7\uAC1C\uB150", note: GLOSSARY.length, onClick: () => openLearn() }),
                 React.createElement(Shortcut, { icon: "bookmark", label: "\uBD81\uB9C8\uD06C", note: Object.values(bm).filter(Boolean).length, onClick: () => setScreen('bookmarks') }),
-                React.createElement(Shortcut, { icon: "layers", label: "\uD380\uB4DC\uB808\uC774\uC9D5", note: ((fundraising && fundraising.items) || []).length, onClick: () => { setGpSel(null); setGpTab('fr'); setScreen('gp'); } }),
+                React.createElement(Shortcut, { icon: "layers", label: "\uD380\uB4DC\uB808\uC774\uC9D5", note: ((fundraising && fundraising.items) || []).length, onClick: () => setScreen('fund') }),
                 React.createElement(Shortcut, { icon: "user", label: "\uC778\uC0AC \uB3D9\uD5A5", onClick: () => applyFilter('인사') }),
                 React.createElement(Shortcut, { icon: "flag", label: "\uC9C0\uBC29\uC774\uC804", onClick: () => applyFilter('이전') }),
                 React.createElement(Shortcut, { icon: "globe", label: "\uC601\uBB38 \uAE30\uC0AC", onClick: () => applyFilter('EN') }),
@@ -574,7 +567,7 @@ function App() {
     // 검색 — 기사·기관·용어를 한 번에
     const q = query.trim().toLowerCase();
     const searchScreen = (() => {
-        const arts = q ? items.filter((i) => `${i.ko} ${i.en} ${i.inst} ${i.source} ${i.assetLabel}`.toLowerCase().includes(q)) : [];
+        const arts = q ? items.filter((i) => `${i.ko} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel}`.toLowerCase().includes(q)) : [];
         const insts = q ? [
             ...(roster || []).filter((r) => r.name.toLowerCase().includes(q)).map((r) => ({ inst: r.name, role: 'LP', sub: r.group })),
             ...gpNames.filter((n) => n.toLowerCase().includes(q)).map((n) => ({ inst: n, role: 'GP', sub: 'Global GP' })),
@@ -617,10 +610,11 @@ function App() {
     const screens = {
         home: homeScreen, brief: briefScreen, korlp: lpScreen, gp: gpScreen, menu: menuScreen,
         search: searchScreen, bookmarks: bookmarksScreen, deals: dealsScreen,
+        fund: React.createElement(FundraisingView, { data: fundraising, onOpen: openArticle, onGp: (g) => openInst({ inst: g, role: 'GP' }) }),
         learn: React.createElement(LearnScreen, { focus: learnFocus, onFocusDone: () => setLearnFocus(null) }),
     };
     const navActive = screen === 'detail' ? prevScreen : screen;
-    const bottomActive = ['home', 'brief', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
+    const bottomActive = ['home', 'brief', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
     const sideActive = navActive === 'menu' ? 'home' : navActive;
     const master = isDesktop && LIST_SCREENS.includes(screen);
     return (React.createElement(UICtx.Provider, { value: { desktop: isDesktop } },

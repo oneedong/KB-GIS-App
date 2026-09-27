@@ -16,8 +16,8 @@ const store = {
 };
 
 // ─── 내비게이션 ──────────────────────────────────────────────
-const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
-const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
+const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
+const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
 const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연기금'], ['공제회', '공제회'], ['중앙회', '중앙회'], ['은행', '은행'], ['보험·캐피탈', '보험·캐피탈'], ['운용·증권', '운용·증권'], ['인사', '인사'], ['이전', '지방이전']];
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
@@ -33,7 +33,7 @@ function BottomNav({ active, onGo, badge }) {
           <div key={k} onClick={() => onGo(k)} role="button" aria-label={label}
                style={{ flex: 1, height: 58, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer', color: on ? KB.ink : KB.mute, position: 'relative' }}>
             <Ico n={ic} size={23} sw={on ? 2.1 : 1.6} />
-            <span style={{ font: on ? F(700, 11) : F(500, 11), whiteSpace: 'nowrap' }}>{label}</span>
+            <span style={{ font: on ? F(700, 10.5) : F(500, 10.5), whiteSpace: 'nowrap', letterSpacing: '-.02em' }}>{label}</span>
             {k === 'home' && badge > 0 && <span style={{ ...badgeStyle, position: 'absolute', top: 6, left: '50%', marginLeft: 5 }}>{badge > 99 ? '99+' : badge}</span>}
           </div>
         );
@@ -353,31 +353,6 @@ function App() {
         {filter === '전체' && (
           <div style={{ paddingBottom: 6 }}>
             <BriefDigest market={market} onOpen={() => setScreen('brief')} />
-            {invItems.length > 0 && (() => {
-              const cl = clusterDeals(invItems.filter((e) => e.overseas).slice(0, 60)).slice(0, 4);
-              return (
-                <div style={{ margin: '12px 16px 0', padding: '4px 16px 6px', border: `1px solid ${KB.line}`, borderRadius: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '12px 0 4px' }}>
-                    <span style={{ font: F(700, 14.5), color: KB.ink }}>최근 해외 딜·출자</span>
-                    <span style={{ marginLeft: 'auto' }}><More onClick={() => setScreen('deals')}>투자내역</More></span>
-                  </div>
-                  {cl.map((c, i) => <DealRow key={c.key + i} c={c} first={i === 0} compact onOpen={openDeal} />)}
-                </div>
-              );
-            })()}
-            {(() => {
-              const g = termOfDay();
-              return (
-                <div onClick={() => openTerm(g.id)} style={{ margin: '12px 16px 0', padding: '14px 16px', borderRadius: 12, background: KB.band, cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ font: F(700, 12.5), color: KB.gray }}>오늘의 용어</span>
-                    <span style={{ marginLeft: 'auto' }}><More onClick={(e) => { e.stopPropagation(); openLearn(); }}>용어·개념</More></span>
-                  </div>
-                  <div style={{ font: F(700, 16), color: KB.ink, marginTop: 6 }}>{g.term}</div>
-                  <div style={{ font: F(400, 13.5, 1.6), color: KB.ink2, marginTop: 4 }}>{g.short}</div>
-                </div>
-              );
-            })()}
             <div style={{ height: 14 }}></div>
           </div>
         )}
@@ -474,10 +449,20 @@ function App() {
 
   // Global GP
   const gpNames = gpProfiles ? Object.keys(gpProfiles) : [];
+  // AUM(달러 환산, 십억 달러) 큰 순 — 프로필 AUM 이 없으면 기사 기준 AUM
+  const aumB = (txt) => {
+    const m = String(txt || '').replace(/,/g, '').match(/([$€£])?\s*([\d.]+)\s*([TtBbMm])/);
+    if (!m) return null;
+    const v = parseFloat(m[2]) * ({ t: 1000, b: 1, m: 0.001 }[m[3].toLowerCase()]);
+    return v * ({ '€': 1.08, '£': 1.27 }[m[1]] || 1);
+  };
   const gpRows = useMemo(() => gpNames.map((n) => {
     const d = dealsByInst[n] || [];
-    return { name: n, p: gpProfiles[n] || {}, arts: (artsByInst[n] || []).length, deals: d.length };
-  }).sort((a, b) => (b.deals * 3 + b.arts) - (a.deals * 3 + a.arts) || gpNames.indexOf(a.name) - gpNames.indexOf(b.name)), [gpProfiles, dealsByInst, artsByInst]);
+    const p = gpProfiles[n] || {};
+    const news = ((insights && insights.aums) || []).find((x) => x.inst === n);
+    const aum = aumB(p.aum) != null ? aumB(p.aum) : (news ? aumB(news.display) : null);
+    return { name: n, p, aum, arts: (artsByInst[n] || []).length, deals: d.length };
+  }).sort((a, b) => (b.aum == null ? -1 : b.aum) - (a.aum == null ? -1 : a.aum) || b.arts - a.arts), [gpProfiles, dealsByInst, artsByInst, insights]);
   const gpDeals = invItems.filter((e) => e.role === 'GP');
   const gpScreen = (() => {
     if (gpSel) {
@@ -495,8 +480,8 @@ function App() {
     const frItems = (fundraising && fundraising.items) || [];
     return (
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
-        <TopBar big title="Global GP" sub={`해외 운용사 ${gpNames.length}곳 · 프로필 ${gpProfilesAt || '-'} 기준 · 딜 자동 갱신`} border={false} />
-        <Tabs items={[['list', '운용사', gpNames.length], ['deals', '딜·펀드', gpDeals.length], ['fr', '펀드레이징', frItems.length]]} value={gpTab} onChange={setGpTab} />
+        <TopBar big title="Global GP" sub={`해외 운용사 ${gpNames.length}곳 · AUM 순 · 프로필 ${gpProfilesAt || '-'} 기준`} border={false} />
+        <Tabs items={[['list', '운용사', gpNames.length], ['deals', '딜', gpDeals.length]]} value={gpTab === 'fr' ? 'list' : gpTab} onChange={setGpTab} />
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div style={{ maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
             {gpTab === 'list' && (
@@ -506,10 +491,11 @@ function App() {
                 {!gpProfiles ? <Empty compact title="운용사 목록을 불러오는 중입니다" /> : rows.map((r, i) => (
                   <ListRow key={r.name} first={i === 0} chevron onClick={() => setGpSel(r.name)}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <span style={{ font: F(600, 15.5), color: KB.ink }}>{r.name}</span>
-                      {r.p.aum && <span style={{ font: F(500, 12.5), color: KB.sub }}>{r.p.aum}</span>}
+                      <span style={{ font: F(700, 13), color: r.aum != null ? KB.gray : KB.faint, width: 22 }}>{r.aum != null ? gpRows.indexOf(r) + 1 : '–'}</span>
+                      <span style={{ font: F(600, 15.5), color: KB.ink, flex: 1, minWidth: 0 }}>{r.name}</span>
+                      <span style={{ font: F(700, 14), color: KB.ink }}>{r.p.aum || '–'}</span>
                     </div>
-                    <div style={{ font: F(500, 12.5), color: KB.mute, marginTop: 4 }}>
+                    <div style={{ font: F(500, 12.5), color: KB.mute, marginTop: 4, paddingLeft: 30 }}>
                       {[(r.p.strengths || []).slice(0, 3).map((s) => (s.k && ASSET[s.k] ? ASSET[s.k].label : s.label)).filter(Boolean).join('·'), r.arts ? `기사 ${r.arts}` : '', r.deals ? `딜 ${r.deals}` : ''].filter(Boolean).join(' · ')}
                     </div>
                   </ListRow>
@@ -581,7 +567,7 @@ function App() {
           <Shortcut icon="briefcase" label="투자내역" note={invItems.length} onClick={() => setScreen('deals')} />
           <Shortcut icon="book" label="용어·개념" note={GLOSSARY.length} onClick={() => openLearn()} />
           <Shortcut icon="bookmark" label="북마크" note={Object.values(bm).filter(Boolean).length} onClick={() => setScreen('bookmarks')} />
-          <Shortcut icon="layers" label="펀드레이징" note={((fundraising && fundraising.items) || []).length} onClick={() => { setGpSel(null); setGpTab('fr'); setScreen('gp'); }} />
+          <Shortcut icon="layers" label="펀드레이징" note={((fundraising && fundraising.items) || []).length} onClick={() => setScreen('fund')} />
           <Shortcut icon="user" label="인사 동향" onClick={() => applyFilter('인사')} />
           <Shortcut icon="flag" label="지방이전" onClick={() => applyFilter('이전')} />
           <Shortcut icon="globe" label="영문 기사" onClick={() => applyFilter('EN')} />
@@ -636,7 +622,7 @@ function App() {
   // 검색 — 기사·기관·용어를 한 번에
   const q = query.trim().toLowerCase();
   const searchScreen = (() => {
-    const arts = q ? items.filter((i) => `${i.ko} ${i.en} ${i.inst} ${i.source} ${i.assetLabel}`.toLowerCase().includes(q)) : [];
+    const arts = q ? items.filter((i) => `${i.ko} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel}`.toLowerCase().includes(q)) : [];
     const insts = q ? [
       ...(roster || []).filter((r) => r.name.toLowerCase().includes(q)).map((r) => ({ inst: r.name, role: 'LP', sub: r.group })),
       ...gpNames.filter((n) => n.toLowerCase().includes(q)).map((n) => ({ inst: n, role: 'GP', sub: 'Global GP' })),
@@ -714,10 +700,11 @@ function App() {
   const screens = {
     home: homeScreen, brief: briefScreen, korlp: lpScreen, gp: gpScreen, menu: menuScreen,
     search: searchScreen, bookmarks: bookmarksScreen, deals: dealsScreen,
+    fund: <FundraisingView data={fundraising} onOpen={openArticle} onGp={(g) => openInst({ inst: g, role: 'GP' })} />,
     learn: <LearnScreen focus={learnFocus} onFocusDone={() => setLearnFocus(null)} />,
   };
   const navActive = screen === 'detail' ? prevScreen : screen;
-  const bottomActive = ['home', 'brief', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
+  const bottomActive = ['home', 'brief', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
   const sideActive = navActive === 'menu' ? 'home' : navActive;
   const master = isDesktop && LIST_SCREENS.includes(screen);
 

@@ -95,7 +95,7 @@ const GLOSSARY = [
         body: 'LP가 원금과 우선수익(허들)을 먼저 받은 뒤, 남는 이익의 일정 비율(사모펀드는 보통 20%, 크레딧은 10~15%)을 GP가 가져가요. GP가 좋은 성과를 내도록 만드는 핵심 장치예요.',
         ex: '펀드 이익이 1억 달러이고 조건을 충족하면 GP 성과보수는 약 2,000만 달러예요.',
         dia: 'waterfall', rel: ['hurdle', 'catchup', 'waterfall'] },
-    { id: 'hurdle', cat: 'flow', term: '허들레이트 (우선수익률)', en: 'Hurdle / Preferred Return', aliases: /허들\s*레이트|허들|우선\s*수익(?:률)?|기준\s*수익률|preferred return|hurdle/,
+    { id: 'hurdle', cat: 'flow', term: '허들레이트 (우선수익률)', en: 'Hurdle / Preferred Return', aliases: /허들\s*레이트|허들|우선\s*수익(?:률)?|기준\s*수익률|preferred return|hurdle rate/i,
         short: 'GP가 성과보수를 받기 전에 LP에게 먼저 보장하는 최소 수익률이에요(보통 연 8%).',
         body: 'LP가 원금에 더해 연 8% 정도의 수익을 먼저 받아야 GP가 성과보수를 가져갈 수 있어요. 성과가 허들에 못 미치면 GP는 관리보수만 받아요.',
         ex: '허들 8%면 LP가 원금 + 연 8% 복리 수익을 받기 전까지 성과보수는 0이에요.',

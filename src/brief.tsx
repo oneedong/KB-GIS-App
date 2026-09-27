@@ -228,10 +228,76 @@ function HedgeBlock({ hedge }) {
   );
 }
 
+// ─── 핵심 헤드라인 ───────────────────────────────────────────
+// 수집한 시황 기사 중 '시장을 움직인 재료'가 담긴 제목을 앞세운다:
+// 방향(급등·급락·반등…) + 원인(금리·관세·실적·반도체·유가…)이 함께 있으면 높은 점수.
+const HL_MOVE = /급등|급락|폭락|폭등|반등|하락|상승|약세|강세|랠리|쇼크|패닉|최고치|최저치|사상\s*최|출렁|흔들|되돌림|숨고르기/;
+const HL_CAUSE = /관세|금리|연준|Fed|FOMC|파월|CPI|물가|인플레|고용|실업|실적|반도체|AI|엔비디아|테슬라|애플|빅테크|유가|원유|전쟁|지정학|중동|중국|엔화|환율|국채|트럼프|경기|침체|셧다운|딥시크|수출|외국인|기관|매도|매수|금통위|한은|ECB|BOJ/;
+function marketHeadlines(issues) {
+  const seen = new Set();
+  return (issues || []).map((it, i) => {
+    const t = String(it.title || '');
+    let sc = 0;
+    if (HL_MOVE.test(t)) sc += 3;
+    if (HL_CAUSE.test(t)) sc += 3;
+    if (/[…,·]|에\s|로\s/.test(t)) sc += 1;                         // "~에 급락", "…반도체 강세" 식 인과 표현
+    if (/^\[?(?:코스피|코스닥|뉴욕증시|환율)\]?\s*마감$|^\S+\s+마감\s*$/.test(t)) sc -= 3;   // 숫자만 전하는 마감 기사
+    return { ...it, sc, i };
+  }).filter((x) => {
+    const k = x.title.replace(/[^가-힣A-Za-z0-9]/g, '').slice(0, 14);
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  }).sort((a, b) => b.sc - a.sc || a.i - b.i);
+}
+
+// ─── 달력(일자별 시황) ───────────────────────────────────────
+const dk2d = (k) => new Date(Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)));
+function BriefCalendar({ keys, value, onPick }) {
+  const has = new Set(keys);
+  const cur = value || keys[0] || '';
+  const [ym, setYm] = React.useState(() => (cur ? [+cur.slice(0, 4), +cur.slice(4, 6)] : [2026, 1]));
+  const [y, m] = ym;
+  const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  const key = (d) => `${y}${pad2(m)}${pad2(d)}`;
+  const move = (dm) => { const t = new Date(Date.UTC(y, m - 1 + dm, 1)); setYm([t.getUTCFullYear(), t.getUTCMonth() + 1]); };
+  const monthHas = keys.some((k) => k.startsWith(`${y}${pad2(m)}`));
+  return (
+    <div style={{ padding: '6px 4px 4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 10 }}>
+        <span onClick={() => move(-1)} style={{ cursor: 'pointer', color: KB.sub, transform: 'scaleX(-1)' }}><Ico n="chevron" size={20} sw={2} /></span>
+        <span style={{ font: F(700, 16), color: KB.ink, minWidth: 110, textAlign: 'center' }}>{y}년 {m}월</span>
+        <span onClick={() => move(1)} style={{ cursor: 'pointer', color: KB.sub }}><Ico n="chevron" size={20} sw={2} /></span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: 4, textAlign: 'center' }}>
+        {['일', '월', '화', '수', '목', '금', '토'].map((w, i) => <div key={w} style={{ font: F(600, 12), color: i === 0 ? KB.up : i === 6 ? KB.down : KB.mute, padding: '4px 0' }}>{w}</div>)}
+        {cells.map((d, i) => {
+          if (!d) return <div key={'e' + i}></div>;
+          const k = key(d), ok = has.has(k), on = k === cur;
+          return (
+            <div key={k} onClick={() => ok && onPick(k)} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: ok ? 'pointer' : 'default' }}>
+              <span style={{ width: 36, height: 36, borderRadius: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: on ? KB.ink : 'transparent', color: on ? '#fff' : ok ? KB.ink : KB.faint, font: ok ? F(700, 14) : F(400, 14), position: 'relative' }}>
+                {d}
+                {ok && !on && <span style={{ position: 'absolute', bottom: 4, width: 4, height: 4, borderRadius: 2, background: KB.yellow }}></span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {!monthHas && <div style={{ font: F(500, 12.5), color: KB.mute, textAlign: 'center', marginTop: 8 }}>이 달에는 저장된 시황이 없습니다</div>}
+      <div style={{ font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 }}>노란 점이 있는 날짜를 누르면 그날 시황을 볼 수 있습니다</div>
+    </div>
+  );
+}
+
 // ─── 시황 화면 ───────────────────────────────────────────────
 function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBusy, onRefreshLive, onPick }) {
   const desktop = useDesktop();
+  const [cal, setCal] = React.useState(false);
   const isLatest = !!(b && market && b.dateKey === market.dateKey);
+  const heads = marketHeadlines(b && b.issues);
+  const top = heads[0], points = heads.slice(1, 5), rest = heads.slice(5);
   const lv = isLatest ? live : null;
   const grid = desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px', alignItems: 'start' } : {};
   const col = (children) => <div style={{ minWidth: 0 }}>{children}</div>;
@@ -246,26 +312,41 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
           </div>
         )} />
       {briefIndex && briefIndex.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', background: KB.bg, borderBottom: `1px solid ${KB.line}`, flexShrink: 0 }}>
-          {briefIndex.slice(0, 40).map((x) => <Chip key={x.dateKey} active={b && b.dateKey === x.dateKey} onClick={() => onSelectDate(x.dateKey)}>{x.dateKey}</Chip>)}
+        <div style={{ flexShrink: 0, background: KB.bg, borderBottom: `1px solid ${KB.line}` }}>
+          <div onClick={() => setCal((c) => !c)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', cursor: 'pointer' }}>
+            <Ico n="calendar" size={19} color={KB.gray} />
+            <span style={{ font: F(700, 14.5), color: KB.ink }}>{b && b.dateKey ? `${b.dateKey.slice(0, 4)}.${b.dateKey.slice(4, 6)}.${b.dateKey.slice(6, 8)} (${['일', '월', '화', '수', '목', '금', '토'][dk2d(b.dateKey).getUTCDay()]})` : '날짜 선택'}</span>
+            <span style={{ font: F(500, 12.5), color: KB.mute }}>{briefIndex.length}일치 저장</span>
+            <span style={{ marginLeft: 'auto', font: F(600, 13), color: KB.sub, display: 'flex', alignItems: 'center', gap: 3 }}>달력<span style={{ transform: cal ? 'rotate(180deg)' : 'none', display: 'flex' }}><Ico n="down" size={16} sw={2} /></span></span>
+          </div>
+          {cal && (
+            <div style={{ maxWidth: 420, margin: '0 auto', padding: '0 16px 12px' }}>
+              <BriefCalendar keys={briefIndex.map((x) => x.dateKey)} value={b && b.dateKey} onPick={(k) => { onSelectDate(k); setCal(false); }} />
+            </div>
+          )}
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 }}>
           {!b ? <Empty title="아직 브리핑이 없습니다" desc="매일 아침 08시(KST)에 전일 시장을 정리해 올립니다." /> : (
             <>
-              <Section first title="한줄 요약">
-                <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>
-                <div style={{ font: F(700, 13.5), color: KB.ink, margin: '16px 0 8px' }}>관찰 포인트</div>
-                {(b.watch && b.watch.length) ? (
-                  <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                    {b.watch.map((w, i) => (
-                      <li key={i} style={{ display: 'flex', gap: 9, font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' }}>
-                        <span style={{ width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 }}></span><span>{w}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <div style={{ font: F(400, 13.5), color: KB.mute }}>기준선을 넘는 특이 신호는 없었음</div>}
+              <Section first title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
+                {top ? (
+                  <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>
+                    <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{top.title}</div>
+                    <div style={{ font: F(500, 12.5), color: KB.sub, marginTop: 6 }}>{top.source}</div>
+                  </a>
+                ) : <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>}
+                <div style={{ font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' }}>관찰 포인트</div>
+                {points.length ? points.map((w, i) => (
+                  <a key={i} href={w.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 }}></span>
+                    <span style={{ flex: 1 }}>
+                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{w.title}</span>
+                      <span style={{ display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 }}>{w.source}</span>
+                    </span>
+                  </a>
+                )) : (b.watch && b.watch.length ? b.watch.map((w, i) => <div key={i} style={{ font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' }}>· {w}</div>) : <div style={{ font: F(400, 13.5), color: KB.mute }}>수집된 핵심 뉴스가 없음</div>)}
               </Section>
               <div style={grid}>
                 {col(<>
@@ -304,17 +385,17 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                   <Section title="환헤지 비용 · 스왑포인트"><HedgeBlock hedge={b.hedge} /></Section>
                 </>)}
               </div>
-              <Section title="주요이슈 뉴스">
-                {(b.issues && b.issues.length) ? (
+              <Section title="그 밖의 시황 뉴스">
+                {rest.length ? (
                   <div style={desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {}}>
-                    {b.issues.map((it, i) => (
+                    {rest.map((it, i) => (
                       <a key={i} href={it.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` }}>
                         <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{it.title}</div>
                         <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{it.source}</div>
                       </a>
                     ))}
                   </div>
-                ) : <Empty compact title="수집된 이슈가 없음" />}
+                ) : <div style={{ font: F(400, 13.5), color: KB.mute }}>위 핵심 뉴스 외 추가 기사 없음</div>}
                 {(b.errors && b.errors.length > 0) && <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 12 }}>※ 받지 못한 항목 {b.errors.length}건 — 값을 추정하지 않고 비워 뒀음</div>}
                 <div style={{ font: F(400, 12, 1.8), color: KB.mute, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${KB.line}` }}>
                   출처 · 지수·환율·원자재·추이 Yahoo Finance(폴백 Stooq) · 크립토 Binance(폴백 Coinbase) · SOFR/EFFR·FOMC New York Fed · SONIA·영국 정책금리 Bank of England ·
@@ -341,7 +422,7 @@ function BriefDigest({ market, onOpen }) {
         <span style={{ font: F(500, 12), color: KB.mute }}>{market.dateKey}</span>
         <span style={{ marginLeft: 'auto', color: KB.faint }}><Ico n="chevron" size={17} sw={2} /></span>
       </div>
-      <div style={{ font: F(400, 13.5, 1.6), color: KB.ink2, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{market.summary}</div>
+      <div style={{ font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(marketHeadlines(market.issues)[0] || {}).title || market.summary}</div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${rows.length}, 1fr)`, gap: 8, marginTop: 10 }}>
         {rows.map((r) => (
           <div key={r.name} style={{ minWidth: 0 }}>

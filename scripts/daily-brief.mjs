@@ -455,6 +455,10 @@ const ISSUE_QUERIES = [
   '원달러 환율 마감 when:2d',
   '(FOMC OR 금통위 OR 기준금리) when:3d',
   '(국채 금리 OR 채권시장) 마감 when:2d',
+  // 시장을 움직인 재료(원인) 기사 — 앱의 '핵심 헤드라인'에 쓰인다
+  '(증시 OR 코스피 OR 뉴욕증시) (급등 OR 급락 OR 폭락 OR 반등) 이유 when:2d',
+  '(관세 OR 반도체 OR 엔비디아 OR 유가 OR 연준 OR 파월) 증시 when:2d',
+  '(CPI OR 고용지표 OR 물가 OR 실적) 뉴욕증시 when:2d',
 ];
 export function parseRss(xml) {
   const items = [];
@@ -486,7 +490,7 @@ async function issues() {
     } catch (e) { errors.push(`이슈(${q}): ${e.message}`); }
     await sleep(700);                       // 연속 호출 간 간격 — RSS 레이트리밋 회피
   }
-  return out.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 8);
+  return out.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 14);
 }
 
 // ── 문장 생성 (음슴체) ────────────────────────────────────

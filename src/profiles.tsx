@@ -607,3 +607,117 @@ function AllocView({ alloc, insights, onOpenLp }) {
     </>
   );
 }
+
+// ─── 펀드레이징 (운용사·펀드별 모집 단계와 단계별 일자) ─────────────
+const FR_STEPS = ['모집 중', '1차 클로즈', '중간 클로즈', '클로즈', '파이널 클로즈'];
+const FR_LABEL = { '모집 중': '모집 개시', '1차 클로즈': '1차 클로즈', '중간 클로즈': '중간 클로즈', '클로즈': '클로즈(단계 미상)', '파이널 클로즈': '파이널 클로즈' };
+const frTone = (st) => (st === '파이널 클로즈' ? 'dark' : st === '모집 중' ? 'outline' : 'yellow');
+const fundTitle = (f) => f.fund || (/\bfund$|펀드$/i.test(f.gp) ? f.gp : `${f.gp} ${(ASSET[f.asset] && ASSET[f.asset].label) || ''} 펀드`);
+
+function FundCard({ f, onOpenStage, onGp, first }) {
+  const reached = new Set(f.stages.map((s) => s.stage));
+  const steps = FR_STEPS.filter((k) => k !== '클로즈' || reached.has('클로즈'));
+  return (
+    <div style={{ padding: '16px 0', borderTop: first ? 'none' : `1px solid ${KB.line2}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <Tag tone={frTone(f.status)}>{f.status}</Tag>
+        <Tag>{(ASSET[f.asset] && ASSET[f.asset].label) || '대체투자'}</Tag>
+        {!f.fund && <span style={{ font: F(500, 12), color: KB.mute }}>펀드명 미확인</span>}
+      </div>
+      <div style={{ font: F(700, 16.5, 1.4), color: KB.ink, marginTop: 8, wordBreak: 'keep-all' }}>{fundTitle(f)}</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4, font: F(500, 13), color: KB.sub }}>
+        <span onClick={() => onGp && onGp(f.gp)} style={{ font: F(600, 13), color: KB.gray, cursor: onGp ? 'pointer' : 'default' }}>{f.gp}</span>
+        {f.target && <span>목표 {f.target}</span>}
+      </div>
+      {/* 단계별 타임라인 — 도달한 단계는 채운 점, 보도일·규모 표시 */}
+      <div style={{ marginTop: 12, position: 'relative' }}>
+        {steps.map((k, i) => {
+          const s = f.stages.find((x) => x.stage === k);
+          const last = i === steps.length - 1;
+          return (
+            <div key={k} onClick={() => s && onOpenStage(s)} style={{ display: 'flex', gap: 12, cursor: s ? 'pointer' : 'default', minHeight: 34 }}>
+              <div style={{ width: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <span style={{ width: 11, height: 11, borderRadius: 6, marginTop: 4, background: s ? (k === '파이널 클로즈' ? KB.ink : KB.yellow) : '#fff', border: `2px solid ${s ? (k === '파이널 클로즈' ? KB.ink : KB.yellow) : KB.line}`, boxSizing: 'border-box' }}></span>
+                {!last && <span style={{ flex: 1, width: 2, background: s ? KB.yellowLine : KB.line2, marginTop: 2 }}></span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, paddingBottom: last ? 0 : 10 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ font: s ? F(600, 14) : F(500, 14), color: s ? KB.ink : KB.faint }}>{FR_LABEL[k]}</span>
+                  {s && <span style={{ font: F(600, 13), color: KB.sub }}>{fmtDate(itemMs(s))}</span>}
+                  {s && s.size && <span style={{ font: F(700, 13.5), color: KB.gray }}>{s.size}</span>}
+                </div>
+                {s && <div style={{ font: F(500, 12.5, 1.45), color: KB.mute, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.source}{s.reports > 1 ? ` 외 ${s.reports - 1}건` : ''} · {s.tko || s.title}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FundraisingView({ data, onOpen, onGp }) {
+  const desktop = useDesktop();
+  const [tab, setTab] = React.useState('funds');
+  const [st, setSt] = React.useState('all');
+  const [q, setQ] = React.useState('');
+  const funds = (data && data.funds) || [];
+  const items = (data && data.items) || [];
+  const ql = q.trim().toLowerCase();
+  const match = (f) => (st === 'all' || f.status === st || (st === '클로즈' && f.status !== '모집 중')) && (!ql || `${f.gp} ${f.fund}`.toLowerCase().includes(ql));
+  const list = funds.filter(match);
+  const cnt = (k) => funds.filter((f) => (k === 'all' ? true : k === '클로즈' ? f.status !== '모집 중' : f.status === k)).length;
+  const openStage = (s) => onOpen(s.id, s);
+  const byGp = {};
+  list.forEach((f) => { (byGp[f.gp] = byGp[f.gp] || []).push(f); });
+  const gps = Object.keys(byGp).sort((a, b) => byGp[b].length - byGp[a].length || a.localeCompare(b));
+  return (
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
+      <TopBar big title="펀드레이징" sub={`운용사 ${new Set(funds.map((f) => f.gp)).size}곳 · 펀드 ${funds.length}개 · 보도 ${items.length}건${data && data.updatedAt ? ` · ${data.updatedAt} 갱신` : ''}`} border={false} />
+      <Tabs items={[['funds', '펀드별', list.length], ['gp', '운용사별', gps.length], ['feed', '최신 보도', items.length]]} value={tab} onChange={setTab} />
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ maxWidth: desktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
+          {tab !== 'feed' && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 10 }}>
+                <Ico n="search" size={18} color={KB.mute} />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="운용사·펀드 검색" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
+              </div>
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '12px 0 6px' }}>
+                {[['all', '전체'], ['모집 중', '모집 중'], ['클로즈', '클로즈 전체'], ['1차 클로즈', '1차'], ['중간 클로즈', '중간'], ['파이널 클로즈', '파이널']].map(([k, l]) => <Chip key={k} active={st === k} onClick={() => setSt(k)} count={cnt(k)}>{l}</Chip>)}
+              </div>
+            </>
+          )}
+          {tab === 'funds' && (list.length ? list.map((f, i) => <FundCard key={f.fundKey} f={f} first={i === 0} onOpenStage={openStage} onGp={onGp} />)
+            : <Empty compact icon="layers" title="해당하는 펀드가 없습니다" />)}
+          {tab === 'gp' && (gps.length ? gps.map((g, gi) => (
+            <div key={g} style={{ marginTop: gi ? 26 : 6 }}>
+              <div onClick={() => onGp && onGp(g)} style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: `2px solid ${KB.ink}`, cursor: 'pointer' }}>
+                <span style={{ font: F(700, 16.5), color: KB.ink }}>{g}</span>
+                <span style={{ font: F(500, 12.5), color: KB.sub }}>펀드 {byGp[g].length} · 모집 중 {byGp[g].filter((f) => f.status === '모집 중').length} · 클로즈 {byGp[g].filter((f) => f.status !== '모집 중').length}</span>
+                <span style={{ marginLeft: 'auto', color: KB.faint }}><Ico n="chevron" size={16} sw={2} /></span>
+              </div>
+              {byGp[g].map((f, i) => <FundCard key={f.fundKey} f={f} first={i === 0} onOpenStage={openStage} />)}
+            </div>
+          )) : <Empty compact icon="layers" title="해당하는 운용사가 없습니다" />)}
+          {tab === 'feed' && items.map((f, i) => (
+            <div key={f.key || f.id + i} onClick={() => onOpen(f.id, f)} style={{ padding: '14px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Tag tone={frTone(f.stage)}>{f.stage}</Tag>
+                {f.gp && <span style={{ font: F(700, 14), color: KB.ink }}>{f.gp}</span>}
+                {f.size && <span style={{ font: F(700, 14), color: KB.gray }}>{f.size}</span>}
+                <span style={{ marginLeft: 'auto', font: F(500, 12), color: KB.mute }}>{fmtDate(itemMs(f))}</span>
+              </div>
+              <div style={{ font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 }}>{f.title}</div>
+              {f.tko && <div style={{ font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 }}>{f.tko}</div>}
+              <div style={{ font: F(500, 12), color: KB.mute, marginTop: 4 }}>{f.source}</div>
+            </div>
+          ))}
+          <div style={{ font: F(400, 12, 1.7), color: KB.mute, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${KB.line}` }}>
+            단계별 일자는 해당 단계를 처음 보도한 기사의 날짜입니다(운용사 발표일과 하루 이틀 다를 수 있음). 규모는 기사 표기 그대로이며, 같은 펀드의 여러 보도는 한 단계로 묶습니다. 3시간마다 갱신·누적됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -31,6 +31,7 @@ function FeedItem({ item, onOpen, onBookmark, isNew, selected }) {
           <span style={{ font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' }}>{item.assetLabel}</span>
         </div>
         <div style={{ font: F(600, 16, 1.45), color: KB.ink, marginTop: 6, letterSpacing: '-.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.ko}</div>
+        {item.tko && <div style={{ font: F(500, 14.5, 1.45), color: KB.ko, marginTop: 4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.tko}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, font: F(500, 12), color: KB.mute, minWidth: 0 }}>
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '50%' }}>{item.source}</span>
           <span>·</span>
@@ -76,7 +77,8 @@ function BodySkeleton() {
 
 function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack, deals, onOpenDeal, onOpenInst, onOpenTerm, onDead }) {
   const desktop = useDesktop();
-  const [st, setSt] = React.useState({ id: null, body: '', loading: false, dead: false, src: '' });
+  const [st, setSt] = React.useState({ id: null, body: '', ko: null, loading: false, dead: false, src: '' });
+  const [lang, setLang] = React.useState('both');   // 영문 기사: both(한영 병기) | ko | en
   const [openTerm, setOpenTerm] = React.useState(null);
   const scrollRef = React.useRef(null);
 
@@ -84,13 +86,13 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     if (!sel) return undefined;
     setOpenTerm(null);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    setSt({ id: sel.id, body: '', loading: true, dead: false, src: '' });
+    setSt({ id: sel.id, body: '', ko: null, loading: true, dead: false, src: '' });
     const ctrl = new AbortController();
     let off = false;
     loadArticleBody(sel, ctrl.signal)
       .then((r) => {
         if (off) return;
-        setSt({ id: sel.id, body: r.body || '', loading: false, dead: !!r.dead, src: r.src || '' });
+        setSt({ id: sel.id, body: r.body || '', ko: r.ko || null, loading: false, dead: !!r.dead, src: r.src || '' });
         if (r.dead && onDead) onDead(sel.id);
       })
       .catch(() => { if (!off) setSt((s) => ({ ...s, loading: false })); });
@@ -112,7 +114,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const isFull = !!fetched && fetched.length > Math.max(420, lead.length + 40);
   const loading = mine ? st.loading : true;
   // 문장이 하나도 없는 조각(다른 기사 제목·메뉴 잔재)만 남았다면 본문이 없는 것으로 본다
-  const rawParas = toParagraphs(text, sel.ko);
+  const ko = mine && st.ko && Array.isArray(st.ko.p) ? st.ko : null;
+  const isEn = sel.lang === 'en';
+  const rawParas = ko && fetched ? String(fetched).split(/\n+/).map((x) => x.trim()).filter(Boolean) : toParagraphs(text, sel.ko);
   const paragraphs = rawParas.some((p) => isSentencey(p.replace(/…$/, '')) || p.length > 90) ? rawParas : [];
   const { paraSents, hl } = keySentences(paragraphs, sel.inst);
   const mark = makeTermMarker(12);
@@ -121,13 +125,28 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const terms = findTerms(`${sel.ko} ${text}`, 8);
   const when = fmtDate(itemMs(sel)) + (sel.time ? ' ' + sel.time : '');
 
+  const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? ko.p[pi] : '');
+  const koNode = (pi, sub) => {
+    const t = koOf(pi);
+    if (!t) return null;
+    return sub
+      ? <div key={'k' + pi} style={{ font: F(700, 16, 1.5), color: KB.ko, margin: lang === 'ko' ? '28px 0 10px' : '-4px 0 12px' }}>{t}</div>
+      : <p key={'k' + pi} style={{ font: F(400, 16, 1.85), color: KB.ko, margin: lang === 'ko' ? '0 0 20px' : '-8px 0 24px', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
+          {mark(t).map((x, k) => (x.g ? <TermMark key={k} g={x.g} onOpen={onOpenTerm}>{x.t}</TermMark> : <React.Fragment key={k}>{x.t}</React.Fragment>))}
+        </p>;
+  };
+  const showEn = !ko || lang !== 'ko';
+  const showKo = ko && lang !== 'en';
   const bodyNodes = paraSents.map((ss, pi) => {
     const p = paragraphs[pi];
-    if (isSubhead(p, paragraphs[pi + 1])) {
-      return <h3 key={pi} style={{ font: F(700, 17, 1.5), color: KB.ink, margin: '28px 0 10px', letterSpacing: '-.01em' }}>{p}</h3>;
+    const sub = isSubhead(p, paragraphs[pi + 1]);
+    if (!showEn) return koNode(pi, sub) || (lang === 'ko' && pi >= (ko.n || ko.p.length) ? <p key={pi} style={{ font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px' }}>{p}</p> : null);
+    if (sub) {
+      return <React.Fragment key={pi}><h3 style={{ font: F(700, 17, 1.5), color: KB.ink, margin: '28px 0 10px', letterSpacing: '-.01em' }}>{p}</h3>{showKo && koNode(pi, true)}</React.Fragment>;
     }
     return (
-      <p key={pi} style={{ font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
+      <React.Fragment key={pi}>
+      <p style={{ font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
         {ss.map((s, si) => {
           const parts = mark(s).map((x, k) => (x.g
             ? <TermMark key={k} g={x.g} onOpen={onOpenTerm}>{x.t}</TermMark>
@@ -138,6 +157,8 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             : <React.Fragment key={si}>{parts}{gap}</React.Fragment>;
         })}
       </p>
+      {showKo && koNode(pi, false)}
+      </React.Fragment>
     );
   });
 
@@ -159,9 +180,23 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             <span style={{ font: F(500, 13), color: KB.mute }}>{sel.assetLabel} · {sel.regionLabel}</span>
           </div>
           <h1 style={{ font: F(700, desktop ? 26 : 23, 1.4), color: KB.ink, letterSpacing: '-.025em', margin: '12px 0 0', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>{sel.ko}</h1>
-          {sel.en && sel.en !== sel.ko && <div style={{ font: F(400, 14, 1.55), color: KB.mute, marginTop: 8 }}>{sel.en}</div>}
+          {sel.tko && <div style={{ font: F(600, isEn ? 19 : 17, 1.45), color: KB.ko, marginTop: 8, wordBreak: 'keep-all' }}>{sel.tko}</div>}
           <div style={{ font: F(500, 13), color: KB.mute, marginTop: 12, paddingBottom: 18, borderBottom: `1px solid ${KB.line}` }}>{sel.source} · {when}</div>
 
+          {isEn && (
+            <div style={{ margin: '16px 0 0' }}>
+              {ko ? (
+                <div style={{ display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 }}>
+                  {[['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (
+                    <div key={k} onClick={() => setLang(k)} style={{ padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? '#fff' : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }}>{l}</div>
+                  ))}
+                </div>
+              ) : (!loading && paragraphs.length > 0 && (
+                <div style={{ font: F(500, 12.5, 1.6), color: KB.mute }}>본문 번역은 수집할 때 최신 기사부터 차례로 반영됩니다. 아직 번역되지 않아 영문으로 표시합니다.</div>
+              ))}
+              {ko && <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 }}><span style={{ color: KB.ko, fontWeight: 600 }}>파란 글씨</span>는 한국어 번역입니다{ko.n && ko.n < paragraphs.length ? ` · 앞 ${ko.n}개 문단 번역` : ''}.</div>}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '18px 0 16px', font: F(500, 12.5), color: KB.mute }}>
             {loading && !paragraphs.length ? <span>원문에서 본문을 불러오는 중</span>
               : isFull ? <Tag tone="outline">전문</Tag>
@@ -175,11 +210,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             : loading ? <BodySkeleton />
             : (mine && st.dead)
               ? <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>원문 기사가 삭제되어 더 이상 볼 수 없습니다. 다음 수집 때 목록에서 빠집니다.</div>
-              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.</div>}
+              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>내부 보안 정책으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.</div>}
 
           {!loading && paragraphs.length > 0 && !isFull && realUrl && (
             <div style={{ font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 }}>
-              {sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '매체가 전문 제공을 막아 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.'}
+              {sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '내부 보안 정책으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.'}
             </div>
           )}
 

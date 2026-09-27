@@ -28,6 +28,7 @@ const KB = {
     up: '#E0322B', // 상승
     down: '#1E63D5', // 하락
     pos: '#15804B',
+    ko: '#1F5FC8', // 영문 기사 한글 번역(병기)
 };
 // 폰트 단축: F(굵기, 크기, 행간)
 const F = (w, size, lh) => `${w} ${size}px${lh ? '/' + lh : ''} Pretendard, -apple-system, sans-serif`;
@@ -70,13 +71,13 @@ function Ico({ n, size = 22, color = 'currentColor', sw = 1.7, fill = 'none', st
     return (React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: fill, stroke: color, strokeWidth: sw, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block', flexShrink: 0, ...(style || {}) }, "aria-hidden": "true" },
         React.createElement("path", { d: d })));
 }
-// ─── 로고 (KB 워드마크 + 서비스명) ──────────────────────────────
-function Logo({ size = 18, onClick, light }) {
-    return (React.createElement("div", { onClick: onClick, style: { display: 'flex', alignItems: 'center', gap: 8, cursor: onClick ? 'pointer' : 'default', userSelect: 'none' } },
-        React.createElement("div", { style: { width: size + 10, height: size + 10, borderRadius: 7, background: KB.yellow, display: 'flex', alignItems: 'center', justifyContent: 'center', font: F(800, size * 0.62), color: KB.gray, letterSpacing: '-.03em' } }, "KB"),
-        React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 5 } },
-            React.createElement("span", { style: { font: F(800, size), color: light ? '#fff' : KB.ink, letterSpacing: '-.02em' } }, "GIS"),
-            React.createElement("span", { style: { font: F(500, size * 0.62), color: light ? 'rgba(255,255,255,.7)' : KB.mute } }, "\uD574\uC678\uB300\uCCB4\uD22C\uC790"))));
+// ─── 로고 — 미니멀 워드마크 "KB GIS" (노란 포인트 하나) ─────────────
+function Logo({ size = 18, onClick }) {
+    return (React.createElement("div", { onClick: onClick, style: { display: 'flex', alignItems: 'center', gap: Math.round(size * 0.42), cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }, "aria-label": "KB GIS" },
+        React.createElement("span", { style: { width: Math.round(size * 0.5), height: Math.round(size * 0.5), borderRadius: 2, background: KB.yellow, flexShrink: 0 } }),
+        React.createElement("span", { style: { font: F(800, size), color: KB.ink, letterSpacing: '-.01em' } },
+            "KB",
+            React.createElement("span", { style: { fontWeight: 500, marginLeft: Math.round(size * 0.28) } }, "GIS"))));
 }
 // ─── 화면 뼈대 ──────────────────────────────────────────────────
 // 상단바: 뒤로가기·제목·오른쪽 액션. 모바일은 안전영역 여백 포함.

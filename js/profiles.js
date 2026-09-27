@@ -423,3 +423,92 @@ function AllocView({ alloc, insights, onOpenLp }) {
                 React.createElement(Delta, { v: r.value, digits: 1, size: 15 }),
                 React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, r.date)))))))));
 }
+// ─── 펀드레이징 (운용사·펀드별 모집 단계와 단계별 일자) ─────────────
+const FR_STEPS = ['모집 중', '1차 클로즈', '중간 클로즈', '클로즈', '파이널 클로즈'];
+const FR_LABEL = { '모집 중': '모집 개시', '1차 클로즈': '1차 클로즈', '중간 클로즈': '중간 클로즈', '클로즈': '클로즈(단계 미상)', '파이널 클로즈': '파이널 클로즈' };
+const frTone = (st) => (st === '파이널 클로즈' ? 'dark' : st === '모집 중' ? 'outline' : 'yellow');
+const fundTitle = (f) => f.fund || (/\bfund$|펀드$/i.test(f.gp) ? f.gp : `${f.gp} ${(ASSET[f.asset] && ASSET[f.asset].label) || ''} 펀드`);
+function FundCard({ f, onOpenStage, onGp, first }) {
+    const reached = new Set(f.stages.map((s) => s.stage));
+    const steps = FR_STEPS.filter((k) => k !== '클로즈' || reached.has('클로즈'));
+    return (React.createElement("div", { style: { padding: '16px 0', borderTop: first ? 'none' : `1px solid ${KB.line2}` } },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
+            React.createElement(Tag, { tone: frTone(f.status) }, f.status),
+            React.createElement(Tag, null, (ASSET[f.asset] && ASSET[f.asset].label) || '대체투자'),
+            !f.fund && React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, "\uD380\uB4DC\uBA85 \uBBF8\uD655\uC778")),
+        React.createElement("div", { style: { font: F(700, 16.5, 1.4), color: KB.ink, marginTop: 8, wordBreak: 'keep-all' } }, fundTitle(f)),
+        React.createElement("div", { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4, font: F(500, 13), color: KB.sub } },
+            React.createElement("span", { onClick: () => onGp && onGp(f.gp), style: { font: F(600, 13), color: KB.gray, cursor: onGp ? 'pointer' : 'default' } }, f.gp),
+            f.target && React.createElement("span", null,
+                "\uBAA9\uD45C ",
+                f.target)),
+        React.createElement("div", { style: { marginTop: 12, position: 'relative' } }, steps.map((k, i) => {
+            const s = f.stages.find((x) => x.stage === k);
+            const last = i === steps.length - 1;
+            return (React.createElement("div", { key: k, onClick: () => s && onOpenStage(s), style: { display: 'flex', gap: 12, cursor: s ? 'pointer' : 'default', minHeight: 34 } },
+                React.createElement("div", { style: { width: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 } },
+                    React.createElement("span", { style: { width: 11, height: 11, borderRadius: 6, marginTop: 4, background: s ? (k === '파이널 클로즈' ? KB.ink : KB.yellow) : '#fff', border: `2px solid ${s ? (k === '파이널 클로즈' ? KB.ink : KB.yellow) : KB.line}`, boxSizing: 'border-box' } }),
+                    !last && React.createElement("span", { style: { flex: 1, width: 2, background: s ? KB.yellowLine : KB.line2, marginTop: 2 } })),
+                React.createElement("div", { style: { flex: 1, minWidth: 0, paddingBottom: last ? 0 : 10 } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' } },
+                        React.createElement("span", { style: { font: s ? F(600, 14) : F(500, 14), color: s ? KB.ink : KB.faint } }, FR_LABEL[k]),
+                        s && React.createElement("span", { style: { font: F(600, 13), color: KB.sub } }, fmtDate(itemMs(s))),
+                        s && s.size && React.createElement("span", { style: { font: F(700, 13.5), color: KB.gray } }, s.size)),
+                    s && React.createElement("div", { style: { font: F(500, 12.5, 1.45), color: KB.mute, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+                        s.source,
+                        s.reports > 1 ? ` 외 ${s.reports - 1}건` : '',
+                        " \u00B7 ",
+                        s.tko || s.title))));
+        }))));
+}
+function FundraisingView({ data, onOpen, onGp }) {
+    const desktop = useDesktop();
+    const [tab, setTab] = React.useState('funds');
+    const [st, setSt] = React.useState('all');
+    const [q, setQ] = React.useState('');
+    const funds = (data && data.funds) || [];
+    const items = (data && data.items) || [];
+    const ql = q.trim().toLowerCase();
+    const match = (f) => (st === 'all' || f.status === st || (st === '클로즈' && f.status !== '모집 중')) && (!ql || `${f.gp} ${f.fund}`.toLowerCase().includes(ql));
+    const list = funds.filter(match);
+    const cnt = (k) => funds.filter((f) => (k === 'all' ? true : k === '클로즈' ? f.status !== '모집 중' : f.status === k)).length;
+    const openStage = (s) => onOpen(s.id, s);
+    const byGp = {};
+    list.forEach((f) => { (byGp[f.gp] = byGp[f.gp] || []).push(f); });
+    const gps = Object.keys(byGp).sort((a, b) => byGp[b].length - byGp[a].length || a.localeCompare(b));
+    return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
+        React.createElement(TopBar, { big: true, title: "\uD380\uB4DC\uB808\uC774\uC9D5", sub: `운용사 ${new Set(funds.map((f) => f.gp)).size}곳 · 펀드 ${funds.length}개 · 보도 ${items.length}건${data && data.updatedAt ? ` · ${data.updatedAt} 갱신` : ''}`, border: false }),
+        React.createElement(Tabs, { items: [['funds', '펀드별', list.length], ['gp', '운용사별', gps.length], ['feed', '최신 보도', items.length]], value: tab, onChange: setTab }),
+        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+            React.createElement("div", { style: { maxWidth: desktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' } },
+                tab !== 'feed' && (React.createElement(React.Fragment, null,
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 10 } },
+                        React.createElement(Ico, { n: "search", size: 18, color: KB.mute }),
+                        React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC6B4\uC6A9\uC0AC\u00B7\uD380\uB4DC \uAC80\uC0C9", style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } })),
+                    React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', margin: '12px 0 6px' } }, [['all', '전체'], ['모집 중', '모집 중'], ['클로즈', '클로즈 전체'], ['1차 클로즈', '1차'], ['중간 클로즈', '중간'], ['파이널 클로즈', '파이널']].map(([k, l]) => React.createElement(Chip, { key: k, active: st === k, onClick: () => setSt(k), count: cnt(k) }, l))))),
+                tab === 'funds' && (list.length ? list.map((f, i) => React.createElement(FundCard, { key: f.fundKey, f: f, first: i === 0, onOpenStage: openStage, onGp: onGp }))
+                    : React.createElement(Empty, { compact: true, icon: "layers", title: "\uD574\uB2F9\uD558\uB294 \uD380\uB4DC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4" })),
+                tab === 'gp' && (gps.length ? gps.map((g, gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 26 : 6 } },
+                    React.createElement("div", { onClick: () => onGp && onGp(g), style: { display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: `2px solid ${KB.ink}`, cursor: 'pointer' } },
+                        React.createElement("span", { style: { font: F(700, 16.5), color: KB.ink } }, g),
+                        React.createElement("span", { style: { font: F(500, 12.5), color: KB.sub } },
+                            "\uD380\uB4DC ",
+                            byGp[g].length,
+                            " \u00B7 \uBAA8\uC9D1 \uC911 ",
+                            byGp[g].filter((f) => f.status === '모집 중').length,
+                            " \u00B7 \uD074\uB85C\uC988 ",
+                            byGp[g].filter((f) => f.status !== '모집 중').length),
+                        React.createElement("span", { style: { marginLeft: 'auto', color: KB.faint } },
+                            React.createElement(Ico, { n: "chevron", size: 16, sw: 2 }))),
+                    byGp[g].map((f, i) => React.createElement(FundCard, { key: f.fundKey, f: f, first: i === 0, onOpenStage: openStage }))))) : React.createElement(Empty, { compact: true, icon: "layers", title: "\uD574\uB2F9\uD558\uB294 \uC6B4\uC6A9\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4" })),
+                tab === 'feed' && items.map((f, i) => (React.createElement("div", { key: f.key || f.id + i, onClick: () => onOpen(f.id, f), style: { padding: '14px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+                        React.createElement(Tag, { tone: frTone(f.stage) }, f.stage),
+                        f.gp && React.createElement("span", { style: { font: F(700, 14), color: KB.ink } }, f.gp),
+                        f.size && React.createElement("span", { style: { font: F(700, 14), color: KB.gray } }, f.size),
+                        React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 12), color: KB.mute } }, fmtDate(itemMs(f)))),
+                    React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink2, marginTop: 6 } }, f.title),
+                    f.tko && React.createElement("div", { style: { font: F(500, 14, 1.5), color: KB.ko, marginTop: 2 } }, f.tko),
+                    React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 4 } }, f.source)))),
+                React.createElement("div", { style: { font: F(400, 12, 1.7), color: KB.mute, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${KB.line}` } }, "\uB2E8\uACC4\uBCC4 \uC77C\uC790\uB294 \uD574\uB2F9 \uB2E8\uACC4\uB97C \uCC98\uC74C \uBCF4\uB3C4\uD55C \uAE30\uC0AC\uC758 \uB0A0\uC9DC\uC785\uB2C8\uB2E4(\uC6B4\uC6A9\uC0AC \uBC1C\uD45C\uC77C\uACFC \uD558\uB8E8 \uC774\uD2C0 \uB2E4\uB97C \uC218 \uC788\uC74C). \uADDC\uBAA8\uB294 \uAE30\uC0AC \uD45C\uAE30 \uADF8\uB300\uB85C\uC774\uBA70, \uAC19\uC740 \uD380\uB4DC\uC758 \uC5EC\uB7EC \uBCF4\uB3C4\uB294 \uD55C \uB2E8\uACC4\uB85C \uBB36\uC2B5\uB2C8\uB2E4. 3\uC2DC\uAC04\uB9C8\uB2E4 \uAC31\uC2E0\u00B7\uB204\uC801\uB429\uB2C8\uB2E4.")))));
+}

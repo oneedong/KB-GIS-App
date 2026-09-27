@@ -199,10 +199,12 @@ async function fetchBodyViaProxies(url, signal, title) {
     }
 }
 // 기사 전문 로드 — 캐시 → bodies/ → 프록시 순
+// 영문 기사 번역(수집기가 문단 단위로 저장): { n: 번역된 앞 문단 수, p: [한국어 문단…] }
+const koCache = {};
 async function loadArticleBody(sel, signal) {
-    if (bodyCache[sel.id])
-        return { body: bodyCache[sel.id], src: 'cache' };
-    const stored = bodyStore.get(sel.id);
+    if (bodyCache[sel.id] && (!sel.tr || koCache[sel.id]))
+        return { body: bodyCache[sel.id], ko: koCache[sel.id] || null, src: 'cache' };
+    const stored = !sel.tr && bodyStore.get(sel.id);
     if (stored) {
         bodyCache[sel.id] = stored;
         return { body: stored, src: 'cache' };
@@ -213,9 +215,12 @@ async function loadArticleBody(sel, signal) {
             if (r.ok) {
                 const j = await r.json();
                 if (j && j.body) {
-                    const b = cleanBodyText(j.body, sel.ko);
+                    // 번역이 있는 기사는 문단 짝이 어긋나지 않게 수집기가 정제한 문단 그대로 쓴다
+                    const b = j.ko ? String(j.body).trim() : cleanBodyText(j.body, sel.ko);
                     bodyCache[sel.id] = b;
-                    return { body: b, src: 'archive' };
+                    if (j.ko && Array.isArray(j.ko.p))
+                        koCache[sel.id] = j.ko;
+                    return { body: b, ko: koCache[sel.id] || null, src: 'archive' };
                 }
             }
         }

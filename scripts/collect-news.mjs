@@ -192,6 +192,7 @@ const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-flash-lite-latest', 
 const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
+const TR_DAYS = 3;
 const TITLE_BATCH = 30, TITLE_CALLS = 8, BODY_CALLS = 20, LLM_GAP_MS = 6500;
 let LLM_BLOCKED = false;
 const claudeOn = () => !!ANTHROPIC_API_KEY && !CLAUDE_BLOCKED;
@@ -325,7 +326,9 @@ async function fundPass(list) {
 // 영문 기사 번역 패스 — 제목(묶음) → 본문(최신 기사부터). 결과: a.tko(한글 제목), a.bodyKo = { h, p: [...] }
 async function translatePass(list) {
   if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) return { titles: 0, bodies: 0 };
-  const en = list.filter((a) => a.lang === 'en').sort((x, y) => (x.ts < y.ts ? 1 : -1));
+  // 번역은 최근 3일 기사만 — 그보다 오래된 기사는 새로 따라잡지 않는다(이미 된 번역은 유지)
+  const cut = new Date(Date.now() - TR_DAYS * 86400000).toISOString();
+  const en = list.filter((a) => a.lang === 'en' && (a.ts || '') >= cut).sort((x, y) => (x.ts < y.ts ? 1 : -1));
   let titles = 0, bodies = 0, calls = 0;
   const needT = en.filter((a) => !a.tko);
   for (let i = 0; i < needT.length && calls < TITLE_CALLS * (claudeOn() ? 4 : 1) && !llmDone(); i += TITLE_BATCH) {
@@ -1984,9 +1987,9 @@ async function main() {
     }
     delete a.aiSource;
   }
+  const tr = await translatePass(merged);
   const frxN = await fundPass(merged);
   console.log(`fund details (본문 추출): ${frxN} articles`);
-  const tr = await translatePass(merged);
   console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${ANTHROPIC_API_KEY ? 'Claude ' + CLAUDE_MODEL : 'Gemini'})${llmDone() ? ' — 한도 도달로 중단' : ''}`);
   const listing = await splitBodies(merged);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(listing, null, 0));

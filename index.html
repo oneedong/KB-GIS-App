@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>KB GIS · 해외대체투자 뉴스</title>
-<meta name="description" content="한국 LP·해외 GP·CIO 인사 등 해외대체투자 시장뉴스를 매일 아침 브리핑. AI 3줄 요약과 영문 원문 제공.">
+<title>KB GIS · 해외대체투자</title>
+<meta name="description" content="국내 LP·해외 GP 동향, 기관별 투자내역, 데일리 시황과 해외대체투자 용어 해설을 한곳에서.">
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#1c1d1f">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
 
 <!-- iOS home-screen install -->
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="KB GIS">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 
@@ -24,12 +24,16 @@
   ::-webkit-scrollbar { width: 0; height: 0; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: #e7e5df;
+    background: #eceef1;
+    color: #1c1d20;
     font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
     font-variant-numeric: tabular-nums;
     -webkit-tap-highlight-color: transparent;
   }
   input { font-family: inherit; }
+  input::placeholder { color: #989ba2; }
+  a { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: rgba(255, 188, 0, .35); }
 
   /* #root centers the phone frame and fills the viewport */
   #root {
@@ -49,9 +53,9 @@
     height: 872px;
     min-width: 0;
     background: #fff;
-    border-radius: 42px;
-    border: 1px solid #dedbd3;
-    box-shadow: 0 24px 70px rgba(28,29,31,.20);
+    border-radius: 36px;
+    border: 1px solid #dfe1e5;
+    box-shadow: 0 24px 60px rgba(28,29,32,.16);
     overflow: hidden;
     position: relative;
     display: flex;
@@ -60,7 +64,7 @@
 
   /* On actual phones / installed app: fill the whole screen, drop the frame chrome */
   @media (max-width: 480px) {
-    body { background: #1c1d1f; }
+    body { background: #ffffff; }
     #root { padding: 0; align-items: stretch; }
     .app-frame {
       width: 100%;
@@ -100,7 +104,18 @@
 
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
-<script src="./app.js"></script>
+<!-- 기사 본문 정제(수집기와 같은 규칙) · 본문 추출 -->
+<script src="./article-clean.js"></script>
+<script src="./vendor/readability.js"></script>
+<!-- 앱: src/*.tsx 를 tsc 로 js/ 에 컴파일 (npm run build) -->
+<script src="./js/ui.js"></script>
+<script src="./js/data.js"></script>
+<script src="./js/glossary.js"></script>
+<script src="./js/reader.js"></script>
+<script src="./js/brief.js"></script>
+<script src="./js/profiles.js"></script>
+<script src="./js/article.js"></script>
+<script src="./js/app.js"></script>
 
 <script>
   // Register the service worker so the app works offline and is installable.

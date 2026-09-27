@@ -254,7 +254,7 @@ const KOREAN_LPS = [
   [/신용협동조합중앙회|National Credit Union Federation of Korea/i, '신용협동조합중앙회', '중앙회'],
   [/삼성SRA자산운용|Samsung SRA Asset Management/i, '삼성SRA자산운용', '자산운용사'],
   [/NH아문디자산운용|NH-Amundi Asset Management/i, 'NH아문디자산운용', '자산운용사'],
-  [/Company H/i, 'Company H', '기타'],
+  [/\bCompany H\b(?! ?[a-z])/, 'Company H', '기타'],
   [/한국교직원공제회|교직원공제회|Korea Teachers' Credit Union/i, '한국교직원공제회', '공제회'],
   [/전문건설공제조합|Korea Specialty Contractors Financial Cooperative/i, '전문건설공제조합', '공제회'],
   [/건설근로자공제회|Construction Workers Mutual Aid Association/i, '건설근로자공제회', '공제회'],
@@ -347,7 +347,7 @@ const KOREAN_LPS = [
   [/우리은행|Woori Bank/i, '우리은행', '은행'],
   [/하나은행|Hana Bank/i, '하나은행', '은행'],
   [/신한은행|Shinhan Bank/i, '신한은행', '은행'],
-  [/iM뱅크|iM Bank/i, 'iM뱅크', '은행'],
+  [/iM뱅크|\biM\s?Bank\b/i, 'iM뱅크', '은행'],
   [/수협은행|Suhyup Bank/i, '수협은행', '은행'],
   [/부산은행|Busan Bank/i, '부산은행', '은행'],
   [/경남은행|Kyongnam Bank/i, '경남은행', '은행'],
@@ -360,10 +360,10 @@ const KOREAN_LPS = [
   [/대신증권|Daishin Securities/i, '대신증권', '증권사'],
   [/교보증권|Kyobo Securities/i, '교보증권', '증권사'],
   [/신영증권|Shinyoung Securities/i, '신영증권', '증권사'],
-  [/M캐피탈|M Capital/i, 'M캐피탈', '캐피탈'],
+  [/(?<![A-Za-z가-힣])M\s?캐피탈|(?<![A-Za-z])M Capital\b/, 'M캐피탈', '캐피탈'],
   [/성담개발|Sungdam Development/i, '성담개발', '기타'],
   [/KT&G|KT&G Corporation/i, 'KT&G', '기타'],
-  [/TCK/i, 'TCK', '기타'],
+  [/\bTCK\b/, 'TCK', '기타'],
 ];
 // 해외 GP (운용사)
 // 해외 글로벌 운용사(Global GP). 약칭 충돌을 피하려고 짧은 이름엔 \b 경계 사용.
@@ -569,8 +569,12 @@ export function extractReturn(text) {
 const EXEC_TITLE = /(?:대체투자|해외투자|해외대체|기금운용|투자운용|운용전략|사모투자|인프라(?:투자)?|부동산(?:투자)?|증권운용|글로벌투자)\s?(?:본부장|부문장|실장|단장|팀장|부장)/;
 const EXEC_ACTION = /선임|임명|내정|취임|영입|승진|발탁|합류|이동|이직|사임|퇴임/;
 // 사람 이름 자리에 흔히 끼어드는 조직·업무 어휘(부서명 조각) — 이름으로 뽑지 않는다.
-const EXEC_NAME_BLOCK = /건설|전략|금융|기획|총괄|사업|정책|경영|관리|위원|센터|지원|담당|채권|주식|연금|기업|시장|리스크/;
-const badExecName = (n) => NAME_BLOCK.test(n) || EXEC_NAME_BLOCK.test(n);
+const EXEC_NAME_BLOCK = /건설|전략|금융|기획|총괄|사업|정책|경영|관리|위원|센터|지원|담당|채권|주식|연금|기업|시장|리스크|^(?:대한|한국|신임|전임|현직|당시|이번|새로|직접|신규|해외|국내|글로벌|대체|투자|운용|본부|부문|그룹|최초|첫|역대|초대|차기|후임)$/;
+// 한국 사람 이름 모양 — 흔한 성씨로 시작하는 2~3자(4자는 복성만). '유명해진'·'낙점됐다'·'현대해상'
+// 같은 수식어·회사명이 이름 자리에 잡히는 것을 막는다.
+const SURNAME_RE = /^[김이박최정강조윤장임한오서신권황안송류유전홍고문양손배백허남심노하곽성차주우구민나진지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용예경봉사부가복태목형피두감음빈동온호좌]/;
+const looksLikeName = (n) => SURNAME_RE.test(n) && (n.length <= 3 || /^(?:남궁|황보|제갈|선우|독고|사공|서문)/.test(n));
+const badExecName = (n) => NAME_BLOCK.test(n) || EXEC_NAME_BLOCK.test(n) || !looksLikeName(n);
 // 실무 인사 추출 → { inst, person, title, action } | null
 export function extractExec(text) {
   const tm = text.match(EXEC_TITLE);
@@ -691,7 +695,7 @@ export function buildInsights(articles, refAum = null) {
       // 프로필에 검증된 AUM 이 있으면 자릿수 대조 — 크게 벗어난 수치(다른 주체의
       // 금액·전망치)는 버린다. 프로필 값이 없으면 그대로 '기사 인용'으로 남긴다.
       const ref = krw && refAum ? refAum.get(au.inst) : null;
-      const sane = !ref || (au.amount >= ref * 0.4 && au.amount <= ref * 2.5);
+      const sane = aumSane(au.amount, ref);
       if (sane && krw === (au.instType !== '해외 GP')) {   // 원화=국내 LP, 달러=해외 GP
         aumByInst.set(au.inst, {
           inst: au.inst,
@@ -719,6 +723,12 @@ export function buildInsights(articles, refAum = null) {
     relocations: [...moveByInst.values()].slice(0, 30),
   };
 }
+// 기사 AUM 이 공시 AUM 과 자릿수·규모가 맞는지 — 기금 전체 규모는 몇 달 새 25% 넘게
+// 줄지 않으므로, 그보다 작은 수치는 해외투자·대체투자 등 하위 포트폴리오 금액으로 본다.
+function aumSane(amount, ref) {
+  if (!ref) return true;
+  return amount >= ref * 0.75 && amount <= ref * 1.6;
+}
 // 지방이전 진행 단계 — 기사 표현 그대로 요약한다(단정 금지).
 // 판정은 제목 + 본문 앞부분만 본다. 본문 전체를 보면 무관한 단락의 '결정·의결'
 // 같은 단어가 섞여 "반대 결의" 기사를 '이전 확정'으로 뒤집는 오판이 난다.
@@ -742,43 +752,81 @@ function grpName(t) {
 // 행위어가 명시된 기사만 쓰며(추측 금지), 판단 근거인 기사 링크를 항상 함께 남긴다.
 // 순서가 중요 — 구체적인 행위(위탁운용사 선정·공동투자·세컨더리)를 먼저 본다.
 const DEAL_KINDS = [
-  ['출자사업 공고', /출자\s*사업|위탁\s*운용사\s*(?:모집|공고|선정\s*계획)|제안서\s*(?:접수|마감)|\bRFP\b/i],
-  ['위탁운용사 선정', /위탁\s*운용사\s*(?:선정|선발|최종|확정)|운용사\s*(?:선정|선발)|\bGP\s*선정|숏리스트|mandate/i],
+  ['출자사업', /출자\s*사업|위탁\s*운용사\s*(?:모집|공고|선정\s*계획)|제안서\s*(?:접수|마감)|\bRFP\b|경쟁률|출사표/i],
+  ['위탁운용사 선정', /위탁\s*(?:운용)?사(?:로)?\s*(?:\d+\s*곳\s*)?(?:선정|선발|최종|확정)|운용사\s*(?:\d+\s*곳\s*)?(?:선정|선발)|\bGP\s*선정|숏리스트|mandate/i],
+  // 운용사가 펀드 모집을 마감·돌파한 소식 (LP 기사면 아래에서 '펀드 출자'로 바꾼다)
+  ['펀드 결성', /\b(?:closes?|closed|closing|raises?|raised|hits?|surpass(?:es|ed)?|tops?|exceeds?|launch(?:es|ed)?)\b(?:[^.]|\.(?=\d)){0,50}(?<!pension |wealth |hedge )\b(?:fund|funds|vehicle|programme|program)\b(?!\s+(?:management|manager))|\bfund(?:raise|raising)?\b(?:[^.]|\.(?=\d)){0,30}\b(?:final close|first close|hard cap|hits? target|surpass)|펀드\s*(?:결성|조성|클로징|모집\s*(?:완료|마감))|(?:1차|최종|파이널|퍼스트)\s*클로(?:징|즈)|결성\s*(?:완료|마무리)/i],
   ['공동투자', /코인베스트|공동\s*투자|co-?invest/i],
-  ['세컨더리', /세컨더리|secondar(?:y|ies)|continuation (?:fund|vehicle)|GP-led/i],
+  // 세컨더리 '거래'만 — "세컨더리 운용사 인수"처럼 수식어로만 쓰인 경우는 인수로 본다
+  ['세컨더리', /continuation (?:fund|vehicle)|컨티뉴에이션|\bGP-led\b|\bLP-led\b|tender offer|세컨더리\s*(?:거래|매각|매입|딜|인수|투자|펀드에)|secondar(?:y|ies)\s+(?:deal|sale|transaction|stake|purchase|buy)/i],
   ['펀드 출자', /출자|약정|커밋|\bcommit(?:s|ted|ment)?\b|\banchor|앵커|투자\s*확약/i],
   ['인수', /인수|매입|사들(?:여|였|인|이)|\bacquir(?:e|es|ed|ing)\b|\bbuys?\b|\bbought\b|take[- ]private|\bstake in\b/i],
   ['매각', /매각|엑시트|\bexit(?:s|ed)?\b|\bsells?\b|\bsold\b|divest/i],
   ['대출·크레딧', /대출|리파이낸싱|브릿지\s*론|메자닌|\bfinancing\b|\bloans?\b|\blending\b|refinanc/i],
-  ['투자', /투자(?:한다|했다|키로|하기로|해\s|를\s|에\s*나선|\s*단행|\s*집행|\s*(?:결정|확정|완료|유치))|(?:억|조|달러|유로|파운드|원)\s*(?:규모\s*)?투자|에\s*투자|\binvest(?:s|ed|ing)?\s+(?:in|\$)|\bbacks?\b|\bbacked by\b/i],
+  ['투자', /투자(?:한다|했다|키로|하기로|해\s|를\s|에\s*나선|\s*단행|\s*집행|\s*(?:결정|확정|완료|유치|추진|착수|개시|시동))|(?:억|조|달러|유로|파운드|원)\s*(?:규모\s*)?투자|에\s*투자|\binvest(?:s|ed|ing)?\s+(?:in|\$)|\bbacks?\b|\bbacked by\b/i],
 ];
 // 진행 단계 — 검토·추진 단계와 확정(완료)을 구분해 오해를 막는다.
-const DEAL_PENDING_RE = /검토|추진|나선다|나서|계획|예정|저울질|협상|우협|우선협상|MOU|in talks|consider|weigh|plans? to|nears?\b|explor/i;
-const OVERSEAS_RE = /해외|글로벌|미국|美|유럽|영국|英|독일|獨|프랑스|佛|일본|日|호주|싱가포르|인도|중국|中|북미|남미|아시아|중동|global|overseas|cross-border|U\.S\.|\bUS\b|Europe|UK\b|London|New York/i;
+const DEAL_PENDING_RE = /검토|추진|나선다|나서|계획|예정|저울질|협상|우협|우선협상|MOU|논의|타진|물색|유력|가닥|착수|in talks|consider|weigh|plans? to|nears?\b|explor|\beyes?\b|\bmulls?\b|poised|\bseeks?\b|\bbids?\b|bidding|\baims?\b|set to|exclusive talks|advanced talks/i;
+const OVERSEAS_RE = new RegExp([
+  '해외|글로벌|미국|美|유럽|영국|英|독일|獨|프랑스|佛|일본|日|호주|싱가포르|인도|중국|中|북미|남미|아시아|중동|캐나다|멕시코|브라질|베트남|인도네시아|태국|필리핀|대만|홍콩|스페인|이탈리아|네덜란드|스웨덴|덴마크|노르웨이|핀란드|폴란드|아일랜드|스위스|벨기에|오스트리아|포르투갈|사우디|UAE|이스라엘|뉴질랜드',
+  '도쿄|오사카|뉴욕|런던|파리|베를린|프랑크푸르트|뮌헨|암스테르담|더블린|마드리드|밀라노|스톡홀름|코펜하겐|시드니|멜버른|로스앤젤레스|샌프란시스코|시카고|보스턴|워싱턴|댈러스|휴스턴|마이애미|애틀랜타|시애틀|토론토|밴쿠버|두바이|아부다비|리야드|뭄바이|호치민|하노이|자카르타|방콕|마닐라|상하이|베이징|타이베이',
+  'global|overseas|cross-border|international|U\\.S\\.|\\bUS\\b|\\bUK\\b|Europe|European|America|American|British|London|New York|Tokyo|Osaka|Paris|Berlin|Frankfurt|Munich|Amsterdam|Dublin|Madrid|Milan|Stockholm|Copenhagen|Singapore|Hong Kong|Sydney|Melbourne|Los Angeles|San Francisco|Chicago|Boston|Dallas|Houston|Miami|Toronto|Dubai|Abu Dhabi|Riyadh|Mumbai|Japan|Germany|France|Spain|Italy|Netherlands|Nordic|Sweden|Denmark|Norway|Finland|Poland|Ireland|Switzerland|Canada|Mexico|Brazil|India|China|Australia|Vietnam|Indonesia|Thailand|Philippines|Taiwan|Saudi|Israel|California|Texas|Florida',
+].join('|'), 'i');
 // 투자 '이벤트'가 아닌 기사 — 분석·전망·시리즈물, 무산·거부된 딜, 상장주식 매매·주가 반응,
-// 행사·개관 소식. 이런 제목은 투자내역 DB 에 넣지 않는다.
-const NON_EVENT_RE = /미지수|불투명|우려|전망|어디로|\?|분석|점검|결산|지도\]|기획|시리즈|[①②③④⑤]|무산|철회|결렬|거부|중단|차질|지연|답보|못한|못해|실패|환매|유동성|경고등|대기발령|기회\s*제시|주목|강조|조언|인터뷰|웨비나|세미나|포럼|강연|기념|그랜드\s*(?:오프닝|오픈)|개관|출자\s*회사|주식.{0,20}(?:매각|매수|매도|처분)|어치|주당|최고가|최저가|주가|급등|급락|insider|shares? (?:sold|bought)|price target|\bstock\b|rejects?|scraps?|abandon|calls? off|outlook|webinar/i;
-// 딜 금액 — 단위(억·조·billion·million)가 붙은 금액만 인정(주당 가격·AUM 제외).
+// 행사·개관 소식, 임원 거취·승진, 신용등급 조정, 시장 논평, 사무소 개설. 이런 제목은 투자내역 DB 에 넣지 않는다.
+const NON_EVENT_RE = new RegExp([
+  '미지수|불투명|우려|전망|어디로|\\?|분석|점검|결산|지도\\]|기획|시리즈|[①②③④⑤]|무산|철회|결렬|거부|중단|차질|지연|답보|못한|못해|실패|환매|유동성|경고등|대기발령|기회\\s*제시|주목|강조|조언|인터뷰|웨비나|세미나|포럼|강연|기념|그랜드\\s*(?:오프닝|오픈)|개관|출자\\s*회사|주식.{0,20}(?:매각|매수|매도|처분)|어치|주당|최고가|최저가|주가|급등|급락|사무소\\s*(?:개설|개소|오픈)|지사\\s*(?:설립|개설)',
+  'insider|shares? (?:sold|bought)|price target|\\bstock\\b|rejects?|scraps?|abandon|calls? off|outlook|webinar',
+  // 임원 거취 ("PE chief … in talks to exit", "executive prepares exit")
+  '\\b(?:chief|executive|head|ceo|cio|cfo|coo|partner|president|chair(?:man|woman)?|founder|managing director)\\b[^.]{0,50}\\b(?:exit|exits|leave|leaves|leaving|depart(?:s|ure)?|step(?:s|ping)? down|retire(?:s|ment)?|resign(?:s|ation)?)\\b',
+  '\\bpromot(?:es|ed|ion|ions)\\b|\\bappoint(?:s|ed|ment)\\b|\\bhires?\\b|\\bhired\\b|\\bnames?\\b[^.]{0,40}\\b(?:head|chief|ceo|cio|partner|president)\\b',
+  // 신용등급·시장 논평·주식 리서치
+  '\\b(?:fitch|moody\'?s|kbra|dbrs|s&p global ratings)\\b|\\b(?:upgrade[sd]?|downgrade[sd]?|affirm(?:s|ed)?)\\b',
+  '\\bsees\\b|\\bsays\\b|\\bwarns?\\b|\\bpredicts?\\b|\\bsurvey\\b|\\branking\\b|\\bpodcast\\b|\\bsummit\\b|\\bconference\\b',
+  ';\\s*(?:hold|buy|sell|strong buy)\\b|\\b(?:overweight|underweight)\\b|\\bequities\\b|\\bdividend\\b|\\bdiscount to nav\\b|\\bearnings\\b|\\bquarterly results\\b',
+  '\\bopens?\\b[^.]{0,30}\\boffice\\b|\\bnew office\\b|\\boffice in\\b',
+  // 환매 러시·투자의견 글("Why I'm Downgrading")·추측성 제목("~맞추나", "~할까")
+  '\\bmanagement changes?\\b|\\bleadership changes?\\b|\\bredemptions?\\b|\\bwithdrawals?\\b|rush for (?:the )?exits|\\b(?:upgrading|downgrading)\\b|\\bwhy (?:i|we)\\b',
+  '(?:할까|될까|설까|을까|일까|맞추나|인가|는가)(?=\\s|$|[\'"”’…])',
+].join('|'), 'i');
+// 딜 금액 — 통화·단위가 붙은 금액만 인정(주당 가격·운용자산(AUM)·면적 수치 제외).
 export function dealAmount(text) {
   const t = String(text || '');
   const pats = [
-    /(?:US)?\$\s?[\d.,]+\s?(?:billion|million|bn|mn|B|M)\b/i,
-    /[€£]\s?[\d.,]+\s?(?:billion|million|bn|mn|B|M)\b/i,
-    /[\d.,]+\s?(?:billion|million)\s?(?:dollars|euros|pounds)?/i,
+    /(?:US\$|A\$|C\$|S\$|HK\$|\$|€|£|¥|₩)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|T|B|M)\b/i,
+    /(?:USD|EUR|GBP|JPY|KRW|AUD|CAD|SGD)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn)\b/i,
+    /[\d.,]+\s?(?:trillion|billion|million)\s+(?:dollars|euros|pounds|won|yen)\b/i,
     /[\d,.]+\s?조\s?(?:[\d,]+\s?억)?\s?(?:원|달러|유로|파운드|엔)?/,
     /[\d,.]+\s?억\s?(?:[\d,]+\s?만)?\s?(?:원|달러|유로|파운드|엔)/,
     /[\d,.]+\s?억(?=\s|\.|,|…|$)/,
   ];
   for (const re of pats) {
-    const m = t.match(re);
-    if (!m) continue;
-    const before = t.slice(Math.max(0, m.index - 6), m.index);
-    const after = t.slice(m.index + m[0].length, m.index + m[0].length + 6);
-    if (/주당|per share/i.test(before + after)) continue;            // 주가
-    if (/^\s*(?:굴리|운용|규모의\s*기금|적립)/.test(after)) continue;     // 운용자산(AUM)
-    return m[0].replace(/\s+/g, ' ').trim();
+    const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+    let m;
+    while ((m = g.exec(t))) {
+      const before = t.slice(Math.max(0, m.index - 30), m.index);
+      const after = t.slice(m.index + m[0].length, m.index + m[0].length + 24);
+      const skip = /주당|per share/i.test(before.slice(-6) + after.slice(0, 6))                   // 주가
+        || /^\s*(?:굴리|운용|규모의\s*기금|적립)/.test(after)                                        // 운용자산(AUM)
+        || /(?:운용\s*자산|운용\s*규모|\bAUM\b|assets under management)[^\d$€£¥₩]{0,20}$/i.test(before)
+        || /(?:manag(?:es|ing)|oversee(?:s|ing)?|with|AUM of|assets of)\s+(?:about |around |roughly |nearly |over |more than |some )?$/i.test(before)
+        || /^\s*(?:in\s+)?(?:assets|AUM|of assets)\b/i.test(after);
+      if (!skip) return m[0].replace(/\s+/g, ' ').trim();
+    }
   }
   return '';
+}
+// 제목을 절(…·...·|·–)로 나눈다 — 한 제목에 두 사건이 섞인 경우 운용사가 등장한 절만 본다.
+function titleClauses(title) {
+  const out = [];
+  const re = /\s*(?:…|⋯|\.{2,}|\s[-–—|]\s)\s*/g;
+  let last = 0, m;
+  while ((m = re.exec(title))) {
+    out.push({ text: title.slice(last, m.index), start: last });
+    last = m.index + m[0].length;
+  }
+  out.push({ text: title.slice(last), start: last });
+  return out.filter((c) => c.text.trim());
 }
 const lpsIn = (text) => {
   const hits = [];
@@ -806,6 +854,7 @@ export function gpRoleInTitle(title, g, kind) {
   const len = g.len || 2;                               // 운용사 이름 자체의 길이(뒤 조사는 제외)
   const before = t.slice(Math.max(0, g.idx - 12), g.idx);
   const after = t.slice(g.idx + len, g.idx + len + 30);
+  if (/^\s*(?:과|와|하고|이랑|랑)\s/.test(after)) return null;   // "KKR과 M&A 물색" — 함께 언급된 상대일 뿐
   if (g.idx <= 2 && !/^\s*(?:으로부터|로부터|에게|에\s)/.test(after)) return { kind };
   if (/^\s*(?:으로부터|로부터|에게서)/.test(after) || /\bfrom\s*$/i.test(before)) {
     if (kind === '인수') return { kind: '매각' };
@@ -843,30 +892,53 @@ export function extractDeals(a) {
     // 국내 LP 가 제목에 있으면 LP 가 투자 주체. 상대방은 제목(없으면 리드)의 해외 GP.
     const cp = gpsLead[0] ? gpsLead[0].inst : '';
     const overseas = !!cp || OVERSEAS_RE.test(text);
-    for (const lp of lps) out.push({ ...base, inst: lp.inst, instType: lp.instType, role: 'LP', counterpart: cp, overseas });
+    for (const lp of lps) {
+      // 운용사(자산운용사·증권사)가 아닌 LP 의 '펀드 결성' 기사는 그 펀드에 출자했다는 뜻
+      const k = kind === '펀드 결성' && !['자산운용사', '증권사'].includes(lp.instType) && /출자|약정|커밋|commit|anchor|앵커/i.test(title) ? '펀드 출자' : kind;
+      out.push({ ...base, kind: k, inst: lp.inst, instType: lp.instType, role: 'LP', counterpart: cp, overseas });
+    }
   } else if (gps.length && a.instType === '해외 GP') {
     // 해외 GP 딜 — 운용사가 제목의 '주어'가 아니면 문맥으로 역할을 정한다.
-    const role = gpRoleInTitle(title, gps[0], kind);
+    // 운용사가 나온 절만 떼어 역할·행위·금액을 판정한다
+    //   "원오크, 브라조스 자산 44억 달러에 인수… 아폴로로부터 90억 달러 투자 유치" → 아폴로: 투자 90억 달러
+    const g = gps[0];
+    const cl = titleClauses(title).find((c) => g.idx >= c.start && g.idx < c.start + c.text.length) || { text: title, start: 0 };
+    const clHit = DEAL_KINDS.find(([, re]) => re.test(cl.text));
+    const clKind = clHit ? clHit[0] : kind;
+    const role = gpRoleInTitle(cl.text, { ...g, idx: g.idx - cl.start }, clKind);
     if (role) {
       const cpLp = lpsIn(lead)[0];
-      out.push({ ...base, kind: role.kind, inst: gps[0].inst, instType: '해외 GP', role: 'GP', counterpart: cpLp ? cpLp.inst : '', overseas: true });
+      const clAmount = cl.text !== title ? dealAmount(cl.text) : '';
+      out.push({ ...base, kind: role.kind, amount: clAmount || amount, inst: g.inst, instType: '해외 GP', role: 'GP', counterpart: cpLp ? cpLp.inst : '', overseas: true });
     }
   }
-  for (const e of out) e.key = `${e.inst}|${String(e.title).replace(/[\s\W]/g, '').slice(0, 28)}`;
+  for (const e of out) e.key = `${e.inst}|${String(e.title).replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 28)}`;   // 한글 제목도 구분되게
   return out;
 }
 // 이번 아카이브의 이벤트를 이전 누적분과 합친다 — 92일 창 밖으로 밀려난 기사의
 // 투자내역도 계속 남도록(기관별 투자 이력이 시간이 갈수록 쌓인다).
 export function buildInvestments(articles, prevItems = []) {
-  const map = new Map((prevItems || []).map((e) => [e.key, e]));
-  let added = 0;
+  const prevKeys = new Set((prevItems || []).map((e) => e.key));
+  const inArchive = new Set(articles.map((a) => a.id));
+  const map = new Map();
   for (const a of articles) {
-    for (const e of extractDeals(a)) {
-      if (!map.has(e.key)) added++;
-      map.set(e.key, { ...(map.get(e.key) || {}), ...e });
-    }
+    for (const e of extractDeals(a)) map.set(e.key, { ...e });
+  }
+  // 아카이브에서 밀려난 예전 기사의 이벤트는 저장된 제목으로 현재 기준에 맞춰 다시 검증한다
+  // (판정 규칙이 정교해지면 과거에 잘못 들어간 항목도 함께 정리되도록). 아카이브에 아직 있는
+  // 기사인데 이번 판정에서 빠졌다면 규칙상 이벤트가 아니므로 버린다.
+  for (const p of prevItems || []) {
+    if (map.has(p.key) || inArchive.has(p.id)) continue;
+    const again = extractDeals({
+      id: p.id, ko: p.title, en: p.lang === 'en' ? p.title : '', lang: p.lang,
+      cat: p.role === 'GP' ? 'GP' : 'LP', instType: p.instType, inst: p.inst,
+      asset: p.asset, region: p.region, body: '', date: p.date, ts: p.ts, source: p.source, url: p.url, gurl: p.gurl,
+    }).find((e) => e.inst === p.inst);
+    if (again && !map.has(again.key)) map.set(again.key, { ...p, key: again.key, kind: again.kind, status: again.status, amount: again.amount || p.amount, overseas: p.overseas || again.overseas });
   }
   const items = [...map.values()].sort((x, y) => (x.ts < y.ts ? 1 : x.ts > y.ts ? -1 : 0)).slice(0, 3000);
+  const prevIds = new Set((prevItems || []).map((e) => `${e.inst}|${e.id}`));
+  const added = items.filter((e) => !prevKeys.has(e.key) && !prevIds.has(`${e.inst}|${e.id}`)).length;
   const { date } = kstParts();
   return { updatedAt: date, count: items.length, added, items };
 }
@@ -1271,8 +1343,24 @@ const CAPITAL_RE = /유상\s*증자|자본\s*확충|자본금\s*(?:확대|증액
 // 영문 상장시장 잡음 — 주가·실적·ETF·애널리스트 의견 기사(운용사 이름이 나와도 대체투자와 무관).
 const EN_NOISE_RE = /\b(?:shares? (?:rose|fell|jumped|slid|climbed|dropped|gained|tumbled)|stock (?:price|rose|fell|jumped|surged)|price target|(?:quarterly|q[1-4]) (?:earnings|profit|results)|earnings (?:call|beat|miss|per share)|dividend (?:hike|increase)|analyst (?:upgrade|downgrade|rating)|ETFs?\b|exchange-traded|iShares|bitcoin ETF|options activity|short interest|insider (?:buying|selling))/i;
 const EN_ALT_CONTEXT_RE = /private (?:equity|credit|markets?|debt|capital)|infrastructure|real estate|fund(?:raising)?\b|close[sd]?\b|raise[sd]?\b|commit|acqui|take-private|buyout|secondar|direct lending/i;
+// 국내 증권사·은행의 리테일 상품·이벤트·전산 소식 — 추적 기관(LP) 이름이 나와도 대체투자와 무관
+const RETAIL_NOISE_RE = /발행어음|특판|완판|조기\s*판매|\bMTS\b|\bHTS\b|접속\s*장애|출시\s*알림|이벤트|경품|캐시백|카드\s*(?:출시|혜택|기념)|연금저축|\bIRP\b|\bISA\b|\bETF\b|\bETN\b|\bELS\b|\bDLS\b|해외\s*주식\s*(?:거래|이벤트|수수료|서비스)|수수료\s*(?:무료|인하|면제)|고객\s*감사|사은품|앱\s*(?:개편|출시)|선정산|소상공인|핀테크/i;
+// 명백한 잡음(제목 기준) — 보관 기사 재검사에 쓴다.
+export function isNoise(raw) {
+  const t = raw.title || '';
+  if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return true;
+  if (/[가-힣]/.test(t)) {
+    if (RETAIL_NOISE_RE.test(t) && !RETAIL_KEEP_RE.test(t) && !CIO_TITLE.test(t) && !EXEC_TITLE.test(t)) return true;
+  } else if (EN_NOISE_RE.test(t) && !EN_ALT_CONTEXT_RE.test(t.replace(EN_NOISE_RE, ''))) return true;
+  const text = `${t} ${raw.desc || ''}`;
+  const keep = (isForeignGP(text) || isKoreanLP(text)) && (CAPITAL_RE.test(text) || MOVE_RE.test(text) || CIO_TITLE.test(text) || EXEC_TITLE.test(text));
+  return EXCLUDE_RE.test(t) && !keep;
+}
+// 같은 제목에 실제 딜(매입·출자 등)이 함께 나오면 잡음으로 보지 않는다("…포트폴리오 매입… 회원 감사이벤트")
+const RETAIL_KEEP_RE = /매입|인수|매각|출자|약정|대체투자|사모펀드|블라인드|위탁운용|인프라\s*펀드|부동산\s*펀드/;
 export function isRelevant(raw) {
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
+  if (/[가-힣]/.test(raw.title) && RETAIL_NOISE_RE.test(raw.title) && !RETAIL_KEEP_RE.test(raw.title) && !CIO_TITLE.test(raw.title) && !EXEC_TITLE.test(raw.title)) return false;
   const text = `${raw.title} ${raw.desc}`;
   // 영문 주가·실적·ETF 기사는 대체투자 맥락(펀드·딜)이 제목에 없으면 제외
   if (!/[가-힣]/.test(raw.title) && EN_NOISE_RE.test(raw.title) && !EN_ALT_CONTEXT_RE.test(raw.title.replace(EN_NOISE_RE, ''))) return false;
@@ -1456,15 +1544,35 @@ async function main() {
   // 보관된 과거 기사도 강화된 관련성 기준으로 다시 거릅니다(상장주식·국내 잡음 제거).
   // 단, (1) 수동 고정(pinned) 기사와 (2) 추적 대상 기관의 조직/인사 변경 뉴스는
   // 펀드 키워드가 없어도 보존합니다(예: 국민연금 '기금운용과' 신설).
+  // 기관 판정 정규식이 보정되면(예: 'company has' 를 'Company H' 로 오인하던 문제) 보관 기사의
+  // 기관·분류도 다시 맞춘다 — 저장된 기관명이 제목·리드 어디에도 더는 맞지 않을 때만 재판정.
+  const INST_RE = new Map([...KOREAN_LPS.map(([re, name]) => [name, re]), ...FOREIGN_GPS.map(([re, name]) => [name, re])]);
+  let reclassed = 0;
+  for (const p of prev) {
+    const re = INST_RE.get(p.inst);
+    if (!re || p.pinned) continue;
+    if (re.test(`${p.ko || ''} ${(p.body || '').slice(0, 400)}`)) continue;
+    const hit = pickInstOrdered(p.ko || '', (p.body || '').slice(0, 200));
+    p.inst = hit ? hit.inst : (p.source || '출처 미상');
+    p.instType = hit ? hit.instType : '기타';
+    if (p.cat === 'LP' || p.cat === 'GP') p.cat = hit ? (hit.instType === '해외 GP' ? 'GP' : 'LP') : '마켓';
+    reclassed++;
+  }
+  if (reclassed) console.log(`archive reclassified: ${reclassed} articles`);
   const before = prev.length;
   prev = prev.filter(p => {
     const txt = `${p.ko || ''} ${p.body || ''}`;
     if (p.pinned) return true;
     if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt) || MOVE_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
-    // 수집 시점(제목 + RSS 요약)과 같은 기준으로 다시 본다. 전문 본문 전체로 검사하면
-    // 본문 속 '주가·코스피·환율' 같은 단어에 걸려 멀쩡한 기사가 다음 회차에 빠졌다가
-    // 다시 수집되기를 반복한다(목록 깜빡임).
-    return isRelevant({ title: p.ko || '', desc: (p.body || '').slice(0, 200) });
+    // 이미 수집된 기사는 '잡음' 규칙(리테일 상품·상장주식·국내 잡음)에 새로 걸릴 때만 뺀다.
+    // 수집 시점엔 RSS 요약까지 보고 통과했으므로, 제목+리드만으로 관련성을 다시 요구하면
+    // 멀쩡한 기사가 다음 회차에 빠졌다가 다시 수집되기를 반복한다(목록 깜빡임).
+    const title = p.ko || '';
+    const raw = { title, desc: (p.body || '').slice(0, 200), source: p.source };
+    if (isNoise(raw)) return false;
+    if (isRelevant(raw)) return true;
+    if (isForeignGP(title) || isKoreanLP(title)) return true;     // 추적 기관이 제목에 있으면 유지
+    return FUND_RE.test(title);                                    // 기관 미식별 기사는 펀드 맥락이 제목에 있을 때만
   });
   if (before !== prev.length) console.log(`archive re-filtered: ${before} -> ${prev.length}`);
   const prevById = new Map(prev.map(p => [p.id, p]));
@@ -1658,8 +1766,9 @@ async function main() {
     updatedAt: fresh.updatedAt,
     cios: mergeBy('inst', prevIns.cios, fresh.cios),
     assetReturns: mergeBy('asset', prevIns.assetReturns, fresh.assetReturns),
-    execs: mergeBy('key', prevIns.execs, fresh.execs).slice(0, 40),
-    aums: mergeBy('inst', prevIns.aums, fresh.aums),
+    execs: mergeBy('key', prevIns.execs, fresh.execs).filter((e) => !badExecName(e.person)).slice(0, 40),
+    // 이전 회차에 남은 값도 같은 기준으로 다시 거른다(기준 강화 전 수치 정리)
+    aums: mergeBy('inst', prevIns.aums, fresh.aums).filter((x) => x.unit !== 'KRW' || aumSane(x.amount, refAum.get(x.inst))),
     relocations: mergeBy('inst', prevIns.relocations, fresh.relocations).slice(0, 30),
   };
   await writeFile(new URL('../insights.json', import.meta.url), JSON.stringify(insights, null, 0));
@@ -1760,8 +1869,15 @@ function selftest() {
     [L, '국민연금, 美 물류센터에 3억달러 투자', '국민연금:투자'],
     [L, '교직원공제회, 블랙스톤 인프라 펀드에 2억달러 출자', '한국교직원공제회:펀드 출자'],
     [L, '행정공제회·군인공제회, 유럽 부동산 대출펀드 3000억 약정', '대한지방행정공제회:펀드 출자,군인공제회:펀드 출자'],
-    [L, '과학기술인공제회, 해외 세컨더리 위탁운용사 3곳 선정', '과학기술인공제회:세컨더리'],
-    [L, '교직원공제회, 3000억 규모 블라인드 PEF 출자사업 공고', '한국교직원공제회:출자사업 공고'],
+    [L, '과학기술인공제회, 해외 세컨더리 위탁운용사 3곳 선정', '과학기술인공제회:위탁운용사 선정'],
+    [L, '국민연금, 美 세컨더리 펀드 결성에 5억달러 출자', '국민연금:펀드 출자'],
+    [G, "Blackstone's Private Equity Chief Joe Baratta in Talks to Exit", ''],
+    [G, 'CVC Cordatus Loan Fund XXII notes upgraded by Fitch', ''],
+    [G, 'Bain Capital Ventures Closes $1.6 Billion Fund XI To Back AI Startups', 'Bain Capital:펀드 결성'],
+    [G, 'EQT, 콜러캐피탈 인수 완료…세컨더리 운용사 품고 투자 다각화', 'EQT:인수'],
+    [G, '원오크, 브라조스 자산 44억 달러에 인수… 아폴로로부터 90억 달러 투자 유치', 'Apollo:투자'],
+    [G, 'Partners Group Opens New Stockholm Office as It Increases Commitment to Nordics', ''],
+    [L, '교직원공제회, 3000억 규모 블라인드 PEF 출자사업 공고', '한국교직원공제회:출자사업'],
     [L, '국민연금 1점에 움직이는 운용사들…‘전주 거점’ 경쟁 본격화', ''],
     [L, '달라진 국민연금 투자…인프라·사모대출에 몰렸다 [국민연금 대체투자 지도]①', ''],
     [G, '블랙스톤 이사 조셉 바라타, 1,238만 달러 상당 주식 매각', ''],
@@ -1771,8 +1887,11 @@ function selftest() {
     [G, 'Company X sells logistics portfolio to Blackstone for $1.2 billion', 'Blackstone:인수'],
   ];
   const dealFails = dealCases.filter(([f, t, exp]) => f(t).map((e) => `${e.inst}:${e.kind}`).join(',') !== exp);
-  const amt = [dealAmount('75조 굴리는 국민연금'), dealAmount('주당 A$2.50 인수'), dealAmount('KKR, 21억 달러 레버리지 론')];
-  const ok8 = dealFails.length === 0 && amt[0] === '' && amt[1] === '' && amt[2] === '21억 달러';
+  const amt = [dealAmount('75조 굴리는 국민연금'), dealAmount('주당 A$2.50 인수'), dealAmount('KKR, 21억 달러 레버리지 론'),
+    dealAmount('EQT acquires 2 million square foot logistics portfolio'), dealAmount('Ares, which manages $671B in assets, eyes stake'),
+    dealAmount('Macquarie PE acquires Hwasung for ₩300 Billion')];
+  const ok8 = dealFails.length === 0 && amt[0] === '' && amt[1] === '' && amt[2] === '21억 달러' && amt[3] === '' && amt[4] === '' && amt[5] === '₩300 Billion';
+  if (!ok8) console.log('amounts:', JSON.stringify(amt));
   if (dealFails.length) console.log('deal FAIL:', dealFails.map((x) => x[1]).join(' | '));
   console.log(`deals: ${dealCases.length - dealFails.length}/${dealCases.length} ok`);
 

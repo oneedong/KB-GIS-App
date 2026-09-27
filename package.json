@@ -5,7 +5,7 @@
   "scripts": {
     "collect": "node scripts/collect-news.mjs",
     "selftest": "node scripts/collect-news.mjs --selftest && node scripts/daily-brief.mjs --selftest",
-    "build": "tsc --jsx react --target es2019 --module none --lib es2019,dom --skipLibCheck --ignoreDeprecations 6.0 src/ui.tsx src/glossary.tsx src/app.tsx --outDir ."
+    "build": "tsc --jsx react --target es2019 --module none --lib es2019,dom --skipLibCheck --ignoreDeprecations 6.0 src/ui.tsx src/data.tsx src/glossary.tsx src/reader.tsx src/brief.tsx src/profiles.tsx src/article.tsx src/app.tsx --outDir js"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",

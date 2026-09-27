@@ -1,15 +1,25 @@
 /* KB GIS service worker — offline app shell, auto-updating on new deploys */
-const CACHE = 'kbgis-v42';
+const CACHE = 'kbgis-v43';
 
 // Local app shell — precached on install so the app opens offline.
 const SHELL = [
   './',
   './index.html',
-  './app.js',
+  './article-clean.js',
+  './vendor/readability.js',
+  './js/ui.js',
+  './js/data.js',
+  './js/glossary.js',
+  './js/reader.js',
+  './js/brief.js',
+  './js/profiles.js',
+  './js/article.js',
+  './js/app.js',
   './allocations.json',
   './lp-profiles.json',
   './gp-profiles.json',
   './fundraising.json',
+  './investments.json',
   './market.json',
   './vendor/react.production.min.js',
   './vendor/react-dom.production.min.js',

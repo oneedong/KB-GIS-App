@@ -1,14 +1,14 @@
 {
-  "name": "KB GIS · 해외대체투자 뉴스",
+  "name": "KB GIS · 해외대체투자",
   "short_name": "KB GIS",
-  "description": "한국 LP·해외 GP·CIO 인사 등 해외대체투자 시장뉴스를 매일 아침 브리핑. AI 3줄 요약과 영문 원문 제공.",
+  "description": "국내 LP·해외 GP 동향, 기관별 투자내역, 데일리 시황과 해외대체투자 용어 해설을 한곳에서.",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1c1d1f",
-  "theme_color": "#1c1d1f",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

@@ -23,6 +23,8 @@
     /^(?:Related(?:\s+(?:articles|stories|coverage|news))?|Read more|More from|Most read|Popular|Trending|Recommended|You may also like|Also read|See also)\s*:?\s*$/i,
     /^(?:ⓒ|©)/,
     /(?:저작권자|Copyright)\s*[ⓒ©(]/i,
+    // 보도자료 꼬리: "About Blackstone", "Forward-Looking Statements", "Media Contact" 이후는 회사 소개·연락처
+    /^(?:About\s+[A-Z][\w&.,'’ ()-]{1,60}|Forward[- ]Looking Statements?|Cautionary (?:Note|Statement)[\w ]{0,40}|(?:Media|Press|Investor)\s+(?:Contacts?|Relations|Inquiries)|Contacts?|Disclaimer\b.*|More news and analyses on .*)\s*:?\s*$/i,
   ];
 
   // ── 단락 단위로 버리는 패턴 ──
@@ -39,6 +41,12 @@
     /^(?:Reporting by|Editing by|Additional reporting|Writing by|Compiled by|Our Standards|Sign up|Subscribe|Get the latest|Register (?:now|for)|Click here|For more (?:news|information)|This article (?:was|first)|Want to read more|Thomson Reuters|Bloomberg L\.P\.)/i,
     // 광고 표기만 있는 단락
     /^(?:AD|광고|Advertisement|ADVERTISEMENT|Sponsored(?: content)?|스폰서)\s*$/i,
+    // 포털·언론사 안내문 (자동요약 안내, 윤리강령, 언론사 이동, 검색 선호 출처, 투자 책임 고지, 댓글 정책, 알림 설정)
+    /자동\s*요약한\s*결과|요약\s*보기\s*자동\s*요약|윤리\s*강령|독자\s*편집\s*위원회|정정[‧·ㆍ]?\s*반론\s*보도|해당\s*언론사로\s*이동|에서\s*직접\s*확인하세요|선호\s*출처로?\s*추가|기사를\s*더\s*자주\s*볼\s*수|투자\s*판단의\s*참고용|투자\s*손실에\s*대한\s*책임|건전한\s*토론\s*문화|댓글은\s*표시가\s*제한|알림\s*설정하고|엄선한\s*주요\s*뉴스|글자\s*크기로\s*변경|파란\s*원을\s*좌우로/,
+    // 영문 매체 안내문
+    /preferred source on Google|MarketBeat|narrative science|instant news alert|translated from its original|^Like this article\?|editorial guidelines|ethics policy|reset your password|username or email|Already have an account|^(?:Log ?In|Sign ?In|Sign ?Up)\b.{0,30}$|^Powered by\b.{0,60}$/i,
+    // 표 형태로 흩어진 종목 코드 줄 ("en | US0925… | BLACKSTONE INC. | …")
+    /^[^|]{0,40}(?:\s\|\s[^|]{1,40}){3,}$/,
   ];
 
   // 짧은 단락에서만 버리는 패턴 (긴 본문 문장에 우연히 들어간 경우는 살린다)
@@ -50,8 +58,23 @@
     [/(?:제공|캡처|뉴스1|뉴시스|연합뉴스)\s*\)?\s*$/, 45],
     [/^[가-힣]{2,4}\s?(?:선임|수석|객원)?\s?(?:기자|특파원|통신원|앵커)\b/, 60],
     [/[\w.+-]+@[\w-]+\.[\w.-]+/, 80],
-    [/^[▶▷☞→■□◆◇※]/, 160],
+    [/^[▶▷☞→■□◆◇※«»‹›]/, 160],
     [/(?:좋아요|공유|스크랩|추천)\s*\d*\s*$/, 30],
+    // 사진 설명(▲ 로 시작하는 국내 매체 캡션)
+    [/^[▲△]\s*\S/, 220],
+    // 영문 바이라인·게시 시각: "By Amit Chowdhry Sep 21, 2026", "Updated On Sep 23, 2026 at 05:05 PM IST"
+    [/^By\s+[A-Z][\w.'’-]+(?:\s+[A-Z][\w.'’-]+){0,3}\b/, 80],
+    [/^(?:Updated|Published|Posted|Last updated|First published)(?:\s+on)?\s*:?\s+\w/i, 80],
+    [/^(?:Photo|Image|Credit|Source|Photograph)\s*:/i, 160],
+    [/\b\d{1,2}:\d{2}\s*(?:AM|PM)?\s*\(?(?:UTC|GMT|IST|EST|EDT|KST|CET)\b/i, 90],
+    // 국내 매체 게시 시각·기자 소개
+    [/(?:발행일|입력|수정|승인|등록|송고)\s*:?\s*\d{4}[.\-/]\s?\d{1,2}[.\-/]\s?\d{1,2}/, 70],
+    [/(?:취재|담당)(?:하고\s*있습니다|합니다)\.|보도하겠습니다\.?\s*$/, 240],
+    [/This account is not managed or monitored|will not receive a response/i, 600],
+    [/데이터\s*레터|뉴스레터|매일\s*아침\s*\d+\s*시/, 160],
+    [/^(?:Read (?:Earlier|More|Next|Also)|Also Read|Recommended|Related)\s*:/i, 200],
+    [/^(?:Price as of|Market capitali[sz]ation|Sector\s*\/\s*Industry|Index membership|Next earnings date|52[- ]week|P\/E ratio|Dividend yield)\b/i, 120],
+    [/\d+\s*분\s*(?:걸림|읽기)|\d+\s*min(?:ute)?s?\s*read|댓글\s*남기기/i, 60],
   ];
 
   // 첫 단락 앞의 바이라인 접두어: "(서울=연합뉴스) 홍길동 기자 =", "[이데일리 김OO 기자]", "[더벨]"
@@ -136,7 +159,23 @@
       seen.push(full.slice(0, 400));
       out.push(p);
     }
-    return { paragraphs: out, paywalled };
+    return { paragraphs: dropHeadlineRuns(out), paywalled };
+  }
+
+  // 문장이 아닌 짧은 줄이 3개 이상 연달아 나오면 다른 기사 제목 목록·인물 명단 같은
+  // 위젯 잔재로 본다(본문 소제목은 사이사이 문단이 있어 연달아 나오지 않는다).
+  // '-', '•' 로 시작하는 목록은 본문 요약 목록일 수 있어 남긴다.
+  function dropHeadlineRuns(list) {
+    const isShortLine = (p) => p.length <= 100 && !isSentencey(p) && !/^[-•·‐]/.test(p);
+    const keep = list.map(() => true);
+    for (let i = 0; i < list.length;) {
+      if (!isShortLine(list[i])) { i++; continue; }
+      let j = i;
+      while (j < list.length && isShortLine(list[j])) j++;
+      if (j - i >= 3) for (let k = i; k < j; k++) keep[k] = false;
+      i = j;
+    }
+    return list.filter((_, i) => keep[i]);
   }
 
   /** 문자열 본문을 정제한 뒤 '\n\n' 으로 이어 돌려준다. */

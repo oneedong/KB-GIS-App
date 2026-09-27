@@ -1818,6 +1818,8 @@ export function pageDate(html) {
 }
 // 기사가 아닌 페이지(태그·목록·기관 소개·로그인)
 const STALE_PRONE_RE = /privateequityinternational\.com|infrastructureinvestor\.com|privatedebtinvestor\.com|secondariesinvestor\.com|perenews\.com|buyoutsinsider\.com|agendaweek\.com|altassets\.net|pehub\.com/i;
+// PEI 계열 매체는 옛 기사 주소가 끝에 '/'가 없는 형식이다(현행 기사는 '/'로 끝남) — 검색이 옛 기사를 새 날짜로 돌려줄 때 걸러낸다
+const PEI_OLD_URL_RE = /\/\/(?:www\.)?(?:privateequityinternational|infrastructureinvestor|privatedebtinvestor|perenews|secondariesinvestor|buyoutsinsider|agendaweek|newprivatemarkets)\.com\/[^/?#]+$/i;
 const NON_ARTICLE_URL_RE = /\/(?:tag|tags|category|categories|author|authors|topics?|institution-profiles|people-profiles|companies)\/|\/page\/\d+\/?$|\/client\/login|[?&]target=/i;
 const NON_ARTICLE_TITLE_RE = /\bArchives\s*$|\bPage \d+ of \d+\b|^\s*-\s|^(?:Private Equity Investors|Institution profile)\b/i;
 async function fetchArticleText(url, title = '') {
@@ -1919,7 +1921,7 @@ const HARD_NOISE_RE = new RegExp([
   '\\b(?:q[1-4]|quarterly|annual|monthly)(?: 20\\d\\d)? (?:commentary|distributions?|distribution schedule)\\b|\\bdeclares? (?:\\w+ ){0,3}distributions?\\b|\\bdistribution schedule\\b',
   '\\bprecision trading\\b|\\brisk zones\\b|\\betf \\([a-z]{2,6}\\)|\\bclass action\\b|securities (?:fraud|litigation)|investor counsel|encourages? .{0,40}investors? to (?:inquire|contact)',
   '^[^:]{2,60}: [a-z][\\w .,&-]{0,60}\\b(?:firm|investor|manager)\\b (?:backing|investing|focused|specializing|across|in)\\b',   // Dealroom 등 회사 소개 페이지
-  '\\btop (?:\\d+ )?stories\\b|\\bin pictures\\b',
+  '\\btop (?:\\d+ )?stories\\b|\\bin pictures\\b|^take the .{0,40}\\bsurvey\\b',
   '\\bmarket (?:size|share|forecast|report)\\b.{0,40}\\b20[3-4]\\d\\b|\\bmuseum\\b|\\bchurch\\b|\\bcharity\\b',
   '\\b(?:price target|analyst rating|(?:upgrades?|downgrades?|reiterates?) (?:\\w+ )?(?:rating|to (?:buy|sell|hold|overweight|underweight)))\\b',
   // 국문: 주식 투자자 대상 해설·애널리스트 의견·시장조사 전망
@@ -2294,7 +2296,7 @@ async function main() {
   const deadCount = all.filter(a => a.linkDead).length;
   const merged = dedupe([...all, ...prev])
     .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/소프트404) 제외
-    .filter(a => !a.stale)                             // 원문 발행일이 한참 전인 옛 기사
+    .filter(a => !a.stale && !PEI_OLD_URL_RE.test(a.url || ''))   // 원문 발행일이 한참 전인 옛 기사
     .filter(a => !NON_ARTICLE_URL_RE.test(a.url || '') && !NON_ARTICLE_TITLE_RE.test(a.ko || ''))   // 태그·목록·기관 소개 페이지
     .filter(a => !SOURCE_BLOCK_RE.test(a.source || '') && !SOURCE_BLOCK_RE.test(a.url || ''))  // 깨진 링크 매체 제외(기존 보관분 포함)
     .filter(inWindow)
@@ -2409,8 +2411,8 @@ async function main() {
   console.log(`insights: ${insights.cios.length} CIO, ${insights.execs.length} 실무인사, ${insights.aums.length} AUM, ${insights.relocations.length} 지방이전, ${insights.assetReturns.length} asset-returns`);
 
   // 옛 기사(발행일 재확인)·삭제된 기사·기사 아닌 페이지에서 나온 누적 항목은 트래커에서도 뺀다
-  const dropIds = new Set([...all, ...prev].filter((a) => a.stale || a.linkDead || NON_ARTICLE_URL_RE.test(a.url || '') || NON_ARTICLE_TITLE_RE.test(a.ko || '')).map((a) => a.id));
-  const keepPrev = (p) => !dropIds.has(p.id) && !NON_ARTICLE_URL_RE.test(p.url || '') && !NON_ARTICLE_TITLE_RE.test(p.title || '');
+  const dropIds = new Set([...all, ...prev].filter((a) => a.stale || a.linkDead || PEI_OLD_URL_RE.test(a.url || '') || NON_ARTICLE_URL_RE.test(a.url || '') || NON_ARTICLE_TITLE_RE.test(a.ko || '')).map((a) => a.id));
+  const keepPrev = (p) => !dropIds.has(p.id) && !PEI_OLD_URL_RE.test(p.url || '') && !NON_ARTICLE_URL_RE.test(p.url || '') && !NON_ARTICLE_TITLE_RE.test(p.title || '');
   // 펀드레이징 트래커(fundraising.json) — 모집·클로징 이벤트 자동 추출.
   let prevFr = [];
   try { prevFr = ((JSON.parse(await readFile(new URL('../fundraising.json', import.meta.url), 'utf8')).items) || []).filter(keepPrev); } catch {}

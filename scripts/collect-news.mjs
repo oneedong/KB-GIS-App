@@ -180,6 +180,32 @@ const QUERIES = [
   '(해외 OR 글로벌) 사모대출 (펀드 OR 투자) (출자 OR 약정 OR 선정) when:14d',
   '(미국 OR 유럽 OR 영국 OR 독일 OR 호주 OR 일본) (오피스 OR 물류센터 OR 데이터센터 OR 호텔) (국내 투자자 OR 국내 기관 OR 한국 투자자) when:30d',
 ];
+// (23) 운용사별 펀드레이징 — 넓은 검색어(OR 묶음)는 검색 결과 30건 안에서 다른 기사에 밀려
+//      개별 운용사의 클로징 소식을 놓친다(예: Carlyle Infrastructure Credit Fund II 23억 달러 파이널 클로즈).
+//      추적 운용사마다 검색어를 따로 둔다. 이름이 흔한 단어인 곳은 정식 명칭으로 찾는다.
+const GP_QUERY_NAMES = ['Blackstone', 'KKR', '"Apollo Global"', 'Carlyle', '"Ares Management"', 'Brookfield', 'BlackRock', '"Goldman Sachs Alternatives"',
+  '"Bain Capital"', 'TPG', '"CVC Capital"', 'EQT', '"Advent International"', 'Permira', '"Warburg Pincus"', '"Vista Equity"', '"Silver Lake"',
+  '"Thoma Bravo"', '"General Atlantic"', '"Hellman & Friedman"', 'Cinven', '"Clayton Dubilier"', 'Oaktree', '"HPS Investment"', '"Sixth Street"',
+  '"Blue Owl"', '"Golub Capital"', '"Intermediate Capital"', 'Tikehau', 'PIMCO', 'PGIM', '"Global Infrastructure Partners"', 'Stonepeak',
+  '"I Squared"', 'DigitalBridge', '"Macquarie Asset Management"', 'Actis', '"Starwood Capital"', 'Hines', 'Greystar', 'PATRIZIA', 'Nuveen',
+  'Ardian', '"Partners Group"', '"Hamilton Lane"', 'StepStone', '"Coller Capital"', '"Lexington Partners"', 'Pantheon', '"Neuberger Berman"',
+  '"Fortress Investment"', 'Cerberus', 'Centerbridge', '"Lone Star Funds"', '"Angelo Gordon"', '"Davidson Kempner"', 'BBAM', 'Apax', 'Clearlake',
+  '"Francisco Partners"', '"Insight Partners"', '"Platinum Equity"', '"L Catterton"', 'Bridgepoint', '"PAG"', '"MBK Partners"', 'Hillhouse',
+  '"Affinity Equity"', '"Copenhagen Infrastructure"', 'Antares', '"Churchill Asset"', 'Hayfin', 'Arcmont', 'Pemberton', '"Morgan Stanley Investment Management"',
+  '"J.P. Morgan Asset Management"', 'Castlelake', '"Carlyle Aviation"', 'Harbourvest', '"Adams Street"', 'Blackstone Infrastructure', '"Brookfield Infrastructure"'];
+for (const n of GP_QUERY_NAMES) {
+  QUERIES.push(`${n} (fund OR vehicle OR strategy) (closes OR closed OR "final close" OR "first close" OR raises OR raised OR secures OR launches OR targets OR "hard cap") when:45d`);
+}
+// (24) 대체투자 전문지 — 사이트별 최신 기사(펀드레이징·딜·LP 소식이 집중되는 매체)
+const TRADE_SITES = ['altassets.net', 'alternativeswatch.com', 'alternativecreditinvestor.com', 'irei.com', 'privateequitywire.co.uk', 'pehub.com',
+  'infrastructureinvestor.com', 'privatedebtinvestor.com', 'secondariesinvestor.com', 'privateequityinternational.com', 'perenews.com',
+  'buyoutsinsider.com', 'pionline.com', 'institutionalinvestor.com', 'realassets.ipe.com', 'ipe.com', 'penews.com', 'dealstreetasia.com',
+  'avcj.com', 'mingtiandi.com', 'infrastructureinvestor.com', 'citywireselector.com', 'privatemarketsmagazine.com', 'mergermarket.com', 'agendaweek.com'];
+for (const d of [...new Set(TRADE_SITES)]) QUERIES.push(`site:${d} (fund OR close OR raises OR commits OR acquires OR invests) when:10d`);
+// 국내 자본시장 전문지 — 해외 대체투자·글로벌 GP 소식
+for (const d of ['thebell.co.kr', 'dealsite.co.kr', 'investchosun.com', 'marketinsight.hankyung.com', 'signal.sedaily.com', 'dealbook.co.kr'])
+  QUERIES.push(`site:${d} (해외 OR 글로벌 OR 美 OR 유럽) (펀드 OR 출자 OR 인수 OR 결성 OR 클로징 OR 사모대출 OR 인프라)`);
+QUERIES.push('(칼라일 OR 블랙스톤 OR KKR OR 아폴로 OR 브룩필드 OR 아레스 OR EQT OR CVC OR 블랙록) (펀드 OR 비히클) (결성 OR 클로징 OR 조성 OR 모집 완료) when:30d');
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
 // 저장소 Secrets 에 GEMINI_API_KEY 가 있으면 "기사 본문"을 근거로 진짜 요약을
@@ -1124,7 +1150,7 @@ const FR_STAGES = [
   ['파이널 클로즈', /파이널\s*클로(?:즈|징)|최종\s*클로(?:즈|징)|최종\s*결성|결성\s*(?:완료|마무리)|final\s*clos|hard[- ]?cap|하드캡/i],
   ['중간 클로즈', /(?:중간|2차|3차|두\s*번째)\s*클로(?:즈|징)|interim\s*clos|second\s*clos|third\s*clos|\bsurpass(?:es|ed)?\b(?!.{0,40}\bfinal)/i],
   ['1차 클로즈', /1차\s*클로(?:즈|징)|퍼스트\s*클로(?:즈|징)|첫\s*클로(?:즈|징)|first\s*clos/i],
-  ['클로즈', /클로(?:즈|징)|결성(?:했|을|식|한)|\bclose[sd]?\b|\bclosing\b|\braised\b|\btops?\b.{0,20}\btarget\b|\bhits?\b.{0,20}\btarget\b/i],
+  ['클로즈', /클로(?:즈|징)|결성(?:했|을|식|한)|\bclose[sd]?\b|\bclosing\b|\braised\b|\b(?:inks|attracts|secures|garners|gathers|hauls|amasses|collects|bags|nets|wraps up)\b|\btops?\b.{0,20}\btarget\b|\bhits?\b.{0,20}\btarget\b/i],
   ['모집 중', /모집|조성(?:\s*중|한다|에\s*나서|\s*추진)|목표(?:로|액)|타깃|\btarget(?:ing|s)?\b|\braising\b|\blaunch(?:es|ed)?\b|\bseeks?\b|출범|\bmarket(?:ing|s)?\b.{0,15}\bfund\b/i],
 ];
 const FR_EXCLUDE = /환매|redemption|상장폐지|withdrawal|\bETF\b|mutual fund|pension fund|sovereign wealth fund|hedge fund|index fund|\bmuni|closed-end|\blisted\b|dividend|distribution (?:declar|rate)|\bNAV\b|share class|\bprofit\b|\breports?\b|위탁사로\s*선정|위탁운용사|딜\s*클로징|출자\s*사업|tender offer|공개\s*매수|share (?:sale|buyback)|stock|commentary|\breview\b|\bQ[1-4]\s*20\d\d/i;
@@ -2240,10 +2266,19 @@ async function main() {
     .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
   // 아카이브 상한 — 전체 1,000건, 영문은 450건까지(영문 결과가 많아 국내 LP 기사를
   // 밀어내지 않도록). 최신순으로 채운다.
-  const ARCHIVE_MAX = 1000, EN_MAX = 450;
+  const ARCHIVE_MAX = 1500, EN_MAX = 750;   // 운용사별·전문지 검색으로 영문 수집량이 늘어 창을 넓힌다
+  // 같은 소식은 매체를 바꿔 수십 건씩 들어오므로(예: 한 증권사 협약 기사 25건) 이야기당 3건까지만 보관
+  const storyCount = new Map();
+  const storyKey = (a) => {
+    const toks = String(a.ko || '').toLowerCase().replace(/\s[-–|]\s[^-–|]{2,40}$/, '').split(/[^0-9a-z가-힣]+/).filter((w) => w.length >= 2).map((w) => (/^[가-힣]+$/.test(w) ? w.slice(0, 3) : w));
+    return `${a.lang}|${a.ts.slice(0, 10)}|${[...new Set(toks)].slice(0, 5).sort().join(' ')}`;
+  };
   { let en = 0; const kept = [];
     for (const a of merged) {
       if (kept.length >= ARCHIVE_MAX) break;
+      const sk = storyKey(a); const sc = storyCount.get(sk) || 0;
+      if (sc >= 3 && !a.pinned && String(a.body || "").length < 400) continue;
+      storyCount.set(sk, sc + 1);
       if (a.lang === 'en' && !a.translated) { if (en >= EN_MAX) continue; en++; }
       kept.push(a);
     }

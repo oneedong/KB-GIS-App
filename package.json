@@ -8,6 +8,7 @@
     "build": "tsc --jsx react --target es2019 --module none --lib es2019,dom --skipLibCheck --ignoreDeprecations 6.0 src/ui.tsx src/data.tsx src/glossary.tsx src/reader.tsx src/brief.tsx src/profiles.tsx src/article.tsx src/app.tsx --outDir js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@mozilla/readability": "^0.6.0",
     "linkedom": "^0.18.13"
   }

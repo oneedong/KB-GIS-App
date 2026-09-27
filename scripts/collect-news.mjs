@@ -193,10 +193,44 @@ const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
 const TITLE_BATCH = 30, TITLE_CALLS = 8, BODY_CALLS = 20, LLM_GAP_MS = 6500;
-let LLM_BLOCKED = false;                         // 429(한도 초과)를 받으면 이번 회차는 번역 중단
+let LLM_BLOCKED = false;
+const claudeOn = () => !!ANTHROPIC_API_KEY && !CLAUDE_BLOCKED;
+const llmDone = () => !claudeOn() && (LLM_BLOCKED || !GEMINI_API_KEY);                         // 429(한도 초과)를 받으면 이번 회차는 번역 중단
 
-// Gemini 호출(모델 폴백 포함) → 응답 텍스트. 실패 시 null.
+// ── Claude(Anthropic API) — 저장소 Secrets 에 ANTHROPIC_API_KEY 가 있으면 번역·펀드명 추출에 먼저 쓴다 ──
+// 모델은 저장소 변수 ANTHROPIC_MODEL 로 바꿀 수 있다(기본 claude-opus-5). 실패·한도 초과 시 Gemini 로 넘어간다.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5';
+let claudeClient = null, CLAUDE_BLOCKED = false;
+async function claudeRaw(prompt, maxTok) {
+  if (!ANTHROPIC_API_KEY || CLAUDE_BLOCKED) return null;
+  try {
+    if (!claudeClient) { const { default: Anthropic } = await import('@anthropic-ai/sdk'); claudeClient = new Anthropic({ apiKey: ANTHROPIC_API_KEY }); claudeRaw.A = Anthropic; }
+    const res = await claudeClient.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: Math.max(maxTok, 2048) * 2,
+      output_config: { effort: 'low' },                 // 번역·추출은 깊은 추론이 필요 없는 작업
+      messages: [{ role: 'user', content: prompt }],
+    });
+    if (res.stop_reason === 'refusal') return null;
+    const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+    return text || null;
+  } catch (e) {
+    const A = claudeRaw.A;
+    if (A && (e instanceof A.RateLimitError || e instanceof A.AuthenticationError || e instanceof A.PermissionDeniedError)) {
+      console.warn(`claude ${CLAUDE_MODEL}: ${e.status} — 이번 회차는 Gemini 로`); CLAUDE_BLOCKED = true;
+    } else console.warn(`claude ${CLAUDE_MODEL} error: ${e.status || ''} ${String(e.message || e).slice(0, 120)}`);
+    return null;
+  }
+}
+
+// LLM 호출 → 응답 텍스트. Claude(키가 있으면) → Gemini(모델 폴백) 순. 실패 시 null.
 async function llmRaw(prompt, maxTok) {
+  const viaClaude = await claudeRaw(prompt, maxTok);
+  if (viaClaude) return viaClaude;
+  return geminiRaw(prompt, maxTok);
+}
+async function geminiRaw(prompt, maxTok) {
   if (!GEMINI_API_KEY || LLM_BLOCKED) return null;
   const models = [WORKING_MODEL, ...MODEL_CANDIDATES].filter((m, i, a) => m && a.indexOf(m) === i && !EXHAUSTED.has(m));
   if (!models.length) { LLM_BLOCKED = true; return null; }
@@ -275,35 +309,35 @@ TEXT: ${body}`;
   } catch { return null; }
 }
 async function fundPass(list) {
-  if (!GEMINI_API_KEY) return 0;
+  if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) return 0;
   const cand = list.filter((a) => !a.frx && extractFundraising(a)).sort((x, y) => (x.ts < y.ts ? 1 : -1));
   let n = 0;
   for (const a of cand) {
-    if (n >= FRX_BUDGET || LLM_BLOCKED) break;
+    if (n >= FRX_BUDGET || llmDone()) break;
     const r = await extractFundLLM(a);
     n++;
     if (r) a.frx = r;
-    await pause(LLM_GAP_MS);
+    await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   return list.filter((a) => a.frx).length;
 }
 
 // 영문 기사 번역 패스 — 제목(묶음) → 본문(최신 기사부터). 결과: a.tko(한글 제목), a.bodyKo = { h, p: [...] }
 async function translatePass(list) {
-  if (!GEMINI_API_KEY) return { titles: 0, bodies: 0 };
+  if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) return { titles: 0, bodies: 0 };
   const en = list.filter((a) => a.lang === 'en').sort((x, y) => (x.ts < y.ts ? 1 : -1));
   let titles = 0, bodies = 0, calls = 0;
   const needT = en.filter((a) => !a.tko);
-  for (let i = 0; i < needT.length && calls < TITLE_CALLS && !LLM_BLOCKED; i += TITLE_BATCH) {
+  for (let i = 0; i < needT.length && calls < TITLE_CALLS * (claudeOn() ? 4 : 1) && !llmDone(); i += TITLE_BATCH) {
     const chunk = needT.slice(i, i + TITLE_BATCH);
     const out = await translateTitles(chunk.map((a) => a.ko));
     calls++;
     if (out) chunk.forEach((a, k) => { if (out[k] && /[가-힣]/.test(out[k])) { a.tko = out[k]; titles++; } });
-    await pause(LLM_GAP_MS);
+    await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   let bcalls = 0;
   for (const a of en) {
-    if (bcalls >= BODY_CALLS || LLM_BLOCKED) break;
+    if (bcalls >= BODY_CALLS * (claudeOn() ? 3 : 1) || llmDone()) break;
     if (!a.body || String(a.body).length < 300) continue;
     let paras = enParas(a.body);
     // 너무 긴 기사는 앞부분 9,000자까지만(한 번에 번역 가능한 분량)
@@ -314,7 +348,7 @@ async function translatePass(list) {
     const out = await translateParas(a.tko || a.ko, paras);
     bcalls++;
     if (out) { a.bodyKo = { h, n: paras.length, p: out }; bodies++; }
-    await pause(LLM_GAP_MS);
+    await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   return { titles, bodies };
 }
@@ -1953,7 +1987,7 @@ async function main() {
   const frxN = await fundPass(merged);
   console.log(`fund details (본문 추출): ${frxN} articles`);
   const tr = await translatePass(merged);
-  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies${LLM_BLOCKED ? ' (한도 도달로 중단)' : ''}`);
+  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${ANTHROPIC_API_KEY ? 'Claude ' + CLAUDE_MODEL : 'Gemini'})${llmDone() ? ' — 한도 도달로 중단' : ''}`);
   const listing = await splitBodies(merged);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(listing, null, 0));
   console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);

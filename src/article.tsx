@@ -20,9 +20,12 @@ const HIGHLIGHT = {
   WebkitBoxDecorationBreak: 'clone',
 };
 
-function FeedItem({ item, onOpen, onPress, onBookmark, isNew, selected }) {
+function FeedItem({ item, more = [], onOpen, onOpenOther, onPress, onBookmark, isNew, selected }) {
+  const [open, setOpen] = React.useState(false);
+  const srcs = [...new Set(more.map((m) => m.source))];
   return (
-    <div onClick={onOpen} onPointerDown={onPress} style={{ display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' }}>
+    <div style={{ borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg }}>
+    <div onClick={onOpen} onPointerDown={onPress} style={{ display: 'flex', gap: 10, padding: more.length ? '16px 20px 8px' : '16px 20px', cursor: 'pointer' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, font: F(600, 12.5), color: KB.gray, minWidth: 0 }}>
           {isNew && <span title="새 기사" style={{ width: 6, height: 6, borderRadius: 3, background: KB.yellow, flexShrink: 0 }}></span>}
@@ -43,6 +46,26 @@ function FeedItem({ item, onOpen, onPress, onBookmark, isNew, selected }) {
       <div onClick={onBookmark} role="button" aria-label="북마크" style={{ alignSelf: 'flex-start', padding: 4, margin: '-2px -6px 0 0', cursor: 'pointer' }}>
         <Ico n="bookmark" size={20} sw={1.7} fill={item.bookmarked ? KB.yellow : 'none'} color={item.bookmarked ? KB.gray : KB.faint} />
       </div>
+    </div>
+    {more.length > 0 && (
+      <div style={{ padding: '0 20px 12px' }}>
+        <div onClick={() => setOpen((o) => !o)} role="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 14, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' }}>
+          <span style={{ whiteSpace: 'nowrap' }}>같은 소식 {more.length}건</span>
+          <span style={{ font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>· {srcs.slice(0, 3).join(', ')}{srcs.length > 3 ? ' 외' : ''}</span>
+          <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', color: KB.faint }}><Ico n="down" size={14} sw={2} /></span>
+        </div>
+        {open && (
+          <div style={{ marginTop: 6, borderLeft: `2px solid ${KB.line}`, paddingLeft: 12 }}>
+            {more.map((m) => (
+              <div key={m.id} onClick={() => onOpenOther && onOpenOther(m.id)} onPointerDown={() => fetchArchiveBody(m)} style={{ padding: '7px 0', cursor: 'pointer' }}>
+                <div style={{ font: F(500, 13.5, 1.45), color: KB.ink2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.tko || m.ko}</div>
+                <div style={{ font: F(500, 11.5), color: KB.mute, marginTop: 2 }}>{m.source} · {shortWhen(m)}{m.b ? ' · 전문' : ''}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
     </div>
   );
 }
@@ -129,7 +152,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const when = fmtDate(itemMs(sel)) + (sel.time ? ' ' + sel.time : '');
 
   // 번역문에 섞여 나온 한자 표기("伦敦(런던)")는 괄호 속 한글만 남긴다
-  const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? nm(String(ko.p[pi] || '').replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '');
+  // 번역이 영문 그대로 돌아온 문단(한글이 없는 문단)은 번역으로 보이지 않는다
+  const koOf = (pi) => {
+    const t = ko && pi < (ko.n || ko.p.length) ? String(ko.p[pi] || '') : '';
+    return /[가-힣]/.test(t) ? nm(t.replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '';
+  };
   const koNode = (pi, sub) => {
     const t = koOf(pi);
     if (!t) return null;

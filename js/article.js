@@ -19,24 +19,46 @@ const HIGHLIGHT = {
     boxDecorationBreak: 'clone',
     WebkitBoxDecorationBreak: 'clone',
 };
-function FeedItem({ item, onOpen, onPress, onBookmark, isNew, selected }) {
-    return (React.createElement("div", { onClick: onOpen, onPointerDown: onPress, style: { display: 'flex', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg, cursor: 'pointer' } },
-        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, font: F(600, 12.5), color: KB.gray, minWidth: 0 } },
-                isNew && React.createElement("span", { title: "\uC0C8 \uAE30\uC0AC", style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow, flexShrink: 0 } }),
-                React.createElement("span", { style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.instLabel),
-                item.assetLabel && React.createElement("span", { style: { color: KB.faint } }, "\u00B7"),
-                item.assetLabel && React.createElement("span", { style: { font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' } }, item.assetLabel)),
-            React.createElement("div", { style: { font: F(600, 16, 1.45), color: KB.ink, marginTop: 6, letterSpacing: '-.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.ko),
-            item.tko && React.createElement("div", { style: { font: F(500, 14.5, 1.45), color: KB.ko, marginTop: 4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.tko),
-            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, font: F(500, 12), color: KB.mute, minWidth: 0 } },
-                React.createElement("span", { style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '50%' } }, item.source),
-                React.createElement("span", null, "\u00B7"),
-                React.createElement("span", { style: { whiteSpace: 'nowrap' } }, shortWhen(item)),
-                item.b ? React.createElement(Tag, { tone: "outline", style: { height: 18, padding: '0 5px', font: F(600, 10.5), marginLeft: 2 } }, "\uC804\uBB38") : null,
-                item.lang === 'en' && React.createElement(Tag, { tone: "outline", style: { height: 18, padding: '0 5px', font: F(600, 10.5) } }, "EN"))),
-        React.createElement("div", { onClick: onBookmark, role: "button", "aria-label": "\uBD81\uB9C8\uD06C", style: { alignSelf: 'flex-start', padding: 4, margin: '-2px -6px 0 0', cursor: 'pointer' } },
-            React.createElement(Ico, { n: "bookmark", size: 20, sw: 1.7, fill: item.bookmarked ? KB.yellow : 'none', color: item.bookmarked ? KB.gray : KB.faint }))));
+function FeedItem({ item, more = [], onOpen, onOpenOther, onPress, onBookmark, isNew, selected }) {
+    const [open, setOpen] = React.useState(false);
+    const srcs = [...new Set(more.map((m) => m.source))];
+    return (React.createElement("div", { style: { borderBottom: `1px solid ${KB.line2}`, background: selected ? KB.yellowTint : KB.bg } },
+        React.createElement("div", { onClick: onOpen, onPointerDown: onPress, style: { display: 'flex', gap: 10, padding: more.length ? '16px 20px 8px' : '16px 20px', cursor: 'pointer' } },
+            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, font: F(600, 12.5), color: KB.gray, minWidth: 0 } },
+                    isNew && React.createElement("span", { title: "\uC0C8 \uAE30\uC0AC", style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow, flexShrink: 0 } }),
+                    React.createElement("span", { style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.instLabel),
+                    item.assetLabel && React.createElement("span", { style: { color: KB.faint } }, "\u00B7"),
+                    item.assetLabel && React.createElement("span", { style: { font: F(500, 12.5), color: KB.mute, whiteSpace: 'nowrap' } }, item.assetLabel)),
+                React.createElement("div", { style: { font: F(600, 16, 1.45), color: KB.ink, marginTop: 6, letterSpacing: '-.01em', wordBreak: 'keep-all', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.ko),
+                item.tko && React.createElement("div", { style: { font: F(500, 14.5, 1.45), color: KB.ko, marginTop: 4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, item.tko),
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, font: F(500, 12), color: KB.mute, minWidth: 0 } },
+                    React.createElement("span", { style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '50%' } }, item.source),
+                    React.createElement("span", null, "\u00B7"),
+                    React.createElement("span", { style: { whiteSpace: 'nowrap' } }, shortWhen(item)),
+                    item.b ? React.createElement(Tag, { tone: "outline", style: { height: 18, padding: '0 5px', font: F(600, 10.5), marginLeft: 2 } }, "\uC804\uBB38") : null,
+                    item.lang === 'en' && React.createElement(Tag, { tone: "outline", style: { height: 18, padding: '0 5px', font: F(600, 10.5) } }, "EN"))),
+            React.createElement("div", { onClick: onBookmark, role: "button", "aria-label": "\uBD81\uB9C8\uD06C", style: { alignSelf: 'flex-start', padding: 4, margin: '-2px -6px 0 0', cursor: 'pointer' } },
+                React.createElement(Ico, { n: "bookmark", size: 20, sw: 1.7, fill: item.bookmarked ? KB.yellow : 'none', color: item.bookmarked ? KB.gray : KB.faint }))),
+        more.length > 0 && (React.createElement("div", { style: { padding: '0 20px 12px' } },
+            React.createElement("div", { onClick: () => setOpen((o) => !o), role: "button", style: { display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 14, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' } },
+                React.createElement("span", { style: { whiteSpace: 'nowrap' } },
+                    "\uAC19\uC740 \uC18C\uC2DD ",
+                    more.length,
+                    "\uAC74"),
+                React.createElement("span", { style: { font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+                    "\u00B7 ",
+                    srcs.slice(0, 3).join(', '),
+                    srcs.length > 3 ? ' 외' : ''),
+                React.createElement("span", { style: { display: 'flex', transform: open ? 'rotate(180deg)' : 'none', color: KB.faint } },
+                    React.createElement(Ico, { n: "down", size: 14, sw: 2 }))),
+            open && (React.createElement("div", { style: { marginTop: 6, borderLeft: `2px solid ${KB.line}`, paddingLeft: 12 } }, more.map((m) => (React.createElement("div", { key: m.id, onClick: () => onOpenOther && onOpenOther(m.id), onPointerDown: () => fetchArchiveBody(m), style: { padding: '7px 0', cursor: 'pointer' } },
+                React.createElement("div", { style: { font: F(500, 13.5, 1.45), color: KB.ink2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, m.tko || m.ko),
+                React.createElement("div", { style: { font: F(500, 11.5), color: KB.mute, marginTop: 2 } },
+                    m.source,
+                    " \u00B7 ",
+                    shortWhen(m),
+                    m.b ? ' · 전문' : ''))))))))));
 }
 // 날짜별 머리(목록 안에서 고정)
 function DayHeader({ label, count }) {
@@ -105,7 +127,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     const terms = findTerms(`${sel.ko} ${text}`, 8);
     const when = fmtDate(itemMs(sel)) + (sel.time ? ' ' + sel.time : '');
     // 번역문에 섞여 나온 한자 표기("伦敦(런던)")는 괄호 속 한글만 남긴다
-    const koOf = (pi) => (ko && pi < (ko.n || ko.p.length) ? nm(String(ko.p[pi] || '').replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '');
+    // 번역이 영문 그대로 돌아온 문단(한글이 없는 문단)은 번역으로 보이지 않는다
+    const koOf = (pi) => {
+        const t = ko && pi < (ko.n || ko.p.length) ? String(ko.p[pi] || '') : '';
+        return /[가-힣]/.test(t) ? nm(t.replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1')) : '';
+    };
     const koNode = (pi, sub) => {
         const t = koOf(pi);
         if (!t)

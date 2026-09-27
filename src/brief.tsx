@@ -23,7 +23,9 @@ async function liveYahoo(symbol) {
   const j = await proxyJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`);
   const m = ((((j || {}).chart || {}).result || [{}])[0] || {}).meta || {};
   const last = typeof m.regularMarketPrice === 'number' ? m.regularMarketPrice : null;
-  const prev = typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : (typeof m.previousClose === 'number' ? m.previousClose : null);
+  // 선물 연속물(=F)은 월물 교체일에 chartPreviousClose 가 이전 월물 종가라 같은 월물의 직전 정산가를 쓴다
+  const fut = /=F$/.test(symbol) && typeof m.previousClose === 'number';
+  const prev = fut ? m.previousClose : typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : (typeof m.previousClose === 'number' ? m.previousClose : null);
   if (last == null || !prev) return null;
   const k = /JPYKRW/.test(symbol) ? 100 : 1;
   return { last: last * k, chg: (last - prev) * k, chgPct: (last - prev) / prev * 100 };
@@ -333,7 +335,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
               <Section first title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
                 {top ? (
                   <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>
-                    <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(top.title)}</div>
+                    <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(top.title, top.source))}</div>
                     <div style={{ font: F(500, 12.5), color: KB.sub, marginTop: 6 }}>{top.source}</div>
                   </a>
                 ) : <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>}
@@ -342,7 +344,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                   <a key={i} href={w.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
                     <span style={{ width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 }}></span>
                     <span style={{ flex: 1 }}>
-                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{nm(w.title)}</span>
+                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(w.title, w.source))}</span>
                       <span style={{ display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 }}>{w.source}</span>
                     </span>
                   </a>
@@ -390,7 +392,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                   <div style={desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {}}>
                     {rest.map((it, i) => (
                       <a key={i} href={it.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` }}>
-                        <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{nm(it.title)}</div>
+                        <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{nm(stripMedia(it.title, it.source))}</div>
                         <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{it.source}</div>
                       </a>
                     ))}
@@ -424,7 +426,7 @@ function BriefDigest({ market, onOpen }) {
         <span style={{ font: F(500, 12), color: KB.mute }}>{briefDay(market.dateKey)}</span>
         <span style={{ marginLeft: 'auto', color: KB.faint }}><Ico n="chevron" size={17} sw={2} /></span>
       </div>
-      <div style={{ font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(marketHeadlines(market.issues)[0] || {}).title || market.summary}</div>
+      <div style={{ font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{nm(stripMedia((marketHeadlines(market.issues)[0] || {}).title, (marketHeadlines(market.issues)[0] || {}).source)) || market.summary}</div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${rows.length}, 1fr)`, gap: 8, marginTop: 10 }}>
         {rows.map((r) => (
           <div key={r.name} style={{ minWidth: 0 }}>

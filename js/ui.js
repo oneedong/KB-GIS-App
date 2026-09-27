@@ -131,9 +131,9 @@ function Tag({ children, tone = 'base', style }) {
 function Section({ title, sub, right, children, first, pad = true, id }) {
     const desktop = useDesktop();
     const head = (title || right) && (React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, padding: pad ? (desktop ? '18px 20px 10px' : '20px 20px 10px') : '0 0 10px' } },
-        React.createElement("div", { style: { font: F(700, 16.5), color: KB.ink, letterSpacing: '-.02em' } }, title),
-        sub && React.createElement("div", { style: { font: F(500, 12), color: KB.mute } }, sub),
-        right && React.createElement("div", { style: { marginLeft: 'auto' } }, right)));
+        React.createElement("div", { style: { font: F(700, 16.5), color: KB.ink, letterSpacing: '-.02em', whiteSpace: 'nowrap', flexShrink: 0 } }, title),
+        sub && React.createElement("div", { style: { font: F(500, 12), color: KB.mute, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, sub),
+        right && React.createElement("div", { style: { marginLeft: 'auto', flexShrink: 0, whiteSpace: 'nowrap' } }, right)));
     if (desktop) {
         return (React.createElement("div", { id: id, style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, marginTop: first ? 0 : 16, overflow: 'hidden' } },
             head,

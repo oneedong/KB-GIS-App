@@ -275,7 +275,11 @@ async function translateTitles(titles) {
 async function translateParas(title, paras) {
   const prompt = `${TR_RULES}\n다음은 기사 "${title}"의 본문 문단 배열이다. 각 문단을 한국어로 번역해 입력과 같은 순서·같은 개수의 JSON 문자열 배열만 출력하라(문단을 합치거나 나누지 말 것, 설명·마크다운 금지).\n${JSON.stringify(paras)}`;
   const out = parseJsonArr(await llmRaw(prompt, 8192));
-  return out && out.length === paras.length ? out.map((x) => String(x || '').trim()) : null;
+  if (!out || out.length !== paras.length) return null;
+  const res = out.map((x) => String(x || '').trim());
+  // 번역되지 않고 영문 그대로 돌아온 문단이 절반을 넘으면 실패로 본다(다음 회차에 다시)
+  const untranslated = res.filter((x, i) => !/[가-힣]/.test(x) && /[A-Za-z]{3}/.test(paras[i])).length;
+  return untranslated > res.length / 2 ? null : res;
 }
 // 본문이 바뀌면 번역을 다시 하도록 원문 문단의 짧은 지문을 함께 저장한다.
 // TV(번역 규칙 버전)가 바뀌면 최근 기사의 제목·본문 번역을 새 규칙으로 다시 한다.
@@ -529,14 +533,14 @@ const FOREIGN_GPS = [
   [/stonepeak|스톤피크/i, 'Stonepeak', '해외 GP'],
   [/i squared|isquared|\bISQ\b/i, 'I Squared', '해외 GP'],
   [/digitalbridge|디지털브리지/i, 'DigitalBridge', '해외 GP'],
-  [/macquarie|맥쿼리/i, 'Macquarie', '해외 GP'],
+  [/(?<!port )macquarie(?! (?:university|island|street|park|dictionary))|맥쿼리/i, 'Macquarie', '해외 GP'],
   [/\bactis\b|액티스/i, 'Actis', '해외 GP'],
   [/starwood capital|스타우드/i, 'Starwood', '해외 GP'],
   [/\bhines\b|하인즈/i, 'Hines', '해외 GP'],
   [/greystar/i, 'Greystar', '해외 GP'],
   [/patrizia/i, 'PATRIZIA', '해외 GP'],
   [/nuveen|누빈/i, 'Nuveen', '해외 GP'],
-  [/ardian|아디안/i, 'Ardian', '해외 GP'],
+  [/\bardian\b|아르?디안/i, 'Ardian', '해외 GP'],
   [/partners group|파트너스 ?그룹/i, 'Partners Group', '해외 GP'],
   [/hamilton lane|해밀턴 ?레인/i, 'Hamilton Lane', '해외 GP'],
   [/stepstone|스텝스톤/i, 'StepStone', '해외 GP'],
@@ -641,6 +645,11 @@ function pickInstOrdered(title = '', desc = '') {
   };
   return earliest(title) || earliest(desc) || null;
 }
+function pickKoreanLpFirst(text) {
+  let best = null, bestIdx = Infinity;
+  for (const [re, name, type] of KOREAN_LPS) { const m = text.match(re); if (m && m.index < bestIdx) { bestIdx = m.index; best = { inst: name, instType: type }; } }
+  return best;
+}
 // 텍스트에서 마지막으로 등장하는 국내 LP 기관(직함 바로 앞 기관)을 찾습니다.
 function pickKoreanLpLast(text) {
   let best = null, bestIdx = -1;
@@ -657,19 +666,46 @@ const CIO_APPOINT = /선임|임명|내정|취임|영입|발탁/;
 const CIO_RECRUIT = /공모|모집|후보|압축|인선|공석|선정/;
 // 공모가 무산·백지화된 상황 — '진행 중'보다 우선해 상태를 정확히 반영.
 const CIO_SCRAP = /무산|백지화|없던\s*일로|원점으로|재공모/;
+const CIO_WORD_BLOCK = /^(?:공개|민간|외부|내부|전문가|공모가|이번|이후|이날|이에|이를|이미|이어|이와|이는|정부|정책|강화|조직|조성|한편|한국|신임|신규|전임|전년|최근|최대|최초|장기|장관|기존|주요|주식|안정|유력|유일|고위|공석|공모|문제|방안|남은|오는|지난|올해|내년|하반기|상반기|임명|임기|선임|권한|노조|성과|원장|위원|구조|조정|장관|이사|주목|국장|전문)$/;
 const NAME_BLOCK = /국민|연금|공제|기금|운용|투자|대체|사모|신임|차기|올해|내년|최고|책임|본부|이사|대표|부문|해외|국내|글로벌|수익|자산|증원|복지|행정|교직|군인|과학|우정|연기|수협|중앙/;
 // CIO/운용 사령탑 인사 추출 → { inst, status, person, background } | null
+// 같은 기관의 CIO 소식 두 건 중 무엇을 보일지 — 선임(이름 확인) 소식은 그 뒤 60일 안의
+// '공모·인선' 언급(회고·후속 기사)보다 우선한다. 그 밖에는 최신 소식.
+export function preferCio(cur, n) {
+  const days = (x, y) => (Date.parse(x || 0) - Date.parse(y || 0)) / 86400000;
+  const sel = (x) => x.status === '선임' && x.person;
+  if (sel(n) && !sel(cur)) return days(cur.ts, n.ts) < 60;           // cur(공모)가 n(선임)보다 60일 이상 뒤면 새 공모 국면
+  if (!sel(n) && sel(cur)) return days(n.ts, cur.ts) >= 60;
+  return (n.ts || '') > (cur.ts || '');
+}
 export function extractCio(text) {
   if (!CIO_TITLE.test(text)) return null;
   const tIdx = text.search(CIO_TITLE);
-  const target = pickKoreanLpLast(text.slice(0, tIdx + 8)) || pickKoreanLpLast(text);
+  let target = pickKoreanLpLast(text.slice(0, tIdx + 8)) || pickKoreanLpLast(text);
+  // "국민연금 … 이규홍 전 사학연금 CIO" — 직함 바로 앞 기관이 '전(前)' 직장이면 제목 첫 기관이 대상
+  if (target) {
+    const re = KOREAN_LPS.find(([, name]) => name === target.inst)[0];
+    let pos = -1;
+    for (const m of text.slice(0, tIdx + 8).matchAll(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g'))) pos = m.index;
+    if (pos > 0 && /(?:^|\s)(?:전|前)\s*$/.test(text.slice(Math.max(0, pos - 4), pos))) {
+      const first = pickKoreanLpFirst(text.slice(0, 80));
+      if (first && first.inst !== target.inst) target = first;
+    }
+  }
   let person = '';
-  // 고정밀: "…CIO/기금이사 …에 OOO" (직함 뒤 이름)
-  let m = text.match(/(?:기금이사|CIO|최고투자책임자|투자운용본부장|운용본부장)\s*(?:신임\s*)?(?:에|로|으로)\s*([가-힣]{2,4})/);
-  if (m && !NAME_BLOCK.test(m[1])) person = m[1];
-  if (!person) {                       // "OOO 신임 기금이사/CIO" (이름 먼저) — 선임 동반 시에만
-    let m2 = text.match(/([가-힣]{2,4})\s*(?:신임)\s*(?:기금이사|CIO|최고투자책임자|운용본부장)/);
-    if (m2 && !NAME_BLOCK.test(m2[1]) && CIO_APPOINT.test(text)) person = m2[1];
+  // 이름 후보는 사람 이름 모양(흔한 성씨 + 2~3자)이고 흔한 낱말이 아니어야 한다 — '게는'·'임명되면'·'낙점됐다' 차단
+  const okName = (n) => n && looksLikeName(n) && !NAME_BLOCK.test(n) && !CIO_WORD_BLOCK.test(n) && !(n.length === 3 && /[가는를을은도에의와과로한된할던인적]$/.test(n));
+  const pats = [
+    /(?:기금이사|CIO|최고투자책임자|투자운용본부장|운용본부장|사령탑|수장)\s*(?:신임\s*)?(?:에|로|으로)\s*(?:[가-힣]{0,6}\s)?([가-힣]{2,3})(?=\s|씨|,|$|…|을|를|이|가|\(|·)/g,   // "CIO에 이규홍", "사령탑에 이규홍"
+    /(?:기금이사|CIO|최고투자책임자|운용본부장)\s+([가-힣]{2,3})(?=씨|\s*(?:선임|임명|내정|취임))/g,                                  // "CIO 이규홍씨", "CIO 이규홍 선임"
+  ];
+  // 제목(앞부분)에서 먼저 찾고, 없으면 본문 전체에서
+  for (const part of [text.slice(0, 160), text]) {
+    for (const re of pats) { for (const m of part.matchAll(re)) { if (okName(m[1])) { person = m[1]; break; } } if (person) break; }
+    if (person) break;
+  }
+  if (!person && CIO_APPOINT.test(text)) {   // "이규홍 (신임) CIO 선임" (이름 먼저) — 선임 동반 시에만
+    for (const m of text.matchAll(/(?<![가-힣])([가-힣]{2,3})\s*(?:신임\s*)?(?:기금이사|CIO|최고투자책임자|운용본부장)/g)) if (okName(m[1])) { person = m[1]; break; }
   }
   const status = person ? '선임'
     : (CIO_SCRAP.test(text) ? '공모 무산·재공모 수순'
@@ -785,6 +821,7 @@ export function extractAum(text, gpNames = []) {
 export function buildInsights(articles, refAum = null) {
   const ASSET_LABEL = { AV: '항공기금융', IN: '인프라', PC: 'Private Credit', RE: '부동산', PE: 'Private Equity', ALT: '대체투자 전체' };
   const cioByInst = new Map();
+  const cioVotes = new Map();
   const retByAsset = new Map();
   const execByKey = new Map();
   const aumByInst = new Map();
@@ -794,7 +831,11 @@ export function buildInsights(articles, refAum = null) {
     const text = `${a.ko || ''} ${a.body || ''}`;
     const c = extractCio(text);
     if (c && c.inst && c.instType !== '해외 GP') {
-      if (!cioByInst.has(c.inst)) {
+      if (c.status === '선임' && c.person) { const k = `${c.inst}|${c.person}`; cioVotes.set(k, (cioVotes.get(k) || 0) + 1); }
+      const cur = cioByInst.get(c.inst);
+      // 같은 기관 선임 보도가 여럿이면 가장 많이 보도된 인물(다른 기관 인사를 함께 다룬 기사에 흔들리지 않게)
+      const votesOf = (x) => (x && x.status === '선임' ? cioVotes.get(`${x.inst}|${x.person}`) || 0 : 0);
+      if (!cur || (cur.status === '선임' && c.status === '선임' && cur.person !== c.person ? votesOf(c) > votesOf(cur) : preferCio(cur, { ...c, ts: a.ts }))) {
         const note = c.status === '선임'
           ? `신임 CIO ${c.person}${c.background ? ` (${c.background} 출신)` : ''}`
           : c.status === '공모 무산·재공모 수순'
@@ -1034,7 +1075,9 @@ export function extractDeals(a) {
     const g = gps[0];
     const cl = titleClauses(title).find((c) => g.idx >= c.start && g.idx < c.start + c.text.length) || { text: title, start: 0 };
     const clHit = DEAL_KINDS.find(([, re]) => re.test(cl.text));
-    const clKind = clHit ? clHit[0] : kind;
+    // 운용사가 나온 절에 행위어가 없고 '후보·거론'이면 매각 기사 속 인수 후보다 ("…매각 검토…BlackRock 지원 AIP·IFM 후보 거론")
+    const candidate = /후보|거론|유력|인수전|숏리스트|우협|우선협상|bidders?|suitors?|front-?runner/i.test(cl.text);
+    const clKind = clHit ? clHit[0] : (candidate && kind === '매각' ? '인수' : kind);
     const role = gpRoleInTitle(cl.text, { ...g, idx: g.idx - cl.start }, clKind);
     if (role) {
       const cpLp = lpsIn(lead)[0];
@@ -1812,7 +1855,21 @@ export function parseFeed(xml) {
 const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
 const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
 // 기사 링크가 상시 깨져 있는(존재하지 않는 링크 안내) 저품질 매체 차단 목록.
-const SOURCE_BLOCK_RE = /마일드경제|todaymild/i;
+const SOURCE_BLOCK_RE = /마일드경제|todaymild|marketbeat|kalkine|indexbox|tickerreport|etfdailynews|americanbankingnews|defenseworld/i;   // 깨진 링크·자동 생성 주식 기사 매체
+// 대체투자 맥락과 무관하게 항상 잡음인 제목 — 증권 공시(Form 4·13D)·주식 매매/보유 변동·밸류에이션 지표 페이지,
+// 뮤추얼펀드 분기 코멘터리·분배금 공시, 집단소송 광고, 회사 소개 페이지, 시장조사 보고서, 애널리스트 의견
+const HARD_NOISE_RE = new RegExp([
+  '\\bform (?:3|4|5|8-?k|10-?[kq]|13[dfg](?:\\/a)?|sc 13[dg]|n-?port|424b\\d?|d)\\b',
+  '[\\d,]{4,} shares\\b|\\bshares (?:in|of) .{0,80}\\b(?:acquired|purchased|sold|bought|trimmed|boosted|raised|cut) by\\b|\\b(?:sells?|buys?|acquires?|purchases?|trims?|boosts?) (?:[\\d,]+ )?shares of\\b',
+  '\\bshort interest\\b|stock price, news, quote|share price, .{0,20}stock news|\\b(?:enterprise value|price) to (?:revenue|ebitda|ebit|book|earnings|sales)\\b|\\bsees (?:large|unusual) (?:volume|options)|52-week (?:low|high)',
+  '\\b(?:q[1-4]|quarterly|annual|monthly)(?: 20\\d\\d)? (?:commentary|distributions?|distribution schedule)\\b|\\bdeclares? (?:\\w+ ){0,3}distributions?\\b|\\bdistribution schedule\\b',
+  '\\bclass action\\b|securities (?:fraud|litigation)|investor counsel|encourages? .{0,40}investors? to (?:inquire|contact)',
+  '^[^:]{2,60}: [\\w .,-]{0,30}(?:private equity|venture capital|investment|growth equity) firm (?:backing|investing|focused|specializing)',
+  '\\bmarket (?:size|share|forecast|report)\\b.{0,40}\\b20[3-4]\\d\\b|\\bmuseum\\b|\\bchurch\\b|\\bcharity\\b',
+  '\\b(?:price target|analyst rating|(?:upgrades?|downgrades?|reiterates?) (?:\\w+ )?(?:rating|to (?:buy|sell|hold|overweight|underweight)))\\b',
+  // 국문: 주식 투자자 대상 해설·애널리스트 의견·시장조사 전망
+  '(?:주식|주가)\\s*투자자|투자자들(?:이|에게)\\s*.{0,20}(?:조치|영향)|투자의견|목표\\s*주가|주식\\s*등급|(?:등급|의견)을?\\s*(?:상향|하향)\\s*조정|20[3-4]\\d년까지\\s*(?:성장|연평균)|시장\\s*규모\\s*전망',
+].join('|'), 'i');
 // 추적 기관의 자본확충(유상증자 등) — 투자여력 확대라는 placement agent 핵심
 // 신호이므로, EXCLUDE_RE(상장사 잡음 제거)에 걸려도 예외로 수집한다.
 const CAPITAL_RE = /유상\s*증자|자본\s*확충|자본금\s*(?:확대|증액)|출자\s*전환/;
@@ -1825,6 +1882,7 @@ const RETAIL_NOISE_RE = /발행어음|특판|완판|조기\s*판매|\bMTS\b|\bHT
 export function isNoise(raw) {
   const t = raw.title || '';
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return true;
+  if (HARD_NOISE_RE.test(t)) return true;
   if (/[가-힣]/.test(t)) {
     if (RETAIL_NOISE_RE.test(t) && !RETAIL_KEEP_RE.test(t) && !CIO_TITLE.test(t) && !EXEC_TITLE.test(t)) return true;
   } else if (EN_NOISE_RE.test(t) && !EN_ALT_CONTEXT_RE.test(t.replace(EN_NOISE_RE, ''))) return true;
@@ -1836,6 +1894,7 @@ export function isNoise(raw) {
 const RETAIL_KEEP_RE = /매입|인수|매각|출자|약정|대체투자|사모펀드|블라인드|위탁운용|인프라\s*펀드|부동산\s*펀드/;
 export function isRelevant(raw) {
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
+  if (HARD_NOISE_RE.test(raw.title || '')) return false;             // 공시·주식 데이터·코멘터리 등
   if (/[가-힣]/.test(raw.title) && RETAIL_NOISE_RE.test(raw.title) && !RETAIL_KEEP_RE.test(raw.title) && !CIO_TITLE.test(raw.title) && !EXEC_TITLE.test(raw.title)) return false;
   const text = `${raw.title} ${raw.desc}`;
   // 영문 주가·실적·ETF 기사는 대체투자 맥락(펀드·딜)이 제목에 없으면 제외
@@ -1877,7 +1936,8 @@ export function enrich(raw) {
   const region = pick(REGIONS, text, 'GL');
   // 기관(국내 LP·해외 GP) 미식별 = 기관과 무관한 일반 대체투자 '마켓 뉴스'.
   let cat = instHit ? (instType === '해외 GP' ? 'GP' : 'LP') : '마켓';
-  if (PEOPLE_RE.test(text) || ORG_RE.test(text)) cat = '인사';   // 조직/인사 변경
+  const catText = lang === 'en' ? raw.title : text;               // 영문 요약문의 restructuring·names 등은 인사와 무관한 경우가 많다
+  if (PEOPLE_RE.test(catText) || ORG_RE.test(catText)) cat = '인사';   // 조직/인사 변경
   // 지방이전은 인사·조직보다 상위로 분류 — 국내 기관(LP) 기사에 한해 적용한다.
   if (instHit && instType !== '해외 GP' && MOVE_RE.test(text)) cat = '이전';
   const { date, time, iso } = kstParts(raw.pub);
@@ -1942,7 +2002,9 @@ async function splitBodies(list) {
   const out = [];
   for (const a of list) {
     const body = a.body || '';
-    const { fetchedLen, bodyKo, b: _b, bl: _bl, tr: _tr, ...rest } = a;
+    // 앱이 쓰지 않는 필드(추출 요약 ai·고정 문구 metricLabel·제목과 같은 en)는 목록 파일에서 빼서 첫 로딩을 가볍게 한다
+    const { fetchedLen, bodyKo, b: _b, bl: _bl, tr: _tr, ai: _ai, metricLabel: _ml, ...rest } = a;
+    if (rest.en && rest.en === rest.ko) delete rest.en;
     if (body.length > LEAD_MAX + 80 || bodyKo) {
       keep.add(`${a.id}.json`);
       const json = JSON.stringify(bodyKo ? { id: a.id, body, ko: bodyKo } : { id: a.id, body });
@@ -2032,6 +2094,11 @@ async function main() {
     p.inst = hit ? hit.inst : (p.source || '출처 미상');
     p.instType = hit ? hit.instType : '기타';
     if (p.cat === 'LP' || p.cat === 'GP') p.cat = hit ? (hit.instType === '해외 GP' ? 'GP' : 'LP') : '마켓';
+    reclassed++;
+  }
+  for (const p of prev) {                                         // 영문 기사 '인사' 분류는 제목 기준으로 다시 확인
+    if (p.cat !== '인사' || p.lang !== 'en' || p.pinned || PEOPLE_RE.test(p.ko || '') || ORG_RE.test(p.ko || '')) continue;
+    p.cat = p.instType === '해외 GP' ? 'GP' : (p.instType && p.instType !== '기타' ? 'LP' : '마켓');
     reclassed++;
   }
   if (reclassed) console.log(`archive reclassified: ${reclassed} articles`);
@@ -2248,7 +2315,18 @@ async function main() {
   };
   const insights = {
     updatedAt: fresh.updatedAt,
-    cios: mergeBy('inst', prevIns.cios, fresh.cios),
+    cios: (() => {                                                    // 이전 값도 새 기준(이름 모양·선임 우선)으로 다시 고른다
+      const map = new Map();
+      const freshSet = new Set(fresh.cios);
+      for (const x of [...(prevIns.cios || []), ...fresh.cios]) {
+        if (x.status === '선임' && !(x.person && looksLikeName(x.person) && !NAME_BLOCK.test(x.person) && !CIO_WORD_BLOCK.test(x.person))) continue;
+        const cur = map.get(x.inst);
+        // 이번 회차 결과(보도 수 투표)가 이전 회차의 다른 선임자보다 우선
+        const override = cur && freshSet.has(x) && !freshSet.has(cur) && x.status === '선임' && cur.status === '선임';
+        if (!cur || override || preferCio(cur, x)) map.set(x.inst, x);
+      }
+      return [...map.values()].sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+    })(),
     assetReturns: mergeBy('asset', prevIns.assetReturns, fresh.assetReturns),
     execs: mergeBy('key', prevIns.execs, fresh.execs).filter((e) => !badExecName(e.person)).slice(0, 40),
     // 이전 회차에 남은 값도 같은 기준으로 다시 거른다(기준 강화 전 수치 정리)

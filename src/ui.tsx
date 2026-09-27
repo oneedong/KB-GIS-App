@@ -164,9 +164,9 @@ function Section({ title, sub, right, children, first, pad = true, id }) {
   const desktop = useDesktop();
   const head = (title || right) && (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: pad ? (desktop ? '18px 20px 10px' : '20px 20px 10px') : '0 0 10px' }}>
-      <div style={{ font: F(700, 16.5), color: KB.ink, letterSpacing: '-.02em' }}>{title}</div>
-      {sub && <div style={{ font: F(500, 12), color: KB.mute }}>{sub}</div>}
-      {right && <div style={{ marginLeft: 'auto' }}>{right}</div>}
+      <div style={{ font: F(700, 16.5), color: KB.ink, letterSpacing: '-.02em', whiteSpace: 'nowrap', flexShrink: 0 }}>{title}</div>
+      {sub && <div style={{ font: F(500, 12), color: KB.mute, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+      {right && <div style={{ marginLeft: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}>{right}</div>}
     </div>
   );
   if (desktop) {

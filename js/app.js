@@ -237,7 +237,7 @@ function App() {
         const inst = clean(it.inst) || '';
         return {
             ...it,
-            ko: nm(clean(it.ko)), en: clean(it.en), tko: nm(it.tko), source: clean(it.source), inst,
+            ko: nm(stripMedia(clean(it.ko), it.source)), en: clean(it.en), tko: nm(it.tko), source: clean(it.source), inst,
             body: nm(it.body || ''),
             asset: known ? it.asset : '',
             assetLabel: a ? a.label : '',
@@ -354,24 +354,26 @@ function App() {
     const filterLabel = ASSET[filter] ? ASSET[filter].label : REGION[filter] ? REGION[filter] : filter === 'EN' ? '영문 기사' : filter === '마켓' ? '시장 동향' : filter;
     const sel = (selectedId && byId.get(selectedId)) || (isDesktop ? feedItems[0] : null) || null;
     // ─── 화면 조각 ───────────────────────────────────────────
+    // 같은 소식은 한 건으로 묶어 보여 준다(북마크 목록은 그대로)
     const feedList = (list, opts = {}) => {
         const out = [];
         let last = null;
-        const shown = opts.all ? list : list.slice(0, limit);
+        const stories = opts.noGroup ? list.map((lead) => ({ lead, more: [] })) : clusterStories(list);
+        const shown = opts.all ? stories : stories.slice(0, limit);
         const counts = {};
-        shown.forEach((i) => { const k = dayKeyOf(itemMs(i)); counts[k] = (counts[k] || 0) + 1; });
-        shown.forEach((item) => {
+        shown.forEach((c) => { const k = dayKeyOf(itemMs(c.lead)); counts[k] = (counts[k] || 0) + 1; });
+        shown.forEach(({ lead: item, more }) => {
             const k = dayKeyOf(itemMs(item));
             if (!opts.flat && k !== last) {
                 out.push(React.createElement(DayHeader, { key: 'd' + k, label: dayLabel(itemMs(item)), count: counts[k] }));
                 last = k;
             }
-            out.push(React.createElement(FeedItem, { key: item.id, item: item, isNew: !!(seen && !seen[item.id]), selected: isDesktop && sel && sel.id === item.id, onOpen: () => openArticle(item.id), onPress: () => fetchArchiveBody(item), onBookmark: (e) => toggleBm(item.id, e) }));
+            out.push(React.createElement(FeedItem, { key: item.id, item: item, more: more, isNew: !!(seen && !seen[item.id]), selected: isDesktop && sel && (sel.id === item.id || more.some((m) => m.id === sel.id)), onOpen: () => openArticle(item.id), onOpenOther: (id) => openArticle(id), onPress: () => fetchArchiveBody(item), onBookmark: (e) => toggleBm(item.id, e) }));
         });
-        if (!opts.all && list.length > shown.length) {
+        if (!opts.all && stories.length > shown.length) {
             out.push(React.createElement("div", { key: "more", onClick: () => setLimit((n) => n + PAGE), style: { textAlign: 'center', padding: '18px 0 22px', font: F(600, 14), color: KB.sub, cursor: 'pointer' } },
                 "\uAE30\uC0AC ",
-                Math.min(PAGE, list.length - shown.length),
+                Math.min(PAGE, stories.length - shown.length),
                 "\uAC74 \uB354 \uBCF4\uAE30"));
         }
         return out;
@@ -560,7 +562,7 @@ function App() {
             React.createElement(Section, { title: "\uC9C0\uC5ED" },
                 React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, Object.keys(REGION).map((k) => React.createElement(Chip, { key: k, onClick: () => applyFilter(k), count: items.filter((i) => i.region === k).length }, REGION[k])))),
             React.createElement(Section, { title: "\uC6B4\uC6A9\uC0AC\uBCC4 \uAE30\uC0AC" },
-                React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, gpRows.filter((r) => r.arts > 0).slice(0, 24).map((r) => React.createElement(Chip, { key: r.name, onClick: () => applyFilter(r.name), count: r.arts }, r.name)))),
+                React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, gpRows.filter((r) => r.arts > 0).slice().sort((a, b) => b.arts - a.arts).slice(0, 24).map((r) => React.createElement(Chip, { key: r.name, onClick: () => applyFilter(r.name), count: r.arts }, r.name)))),
             React.createElement(Section, { title: "\uB370\uC774\uD130 \uC548\uB0B4" }, [
                 ['기사', `국문·영문 뉴스 검색 결과를 3시간마다 수집합니다. 현재 ${items.length.toLocaleString('ko-KR')}건${latestAt ? `, 최근 ${latestAt}` : ''}.`],
                 ['기사 전문', '수집할 때 원문에서 본문을 추출해 두고, 광고·관련기사·기자 정보 등은 제외합니다. 유료·차단 매체는 앞부분만 제공됩니다.'],
@@ -612,7 +614,7 @@ function App() {
     const bmItems = items.filter((i) => bm[i.id]);
     const bookmarksScreen = (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
         React.createElement(TopBar, { big: true, title: "\uBD81\uB9C8\uD06C", sub: `저장한 기사 ${bmItems.length}건` }),
-        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } }, bmItems.length ? feedList(bmItems, { flat: true, all: true })
+        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } }, bmItems.length ? feedList(bmItems, { flat: true, all: true, noGroup: true })
             : React.createElement(Empty, { icon: "bookmark", title: "\uC800\uC7A5\uD55C \uAE30\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uAE30\uC0AC \uBAA9\uB85D\uC758 \uBD81\uB9C8\uD06C \uC544\uC774\uCF58\uC744 \uB20C\uB7EC \uB098\uC911\uC5D0 \uBCFC \uAE30\uC0AC\uB97C \uC800\uC7A5\uD558\uC138\uC694." }))));
     const detail = (full) => sel && (React.createElement(ArticleDetail, { sel: sel, bookmarked: !!bm[sel.id], onToggleBm: () => toggleBm(sel.id), onShare: () => onShare(sel), onBack: () => setScreen(prevScreen), showBack: full, deals: dealsByArticle[sel.id] || [], onOpenDeal: openDeal, onOpenInst: (x) => openInst({ inst: x.inst, role: x.role, instType: x.instType }), onOpenTerm: openTerm, onDead: onDead }));
     const screens = {

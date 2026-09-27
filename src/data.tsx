@@ -76,6 +76,19 @@ function cleanBody(s) {
 }
 // 한글로 음역된 해외 기관·인명 → 영문 원어 (한국 기관·한국인 이름은 그대로)
 const nm = (s) => (s && typeof ArticleClean !== 'undefined' && ArticleClean.enNames ? ArticleClean.enNames(s) : s);
+// 제목 끝에 붙은 매체명(" - 조선비즈", " | Kanyi Daily News", " By Investing.com", " : 네이버 블로그") 제거
+const MEDIA_TAIL = /(?:뉴스|일보|경제|신문|투데이|비즈|데일리|타임스|방송|블로그|저널|통신|포스트|미디어|Times|News|Daily|Journal|Post|Wire|Media|Insider|Investing\.com|Bloomberg|Reuters|\.com|\.co\.kr|\.kr|Chosunbiz|CHOSUNBIZ|More)\s*$/i;
+function stripMedia(title, source) {
+  let t = String(title || '').trim();
+  const src = String(source || '').toLowerCase().replace(/^www\./, '');
+  for (let k = 0; k < 2; k++) {
+    const m = t.match(/^(.{12,})\s*(?:\s[-–—|]\s|\s?:\s|\sBy\s)\s*([^-–—|:]{2,32})$/);
+    if (!m) break;
+    const tail = m[2].trim().toLowerCase();
+    if (MEDIA_TAIL.test(m[2]) || (src && (tail.includes(src.split('.')[0]) || src.includes(tail.replace(/\s+/g, ''))))) t = m[1].trim(); else break;
+  }
+  return t;
+}
 function isRealArticle(a) {
   return !!(a && a.url && /^https?:\/\//i.test(a.url) && !/(^|\/\/)kbgis\.app/i.test(a.url));
 }
@@ -165,6 +178,51 @@ function clusterDeals(list) {
   }
   return out;
 }
+// ─── 같은 소식 묶기 ─────────────────────────────────────────
+// 여러 매체가 같은 소식을 거의 같은 제목으로 내면 목록에서 한 건으로 묶는다.
+// 제목 핵심어(불용어·숫자 표기 차이 제외)가 절반 이상 겹치고 48시간 안에 나온 기사끼리 묶고,
+// 대표 기사는 전문이 있는 것 → 먼저 나온 것 순으로 고른다.
+const STORY_STOP = new Set(('the a an and or of to in on for with by as at from its is are be after amid over into new says said report reports reportedly ' +
+  'by investing.com bloomberg reuters ft news update exclusive 단독 속보 종합 보도 외').split(' '));
+function storyTokens(t) {
+  const s = String(t || '').toLowerCase().replace(/[’']s\b/g, '').replace(/\s[-–|]\s[^-–|]{2,40}$/, '');   // 뒤에 붙은 매체명 제거
+  const out = new Set();
+  for (const w of s.split(/[^0-9a-z가-힣₦$€£¥.]+/)) {
+    if (!w || STORY_STOP.has(w)) continue;
+    if (/^[가-힣]+$/.test(w)) { if (w.length >= 2) out.add(w.slice(0, 3)); continue; }
+    const n = w.replace(/^[₦$€£¥n]/, '').replace(/(?:bn|billion)$/, 'b').replace(/\.0+$/, '');
+    if (n.length >= 2) out.add(n);
+  }
+  return out;
+}
+function clusterStories(list) {
+  const out = [];
+  const recent = [];                                    // 최근 48시간 대표들
+  for (const it of list) {
+    const ms = itemMs(it);
+    const tk = storyTokens(it.lang === 'en' ? it.ko : it.ko);
+    let hit = null;
+    for (const c of recent) {
+      if (Math.abs(c.ms - ms) > 48 * 3600000) continue;
+      if (c.lead.lang !== it.lang) continue;
+      let inter = 0; tk.forEach((w) => { if (c.tk.has(w)) inter++; });
+      const r = inter / Math.max(1, Math.min(tk.size, c.tk.size));
+      // 주어(첫 핵심어)가 같아야 한다 — "EUCLYD raises … AI infrastructure" 와 "PicoJool raises … AI infrastructure" 는 다른 소식
+      const same = tk.values().next().value === c.tk.values().next().value;
+      if (tk.size >= 3 && c.tk.size >= 3 && ((same && r >= 0.6 && inter >= 3) || (r >= 0.8 && inter >= 4))) { hit = c; break; }
+    }
+    if (hit) { hit.more.push(it); continue; }
+    const c = { lead: it, more: [], ms, tk };
+    out.push(c); recent.push(c);
+    while (recent.length && Math.abs(recent[0].ms - ms) > 72 * 3600000) recent.shift();
+  }
+  // 대표는 전문이 있는 기사 우선
+  for (const c of out) {
+    if (!c.lead.b) { const k = c.more.findIndex((x) => x.b); if (k >= 0) { const t = c.lead; c.lead = c.more[k]; c.more[k] = t; } }
+  }
+  return out;
+}
+
 // 행위 묶음(필터용)
 const DEAL_FILTERS = [
   ['all', '전체', null],

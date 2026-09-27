@@ -93,7 +93,7 @@ async function getJson(url, timeout = 15000) { return JSON.parse(await getText(u
 
 // ── 시세: Yahoo Finance 차트 API → 실패 시 stooq CSV ──────
 // 두 소스 모두 무료·키 불필요. 종가와 직전 종가를 받아 등락을 계산한다.
-export function parseYahooChart(j) {
+export function parseYahooChart(j, futures = false) {
   const r = ((j || {}).chart || {}).result;
   if (!Array.isArray(r) || !r[0]) return null;
   const meta = r[0].meta || {};
@@ -102,6 +102,12 @@ export function parseYahooChart(j) {
   // 일봉 종가 계열에서 마지막 값과 그 직전 값을 쓴다.
   // meta.chartPreviousClose 는 '요청 구간 시작 이전의 종가'라 구간을 10일로 잡으면
   // 10일치 등락이 하루 등락으로 둔갑한다 — 절대 쓰지 않는다.
+  // 선물 연속물(=F)은 월물이 바뀌는 날 일봉 계열에 이전 월물 종가가 섞여 등락이 크게 왜곡된다
+  // (예: 브렌트 -8.6% vs WTI -2.3%). 같은 월물의 직전 정산가(meta.previousClose)를 우선 쓴다.
+  if (futures) {
+    const lp = num(meta.regularMarketPrice), pp = num(meta.previousClose);
+    if (lp != null && pp) return { last: lp, prev: pp, chg: lp - pp, chgPct: (lp - pp) / pp * 100, src: 'Yahoo Finance' };
+  }
   const last = valid.length ? valid[valid.length - 1] : num(meta.regularMarketPrice);
   let prev = valid.length >= 2 ? valid[valid.length - 2] : null;
   if (prev == null) prev = num(meta.previousClose);
@@ -121,7 +127,7 @@ export function parseStooqCsv(csv) {
 async function quote(symbol, stooqSym) {
   try {
     const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1d`);
-    const q = parseYahooChart(j);
+    const q = parseYahooChart(j, /=F$/.test(symbol));
     if (q) return q;
     throw new Error('빈 응답');
   } catch (e1) {

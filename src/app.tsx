@@ -225,7 +225,7 @@ function App() {
     const inst = clean(it.inst) || '';
     return {
       ...it,
-      ko: nm(clean(it.ko)), en: clean(it.en), tko: nm(it.tko), source: clean(it.source), inst,
+      ko: nm(stripMedia(clean(it.ko), it.source)), en: clean(it.en), tko: nm(it.tko), source: clean(it.source), inst,
       body: nm(it.body || ''),
       asset: known ? it.asset : '',
       assetLabel: a ? a.label : '',
@@ -310,20 +310,22 @@ function App() {
   const sel = (selectedId && byId.get(selectedId)) || (isDesktop ? feedItems[0] : null) || null;
 
   // ─── 화면 조각 ───────────────────────────────────────────
+  // 같은 소식은 한 건으로 묶어 보여 준다(북마크 목록은 그대로)
   const feedList = (list, opts = {}) => {
     const out = [];
     let last = null;
-    const shown = opts.all ? list : list.slice(0, limit);
+    const stories = opts.noGroup ? list.map((lead) => ({ lead, more: [] })) : clusterStories(list);
+    const shown = opts.all ? stories : stories.slice(0, limit);
     const counts = {};
-    shown.forEach((i) => { const k = dayKeyOf(itemMs(i)); counts[k] = (counts[k] || 0) + 1; });
-    shown.forEach((item) => {
+    shown.forEach((c) => { const k = dayKeyOf(itemMs(c.lead)); counts[k] = (counts[k] || 0) + 1; });
+    shown.forEach(({ lead: item, more }) => {
       const k = dayKeyOf(itemMs(item));
       if (!opts.flat && k !== last) { out.push(<DayHeader key={'d' + k} label={dayLabel(itemMs(item))} count={counts[k]} />); last = k; }
-      out.push(<FeedItem key={item.id} item={item} isNew={!!(seen && !seen[item.id])} selected={isDesktop && sel && sel.id === item.id}
-        onOpen={() => openArticle(item.id)} onPress={() => fetchArchiveBody(item)} onBookmark={(e) => toggleBm(item.id, e)} />);
+      out.push(<FeedItem key={item.id} item={item} more={more} isNew={!!(seen && !seen[item.id])} selected={isDesktop && sel && (sel.id === item.id || more.some((m) => m.id === sel.id))}
+        onOpen={() => openArticle(item.id)} onOpenOther={(id) => openArticle(id)} onPress={() => fetchArchiveBody(item)} onBookmark={(e) => toggleBm(item.id, e)} />);
     });
-    if (!opts.all && list.length > shown.length) {
-      out.push(<div key="more" onClick={() => setLimit((n) => n + PAGE)} style={{ textAlign: 'center', padding: '18px 0 22px', font: F(600, 14), color: KB.sub, cursor: 'pointer' }}>기사 {Math.min(PAGE, list.length - shown.length)}건 더 보기</div>);
+    if (!opts.all && stories.length > shown.length) {
+      out.push(<div key="more" onClick={() => setLimit((n) => n + PAGE)} style={{ textAlign: 'center', padding: '18px 0 22px', font: F(600, 14), color: KB.sub, cursor: 'pointer' }}>기사 {Math.min(PAGE, stories.length - shown.length)}건 더 보기</div>);
     }
     return out;
   };
@@ -604,7 +606,7 @@ function App() {
         </Section>
         <Section title="운용사별 기사">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {gpRows.filter((r) => r.arts > 0).slice(0, 24).map((r) => <Chip key={r.name} onClick={() => applyFilter(r.name)} count={r.arts}>{r.name}</Chip>)}
+            {gpRows.filter((r) => r.arts > 0).slice().sort((a, b) => b.arts - a.arts).slice(0, 24).map((r) => <Chip key={r.name} onClick={() => applyFilter(r.name)} count={r.arts}>{r.name}</Chip>)}
           </div>
         </Section>
         <Section title="데이터 안내">
@@ -693,7 +695,7 @@ function App() {
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
       <TopBar big title="북마크" sub={`저장한 기사 ${bmItems.length}건`} />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {bmItems.length ? feedList(bmItems, { flat: true, all: true })
+        {bmItems.length ? feedList(bmItems, { flat: true, all: true, noGroup: true })
           : <Empty icon="bookmark" title="저장한 기사가 없습니다" desc="기사 목록의 북마크 아이콘을 눌러 나중에 볼 기사를 저장하세요." />}
       </div>
     </div>

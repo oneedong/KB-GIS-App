@@ -126,7 +126,7 @@ function TrendModal({ series, name, unit, onClose }) {
         {hi != null && (
           <g>
             <line x1={x(hi)} y1={PT} x2={x(hi)} y2={H - PB} stroke={KB.faint} strokeWidth="1.5" strokeDasharray="4 4" />
-            <circle cx={x(hi)} cy={y(hv)} r="6.5" fill="#fff" stroke={col} strokeWidth="3" />
+            <circle cx={x(hi)} cy={y(hv)} r="6.5" fill={KB.card} stroke={col} strokeWidth="3" />
             <g transform={`translate(${tipX - 70}, ${Math.max(PT, y(hv) - 58)})`}>
               <rect width="140" height="46" rx="8" fill={KB.ink} opacity="0.92" />
               <text x="70" y="19" textAnchor="middle" fontSize="13" fill="#cfd1d6" fontFamily="Pretendard">{fmtD(hd)}</text>
@@ -279,7 +279,7 @@ function BriefCalendar({ keys, value, onPick }) {
           const k = key(d), ok = has.has(k), on = k === cur;
           return (
             <div key={k} onClick={() => ok && onPick(k)} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: ok ? 'pointer' : 'default' }}>
-              <span style={{ width: 36, height: 36, borderRadius: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: on ? KB.ink : 'transparent', color: on ? '#fff' : ok ? KB.ink : KB.faint, font: ok ? F(700, 14) : F(400, 14), position: 'relative' }}>
+              <span style={{ width: 36, height: 36, borderRadius: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: on ? KB.woodDeep : 'transparent', color: on ? '#fff' : ok ? KB.ink : KB.faint, font: ok ? F(700, 14) : F(400, 14), position: 'relative' }}>
                 {d}
                 {ok && !on && <span style={{ position: 'absolute', bottom: 4, width: 4, height: 4, borderRadius: 2, background: KB.yellow }}></span>}
               </span>
@@ -288,7 +288,7 @@ function BriefCalendar({ keys, value, onPick }) {
         })}
       </div>
       {!monthHas && <div style={{ font: F(500, 12.5), color: KB.mute, textAlign: 'center', marginTop: 8 }}>이 달에는 저장된 시황이 없습니다</div>}
-      <div style={{ font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 }}>노란 점이 있는 날짜를 누르면 그날 시황을 볼 수 있습니다</div>
+      <div style={{ font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 }}>점이 있는 날짜를 누르면 그날 시황을 볼 수 있습니다</div>
     </div>
   );
 }

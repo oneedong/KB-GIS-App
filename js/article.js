@@ -11,7 +11,7 @@
  */
 // 형광펜 — 글자 높이 전체를 덮도록 인라인 배경 + 위아래 여백, 줄이 바뀌어도 각 줄에 같은 모양
 const HIGHLIGHT = {
-    background: 'rgba(255, 188, 0, .36)',
+    background: 'rgba(196, 154, 104, .34)', // 나뭇결 색 형광펜
     color: KB.ink,
     fontWeight: 600,
     padding: '3px 1px',
@@ -187,7 +187,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                     " \u00B7 ",
                     when),
                 isEn && (React.createElement("div", { style: { margin: '16px 0 0' } },
-                    ko ? (React.createElement("div", { style: { display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 } }, [['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (React.createElement("div", { key: k, onClick: () => setLang(k), style: { padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? '#fff' : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' } }, l))))) : (!loading && paragraphs.length > 0 && (React.createElement("div", { style: { font: F(500, 12.5, 1.6), color: KB.mute } }, "\uBCF8\uBB38 \uBC88\uC5ED\uC740 \uC218\uC9D1\uD560 \uB54C \uCD5C\uC2E0 \uAE30\uC0AC\uBD80\uD130 \uCC28\uB840\uB85C \uBC18\uC601\uB429\uB2C8\uB2E4. \uC544\uC9C1 \uBC88\uC5ED\uB418\uC9C0 \uC54A\uC544 \uC601\uBB38\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4."))),
+                    ko ? (React.createElement("div", { style: { display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 } }, [['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (React.createElement("div", { key: k, onClick: () => setLang(k), style: { padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' } }, l))))) : (!loading && paragraphs.length > 0 && (React.createElement("div", { style: { font: F(500, 12.5, 1.6), color: KB.mute } }, "\uBCF8\uBB38 \uBC88\uC5ED\uC740 \uC218\uC9D1\uD560 \uB54C \uCD5C\uC2E0 \uAE30\uC0AC\uBD80\uD130 \uCC28\uB840\uB85C \uBC18\uC601\uB429\uB2C8\uB2E4. \uC544\uC9C1 \uBC88\uC5ED\uB418\uC9C0 \uC54A\uC544 \uC601\uBB38\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4."))),
                     ko && React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 } },
                         React.createElement("span", { style: { color: KB.ko, fontWeight: 600 } }, "\uD30C\uB780 \uAE00\uC528"),
                         "\uB294 \uD55C\uAD6D\uC5B4 \uBC88\uC5ED\uC785\uB2C8\uB2E4",

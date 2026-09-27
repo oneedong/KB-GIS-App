@@ -167,7 +167,7 @@ function AltTrend({ trend }) {
       <polyline points={pts} fill="none" stroke={KB.gray} strokeWidth="2.2" strokeLinejoin="round" />
       {trend.map((t, i) => (
         <g key={i}>
-          <circle cx={x(i)} cy={y(t.altPct)} r="4" fill={i === trend.length - 1 ? KB.yellow : '#fff'} stroke={KB.gray} strokeWidth="2" />
+          <circle cx={x(i)} cy={y(t.altPct)} r="4" fill={i === trend.length - 1 ? KB.yellow : KB.card} stroke={KB.gray} strokeWidth="2" />
           <text x={x(i)} y={y(t.altPct) - 9} textAnchor="middle" fontSize="11" fontWeight="600" fill={KB.ink} fontFamily="Pretendard">{t.altPct}</text>
           <text x={x(i)} y={H - 7} textAnchor="middle" fontSize="11" fill={KB.mute} fontFamily="Pretendard">{t.year}</text>
         </g>
@@ -632,7 +632,7 @@ function FundTimeline({ f, onOpenStage }) {
         return (
           <div key={k} onClick={() => s && onOpenStage(s)} style={{ display: 'flex', gap: 12, cursor: s ? 'pointer' : 'default', minHeight: 32 }}>
             <div style={{ width: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-              <span style={{ width: 11, height: 11, borderRadius: 6, marginTop: 4, background: s ? col : '#fff', border: `2px solid ${col}`, boxSizing: 'border-box' }}></span>
+              <span style={{ width: 11, height: 11, borderRadius: 6, marginTop: 4, background: s ? col : KB.card, border: `2px solid ${col}`, boxSizing: 'border-box' }}></span>
               {!last && <span style={{ flex: 1, width: 2, background: s ? KB.yellowLine : KB.line2, marginTop: 2 }}></span>}
             </div>
             <div style={{ flex: 1, minWidth: 0, paddingBottom: last ? 0 : 8 }}>

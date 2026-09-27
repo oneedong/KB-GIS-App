@@ -11,7 +11,7 @@
 
 // 형광펜 — 글자 높이 전체를 덮도록 인라인 배경 + 위아래 여백, 줄이 바뀌어도 각 줄에 같은 모양
 const HIGHLIGHT = {
-  background: 'rgba(255, 188, 0, .36)',
+  background: 'rgba(196, 154, 104, .34)',   // 나뭇결 색 형광펜
   color: KB.ink,
   fontWeight: 600,
   padding: '3px 1px',
@@ -219,7 +219,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
               {ko ? (
                 <div style={{ display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 }}>
                   {[['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (
-                    <div key={k} onClick={() => setLang(k)} style={{ padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? '#fff' : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }}>{l}</div>
+                    <div key={k} onClick={() => setLang(k)} style={{ padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }}>{l}</div>
                   ))}
                 </div>
               ) : (!loading && paragraphs.length > 0 && (

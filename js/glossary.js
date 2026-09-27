@@ -332,7 +332,7 @@ function findTerms(text, limit = 8) {
 // ─── 개념 도식 (SVG, 모바일 폭 360 기준 좌표) ───────────────────
 // 글자 크기가 폰에서 그대로 읽히도록 좌표계를 휴대폰 폭에 맞췄다.
 const D = {
-    box: KB.band, line: '#D5D7DC', ink: KB.ink, sub: KB.sub, faint: '#9A9CA2', y: KB.yellow, yt: KB.yellowTint, g: KB.gray,
+    box: KB.band, line: '#DCD1C1', ink: KB.ink, sub: KB.sub, faint: '#A3988A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
 };
 function Arrow({ id }) {
     return (React.createElement("defs", null,
@@ -358,7 +358,7 @@ const DIAGRAMS = {
             T(250, 110, '② 운용·투자 결정', { size: 10.5, c: D.g, a: 'start' }),
             React.createElement("path", { d: `M110 150 H40 V76`, fill: "none", stroke: D.y, strokeWidth: "2", strokeDasharray: "5 3", markerEnd: `url(#${k})` }),
             T(46, 112, '⑤ 분배', { size: 10.5, c: D.g, w: 700, a: 'start' }),
-            Box(110, 122, 140, 52, { f: '#fff', s: D.g, sw: 1.5 }),
+            Box(110, 122, 140, 52, { f: D.card, s: D.g, sw: 1.5 }),
             T(180, 144, '펀드', { w: 700, size: 13 }),
             T(180, 163, 'Limited Partnership', { size: 10.5, c: D.sub }),
             Ln(162, 174, 162, 210, k),
@@ -374,7 +374,7 @@ const DIAGRAMS = {
             T(180, 278, '분배 순서: LP 원금 → 우선수익 → GP 성과보수(캐리)', { size: 10.5, c: D.g, w: 600 }),
             T(180, 297, 'GP는 관리보수(연 1.5~2%)를 받고 약정의 1~3%를 직접 출자', { size: 10, c: D.sub }))) },
     // 2) 자금 흐름 + J커브 — 약정 100 기준 가상의 예시(총 납입 95, 총 분배 150)
-    flow: { title: '캐피탈콜·분배와 J커브', cap: '막대는 해마다 오간 돈(아래 파랑: LP가 낸 캐피탈콜, 위 노랑: 돌려받은 분배), 검은 선은 그 누적 합계예요. 투자 초기엔 돈이 나가기만 해 누적이 마이너스로 파였다가, 회수가 시작되면 J 모양으로 올라와 0을 넘어서요. (약정 100 기준 가상의 예시)', render: (k) => {
+    flow: { title: '캐피탈콜·분배와 J커브', cap: '막대는 해마다 오간 돈(아래 청회색: LP가 낸 캐피탈콜, 위 나무색: 돌려받은 분배), 검은 선은 그 누적 합계예요. 투자 초기엔 돈이 나가기만 해 누적이 마이너스로 파였다가, 회수가 시작되면 J 모양으로 올라와 0을 넘어서요. (약정 100 기준 가상의 예시)', render: (k) => {
             const calls = [-22, -25, -20, -13, -8, -4, -2, -1, 0, 0];
             const dists = [0, 0, 3, 8, 15, 24, 30, 30, 24, 16];
             const Z = 126, S = 1.3; // 0선 위치 · 1단위당 픽셀
@@ -390,7 +390,7 @@ const DIAGRAMS = {
                 React.createElement("line", { x1: "46", y1: Y(v), x2: "348", y2: Y(v), stroke: v === 0 ? D.g : D.line, strokeWidth: v === 0 ? 1.2 : 1, strokeDasharray: v === 0 ? undefined : '3 3' }),
                 T(40, Y(v) + 4, v > 0 ? '+' + v : v === 0 ? '0' : '−' + (-v), { size: 10, c: D.sub, a: 'end' }));
             return (React.createElement("svg", { viewBox: "0 0 360 300", width: "100%" },
-                React.createElement("rect", { x: "16", y: "10", width: "11", height: "11", rx: "2", fill: "#9DB6E8" }),
+                React.createElement("rect", { x: "16", y: "10", width: "11", height: "11", rx: "2", fill: "#9FB0C2" }),
                 T(32, 20, '캐피탈콜(납입)', { size: 10.5, a: 'start', c: D.sub }),
                 React.createElement("rect", { x: "122", y: "10", width: "11", height: "11", rx: "2", fill: D.y }),
                 T(138, 20, '분배(회수)', { size: 10.5, a: 'start', c: D.sub }),
@@ -400,11 +400,11 @@ const DIAGRAMS = {
                 React.createElement("line", { x1: (X(4) + X(5)) / 2, y1: "36", x2: (X(4) + X(5)) / 2, y2: "200", stroke: D.line, strokeWidth: "1" }),
                 T((X(0) + X(4)) / 2, 44, '투자기간 · 돈이 나감', { size: 10, c: D.faint }),
                 T((X(5) + X(9)) / 2, 44, '회수기간 · 돈이 돌아옴', { size: 10, c: D.faint }),
-                calls.map((c, i) => c < 0 && React.createElement("rect", { key: 'c' + i, x: X(i) - 7, y: Z, width: 14, height: -c * S, rx: "1.5", fill: "#9DB6E8" })),
+                calls.map((c, i) => c < 0 && React.createElement("rect", { key: 'c' + i, x: X(i) - 7, y: Z, width: 14, height: -c * S, rx: "1.5", fill: "#9FB0C2" })),
                 dists.map((d, i) => d > 0 && React.createElement("rect", { key: 'd' + i, x: X(i) - 7, y: Y(d), width: 14, height: d * S, rx: "1.5", fill: D.y })),
                 tick(0),
                 React.createElement("polyline", { points: pts, fill: "none", stroke: D.ink, strokeWidth: "2.4", strokeLinejoin: "round" }),
-                cums.map((v, i) => React.createElement("circle", { key: i, cx: X(i), cy: Y(v), r: i === low ? 4 : 2.8, fill: i === low ? D.ink : '#fff', stroke: D.ink, strokeWidth: "1.8" })),
+                cums.map((v, i) => React.createElement("circle", { key: i, cx: X(i), cy: Y(v), r: i === low ? 4 : 2.8, fill: i === low ? D.ink : D.card, stroke: D.ink, strokeWidth: "1.8" })),
                 T(X(low) + 10, Y(cums[low]) + 16, `바닥 −${-cums[low]} (${low + 1}년차)`, { size: 10.5, w: 700, a: 'start' }),
                 React.createElement("circle", { cx: bx, cy: Z, r: "4.5", fill: D.y, stroke: D.ink, strokeWidth: "1.8" }),
                 T(348, Z + 34, `누적 0 돌파 (${be}~${be + 1}년차)`, { size: 10.5, w: 700, a: 'end' }),
@@ -420,7 +420,7 @@ const DIAGRAMS = {
                 ['① 원금 반환', 'LP가 낸 돈을 100% 먼저 돌려준다', 'LP 100%', D.yt, D.y],
                 ['② 우선수익(허들)', '원금에 연 8% 수익이 될 때까지', 'LP 100%', D.yt, D.y],
                 ['③ GP 캐치업', 'GP 몫이 전체 이익의 20%가 될 때까지', 'GP 80~100%', D.box, D.line],
-                ['④ 잔여 이익 분배', '남는 이익을 나눈다', 'LP 80 : GP 20', '#fff', D.g],
+                ['④ 잔여 이익 분배', '남는 이익을 나눈다', 'LP 80 : GP 20', D.card, D.g],
             ].map(([h, d, sp, f, s], i) => (React.createElement("g", { key: i },
                 Box(20 + i * 12, 14 + i * 74, 320 - i * 24, 56, { f, s }),
                 T(36 + i * 12, 38 + i * 74, h, { a: 'start', w: 700, size: 12.5 }),
@@ -431,7 +431,7 @@ const DIAGRAMS = {
     stack: { title: '자본 구조 (캐피털 스택)', cap: '아래일수록 먼저 돌려받아 안전하고 금리가 낮다. 위로 갈수록 위험과 기대수익이 커진다.', render: (k) => (React.createElement("svg", { viewBox: "0 0 360 290", width: "100%" },
             React.createElement(Arrow, { id: k }),
             [
-                ['보통주 (에쿼티)', '가장 마지막에 받음 · 상승 여력 무제한', '20%+', '#fff', D.g],
+                ['보통주 (에쿼티)', '가장 마지막에 받음 · 상승 여력 무제한', '20%+', D.card, D.g],
                 ['우선주 (Preferred Equity)', '대출보다 뒤, 보통주보다 먼저', '13~16%', D.box, D.line],
                 ['후순위·메자닌 대출', '선순위 다음 상환 · 전환권이 붙기도', '11~13%', D.box, D.line],
                 ['선순위 대출', '가장 먼저 상환 · 담보 1순위', 'SOFR+5%', D.yt, D.y],
@@ -480,7 +480,7 @@ const DIAGRAMS = {
             T(85, 177, '만기 임박', { size: 10.5, c: D.sub }),
             Ln(150, 163, 208, 163, k),
             T(179, 155, '알짜 자산 이전', { size: 10.5, c: D.g }),
-            Box(210, 138, 130, 50, { f: '#fff', s: D.g, sw: 1.5 }),
+            Box(210, 138, 130, 50, { f: D.card, s: D.g, sw: 1.5 }),
             T(275, 160, '컨티뉴에이션 펀드', { w: 700, size: 11.5 }),
             T(275, 177, '같은 GP가 계속 운용', { size: 10.5, c: D.sub }),
             Ln(85, 188, 85, 230, k),
@@ -501,14 +501,14 @@ const DIAGRAMS = {
                 const x = 70 + i * 95, s = 90;
                 return (React.createElement("g", { key: i },
                     React.createElement("rect", { x: x, y: 176 - dpi * s, width: 46, height: dpi * s, fill: D.y }),
-                    React.createElement("rect", { x: x, y: 176 - (dpi + rvpi) * s, width: 46, height: rvpi * s, fill: "#C9CCD2" }),
+                    React.createElement("rect", { x: x, y: 176 - (dpi + rvpi) * s, width: 46, height: rvpi * s, fill: "#D6C8B3" }),
                     T(x + 23, 170 - (dpi + rvpi) * s, `${(dpi + rvpi).toFixed(1)}x`, { w: 700, size: 12 }),
                     T(x + 23, 196, n, { size: 11.5, w: 600 }),
                     T(x + 23, 212, `DPI ${dpi}x`, { size: 10, c: D.g })));
             }),
             React.createElement("rect", { x: "40", y: "8", width: "10", height: "10", fill: D.y }),
             T(56, 17, 'DPI 돌려받은 현금', { size: 10.5, a: 'start', c: D.sub }),
-            React.createElement("rect", { x: "186", y: "8", width: "10", height: "10", fill: "#C9CCD2" }),
+            React.createElement("rect", { x: "186", y: "8", width: "10", height: "10", fill: "#D6C8B3" }),
             T(202, 17, 'RVPI 남은 평가가치', { size: 10.5, a: 'start', c: D.sub }))) },
     // 8) ABS/ABF 구조
     abs: { title: '자산 유동화 구조 (ABS·ABF)', cap: '자산에서 나온 현금은 선순위부터 채우고(위→아래), 손실은 에쿼티부터 떠안는다(아래→위).', render: (k) => (React.createElement("svg", { viewBox: "0 0 360 290", width: "100%" },
@@ -518,14 +518,14 @@ const DIAGRAMS = {
             ['자동차 할부', '소비자 대출', '장비 리스', '카드 채권'].map((s, i) => React.createElement("g", { key: i }, T(64, 66 + i * 16, s, { size: 10.5, c: D.sub }))),
             Ln(114, 75, 148, 75, k),
             T(131, 66, '양도', { size: 10, c: D.g }),
-            Box(150, 44, 64, 62, { f: '#fff', s: D.g, sw: 1.5 }),
+            Box(150, 44, 64, 62, { f: D.card, s: D.g, sw: 1.5 }),
             T(182, 72, 'SPV', { w: 700 }),
             T(182, 89, '특수목적회사', { size: 9.5, c: D.sub }),
             Ln(214, 75, 238, 75, k),
             [
                 ['선순위', 'AAA · 먼저 상환', D.yt, D.y],
                 ['메자닌', 'BBB · 중간', D.box, D.line],
-                ['에쿼티', '마지막 · 첫 손실', '#fff', D.g],
+                ['에쿼티', '마지막 · 첫 손실', D.card, D.g],
             ].map(([h, d, f, s], i) => (React.createElement("g", { key: i },
                 Box(240, 16 + i * 40, 106, 36, { f, s, r: 4 }),
                 T(293, 31 + i * 40, h, { w: 700, size: 11.5 }),
@@ -550,7 +550,7 @@ const DIAGRAMS = {
                 T(X(1.25) + 8, 39, '1차 → 파이널 클로징, 보통 12~18개월', { size: 10, c: D.sub, a: 'start' }),
                 bar(0, 5, 60, 40, D.yt, D.y, '투자기간', '신규 투자 · 4~6년', 'i'),
                 bar(5, 10, 60, 40, D.box, D.line, '회수기간', '가치 제고·매각', 'h'),
-                bar(10, 12, 60, 40, '#fff', D.line, '연장', '+1~2년', 'e'),
+                bar(10, 12, 60, 40, D.card, D.line, '연장', '+1~2년', 'e'),
                 T(X(2.5), 118, '캐피탈콜이 몰림', { size: 10, c: D.g }),
                 T(X(7.5), 118, '분배가 몰림', { size: 10, c: D.g }),
                 Ln(20, 134, 346, 134, k, { w: 1.6 }),
@@ -573,7 +573,7 @@ const DIAGRAMS = {
             T(180, 112, '스왑포인트 = 1,368 − 1,380 = −12원', { w: 700, size: 12.5 }),
             T(180, 134, '≈ 현물 × (원화금리 − 달러금리)', { size: 11, c: D.sub }),
             T(180, 152, '= 1,380 × (2.75% − 3.60%) ≈ −12원', { size: 11, c: D.sub }),
-            Box(20, 170, 320, 46, { f: '#fff', s: D.line }),
+            Box(20, 170, 320, 46, { f: D.card, s: D.line }),
             T(180, 190, '원화 투자자가 달러 자산을 헤지하면', { size: 11, c: D.sub }),
             T(180, 207, '연 약 0.85% 비용 (원화 금리가 낮을 때)', { w: 700, size: 12, c: KB.up }))) },
     // 11) 펀드 파이낸스
@@ -590,7 +590,7 @@ const DIAGRAMS = {
             T(265, 42, 'NAV 대출', { w: 700, size: 12 }),
             T(265, 60, '담보: 보유 자산 가치', { size: 10.5, c: D.g }),
             T(265, 78, '용도: 추가투자·조기분배', { size: 10.5, c: D.sub }),
-            Box(20, 146, 320, 70, { f: '#fff' }),
+            Box(20, 146, 320, 70, { f: D.card }),
             T(180, 168, 'LP가 확인할 점', { w: 700, size: 12 }),
             T(180, 188, '서브라인은 IRR을 높여 보이게 할 수 있고', { size: 11, c: D.sub }),
             T(180, 205, 'NAV 대출은 펀드 전체의 레버리지를 늘린다', { size: 11, c: D.sub }))) },
@@ -618,7 +618,7 @@ function Diagram({ id, compact }) {
     if (!d)
         return null;
     const key = `arr-${id}-${compact ? 'c' : 'f'}`;
-    return (React.createElement("figure", { style: { margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 10, background: '#fff' } },
+    return (React.createElement("figure", { style: { margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card } },
         React.createElement("figcaption", { style: { font: F(700, 13.5), color: KB.ink, marginBottom: 10 } }, d.title),
         React.createElement("div", { style: { maxWidth: 520, margin: '0 auto' } }, d.render(key)),
         React.createElement("div", { style: { font: F(400, 12.5, 1.65), color: KB.sub, marginTop: 8 } }, d.cap)));
@@ -688,8 +688,8 @@ function LearnScreen({ focus, onFocusDone }) {
                 !ql && cat === 'all' && (React.createElement("div", { style: { marginTop: 18, padding: '16px 16px 12px', border: `1px solid ${KB.yellowLine}`, background: KB.yellowTint, borderRadius: 12 } },
                     React.createElement("div", { style: { font: F(700, 15), color: KB.ink } }, "\uCC98\uC74C\uC774\uB77C\uBA74 \uC774 \uC21C\uC11C\uB85C \uC77D\uC5B4 \uBCF4\uC138\uC694"),
                     React.createElement("div", { style: { font: F(400, 13, 1.6), color: KB.sub, marginTop: 4 } }, "\uB204\uAC00 \uB3C8\uC744 \uB0B4\uACE0(LP) \uB204\uAC00 \uAD74\uB9AC\uB294\uC9C0(GP)\uBD80\uD130, \uB3C8\uC774 \uC624\uAC00\uB294 \uD750\uB984\uACFC \uC131\uACFC\uB97C \uC7AC\uB294 \uBC29\uBC95\uAE4C\uC9C0."),
-                    React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 } }, LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (React.createElement("span", { key: id, onClick: () => jump(id), style: { display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 16, background: '#fff', border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 } },
-                        React.createElement("span", { style: { width: 20, height: 20, borderRadius: 10, background: KB.yellow, color: KB.ink, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: F(700, 11) } }, i + 1),
+                    React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 } }, LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (React.createElement("span", { key: id, onClick: () => jump(id), style: { display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 16, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 } },
+                        React.createElement("span", { style: { width: 20, height: 20, borderRadius: 10, background: KB.woodDeep, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: F(700, 11) } }, i + 1),
                         GLOSSARY_BY_ID[id].term.split(' (')[0])))))),
                 React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', margin: '18px 0 6px', paddingBottom: 2 } },
                     React.createElement(Chip, { active: cat === 'all', onClick: () => setCat('all'), count: GLOSSARY.length }, "\uC804\uCCB4"),

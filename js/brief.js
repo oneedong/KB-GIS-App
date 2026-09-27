@@ -135,7 +135,7 @@ function TrendModal({ series, name, unit, onClose }) {
             React.createElement("path", { d: path, fill: "none", stroke: col, strokeWidth: "2.4", strokeLinejoin: "round" }),
             hi != null && (React.createElement("g", null,
                 React.createElement("line", { x1: x(hi), y1: PT, x2: x(hi), y2: H - PB, stroke: KB.faint, strokeWidth: "1.5", strokeDasharray: "4 4" }),
-                React.createElement("circle", { cx: x(hi), cy: y(hv), r: "6.5", fill: "#fff", stroke: col, strokeWidth: "3" }),
+                React.createElement("circle", { cx: x(hi), cy: y(hv), r: "6.5", fill: KB.card, stroke: col, strokeWidth: "3" }),
                 React.createElement("g", { transform: `translate(${tipX - 70}, ${Math.max(PT, y(hv) - 58)})` },
                     React.createElement("rect", { width: "140", height: "46", rx: "8", fill: KB.ink, opacity: "0.92" }),
                     React.createElement("text", { x: "70", y: "19", textAnchor: "middle", fontSize: "13", fill: "#cfd1d6", fontFamily: "Pretendard" }, fmtD(hd)),
@@ -291,12 +291,12 @@ function BriefCalendar({ keys, value, onPick }) {
                     return React.createElement("div", { key: 'e' + i });
                 const k = key(d), ok = has.has(k), on = k === cur;
                 return (React.createElement("div", { key: k, onClick: () => ok && onPick(k), style: { height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: ok ? 'pointer' : 'default' } },
-                    React.createElement("span", { style: { width: 36, height: 36, borderRadius: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: on ? KB.ink : 'transparent', color: on ? '#fff' : ok ? KB.ink : KB.faint, font: ok ? F(700, 14) : F(400, 14), position: 'relative' } },
+                    React.createElement("span", { style: { width: 36, height: 36, borderRadius: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: on ? KB.woodDeep : 'transparent', color: on ? '#fff' : ok ? KB.ink : KB.faint, font: ok ? F(700, 14) : F(400, 14), position: 'relative' } },
                         d,
                         ok && !on && React.createElement("span", { style: { position: 'absolute', bottom: 4, width: 4, height: 4, borderRadius: 2, background: KB.yellow } }))));
             })),
         !monthHas && React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, textAlign: 'center', marginTop: 8 } }, "\uC774 \uB2EC\uC5D0\uB294 \uC800\uC7A5\uB41C \uC2DC\uD669\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"),
-        React.createElement("div", { style: { font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 } }, "\uB178\uB780 \uC810\uC774 \uC788\uB294 \uB0A0\uC9DC\uB97C \uB204\uB974\uBA74 \uADF8\uB0A0 \uC2DC\uD669\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4")));
+        React.createElement("div", { style: { font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 } }, "\uC810\uC774 \uC788\uB294 \uB0A0\uC9DC\uB97C \uB204\uB974\uBA74 \uADF8\uB0A0 \uC2DC\uD669\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4")));
 }
 // ─── 시황 화면 ───────────────────────────────────────────────
 function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBusy, onRefreshLive, onPick }) {

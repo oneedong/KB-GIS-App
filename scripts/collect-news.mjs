@@ -1864,7 +1864,8 @@ const HARD_NOISE_RE = new RegExp([
   '\\bshort interest\\b|stock price, news, quote|share price, .{0,20}stock news|\\b(?:enterprise value|price) to (?:revenue|ebitda|ebit|book|earnings|sales)\\b|\\bsees (?:large|unusual) (?:volume|options)|52-week (?:low|high)',
   '\\b(?:q[1-4]|quarterly|annual|monthly)(?: 20\\d\\d)? (?:commentary|distributions?|distribution schedule)\\b|\\bdeclares? (?:\\w+ ){0,3}distributions?\\b|\\bdistribution schedule\\b',
   '\\bprecision trading\\b|\\brisk zones\\b|\\betf \\([a-z]{2,6}\\)|\\bclass action\\b|securities (?:fraud|litigation)|investor counsel|encourages? .{0,40}investors? to (?:inquire|contact)',
-  '^[^:]{2,60}: [\\w .,-]{0,30}(?:private equity|venture capital|investment|growth equity) firm (?:backing|investing|focused|specializing)',
+  '^[^:]{2,60}: [a-z][\\w .,&-]{0,60}\\b(?:firm|investor|manager)\\b (?:backing|investing|focused|specializing|across|in)\\b',   // Dealroom 등 회사 소개 페이지
+  '\\btop (?:\\d+ )?stories\\b|\\bin pictures\\b',
   '\\bmarket (?:size|share|forecast|report)\\b.{0,40}\\b20[3-4]\\d\\b|\\bmuseum\\b|\\bchurch\\b|\\bcharity\\b',
   '\\b(?:price target|analyst rating|(?:upgrades?|downgrades?|reiterates?) (?:\\w+ )?(?:rating|to (?:buy|sell|hold|overweight|underweight)))\\b',
   // 국문: 주식 투자자 대상 해설·애널리스트 의견·시장조사 전망

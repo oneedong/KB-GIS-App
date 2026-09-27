@@ -8,7 +8,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#FBF8F2">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
 
@@ -24,16 +24,16 @@
   ::-webkit-scrollbar { width: 0; height: 0; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: #eceef1;
-    color: #1c1d20;
+    background: #EDE5D8;   /* 회벽보다 한 톤 깊은 바탕 */
+    color: #2B2520;
     font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
     font-variant-numeric: tabular-nums;
     -webkit-tap-highlight-color: transparent;
   }
   input { font-family: inherit; }
-  input::placeholder { color: #989ba2; }
+  input::placeholder { color: #A3988A; }
   a { -webkit-tap-highlight-color: transparent; }
-  ::selection { background: rgba(255, 188, 0, .35); }
+  ::selection { background: rgba(196, 154, 104, .35); }
 
   /* #root centers the phone frame and fills the viewport */
   #root {
@@ -52,10 +52,10 @@
     width: 404px;
     height: 872px;
     min-width: 0;
-    background: #fff;
+    background: #FBF8F2;
     border-radius: 36px;
-    border: 1px solid #dfe1e5;
-    box-shadow: 0 24px 60px rgba(28,29,32,.16);
+    border: 1px solid #DCD1C1;
+    box-shadow: 0 24px 60px rgba(60,42,25,.16);
     overflow: hidden;
     position: relative;
     display: flex;
@@ -64,7 +64,7 @@
 
   /* On actual phones / installed app: fill the whole screen, drop the frame chrome */
   @media (max-width: 480px) {
-    body { background: #ffffff; }
+    body { background: #FBF8F2; }
     #root { padding: 0; align-items: stretch; }
     .app-frame {
       width: 100%;

@@ -1,34 +1,38 @@
 "use strict";
 // @ts-nocheck
 /*
- * KB GIS — 디자인 시스템 (KB 브랜드 톤)
+ * KB GIS — 디자인 시스템 (화이트 앤 우드)
  *
- * 색은 KB금융 CI 의 KB Yellow(PANTONE 123C)·KB Gray(PANTONE 404C)를 기준으로 하고,
- * 나머지는 금융 앱에 맞는 절제된 무채색으로 둔다. 강조색은 노랑 한 가지만 쓰고
- * (주요 버튼·선택 표시·형광펜), 상승/하락은 국내 관행대로 빨강/파랑.
+ * 바탕은 디아망 회벽 크림화이트(따뜻한 석회 벽 같은 미색), 포인트는 미디엄 우드(오크·티크 중간 톤).
+ * 글자는 순흑 대신 따뜻한 차콜, 선·띠도 베이지 계열로 맞춰 전체가 한 공간처럼 보이게 한다.
+ * 강조색은 우드 한 가지만 쓰고(주요 버튼·선택 표시·형광펜), 상승/하락은 국내 관행대로 빨강/파랑.
+ * (예전 KB 노랑 토큰 이름 yellow* 는 호환을 위해 그대로 두고 값만 우드로 바꿨다.)
  *
  * 이 파일은 app.tsx 보다 먼저 로드되는 일반 스크립트다(index.html 참고).
  * 최상위 const/function 은 전역으로 공유되므로 React 훅은 React.useState 처럼 쓴다.
  */
 const KB = {
-    yellow: '#FFBC00', // KB Yellow
-    yellowPress: '#F0AD00',
-    yellowTint: '#FFF5D6', // 옅은 노랑 — 선택 배경·형광펜
-    yellowLine: '#F3DC96',
-    gray: '#60584C', // KB Gray — 브랜드 보조색(로고·강조 라벨)
-    ink: '#1C1D20', // 제목
-    ink2: '#383A40', // 본문
-    sub: '#666A71', // 보조 텍스트
-    mute: '#989BA2', // 캡션·메타
-    faint: '#C3C5CA',
-    line: '#E4E5E8', // 구분선
-    line2: '#EFF0F2',
-    band: '#F3F4F6', // 섹션 사이 회색 띠
-    bg: '#FFFFFF',
-    up: '#E0322B', // 상승
-    down: '#1E63D5', // 하락
-    pos: '#15804B',
-    ko: '#1F5FC8', // 영문 기사 한글 번역(병기)
+    yellow: '#A47A4F', // 미디엄 우드 — 표시선·점·막대·로고
+    yellowPress: '#8B633D',
+    wood: '#A47A4F',
+    woodDeep: '#8B633D', // 흰 글자를 올리는 버튼 바탕(대비 5.3:1)
+    yellowTint: '#F1E6D6', // 옅은 나뭇결 — 선택 배경·요약 박스
+    yellowLine: '#DDC8AB',
+    gray: '#6B4E33', // 짙은 월넛 — 기관명·강조 라벨
+    ink: '#2B2520', // 제목 — 따뜻한 차콜
+    ink2: '#3E3630', // 본문
+    sub: '#6F655A', // 보조 텍스트
+    mute: '#8F8577', // 캡션·메타
+    faint: '#C9BDAC',
+    line: '#E7DED0', // 구분선
+    line2: '#EFE8DC',
+    band: '#F3EDE3', // 섹션 사이 띠(한 톤 깊은 회벽)
+    bg: '#FBF8F2', // 디아망 회벽 크림화이트
+    card: '#FFFDF9', // 카드·그림 바탕(바탕보다 살짝 밝은 미색)
+    up: '#D2382F', // 상승
+    down: '#2A62C4', // 하락
+    pos: '#3F7A4E',
+    ko: '#2F5F9E', // 영문 기사 한글 번역(병기)
 };
 // 폰트 단축: F(굵기, 크기, 행간)
 const F = (w, size, lh) => `${w} ${size}px${lh ? '/' + lh : ''} Pretendard, -apple-system, sans-serif`;
@@ -71,10 +75,10 @@ function Ico({ n, size = 22, color = 'currentColor', sw = 1.7, fill = 'none', st
     return (React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: fill, stroke: color, strokeWidth: sw, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block', flexShrink: 0, ...(style || {}) }, "aria-hidden": "true" },
         React.createElement("path", { d: d })));
 }
-// ─── 로고 — 미니멀 워드마크 "KB GIS" (노란 포인트 하나) ─────────────
+// ─── 로고 — 미니멀 워드마크 "KB GIS" (우드 포인트 하나) ─────────────
 function Logo({ size = 18, onClick }) {
     return (React.createElement("div", { onClick: onClick, style: { display: 'flex', alignItems: 'center', gap: Math.round(size * 0.42), cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }, "aria-label": "KB GIS" },
-        React.createElement("span", { style: { width: Math.round(size * 0.5), height: Math.round(size * 0.5), borderRadius: 2, background: KB.yellow, flexShrink: 0 } }),
+        React.createElement("span", { style: { width: Math.round(size * 0.5), height: Math.round(size * 0.5), borderRadius: 3, background: 'linear-gradient(135deg, #B98D5F 0%, #A47A4F 55%, #8B633D 100%)', flexShrink: 0 } }),
         React.createElement("span", { style: { font: F(800, size), color: KB.ink, letterSpacing: '-.01em' } },
             "KB",
             React.createElement("span", { style: { fontWeight: 500, marginLeft: Math.round(size * 0.28) } }, "GIS"))));
@@ -98,7 +102,7 @@ function IconBtn({ n, onClick, label, active, size = 22 }) {
     return (React.createElement("div", { onClick: onClick, role: "button", "aria-label": label, title: label, style: { width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: active ? KB.ink : KB.ink2, borderRadius: 8 } },
         React.createElement(Ico, { n: n, size: size, fill: active && n === 'bookmark' ? KB.yellow : 'none', color: active && n === 'bookmark' ? KB.gray : 'currentColor' })));
 }
-// 탭(밑줄형) — KB 앱의 상단 탭처럼 선택 탭에 노란 막대
+// 탭(밑줄형) — KB 앱의 상단 탭처럼 선택 탭에 우드 막대
 function Tabs({ items, value, onChange, scroll, pad = 20 }) {
     return (React.createElement("div", { style: { display: 'flex', gap: scroll ? 20 : 0, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, overflowX: scroll ? 'auto' : 'visible', whiteSpace: 'nowrap', background: KB.bg, flexShrink: 0 } }, items.map(([k, label, count]) => {
         const on = value === k;
@@ -108,19 +112,19 @@ function Tabs({ items, value, onChange, scroll, pad = 20 }) {
             on && React.createElement("div", { style: { position: 'absolute', left: scroll ? 0 : '18%', right: scroll ? 0 : '18%', bottom: -1, height: 3, background: KB.yellow, borderRadius: 2 } })));
     })));
 }
-// 필터 칩 — 선택: 진회색 채움 / 미선택: 테두리
+// 필터 칩 — 선택: 우드 채움 / 미선택: 테두리
 function Chip({ active, onClick, children, count }) {
-    return (React.createElement("div", { onClick: onClick, style: { flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 13px', borderRadius: 16, cursor: 'pointer', font: active ? F(600, 13) : F(500, 13), background: active ? KB.ink : KB.bg, color: active ? '#fff' : KB.ink2, border: `1px solid ${active ? KB.ink : KB.line}`, whiteSpace: 'nowrap' } },
+    return (React.createElement("div", { onClick: onClick, style: { flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 13px', borderRadius: 16, cursor: 'pointer', font: active ? F(600, 13) : F(500, 13), background: active ? KB.woodDeep : KB.card, color: active ? '#fff' : KB.ink2, border: `1px solid ${active ? KB.woodDeep : KB.line}`, whiteSpace: 'nowrap' } },
         children,
-        count != null && React.createElement("span", { style: { font: F(600, 11.5), color: active ? KB.yellow : KB.mute } }, count)));
+        count != null && React.createElement("span", { style: { font: F(600, 11.5), color: active ? '#F1E6D6' : KB.mute } }, count)));
 }
 // 작은 라벨. tone: base | yellow | dark | outline | up | down | pos
 function Tag({ children, tone = 'base', style }) {
     const T = {
         base: { background: KB.band, color: KB.sub },
         yellow: { background: KB.yellowTint, color: KB.gray },
-        dark: { background: KB.ink, color: '#fff' },
-        outline: { background: KB.bg, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.line}` },
+        dark: { background: KB.gray, color: '#fff' }, // 짙은 월넛
+        outline: { background: KB.card, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.line}` },
         up: { background: '#FDECEB', color: KB.up },
         down: { background: '#E9F0FC', color: KB.down },
         pos: { background: '#E7F4EC', color: KB.pos },
@@ -171,10 +175,10 @@ function Empty({ title, desc, icon = 'info', compact }) {
         title && React.createElement("div", { style: { font: F(600, 14.5), color: KB.ink2, marginTop: 12 } }, title),
         desc && React.createElement("div", { style: { font: F(400, 13, 1.6), color: KB.mute, marginTop: 6 } }, desc)));
 }
-// 버튼 — primary(노랑)·secondary(테두리)·dark
+// 버튼 — primary(우드)·secondary(테두리)·dark
 function Btn({ children, onClick, kind = 'primary', href, full, style, icon }) {
     const S = {
-        primary: { background: KB.yellow, color: KB.ink, border: `1px solid ${KB.yellow}` },
+        primary: { background: KB.woodDeep, color: '#fff', border: `1px solid ${KB.woodDeep}` },
         secondary: { background: KB.bg, color: KB.ink2, border: `1px solid ${KB.line}` },
         dark: { background: KB.ink, color: '#fff', border: `1px solid ${KB.ink}` },
     }[kind];

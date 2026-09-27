@@ -45,7 +45,7 @@ jobs:
             # 수집이 길어진 사이 main 이 앞서가면 리베이스 후 재시도 (푸시 경합 방지)
             for i in 1 2 3; do
               git push && break
-              git pull --rebase origin main || exit 1
+              git pull --rebase -X theirs origin main || { git rebase --abort; exit 1; }   # 데이터 파일 충돌은 이번 회차 결과(전체 스냅샷)로 해결
               [ "$i" = "3" ] && exit 1
             done
           else

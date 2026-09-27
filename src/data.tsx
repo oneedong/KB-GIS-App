@@ -22,12 +22,13 @@ const API = {
 const getJson = (url) => fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 // ─── 분류 ────────────────────────────────────────────────────
+// 자산군 표기는 업계 용어 그대로(영문)
 const ASSET = {
-  RE: { label: '부동산', en: 'Real Estate' },
-  PC: { label: '사모대출', en: 'Private Credit' },
-  PE: { label: '사모투자', en: 'Private Equity' },
-  IN: { label: '인프라', en: 'Infrastructure' },
-  AV: { label: '항공기금융', en: 'Aviation' },
+  RE: { label: 'Real Estate', en: 'Real Estate' },
+  PC: { label: 'Private Credit', en: 'Private Credit' },
+  PE: { label: 'Private Equity', en: 'Private Equity' },
+  IN: { label: 'Infrastructure', en: 'Infrastructure' },
+  AV: { label: 'Aviation', en: 'Aviation' },
 };
 const REGION = { US: '미국', EU: '유럽', AP: '아시아', GL: '글로벌' };
 const CAT_LABEL = { LP: '국내 LP', GP: '해외 GP', '인사': '인사', '마켓': '시장', '이전': '지방이전' };

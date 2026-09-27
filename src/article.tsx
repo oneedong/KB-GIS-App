@@ -210,11 +210,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             : loading ? <BodySkeleton />
             : (mine && st.dead)
               ? <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>원문 기사가 삭제되어 더 이상 볼 수 없습니다. 다음 수집 때 목록에서 빠집니다.</div>
-              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>내부 보안 정책으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.</div>}
+              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>언론사 보안 정책(유료·접근 제한)으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.</div>}
 
           {!loading && paragraphs.length > 0 && !isFull && realUrl && (
             <div style={{ font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 }}>
-              {sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '내부 보안 정책으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.'}
+              {sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '언론사 보안 정책(유료·접근 제한)으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.'}
             </div>
           )}
 

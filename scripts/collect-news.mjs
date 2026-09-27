@@ -1212,11 +1212,19 @@ function sponsorOf(a) {
 const FR_AMT = /(?:US\$|A\$|\$|€|£|¥|₩)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|T|B|M)\b|[\d,.]+\s?조\s?(?:[\d,]+\s?억)?\s?원?|[\d,.]+\s?억\s?(?:원|달러|유로|엔)?/i;
 export function extractFundraising(a) {
   const title = String(a.ko || '');
-  const txt = `${title} ${(a.body || '').slice(0, 260)}`;
-  if (!/펀드|\bfunds?\b|블라인드|비히클|vehicle|programme|\bclose\b/i.test(title)) return null;   // 제목에 펀드 맥락 필수
+  const lead = (a.body || '').slice(0, 700);
+  const txt = `${title} ${lead.slice(0, 260)}`;
+  // 제목에 펀드 맥락 필수 — 단, "Carlyle attracts $2.3bn for infrastructure credit"처럼 제목에 '펀드'가 없어도
+  // 모집 동사·금액이 있고 본문 첫머리가 펀드 이야기면 인정한다
+  const fundCtx = /펀드|\bfunds?\b|블라인드|비히클|vehicle|programme|\bclose\b/i.test(title)
+    || (/\b(?:raises?|raised|closes?|closed|inks|attracts|secures|hauls|nets|gathers)\b/i.test(title) && FR_AMT.test(title)
+        && (/\bfund\b/i.test(lead.slice(0, 400)) || /\bfor (?:its )?(?:\w+ ){0,2}(?:infrastructure|infra|credit|private equity|buyout|real estate|secondaries|venture|debt|lending)\b/i.test(title)));
+  if (!fundCtx) return null;
   if (FR_EXCLUDE.test(title)) return null;
-  const hit = FR_STAGES.find(([, re]) => re.test(title)) || FR_STAGES.find(([, re]) => re.test(txt));
+  let hit = FR_STAGES.find(([, re]) => re.test(title)) || FR_STAGES.find(([, re]) => re.test(txt));
   if (!hit) return null;
+  // 제목은 일반 '클로즈'인데 본문 첫머리가 단계를 밝히면(“…at final close”) 그 단계로
+  if (hit[0] === '클로즈') { const deeper = FR_STAGES.slice(0, 3).find(([, re]) => re.test(lead)); if (deeper && !NEAR_RE.test(lead.slice(0, 300))) hit = deeper; }
   const tm = txt.match(new RegExp(`(?:target(?:ing|ed)?(?:\\s+of)?|목표(?:액|\\s*규모)?(?:는|은|로)?)\\s*(?:about\\s*|약\\s*)?(${FR_AMT.source})`, 'i'));
   const target = tm ? tm[1].replace(/\s+/g, ' ').trim() : '';
   let size = dealAmount(title) || (a.metric && a.metric !== '뉴스' ? a.metric : '') || '';
@@ -1369,7 +1377,10 @@ export function buildFundraising(articles, prevItems = []) {
     const mb = managedBy(a.body);
     if (ANCHOR_RE.test(title0(a))) gp = mb ? canonGp(mb) : '';               // 앵커 LP ≠ 운용사 → 본문의 "managed by …"
     else if (!gp && mb) gp = canonGp(mb);
-    let fund = (x && x.fund && fundInText(a, x.fund, gp) ? x.fund : '') || fundNameOf(a.ko, gp) || fundNameFromBody(a.body, gp);
+    // 정식 이름(제목 > 본문) 우선, 서수로 만든 'N호 펀드'는 마지막
+    const tName = fundNameOf(a.ko, gp), bName = fundNameFromBody(a.body, gp);
+    const exact = (n) => (n && !/호 펀드$/.test(n) ? n : '');
+    let fund = (x && x.fund && fundInText(a, x.fund, gp) ? x.fund : '') || exact(tName) || exact(bName) || tName || bName;
     if (fund && !fundNearGp(a, fund, gp)) fund = '';                          // 다른 회사 펀드명을 붙이지 않는다
     if (fund && /^(?:Fund|Partners|Strategic\s+Fund)\b/i.test(fund.trim())) fund = `${(x && x.manager && !/[가-힣]/.test(x.manager) ? x.manager : gp)} ${fund.trim()}`;   // "Fund XI" → "Bain Capital Ventures Fund XI"
     if (fund && (/^series\s+\w+$/i.test(fund.trim()) || fundCore(fund, gp).length < 1)) fund = '';   // "Series 12"(트랜치)·운용사명뿐인 이름

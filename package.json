@@ -1,0 +1,14 @@
+{
+  "name": "kb-gis-app",
+  "private": true,
+  "description": "KB GIS — 해외대체투자 뉴스 수집기 의존성 (앱 자체는 빌드 없이 정적 배포)",
+  "scripts": {
+    "collect": "node scripts/collect-news.mjs",
+    "selftest": "node scripts/collect-news.mjs --selftest && node scripts/daily-brief.mjs --selftest",
+    "build": "tsc --jsx react --target es2019 --module none --lib es2019,dom --skipLibCheck --ignoreDeprecations 6.0 src/ui.tsx src/glossary.tsx src/app.tsx --outDir ."
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "linkedom": "^0.18.13"
+  }
+}

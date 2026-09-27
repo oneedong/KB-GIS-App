@@ -823,11 +823,12 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     setDeadLink(false);
     // 실제 외부 기사 주소가 있어야 본문을 가져올 수 있다(구글 뉴스 리디렉트
     // 주소는 수집기가 실제 주소로 해석해 news.json 에 저장한다).
-    if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url)) return;
+    if (!sel || !sel.url || /news\.google\.com/i.test(sel.url) || !/^https?:\/\//i.test(sel.url)) { if (!(sel && sel.b)) return; }
     // '정리 후' 본문이 충분할 때만 재요청 생략 — 관련기사 위젯/푸터를 걷어내면
     // 몇 줄 안 남는 기사는 브라우저에서 전체 본문을 다시 가져온다.
     const cleanStored = stripSiteFooter(sel.body || '');
-    if (cleanStored.length > 400 && !looksJunky(cleanStored)) return;
+    // (전문이 bodies/ 에 따로 있는 기사는 목록의 리드만으로 멈추지 않는다)
+    if (!sel.b && cleanStored.length > 400 && !looksJunky(cleanStored)) return;
     // 세션/영구 캐시에 있으면 즉시 사용(재방문 시 대기 없음)
     if (bodyCache[sel.id]) { setFetchedBody(bodyCache[sel.id]); return; }
     const stored = bodyStore.get(sel.id);
@@ -836,7 +837,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack 
     const ctrl = new AbortController();
     let cancelled = false;
     setLoadingBody(true);
-    fetchBodyViaProxies(sel.url, ctrl.signal)
+    // 수집기가 전문을 확보한 기사는 bodies/<id>.json 에 있다 — 프록시보다 먼저, 빠르게.
+    const fromArchive = sel.b
+      ? fetch(`./bodies/${sel.id}.json`, { signal: ctrl.signal }).then(r => r.ok ? r.json() : null).then(j => (j && j.body) ? { body: j.body, dead: false } : null).catch(() => null)
+      : Promise.resolve(null);
+    fromArchive.then(r => r || fetchBodyViaProxies(sel.url, ctrl.signal))
       .then(r => {
         if (cancelled) return;
         if (r.body) { bodyCache[sel.id] = r.body; bodyStore.set(sel.id, r.body); setFetchedBody(r.body); }

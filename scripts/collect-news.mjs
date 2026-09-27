@@ -8,7 +8,15 @@
  *   node scripts/collect-news.mjs            # 수집 후 news.json 갱신
  *   node scripts/collect-news.mjs --selftest # 네트워크 없이 파서/분류 테스트
  */
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir, readdir, unlink } from 'fs/promises';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+// 본문 정제 규칙은 앱과 같은 파일을 쓴다(article-clean.js) — 기준이 어긋나지 않게.
+const AC = require('../article-clean.js');
+// 본문 추출 엔진: Mozilla Readability + linkedom (package.json). 설치돼 있지 않으면
+// (예: 로컬 셀프테스트) 기존 정규식 추출로 자동 폴백한다.
+let Readability = null, parseHTML = null;
+try { ({ Readability } = require('@mozilla/readability')); ({ parseHTML } = require('linkedom')); } catch { /* 폴백 */ }
 
 // 검색어: placement agent 관점의 해외 alternative investment fund 중심.
 // (1) 글로벌 펀드레이징/자산군  (2) 글로벌 GP  (3) 국내 LP의 해외 출자.
@@ -128,6 +136,45 @@ const QUERIES = [
   '(BBAM OR Castlelake OR "Carlyle Aviation" OR "DAE Capital" OR Avolon OR AerCap OR "Air Lease") (fund OR aircraft OR leasing OR order) when:14d',
   'aircraft leasing fund OR aviation fund (close OR raise OR invest) when:14d',
   '항공기 (리스 OR 금융 OR 펀드) (투자 OR 조성 OR 출자 OR 결성)',
+  // ── 해외대체투자 확대 (영문 검색어는 미국판 구글 뉴스로 조회 — fetchQuery 참고) ──
+  // (18) 글로벌 펀드레이징 — 클로징·하드캡·신규 비히클
+  '"final close" (private equity OR infrastructure OR credit OR "real estate" OR secondaries) fund when:7d',
+  '("first close" OR "hard cap") fund (private equity OR infrastructure OR "private credit") when:14d',
+  '"private credit" fund (raises OR closes OR launches) billion when:7d',
+  '("direct lending" OR "asset-based finance" OR "asset-backed finance" OR "specialty finance") fund (closes OR raises OR launches) when:14d',
+  'infrastructure fund (closes OR raises OR launches) (billion OR million) when:14d',
+  '"real estate" (debt OR credit OR opportunistic OR "value-add") fund (closes OR raises) when:14d',
+  '(secondaries OR "continuation fund" OR "continuation vehicle" OR "GP-led") (closes OR raises OR deal) when:14d',
+  '("NAV loan" OR "NAV lending" OR "NAV financing" OR "fund finance") private equity when:30d',
+  '("GP stakes" OR "GP stake" OR "minority stake") (asset manager OR private equity firm) when:30d',
+  '"co-investment" (fund OR program OR vehicle) private equity (closes OR raises) when:30d',
+  '(evergreen OR semi-liquid OR "interval fund" OR "private wealth") ("private credit" OR "private equity" OR infrastructure) fund when:14d',
+  // (19) 글로벌 LP 출자 동향 — 연기금·국부펀드·한국 기관의 해외 약정
+  'pension (commits OR commitment OR allocates) ("private equity" OR "private credit" OR infrastructure OR "real estate") fund when:7d',
+  '(CalPERS OR CalSTRS OR "Ontario Teachers" OR CPP OR GIC OR ADIA OR "Future Fund" OR APG OR PGGM) (private OR infrastructure OR credit) (commit OR invest OR allocation) when:14d',
+  '(Korea OR Korean) ("National Pension Service" OR "Korea Investment Corporation" OR pension OR insurer OR "Teachers\' Credit Union") (fund OR "private equity" OR infrastructure OR "real estate" OR credit) when:30d',
+  '"sovereign wealth fund" (invests OR commits OR backs) (infrastructure OR "private equity" OR "private credit") when:14d',
+  // (20) 해외 딜 — 인수·매각·자산 거래
+  '"private equity" (acquires OR "agreed to acquire" OR "take-private" OR "take private") billion when:3d',
+  '("data center" OR "data centre") (private equity OR infrastructure fund OR investor) (acquire OR invest OR stake) when:7d',
+  '("energy transition" OR renewables OR "battery storage") infrastructure (fund OR investor) (acquire OR invest) when:7d',
+  '(logistics OR multifamily OR "student housing" OR hotel OR office) portfolio ("real estate fund" OR "private equity") (acquires OR sells OR buys) when:7d',
+  '(aircraft OR aviation) (lessor OR leasing) (acquire OR portfolio OR fund OR financing) when:14d',
+  // (21) 글로벌 GP 확대
+  '(Hg OR Cinven OR "Thoma Bravo" OR "Vista Equity" OR "Hellman & Friedman" OR "Silver Lake" OR "General Atlantic") (fund OR deal OR acquire) when:14d',
+  '(Macquarie OR Stonepeak OR "Global Infrastructure Partners" OR "I Squared" OR "Copenhagen Infrastructure" OR DigitalBridge) (fund OR acquire OR invest) when:14d',
+  '(Golub OR Antares OR "HPS Investment" OR "Blue Owl" OR "Sixth Street" OR "Oak Hill" OR Churchill OR Ares) ("direct lending" OR "private credit") when:14d',
+  '(Starwood OR "Blackstone Real Estate" OR "Brookfield Asset" OR PGIM OR Nuveen OR LaSalle OR Hines) "real estate" (fund OR acquire OR sells) when:14d',
+  '("Goldman Sachs Alternatives" OR "Morgan Stanley Investment Management" OR "J.P. Morgan Asset" OR "Neuberger Berman" OR "Hamilton Lane" OR StepStone OR Coller OR Lexington) (fund OR close OR secondaries) when:14d',
+  '(Vontobel OR TwentyFour OR Pemberton OR Arcmont OR "Park Square" OR Tikehau OR Hayfin) (credit OR ABS OR fund) when:30d',
+  // (22) 국내 기관의 해외 딜·출자 (한글)
+  '(국민연금 OR 한국투자공사 OR KIC) (해외 OR 미국 OR 유럽 OR 호주) (인수 OR 투자 OR 출자 OR 공동투자) when:14d',
+  '해외 부동산 (인수 OR 매입 OR 투자 OR 매각) (공제회 OR 연기금 OR 보험사 OR 증권사 OR 자산운용) when:14d',
+  '해외 인프라 (투자 OR 인수 OR 출자) (공제회 OR 연기금 OR 보험사 OR 국내 기관) when:14d',
+  '위탁운용사 (선정 OR 모집 OR 공고) (해외 OR 글로벌) (사모 OR 인프라 OR 부동산 OR 사모대출 OR 세컨더리) when:30d',
+  '(해외 OR 글로벌) (세컨더리 OR 코인베스트 OR 공동투자 OR NAV) (연기금 OR 공제회 OR 보험사) when:30d',
+  '(해외 OR 글로벌) 사모대출 (펀드 OR 투자) (출자 OR 약정 OR 선정) when:14d',
+  '(미국 OR 유럽 OR 영국 OR 독일 OR 호주 OR 일본) (오피스 OR 물류센터 OR 데이터센터 OR 호텔) (국내 투자자 OR 국내 기관 OR 한국 투자자) when:30d',
 ];
 
 // ── (선택) 무료 LLM 요약: Google Gemini ──────────────────
@@ -194,7 +241,7 @@ const KOREAN_LPS = [
   [/하나대체투자자산운용|Hana Alternative Asset Management/i, '하나대체투자자산운용', '자산운용사'],
   [/기계설비건설공제조합|Korea Mechanical Construction Financial Cooperative/i, '기계설비건설공제조합', '기타'],
   [/한국성장금융투자운용|Korea Growth Investment Corp\./i, '한국성장금융투자운용', '기타'],
-  [/대한지방행정공제회|행정공제회|POBA|Public Officials Benefit Association/i, '대한지방행정공제회', '공제회'],
+  [/대한지방행정공제회|행정공제회|\bPOBA\b|Public Officials Benefit Association/i, '대한지방행정공제회', '공제회'],
   [/엔지니어링공제조합|Korea Engineering Financial Cooperative/i, '엔지니어링공제조합', '공제회'],
   [/한국지방재정공제회|Korea Local Finance Association/i, '한국지방재정공제회', '공제회'],
   [/iM라이프생명보험|iM라이프생명|iM Life Insurance/i, 'iM라이프생명보험', '보험사'],
@@ -235,7 +282,7 @@ const KOREAN_LPS = [
   [/중소기업중앙회|Korea Federation of SMEs/i, '중소기업중앙회', '중앙회'],
   [/산림조합중앙회|National Forestry Cooperative Federation/i, '산림조합중앙회', '중앙회'],
   [/저축은행중앙회|Korea Federation of Savings Banks/i, '저축은행중앙회', '중앙회'],
-  [/MG새마을금고|KFCC/i, 'MG새마을금고', '은행'],
+  [/MG새마을금고|\bKFCC\b/i, 'MG새마을금고', '은행'],
   [/한국수출입은행|수출입은행|The Export-Import Bank of Korea/i, '한국수출입은행', '은행'],
   [/IBK투자증권|IBK Investment & Securities/i, 'IBK투자증권', '증권사'],
   [/이지스자산운용|IGIS Asset Management/i, '이지스자산운용', '자산운용사'],
@@ -244,7 +291,7 @@ const KOREAN_LPS = [
   [/제이알투자운용|JR Investment Management/i, '제이알투자운용', '자산운용사'],
   [/NH농협캐피탈|NH Capital/i, 'NH농협캐피탈', '캐피탈'],
   [/우리금융캐피탈|Woori Financial Capital/i, '우리금융캐피탈', '캐피탈'],
-  [/한국투자공사|KIC|Korea Investment Corporation/i, '한국투자공사', '연기금'],
+  [/한국투자공사|\bKIC\b|Korea Investment Corporation/i, '한국투자공사', '연기금'],
   [/우정사업본부|Korea Post/i, '우정사업본부', '연기금'],
   [/건설공제조합|Construction Guarantee/i, '건설공제조합', '공제회'],
   [/교보생명보험|교보생명|Kyobo Life Insurance/i, '교보생명보험', '보험사'],
@@ -296,7 +343,7 @@ const KOREAN_LPS = [
   [/현대커머셜|Hyundai Commercial/i, '현대커머셜', '캐피탈'],
   [/KB캐피탈|KB Capital/i, 'KB캐피탈', '캐피탈'],
   [/하나캐피탈|Hana Capital/i, '하나캐피탈', '캐피탈'],
-  [/국민연금|NPS|국민연금공단|National Pension Service/i, '국민연금', '연기금'],
+  [/국민연금|\bNPS\b|국민연금공단|National Pension Service/i, '국민연금', '연기금'],
   [/우리은행|Woori Bank/i, '우리은행', '은행'],
   [/하나은행|Hana Bank/i, '하나은행', '은행'],
   [/신한은행|Shinhan Bank/i, '신한은행', '은행'],
@@ -368,7 +415,7 @@ const FOREIGN_GPS = [
   [/stepstone|스텝스톤/i, 'StepStone', '해외 GP'],
   [/coller capital|콜러/i, 'Coller Capital', '해외 GP'],
   [/lexington partners/i, 'Lexington', '해외 GP'],
-  [/pantheon|판테온/i, 'Pantheon', '해외 GP'],
+  [/pantheon(?!\s*macro)|판테온/i, 'Pantheon', '해외 GP'],
   [/neuberger berman|뉴버거 ?버먼/i, 'Neuberger Berman', '해외 GP'],
   [/fortress investment|포트리스/i, 'Fortress', '해외 GP'],
   [/cerberus|서버러스/i, 'Cerberus', '해외 GP'],
@@ -379,7 +426,7 @@ const FOREIGN_GPS = [
   [/\bBBAM\b|비비에이엠/i, 'BBAM', '해외 GP'],
   [/\bPJT\b|park\s?hill|파크힐/i, 'PJT Park Hill', '해외 GP'],
   [/campbell\s?lutyens|캠벨\s?루티언스/i, 'Campbell Lutyens', '해외 GP'],
-  [/evercore|에버코어/i, 'Evercore', '해외 GP'],
+  [/evercore(?!\s*isi)|에버코어/i, 'Evercore', '해외 GP'],
   [/\bapax\b|아팍스/i, 'Apax', '해외 GP'],
   [/clearlake|클리어레이크/i, 'Clearlake', '해외 GP'],
   [/francisco partners|프란시스코\s?파트너스|프랜시스코\s?파트너스/i, 'Francisco Partners', '해외 GP'],
@@ -690,6 +737,140 @@ function grpName(t) {
   return '기타';
 }
 
+// ── 투자내역 트래커: 기관별 '어디에 투자했나' 누적 DB (investments.json) ──────
+// 기사 제목(+리드)에서 투자 주체·행위·상대방·금액·해외 여부를 뽑는다. 제목에
+// 행위어가 명시된 기사만 쓰며(추측 금지), 판단 근거인 기사 링크를 항상 함께 남긴다.
+// 순서가 중요 — 구체적인 행위(위탁운용사 선정·공동투자·세컨더리)를 먼저 본다.
+const DEAL_KINDS = [
+  ['출자사업 공고', /출자\s*사업|위탁\s*운용사\s*(?:모집|공고|선정\s*계획)|제안서\s*(?:접수|마감)|\bRFP\b/i],
+  ['위탁운용사 선정', /위탁\s*운용사\s*(?:선정|선발|최종|확정)|운용사\s*(?:선정|선발)|\bGP\s*선정|숏리스트|mandate/i],
+  ['공동투자', /코인베스트|공동\s*투자|co-?invest/i],
+  ['세컨더리', /세컨더리|secondar(?:y|ies)|continuation (?:fund|vehicle)|GP-led/i],
+  ['펀드 출자', /출자|약정|커밋|\bcommit(?:s|ted|ment)?\b|\banchor|앵커|투자\s*확약/i],
+  ['인수', /인수|매입|사들(?:여|였|인|이)|\bacquir(?:e|es|ed|ing)\b|\bbuys?\b|\bbought\b|take[- ]private|\bstake in\b/i],
+  ['매각', /매각|엑시트|\bexit(?:s|ed)?\b|\bsells?\b|\bsold\b|divest/i],
+  ['대출·크레딧', /대출|리파이낸싱|브릿지\s*론|메자닌|\bfinancing\b|\bloans?\b|\blending\b|refinanc/i],
+  ['투자', /투자(?:한다|했다|키로|하기로|해\s|를\s|에\s*나선|\s*단행|\s*집행|\s*(?:결정|확정|완료|유치))|(?:억|조|달러|유로|파운드|원)\s*(?:규모\s*)?투자|에\s*투자|\binvest(?:s|ed|ing)?\s+(?:in|\$)|\bbacks?\b|\bbacked by\b/i],
+];
+// 진행 단계 — 검토·추진 단계와 확정(완료)을 구분해 오해를 막는다.
+const DEAL_PENDING_RE = /검토|추진|나선다|나서|계획|예정|저울질|협상|우협|우선협상|MOU|in talks|consider|weigh|plans? to|nears?\b|explor/i;
+const OVERSEAS_RE = /해외|글로벌|미국|美|유럽|영국|英|독일|獨|프랑스|佛|일본|日|호주|싱가포르|인도|중국|中|북미|남미|아시아|중동|global|overseas|cross-border|U\.S\.|\bUS\b|Europe|UK\b|London|New York/i;
+// 투자 '이벤트'가 아닌 기사 — 분석·전망·시리즈물, 무산·거부된 딜, 상장주식 매매·주가 반응,
+// 행사·개관 소식. 이런 제목은 투자내역 DB 에 넣지 않는다.
+const NON_EVENT_RE = /미지수|불투명|우려|전망|어디로|\?|분석|점검|결산|지도\]|기획|시리즈|[①②③④⑤]|무산|철회|결렬|거부|중단|차질|지연|답보|못한|못해|실패|환매|유동성|경고등|대기발령|기회\s*제시|주목|강조|조언|인터뷰|웨비나|세미나|포럼|강연|기념|그랜드\s*(?:오프닝|오픈)|개관|출자\s*회사|주식.{0,20}(?:매각|매수|매도|처분)|어치|주당|최고가|최저가|주가|급등|급락|insider|shares? (?:sold|bought)|price target|\bstock\b|rejects?|scraps?|abandon|calls? off|outlook|webinar/i;
+// 딜 금액 — 단위(억·조·billion·million)가 붙은 금액만 인정(주당 가격·AUM 제외).
+export function dealAmount(text) {
+  const t = String(text || '');
+  const pats = [
+    /(?:US)?\$\s?[\d.,]+\s?(?:billion|million|bn|mn|B|M)\b/i,
+    /[€£]\s?[\d.,]+\s?(?:billion|million|bn|mn|B|M)\b/i,
+    /[\d.,]+\s?(?:billion|million)\s?(?:dollars|euros|pounds)?/i,
+    /[\d,.]+\s?조\s?(?:[\d,]+\s?억)?\s?(?:원|달러|유로|파운드|엔)?/,
+    /[\d,.]+\s?억\s?(?:[\d,]+\s?만)?\s?(?:원|달러|유로|파운드|엔)/,
+    /[\d,.]+\s?억(?=\s|\.|,|…|$)/,
+  ];
+  for (const re of pats) {
+    const m = t.match(re);
+    if (!m) continue;
+    const before = t.slice(Math.max(0, m.index - 6), m.index);
+    const after = t.slice(m.index + m[0].length, m.index + m[0].length + 6);
+    if (/주당|per share/i.test(before + after)) continue;            // 주가
+    if (/^\s*(?:굴리|운용|규모의\s*기금|적립)/.test(after)) continue;     // 운용자산(AUM)
+    return m[0].replace(/\s+/g, ' ').trim();
+  }
+  return '';
+}
+const lpsIn = (text) => {
+  const hits = [];
+  for (const [re, name, type] of KOREAN_LPS) {
+    const m = text.match(re);
+    if (m && !hits.some((h) => h.inst === name)) hits.push({ inst: name, instType: type, idx: m.index });
+  }
+  return hits.sort((a, b) => a.idx - b.idx);
+};
+const gpsIn = (text) => {
+  const hits = [];
+  for (const [re, name] of FOREIGN_GPS) {
+    const m = text.match(re);
+    if (m && !hits.some((h) => h.inst === name)) hits.push({ inst: name, idx: m.index, len: m[0].length });
+  }
+  return hits.sort((a, b) => a.idx - b.idx);
+};
+// 제목 속 운용사의 역할 판정 → { kind } | null(단순 언급이면 null)
+//   주어("블랙스톤, …인수")           → 그대로
+//   "…으로부터/from …"                → 운용사가 투자·대출한 쪽(인수 기사면 운용사가 매도자)
+//   "…에/to …매각", "…와 …매각 논의"   → 운용사가 인수자
+//   "…펀드에 …약정"                    → 운용사 펀드가 출자를 받은 것
+export function gpRoleInTitle(title, g, kind) {
+  const t = String(title);
+  const len = g.len || 2;                               // 운용사 이름 자체의 길이(뒤 조사는 제외)
+  const before = t.slice(Math.max(0, g.idx - 12), g.idx);
+  const after = t.slice(g.idx + len, g.idx + len + 30);
+  if (g.idx <= 2 && !/^\s*(?:으로부터|로부터|에게|에\s)/.test(after)) return { kind };
+  if (/^\s*(?:으로부터|로부터|에게서)/.test(after) || /\bfrom\s*$/i.test(before)) {
+    if (kind === '인수') return { kind: '매각' };
+    if (kind === '투자' || kind === '대출·크레딧') return { kind };
+    return null;
+  }
+  if (/\bbacked by\s*$|\bby\s*$/i.test(before)) return { kind: kind === '매각' ? '인수' : kind };
+  if (kind === '펀드 출자' && /^[^,…]{0,24}펀드/.test(after)) return { kind: '출자 유치' };
+  if (kind === '매각' && (/^\s*(?:등\s*)?(?:컨소시엄|에|에게|와|과)/.test(after) || /\bto\s*$/i.test(before))) return { kind: '인수' };
+  if (kind === '투자' && /^[^,…]{0,6}(?:의|가|이)\s/.test(after)) return { kind };
+  return null;
+}
+export function extractDeals(a) {
+  if (!a || !a.ko || a.cat === '인사' || a.cat === '이전') return [];
+  const title = String(a.en && a.lang === 'en' && !a.translated ? a.en || a.ko : a.ko).replace(/^\s*[\[【][^\]】]{0,20}[\]】]\s*/, '');
+  const lead = String(a.body || '').slice(0, 320);
+  if (NON_EVENT_RE.test(title)) return [];              // 분석·전망·무산·주식매매 등은 이벤트 아님
+  const kindHit = DEAL_KINDS.find(([, re]) => re.test(title));
+  if (!kindHit) return [];                              // 제목에 행위어가 없으면 이벤트로 보지 않는다
+  const kind = kindHit[0];
+  const text = `${title} ${lead}`;
+  const status = DEAL_PENDING_RE.test(title) ? '추진·검토' : '확정';
+  const amount = dealAmount(title) || dealAmount(lead) || '';
+  const lps = lpsIn(title).slice(0, 3);
+  const gps = gpsIn(title);
+  const gpsLead = gps.length ? gps : gpsIn(lead);
+  const base = {
+    kind, status, amount,
+    asset: a.asset, region: a.region,
+    title, id: a.id, url: a.url, gurl: a.gurl, date: a.date, ts: a.ts, source: a.source, lang: a.lang,
+  };
+  const out = [];
+  if (lps.length) {
+    if (kind === '투자' && /투자\s*유치/.test(title)) return [];   // 자금을 '받는' 기사
+    // 국내 LP 가 제목에 있으면 LP 가 투자 주체. 상대방은 제목(없으면 리드)의 해외 GP.
+    const cp = gpsLead[0] ? gpsLead[0].inst : '';
+    const overseas = !!cp || OVERSEAS_RE.test(text);
+    for (const lp of lps) out.push({ ...base, inst: lp.inst, instType: lp.instType, role: 'LP', counterpart: cp, overseas });
+  } else if (gps.length && a.instType === '해외 GP') {
+    // 해외 GP 딜 — 운용사가 제목의 '주어'가 아니면 문맥으로 역할을 정한다.
+    const role = gpRoleInTitle(title, gps[0], kind);
+    if (role) {
+      const cpLp = lpsIn(lead)[0];
+      out.push({ ...base, kind: role.kind, inst: gps[0].inst, instType: '해외 GP', role: 'GP', counterpart: cpLp ? cpLp.inst : '', overseas: true });
+    }
+  }
+  for (const e of out) e.key = `${e.inst}|${String(e.title).replace(/[\s\W]/g, '').slice(0, 28)}`;
+  return out;
+}
+// 이번 아카이브의 이벤트를 이전 누적분과 합친다 — 92일 창 밖으로 밀려난 기사의
+// 투자내역도 계속 남도록(기관별 투자 이력이 시간이 갈수록 쌓인다).
+export function buildInvestments(articles, prevItems = []) {
+  const map = new Map((prevItems || []).map((e) => [e.key, e]));
+  let added = 0;
+  for (const a of articles) {
+    for (const e of extractDeals(a)) {
+      if (!map.has(e.key)) added++;
+      map.set(e.key, { ...(map.get(e.key) || {}), ...e });
+    }
+  }
+  const items = [...map.values()].sort((x, y) => (x.ts < y.ts ? 1 : x.ts > y.ts ? -1 : 0)).slice(0, 3000);
+  const { date } = kstParts();
+  return { updatedAt: date, count: items.length, added, items };
+}
+
 // ── 펀드레이징 트래커: 기사에서 모집 단계 추출 ─────────────────
 // 단계 판별 순서가 중요 — 구체적 표현(파이널/1차)을 일반 표현보다 먼저 본다.
 const FR_STAGES = [
@@ -960,7 +1141,56 @@ export function extractReadable(html) {
 // (예: todaymild.com 이 alert 로 '존재하지 않는 링크 입니다'를 띄우는 경우)
 const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
 
-async function fetchArticleText(url) {
+// 기사 본문 추출 — 세 가지 후보를 만들어 정제(article-clean.js) 후 가장 충실한 것을 쓴다.
+//   1) JSON-LD articleBody  : 매체가 직접 넣어 둔 본문 (가장 깨끗한 경우가 많음)
+//   2) Readability          : 문단 구조를 살린 본문 컨테이너 추출 (광고·위젯 블록 배제)
+//   3) 정규식 추출          : 위 둘이 모두 실패할 때의 최후 수단
+// 정제 단계에서 바이라인·사진설명·관련기사·저작권 꼬리 등이 걸러진다.
+export function extractArticle(html, title = '') {
+  const cands = [];
+  const ld = extractJsonLdBody(html);
+  if (ld) cands.push(['jsonld', AC.clean(ld.split(/\n+/), { title })]);
+  if (Readability && parseHTML) {
+    try {
+      const { document } = parseHTML(html);
+      const art = new Readability(document, { charThreshold: 200, keepClasses: false }).parse();
+      if (art && art.content) {
+        const { document: d2 } = parseHTML(`<html><body><div id="kbgis-root">${art.content}</div></body></html>`);
+        const root = d2.getElementById('kbgis-root') || d2.body;
+        cands.push(['readability', AC.clean(AC.paragraphsFromNode(root), { title })]);
+      }
+    } catch { /* 파싱 실패 페이지는 다른 후보로 */ }
+  }
+  const rx = extractReadable(html);
+  if (rx) cands.push(['regex', AC.clean(rx.split(/\n+/), { title })]);
+  let best = null;
+  for (const [via, r] of cands) {
+    const len = r.paragraphs.join('').length;
+    // 길이 + 문단 구조 가점(문단이 살아 있으면 앱에서 읽기 좋다)
+    const score = len + Math.min(r.paragraphs.length, 10) * 40;
+    if (!best || score > best.score) best = { via, r, score, len };
+  }
+  const paywalled = cands.some(([, r]) => r.paywalled);
+  if (!best || best.len < 60) return { text: '', paywalled };
+  const text = best.r.paragraphs.join('\n\n').slice(0, 12000);
+  if (looksJunky(text)) return { text: '', paywalled };
+  return { text, paywalled, via: best.via };
+}
+
+// 페이지 인코딩 감지 후 디코딩 — 국내 언론사 상당수가 아직 EUC-KR 이라 무조건
+// UTF-8 로 읽으면 본문이 통째로 깨진다(� 투성이). 헤더 → <meta charset> 순으로 본다.
+export function decodeHtml(bytes, contentType = '') {
+  let cs = (String(contentType).match(/charset=["']?([\w-]+)/i) || [])[1] || '';
+  if (!cs) {
+    const head = new TextDecoder('latin1').decode(bytes.slice(0, 4096));
+    cs = (head.match(/<meta[^>]+charset=["']?([\w-]+)/i) || [])[1] || '';
+  }
+  cs = cs.toLowerCase();
+  if (/^(?:euc-?kr|ks_c_5601-1987|cp949|x-windows-949|ms949)$/.test(cs)) cs = 'euc-kr';
+  try { return new TextDecoder(cs || 'utf-8').decode(bytes); }
+  catch { return new TextDecoder('utf-8').decode(bytes); }
+}
+async function fetchArticleText(url, title = '') {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko,en;q=0.8' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
     // 404/410 = 기사가 삭제됐거나 존재하지 않는 링크 → 호출부가 피드에서 제외한다.
@@ -968,11 +1198,11 @@ async function fetchArticleText(url) {
     if (!res.ok) return { text: '' };
     const ct = res.headers.get('content-type') || '';
     if (!/text|html/i.test(ct)) return { text: '', ok: true };
-    const html = await res.text();
-    const text = extractReadable(html);
+    const html = decodeHtml(new Uint8Array(await res.arrayBuffer()), ct);
+    const { text, paywalled, via } = extractArticle(html, title);
     // 본문이 사실상 없고 '존재하지 않는 기사' 안내가 있으면 소프트 404 로 판정.
     if ((!text || text.length < 200) && DEAD_PAGE_RE.test(html.slice(0, 8000))) return { text: '', dead: true };
-    return { text, ok: true };
+    return { text, ok: true, paywalled, via };
   } catch { return { text: '' }; }
 }
 
@@ -988,7 +1218,7 @@ function parseReaderTextSrv(t) {
   const paras = s.split(/\n{2,}/)
     .map(x => x.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
     .filter(x => x.length > 30 && !/^[#>*\-|=]/.test(x) && !FOOTER_RE.test(x) && !RELATED_RE.test(x.slice(0, 24)) && /[가-힣a-zA-Z]{5,}/.test(x) && isSentencey(x));
-  const out = stripSiteFooter(paras.join('\n\n')).slice(0, 8000);
+  const out = AC.clean(stripSiteFooter(paras.join('\n\n')).split(/\n+/)).paragraphs.join('\n\n').slice(0, 12000);
   return looksJunky(out) ? '' : out;
 }
 async function fetchViaReader(url) {
@@ -1038,9 +1268,14 @@ const SOURCE_BLOCK_RE = /마일드경제|todaymild/i;
 // 추적 기관의 자본확충(유상증자 등) — 투자여력 확대라는 placement agent 핵심
 // 신호이므로, EXCLUDE_RE(상장사 잡음 제거)에 걸려도 예외로 수집한다.
 const CAPITAL_RE = /유상\s*증자|자본\s*확충|자본금\s*(?:확대|증액)|출자\s*전환/;
+// 영문 상장시장 잡음 — 주가·실적·ETF·애널리스트 의견 기사(운용사 이름이 나와도 대체투자와 무관).
+const EN_NOISE_RE = /\b(?:shares? (?:rose|fell|jumped|slid|climbed|dropped|gained|tumbled)|stock (?:price|rose|fell|jumped|surged)|price target|(?:quarterly|q[1-4]) (?:earnings|profit|results)|earnings (?:call|beat|miss|per share)|dividend (?:hike|increase)|analyst (?:upgrade|downgrade|rating)|ETFs?\b|exchange-traded|iShares|bitcoin ETF|options activity|short interest|insider (?:buying|selling))/i;
+const EN_ALT_CONTEXT_RE = /private (?:equity|credit|markets?|debt|capital)|infrastructure|real estate|fund(?:raising)?\b|close[sd]?\b|raise[sd]?\b|commit|acqui|take-private|buyout|secondar|direct lending/i;
 export function isRelevant(raw) {
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
   const text = `${raw.title} ${raw.desc}`;
+  // 영문 주가·실적·ETF 기사는 대체투자 맥락(펀드·딜)이 제목에 없으면 제외
+  if (!/[가-힣]/.test(raw.title) && EN_NOISE_RE.test(raw.title) && !EN_ALT_CONTEXT_RE.test(raw.title.replace(EN_NOISE_RE, ''))) return false;
   const gp = isForeignGP(text), lp = isKoreanLP(text);
   // 잡음 제거 — 단, 추적 GP/LP 의 유상증자·자본확충 뉴스는 예외 통과.
   // 잡음 예외: 추적 기관의 자본확충·지방이전·운용 사령탑/실무 인사 기사는
@@ -1102,6 +1337,70 @@ export function enrich(raw) {
   };
 }
 
+// 동시에 n개씩 비동기 작업을 돌리는 간단한 풀.
+async function pool(items, n, fn) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const it = items[i++]; try { await fn(it); } catch { /* 개별 실패는 무시 */ } }
+  });
+  await Promise.all(workers);
+}
+
+// ── 전문 분리 저장: news.json(목록·리드) + bodies/<id>.json(전문) ──
+// 목록 파일이 기사 수에 비례해 수 MB 로 불어나지 않게, 긴 본문은 기사별 파일로
+// 떼어 두고 앱은 기사를 열 때 그 파일만 받는다.
+const BODY_DIR = new URL('../bodies/', import.meta.url);
+const LEAD_MAX = 420;
+const bodyFile = (id) => new URL(`${id}.json`, BODY_DIR);
+export function leadOf(body) {
+  const paras = String(body || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  let out = '';
+  for (const p of paras) {
+    if (!out) out = p; else if (out.length < 180) out += '\n\n' + p; else break;
+    if (out.length >= LEAD_MAX) break;
+  }
+  return out.length > LEAD_MAX ? out.slice(0, LEAD_MAX - 1).trimEnd() + '…' : out;
+}
+async function restoreBodies(list) {
+  await pool(list.filter((a) => a.b), 16, async (a) => {
+    try {
+      const j = JSON.parse(await readFile(bodyFile(a.id), 'utf8'));
+      if (j && j.body) a.body = j.body;
+    } catch { /* 파일이 없으면 리드만으로 계속 */ }
+  });
+}
+// 긴 본문은 파일로 쓰고(내용이 같으면 건너뜀) 목록용 사본에는 리드만 남긴다.
+async function splitBodies(list) {
+  await mkdir(BODY_DIR, { recursive: true });
+  const keep = new Set();
+  let written = 0;
+  const out = [];
+  for (const a of list) {
+    const body = a.body || '';
+    if (body.length > LEAD_MAX + 80) {
+      keep.add(`${a.id}.json`);
+      const json = JSON.stringify({ id: a.id, body });
+      let same = false;
+      try { same = (await readFile(bodyFile(a.id), 'utf8')) === json; } catch {}
+      if (!same) { await writeFile(bodyFile(a.id), json); written++; }
+      const { fetchedLen, ...rest } = a;
+      out.push({ ...rest, body: leadOf(body), b: 1, bl: body.length });
+    } else {
+      const { b, bl, fetchedLen, ...rest } = a;
+      out.push(rest);
+    }
+  }
+  // 아카이브에서 빠진 기사의 본문 파일 정리
+  let removed = 0;
+  try {
+    for (const f of await readdir(BODY_DIR)) {
+      if (f.endsWith('.json') && !keep.has(f)) { await unlink(new URL(f, BODY_DIR)); removed++; }
+    }
+  } catch {}
+  console.log(`bodies: ${keep.size} files (${written} written, ${removed} removed)`);
+  return out;
+}
+
 function dedupe(list) {
   const seen = new Set(), out = [];
   for (const a of list) {
@@ -1112,11 +1411,29 @@ function dedupe(list) {
   return out;
 }
 
+// 영문 검색어는 미국판 구글 뉴스(en-US)로 조회한다 — 한국판(ko-KR)으로 영문을
+// 검색하면 글로벌 매체(Bloomberg·Reuters·PEI·PE Hub 등) 기사가 거의 나오지 않는다.
+// 영문은 결과가 많아 최신순 상위 N건만 쓰고, 503/429 는 물러났다가 재시도한다.
+const EN_PER_QUERY = 30;
 async function fetchQuery(q) {
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 KBGIS-collector' } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return parseFeed(await res.text());
+  const en = !/[가-힣]/.test(q);
+  const loc = en ? 'hl=en-US&gl=US&ceid=US:en' : 'hl=ko&gl=KR&ceid=KR:ko';
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&${loc}`;
+  let lastErr;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 KBGIS-collector' }, signal: AbortSignal.timeout(20000) });
+      if (res.ok) {
+        const items = parseFeed(await res.text());
+        if (!en) return items;
+        return items.sort((a, b) => (Date.parse(b.pub) || 0) - (Date.parse(a.pub) || 0)).slice(0, EN_PER_QUERY);
+      }
+      lastErr = new Error(`HTTP ${res.status}`);
+      if (![429, 500, 502, 503].includes(res.status)) break;
+    } catch (e) { lastErr = e; }
+    await new Promise((r) => setTimeout(r, 2500 * (i + 1)));
+  }
+  throw lastErr || new Error('fetch failed');
 }
 
 async function main() {
@@ -1133,6 +1450,9 @@ async function main() {
 
   let prev = [];
   try { prev = JSON.parse(await readFile(new URL('../news.json', import.meta.url), 'utf8')); } catch {}
+  // news.json 에는 리드만 두고 전문은 bodies/<id>.json 에 따로 둔다(목록 로딩을 가볍게).
+  // 수집기 안에서는 예전처럼 전문을 들고 다니도록 파일에서 복원한다.
+  await restoreBodies(prev);
   // 보관된 과거 기사도 강화된 관련성 기준으로 다시 거릅니다(상장주식·국내 잡음 제거).
   // 단, (1) 수동 고정(pinned) 기사와 (2) 추적 대상 기관의 조직/인사 변경 뉴스는
   // 펀드 키워드가 없어도 보존합니다(예: 국민연금 '기금운용과' 신설).
@@ -1141,7 +1461,10 @@ async function main() {
     const txt = `${p.ko || ''} ${p.body || ''}`;
     if (p.pinned) return true;
     if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt) || MOVE_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
-    return isRelevant({ title: p.ko || '', desc: p.body || '' });
+    // 수집 시점(제목 + RSS 요약)과 같은 기준으로 다시 본다. 전문 본문 전체로 검사하면
+    // 본문 속 '주가·코스피·환율' 같은 단어에 걸려 멀쩡한 기사가 다음 회차에 빠졌다가
+    // 다시 수집되기를 반복한다(목록 깜빡임).
+    return isRelevant({ title: p.ko || '', desc: (p.body || '').slice(0, 200) });
   });
   if (before !== prev.length) console.log(`archive re-filtered: ${before} -> ${prev.length}`);
   const prevById = new Map(prev.map(p => [p.id, p]));
@@ -1151,8 +1474,9 @@ async function main() {
   // 최신 기사를 먼저 해석·크롤링합니다 — 피드 상단(사용자가 먼저 여는 기사)이
   // 실제 URL·본문을 갖도록 하여, 예산 안에서 우선순위를 둔다.
   all.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
-  let fetchBudget = 170, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
-  let readerBudget = 45, readerHits = 0;               // jina 리더 폴백 예산(회당)
+  let fetchBudget = 260, llmBudget = LLM_BUDGET, fetched = 0, summarized = 0, resolved = 0;
+  let readerBudget = 70, readerHits = 0;               // jina 리더 폴백 예산(회당)
+  const toFetch = [];                                  // 이번 회차에 본문을 새로 받을 기사
   for (const a of all) {
     const old = prevById.get(a.id);
     const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
@@ -1172,18 +1496,23 @@ async function main() {
     }
     if (fetchBudget <= 0) continue;
     fetchBudget--;
-    // 새 Google 뉴스 URL(CBMi…)을 실제 기사 주소로 해석한 뒤 본문을 크롤링.
-    // 해석에 실패하면(여전히 google.com) 본문을 긁지 않는다 — 구글 인터스티셜
-    // 페이지 텍스트가 가짜 본문으로 저장되는 것을 막는다(다음 회차에 재시도).
+    toFetch.push(a);
+  }
+  // 본문 크롤링은 5개씩 병렬로 — 순차 처리 대비 수집 시간을 크게 줄인다.
+  // 새 Google 뉴스 URL(CBMi…)은 실제 기사 주소로 해석한 뒤 크롤링하고, 해석에
+  // 실패하면(여전히 google.com) 긁지 않는다 — 구글 인터스티셜 텍스트가 가짜 본문으로
+  // 저장되는 것을 막는다(다음 회차에 재시도).
+  await pool(toFetch, 5, async (a) => {
     let canFetch = true;
     if (/news\.google\.com/.test(a.url)) {
       const real = await resolveGoogleNewsUrlAsync(a.url);
       if (real && !/news\.google\.com/.test(real)) { a.url = real; resolved++; }
       else canFetch = false;
     }
-    const fr = canFetch ? await fetchArticleText(a.url) : { text: '' };
-    if (fr.dead) { a.linkDead = true; continue; }      // 존재하지 않는 기사(404/410) → 피드에서 제외
+    const fr = canFetch ? await fetchArticleText(a.url, a.ko) : { text: '' };
+    if (fr.dead) { a.linkDead = true; return; }        // 존재하지 않는 기사(404/410) → 피드에서 제외
     if (fr.ok) a.linkOk = true;                        // 링크 생존 확인 → 검증 패스 재확인 생략
+    if (fr.paywalled) a.paywalled = true;              // 유료 기사 — 앱에서 '리드만 제공' 표시
     let text = fr.text;
     // 직접 크롤링이 리드 요약(짧은 본문)만 얻으면 jina 리더로 전문 재시도 —
     // 봇차단·특수 마크업 사이트의 '문장 중간에 끊기는 본문'을 해소한다.
@@ -1196,7 +1525,14 @@ async function main() {
       a.body = text;
       a.ai = extractiveSummary(text);
       a.fetched = true;
+      a.fetchedLen = text.length;
       fetched++;
+    }
+  });
+  // LLM 요약/번역은 키 공유·레이트리밋 때문에 순차로, 예산 안에서만.
+  for (const a of toFetch) {
+    if (!a.fetched || !a.body) continue;
+    {
       if (GEMINI_API_KEY && llmBudget > 0) {           // 본문 근거 LLM 요약/번역 (본문 있을 때만)
         if (a.lang === 'en') {                         // 영문 → 한글 번역 + 요약
           const r = await translateAndSummarize(a.ko, a.body);
@@ -1221,23 +1557,27 @@ async function main() {
   // 정상 링크는 linkOk 로 기록해 재확인하지 않는다(수일 내 전체 검증 완료).
   // 검증 중 본문을 확보하면 덤으로 저장한다(본문 커버리지 확대).
   const allIds = new Set(all.map(a => a.id));
-  let verifyBudget = 40, deadArchived = 0, verifiedOk = 0;
-  for (const p of prev) {
-    if (verifyBudget <= 0) break;
-    if (allIds.has(p.id) || p.pinned || p.linkOk || p.linkDead) continue;
-    if (!p.url || !/^https?:\/\//.test(p.url) || /news\.google\.com/.test(p.url)) continue;
-    verifyBudget--;
-    const chk = await fetchArticleText(p.url);
-    if (chk.dead) { p.linkDead = true; deadArchived++; continue; }
-    if (chk.ok) {
-      p.linkOk = true; verifiedOk++;
-      if (!p.fetched && chk.text && chk.text.length > 120) {   // 본문 백필
-        p.body = chk.text; p.ai = extractiveSummary(chk.text); p.fetched = true;
-      }
+  let deadArchived = 0, verifiedOk = 0, upgraded = 0;
+  // (a) 아직 검증 안 된 링크 + (b) 본문이 리드 수준(짧음)인 보관 기사 — 새 추출
+  //     엔진으로 다시 받아 전문으로 바꾼다. 회차당 예산 안에서 최신순으로 처리하므로
+  //     몇 회차면 아카이브 전체가 전문으로 채워진다. 유료 기사는 반복 시도하지 않는다.
+  const realUrl = (p) => p.url && /^https?:\/\//.test(p.url) && !/news\.google\.com/.test(p.url);
+  const recheck = prev
+    .filter(p => !allIds.has(p.id) && !p.pinned && !p.linkDead && realUrl(p))
+    .filter(p => !p.linkOk || (!p.paywalled && (p.body || '').length < 400 && (p.upgradeTries || 0) < 3))
+    .slice(0, 90);
+  await pool(recheck, 5, async (p) => {
+    const chk = await fetchArticleText(p.url, p.ko);
+    if (chk.dead) { p.linkDead = true; deadArchived++; return; }
+    if (!chk.ok) return;                               // 403·타임아웃 등은 다음 회차에 재시도
+    if (!p.linkOk) { p.linkOk = true; verifiedOk++; }
+    if (chk.paywalled) p.paywalled = true;
+    p.upgradeTries = (p.upgradeTries || 0) + 1;
+    if (chk.text && chk.text.length > (p.body || '').length + 120) {   // 더 충실한 본문이면 교체
+      p.body = chk.text; p.ai = extractiveSummary(chk.text); p.fetched = true; upgraded++;
     }
-    // ok 도 dead 도 아니면(403·타임아웃 등) 다음 회차에 재시도
-  }
-  if (deadArchived || verifiedOk) console.log(`archive link-check: ${verifiedOk} ok, ${deadArchived} dead removed`);
+  });
+  if (deadArchived || verifiedOk || upgraded) console.log(`archive re-check: ${verifiedOk} verified, ${upgraded} bodies upgraded, ${deadArchived} dead removed`);
 
   // 관련성 필터를 통과한 최근 3개월(92일) 기사를 모두 노출합니다. 본문 크롤링
   // 여부와 무관하게 기사를 유지합니다 — 본문은 예산(fetchBudget) 안에서 회차마다
@@ -1252,14 +1592,28 @@ async function main() {
     .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/소프트404) 제외
     .filter(a => !SOURCE_BLOCK_RE.test(a.source || '') && !SOURCE_BLOCK_RE.test(a.url || ''))  // 깨진 링크 매체 제외(기존 보관분 포함)
     .filter(inWindow)
-    .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0))
-    .slice(0, 600);
+    .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  // 아카이브 상한 — 전체 1,000건, 영문은 450건까지(영문 결과가 많아 국내 LP 기사를
+  // 밀어내지 않도록). 최신순으로 채운다.
+  const ARCHIVE_MAX = 1000, EN_MAX = 450;
+  { let en = 0; const kept = [];
+    for (const a of merged) {
+      if (kept.length >= ARCHIVE_MAX) break;
+      if (a.lang === 'en' && !a.translated) { if (en >= EN_MAX) continue; en++; }
+      kept.push(a);
+    }
+    merged.length = 0; merged.push(...kept); }
   // 저장 직전 전체 아카이브 위생 패스 — 이번 회차에 재수집되지 않은 보관분에도
   // 최신 위젯/푸터 필터를 소급 적용한다(필터가 개선될 때마다 과거분도 정화).
   let sanitized = 0;
   for (const a of merged) {
+    if (a.body && (a.body.match(/\uFFFD/g) || []).length > 20) {
+      // 인코딩이 깨진 채 저장된 본문 — 버리고 다음 회차에 올바른 인코딩으로 재수집
+      a.body = ''; a.fetched = false; a.upgradeTries = 0; sanitized++;
+    }
     if (a.body) {
-      const c = stripSiteFooter(a.body);
+      // 앱과 같은 정제 규칙(article-clean.js)을 보관분에도 소급 적용
+      const c = AC.clean(stripSiteFooter(a.body).split(/\n+/), { title: a.ko }).paragraphs.join('\n\n');
       if (c !== a.body) { a.body = c; sanitized++; }
       if (a.fetched && c.length < 120) a.fetched = false;   // 정리 후 본문이 사라지면 재크롤 대상
     }
@@ -1271,7 +1625,10 @@ async function main() {
     }
   }
   if (sanitized) console.log(`archive sanitized: ${sanitized} bodies re-cleaned`);
-  await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(merged, null, 0));
+  // 목록(news.json)은 리드만, 전문은 bodies/ 로 분리 저장. 이후 인사이트·투자내역
+  // 추출은 전문이 담긴 merged 를 그대로 쓴다.
+  const listing = await splitBodies(merged);
+  await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(listing, null, 0));
   console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);
 
   // CIO·자산군 수익률 인사이트 자동 갱신(insights.json). 기존 값은 새 추출이
@@ -1312,6 +1669,13 @@ async function main() {
   const fr = buildFundraising(merged);
   await writeFile(new URL('../fundraising.json', import.meta.url), JSON.stringify(fr, null, 0));
   console.log(`fundraising: ${fr.count} events`);
+
+  // 투자내역 트래커(investments.json) — 기관별 출자·인수·대출 등 누적 DB.
+  let prevInv = [];
+  try { prevInv = (JSON.parse(await readFile(new URL('../investments.json', import.meta.url), 'utf8')).items) || []; } catch {}
+  const inv = buildInvestments(merged, prevInv);
+  await writeFile(new URL('../investments.json', import.meta.url), JSON.stringify(inv, null, 0));
+  console.log(`investments: ${inv.count} events (+${inv.added} new), overseas ${inv.items.filter(e => e.overseas).length}`);
 }
 
 function selftest() {
@@ -1389,8 +1753,38 @@ function selftest() {
     && au3 === null && au4 === null;
   console.log(`aum: ${JSON.stringify(au1)} ${JSON.stringify(au2)} noCue=${au3}`);
   console.log(`extract: cio1=${JSON.stringify(cio1)} cio2.status=${cio2 && cio2.status} ret1=${JSON.stringify(ret1)}`);
-  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7;
-  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7})`);
+  // 투자내역 추출 — 주체·행위·역할 판정 회귀 테스트
+  const G = (t) => extractDeals({ id: 'x', ko: t, cat: 'GP', instType: '해외 GP', asset: 'PE', region: 'US', body: '', date: '09.27', ts: '2026-09-27' });
+  const L = (t) => extractDeals({ id: 'x', ko: t, cat: 'LP', instType: '연기금', asset: 'RE', region: 'US', body: '', date: '09.27', ts: '2026-09-27' });
+  const dealCases = [
+    [L, '국민연금, 美 물류센터에 3억달러 투자', '국민연금:투자'],
+    [L, '교직원공제회, 블랙스톤 인프라 펀드에 2억달러 출자', '한국교직원공제회:펀드 출자'],
+    [L, '행정공제회·군인공제회, 유럽 부동산 대출펀드 3000억 약정', '대한지방행정공제회:펀드 출자,군인공제회:펀드 출자'],
+    [L, '과학기술인공제회, 해외 세컨더리 위탁운용사 3곳 선정', '과학기술인공제회:세컨더리'],
+    [L, '교직원공제회, 3000억 규모 블라인드 PEF 출자사업 공고', '한국교직원공제회:출자사업 공고'],
+    [L, '국민연금 1점에 움직이는 운용사들…‘전주 거점’ 경쟁 본격화', ''],
+    [L, '달라진 국민연금 투자…인프라·사모대출에 몰렸다 [국민연금 대체투자 지도]①', ''],
+    [G, '블랙스톤 이사 조셉 바라타, 1,238만 달러 상당 주식 매각', ''],
+    [G, '원오크, 아폴로로부터 90억 달러 투자 유치 완료', 'Apollo:투자'],
+    [G, '아다니, 테마섹·블랙록 등 컨소시엄에 공항 사업부 지분 매각키로', 'BlackRock:인수'],
+    [G, '삼성SDS, AI·로봇·물류 10조 투자 시동…KKR과 M&A 물색', ''],
+    [G, 'Company X sells logistics portfolio to Blackstone for $1.2 billion', 'Blackstone:인수'],
+  ];
+  const dealFails = dealCases.filter(([f, t, exp]) => f(t).map((e) => `${e.inst}:${e.kind}`).join(',') !== exp);
+  const amt = [dealAmount('75조 굴리는 국민연금'), dealAmount('주당 A$2.50 인수'), dealAmount('KKR, 21억 달러 레버리지 론')];
+  const ok8 = dealFails.length === 0 && amt[0] === '' && amt[1] === '' && amt[2] === '21억 달러';
+  if (dealFails.length) console.log('deal FAIL:', dealFails.map((x) => x[1]).join(' | '));
+  console.log(`deals: ${dealCases.length - dealFails.length}/${dealCases.length} ok`);
+
+  // 본문 추출·정제 — JSON-LD 본문에서 바이라인·이메일·저작권 꼬리 제거, 리드 분리
+  const html = '<html><head><script type="application/ld+json">{"@type":"NewsArticle","articleBody":"(서울=연합뉴스) 홍길동 기자 = 행정공제회가 유럽 부동산 대출 펀드에 2000억원을 약정했다.\\n행정공제회는 이번 약정으로 해외 부동산 대출 비중을 늘린다. 업계는 금리 하락기를 대비한 포석으로 본다.\\nhong@yna.co.kr\\nⓒ 연합뉴스 무단전재 금지"}</script></head><body><p>x</p></body></html>';
+  const ex = extractArticle(html, '행정공제회, 유럽 부동산 대출펀드 2000억 약정');
+  const lead = leadOf('가'.repeat(300) + '\n\n' + '나'.repeat(300));
+  const ok9 = ex.text.startsWith('행정공제회가') && !/@|ⓒ|기자 =/.test(ex.text) && ex.text.split('\n\n').length === 2 && lead.length <= LEAD_MAX;
+  console.log(`extract: via=${ex.via} paras=${ex.text.split('\n\n').length} readability=${!!Readability}`);
+
+  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9;
+  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7} ok8=${ok8} ok9=${ok9})`);
   if (!all7) process.exit(1);
 }
 

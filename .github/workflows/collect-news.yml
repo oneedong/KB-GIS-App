@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [ main ]
-    paths: [ 'scripts/collect-news.mjs', '.github/workflows/collect-news.yml' ]
+    paths: [ 'scripts/collect-news.mjs', 'article-clean.js', 'package.json', '.github/workflows/collect-news.yml' ]
 
 permissions:
   contents: write
@@ -23,6 +23,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+      # 본문 추출 엔진(Readability + linkedom) — package-lock.json 기준 설치
+      - name: Install extractor deps
+        run: npm ci --omit=dev --no-audit --no-fund
       - name: Collect
         run: node scripts/collect-news.mjs
         env:
@@ -33,8 +37,8 @@ jobs:
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          if ! git diff --quiet news.json insights.json institutions.json fundraising.json; then
-            git add news.json insights.json institutions.json fundraising.json
+          git add -A news.json insights.json institutions.json fundraising.json investments.json bodies
+          if ! git diff --cached --quiet; then
             git commit -m "chore: refresh news feed [skip ci]"
             # 수집이 길어진 사이 main 이 앞서가면 리베이스 후 재시도 (푸시 경합 방지)
             for i in 1 2 3; do

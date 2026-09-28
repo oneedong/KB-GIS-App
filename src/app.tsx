@@ -135,7 +135,10 @@ function App() {
   const [gpTab, setGpTab] = useState('list');
   const [gpQuery, setGpQuery] = useState('');
   const [dealRole, setDealRole] = useState('all');
-  const [dealView, setDealView] = useState('date');
+  const [dealView, setDealView] = useState('table');
+  const [dealQuery, setDealQuery] = useState('');
+  const [homeQuery, setHomeQuery] = useState('');
+  const [bmQuery, setBmQuery] = useState('');
   const [termSel, setTermSel] = useState(null);
   const [learnFocus, setLearnFocus] = useState(null);
 
@@ -303,13 +306,31 @@ function App() {
     if (REGION[f]) return (i) => i.region === f;
     return (i) => i.inst === f;
   })();
-  const feedItems = items.filter(filterFn);
+  // 목록 안 검색(한글 표기·영문 표기 모두 맞춤)
+  const textHit = (qq) => {
+    const a = qq.trim().toLowerCase();
+    if (!a) return () => true;
+    const b = (nm(qq.trim()) || '').toLowerCase();
+    return (i) => { const t = `${i.ko} ${nm(i.ko)} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel || ''}`.toLowerCase(); return t.includes(a) || (!!b && b !== a && t.includes(b)); };
+  };
+  const feedItems = items.filter(filterFn).filter(textHit(homeQuery));
   const isHomeTab = HOME_TABS.some(([k]) => k === filter);
   const filterLabel = ASSET[filter] ? ASSET[filter].label : REGION[filter] ? REGION[filter] : filter === 'EN' ? '영문 기사' : filter === '마켓' ? '시장 동향' : filter;
 
   const sel = (selectedId && byId.get(selectedId)) || (isDesktop ? feedItems[0] : null) || null;
 
   // ─── 화면 조각 ───────────────────────────────────────────
+  // 투자내역 공통 머리: 검색 + 보기 방식(최신순 / 기관별 / 기관별 표)
+  const dealBar = (lbl, ph) => (
+    <>
+      <SearchField value={dealQuery} onChange={setDealQuery} onClear={() => setDealQuery('')} placeholder={ph} />
+      <div style={{ display: 'flex', gap: 6, margin: '12px 0', flexWrap: 'wrap' }}>
+        <Chip active={dealView === 'table'} onClick={() => setDealView('table')}>{lbl}별 표</Chip>
+        <Chip active={dealView === 'inst'} onClick={() => setDealView('inst')}>{lbl}별</Chip>
+        <Chip active={dealView === 'date'} onClick={() => setDealView('date')}>최신순</Chip>
+      </div>
+    </>
+  );
   // 같은 소식은 한 건으로 묶어 보여 준다(북마크 목록은 그대로)
   const feedList = (list, opts = {}) => {
     const out = [];
@@ -346,6 +367,10 @@ function App() {
         <Tabs scroll pad={20} items={HOME_TABS.map(([k, l]) => [k, l])} value={isHomeTab ? filter : ''} onChange={(k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current) homeScroll.current.scrollTop = 0; }} />
       </div>
       <div ref={homeScroll} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ padding: '12px 20px 4px' }}>
+          <SearchField value={homeQuery} onChange={(v) => { setHomeQuery(v); setLimit(PAGE); }} onClear={() => setHomeQuery('')} placeholder={`${isHomeTab && filter !== '전체' ? (HOME_TABS.find(([k]) => k === filter) || [, ''])[1] + ' ' : ''}기사 안에서 검색`} />
+          {homeQuery.trim() && <div style={{ font: F(500, 12.5), color: KB.sub, marginTop: 8 }}>검색 결과 {feedItems.length}건</div>}
+        </div>
         {!isHomeTab && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', background: KB.yellowTint, borderBottom: `1px solid ${KB.yellowLine}` }}>
             <Ico n="filter" size={16} color={KB.gray} />
@@ -354,7 +379,7 @@ function App() {
             <span onClick={() => setFilter('전체')} style={{ marginLeft: 'auto', font: F(600, 13), color: KB.gray, cursor: 'pointer' }}>필터 해제</span>
           </div>
         )}
-        {filter === '전체' && (
+        {filter === '전체' && !homeQuery.trim() && (
           <div style={{ paddingBottom: 6 }}>
             <BriefDigest market={market} onOpen={() => setScreen('brief')} />
             <div style={{ height: 14 }}></div>
@@ -368,7 +393,7 @@ function App() {
           </div>
         )}
         {feedItems.length === 0
-          ? <Empty title={`${filterLabel} 관련 최근 기사가 없습니다`} desc="새 기사가 수집되면 자동으로 표시됩니다." />
+          ? (homeQuery.trim() ? <Empty compact title="검색 결과가 없습니다" desc="다른 단어로 검색하거나 상단 검색에서 전체 기사를 찾아보세요." /> : <Empty title={`${filterLabel} 관련 최근 기사가 없습니다`} desc="새 기사가 수집되면 자동으로 표시됩니다." />)
           : feedList(feedItems)}
         <div style={{ padding: '14px 20px 26px', font: F(400, 12, 1.7), color: KB.mute, textAlign: 'center' }}>
           기사 {items.length.toLocaleString('ko-KR')}건 · 국문·영문 뉴스 검색으로 3시간마다 수집{latestAt ? ` · 최근 ${latestAt}` : ''}
@@ -436,11 +461,8 @@ function App() {
             )}
             {lpTab === 'deals' && (
               <div style={{ padding: '16px 20px 30px' }}>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-                  <Chip active={dealView === 'date'} onClick={() => setDealView('date')}>최신순</Chip>
-                  <Chip active={dealView === 'inst'} onClick={() => setDealView('inst')}>기관별</Chip>
-                </div>
-                <DealList events={lpDeals} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 40 : null}
+                {dealBar('기관', '기관·상대방·거래 검색 (예: 국민연금, 인수)')}
+                <DealList events={lpDeals} query={dealQuery} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 40 : null}
                   emptyTitle="아직 수집된 국내 LP 투자내역이 없습니다" emptyDesc="기관의 출자·인수·위탁운용사 선정 기사가 나오면 자동으로 쌓입니다." />
               </div>
             )}
@@ -512,11 +534,8 @@ function App() {
             )}
             {gpTab === 'deals' && (
               <>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-                  <Chip active={dealView === 'date'} onClick={() => setDealView('date')}>최신순</Chip>
-                  <Chip active={dealView === 'inst'} onClick={() => setDealView('inst')}>운용사별</Chip>
-                </div>
-                <DealList events={gpDeals} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 40 : null} />
+                {dealBar('운용사', '운용사·자산·거래 검색 (예: Blackstone, 매각)')}
+                <DealList events={gpDeals} query={dealQuery} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 40 : null} />
               </>
             )}
             {gpTab === 'fr' && (
@@ -551,11 +570,8 @@ function App() {
       <Tabs items={[['all', '전체', invItems.length], ['LP', '국내 LP', lpDeals.length], ['GP', '해외 GP', gpDeals.length]]} value={dealRole} onChange={setDealRole} />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            <Chip active={dealView === 'date'} onClick={() => setDealView('date')}>최신순</Chip>
-            <Chip active={dealView === 'inst'} onClick={() => setDealView('inst')}>기관별</Chip>
-          </div>
-          <DealList key={dealRole} events={dealRole === 'all' ? invItems : invItems.filter((e) => e.role === dealRole)} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 50 : null} />
+          {dealBar(dealRole === 'GP' ? '운용사' : dealRole === 'LP' ? '기관' : '운용사·기관', '기관·운용사·거래 검색 (예: KKR, 출자, 국민연금)')}
+          <DealList key={dealRole} query={dealQuery} events={dealRole === 'all' ? invItems : invItems.filter((e) => e.role === dealRole)} onOpen={openDeal} onInst={openInst} showInst grouped={dealView} limit={dealView === 'date' ? 50 : null} />
           <div style={{ font: F(400, 12, 1.7), color: KB.mute, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${KB.line}` }}>
             기사 제목에 출자·인수·매각·펀드 결성 같은 행위가 명시된 경우에만 기록합니다. 금액은 기사 표기 그대로이며, 검토·협상 단계는 ‘추진·검토’로 따로 표시합니다. 같은 딜을 여러 매체가 보도하면 한 건으로 묶습니다.
           </div>
@@ -690,12 +706,15 @@ function App() {
     );
   })();
 
-  const bmItems = items.filter((i) => bm[i.id]);
+  const bmAll = items.filter((i) => bm[i.id]);
+  const bmItems = bmAll.filter(textHit(bmQuery));
   const bookmarksScreen = (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
-      <TopBar big title="북마크" sub={`저장한 기사 ${bmItems.length}건`} />
+      <TopBar big title="북마크" sub={`저장한 기사 ${bmAll.length}건`} />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {bmAll.length > 0 && <div style={{ padding: '12px 20px 4px' }}><SearchField value={bmQuery} onChange={setBmQuery} onClear={() => setBmQuery('')} placeholder="저장한 기사에서 검색" /></div>}
         {bmItems.length ? feedList(bmItems, { flat: true, all: true, noGroup: true })
+          : bmAll.length ? <Empty compact title="검색 결과가 없습니다" />
           : <Empty icon="bookmark" title="저장한 기사가 없습니다" desc="기사 목록의 북마크 아이콘을 눌러 나중에 볼 기사를 저장하세요." />}
       </div>
     </div>

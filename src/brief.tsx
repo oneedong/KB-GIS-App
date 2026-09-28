@@ -294,15 +294,30 @@ function BriefCalendar({ keys, value, onPick }) {
 }
 
 // ─── 시황 화면 ───────────────────────────────────────────────
+const BRIEF_SYN = {
+  나스닥: ['nasdaq'], 다우: ['dow'], 코스피: ['kospi'], 코스닥: ['kosdaq'], 환율: ['usd/krw', 'krw', 'won', '달러', '엔', '유로', 'dollar', 'yen'],
+  달러: ['dollar', 'usd'], 금리: ['rate', 'yield', 'fed', 'sofr', '국채', 'treasury'], 국채: ['treasury', 'yield'], 유가: ['oil', 'wti', 'brent', '원유'],
+  원유: ['oil', 'wti', 'brent'], 금값: ['gold', '금'], 비트코인: ['bitcoin', 'btc'], 연준: ['fed', 'fomc', 'powell'], 엔비디아: ['nvidia'],
+};
 function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBusy, onRefreshLive, onPick }) {
   const desktop = useDesktop();
   const [cal, setCal] = React.useState(false);
+  const [q, setQ] = React.useState('');
   const isLatest = !!(b && market && b.dateKey === market.dateKey);
   const heads = marketHeadlines(b && b.issues);
   const top = heads[0], points = heads.slice(1, 5), rest = heads.slice(5);
   const lv = isLatest ? live : null;
   const grid = desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px', alignItems: 'start' } : {};
   const col = (children) => <div style={{ minWidth: 0 }}>{children}</div>;
+  // 시황 안 검색: 뉴스 제목·출처, 지표 이름, 금리 테너
+  const qa = q.trim().toLowerCase(), qb = (nm(q.trim()) || '').toLowerCase();
+  // 한글로 찾아도 영문 제목·지표명이 걸리도록 자주 쓰는 말만 짝지어 둔다
+  const qx = (Object.entries(BRIEF_SYN).find(([k]) => qa && (qa.includes(k) || k.includes(qa))) || [, []])[1];
+  const hit = (s) => { const t = String(s || '').toLowerCase(); return !!qa && (t.includes(qa) || (!!qb && t.includes(qb)) || qx.some((w) => t.includes(w))); };
+  const qNews = qa ? heads.filter((h) => hit(`${h.title} ${nm(h.title)} ${h.source}`)) : [];
+  const qMk = qa && b ? [['국내증시', b.kr], ['해외증시', b.global], ['환율', b.fx], ['원자재', b.commodity], ['크립토', b.crypto], ['미국채', b.ust]]
+    .map(([t, rows]) => [t, (rows || []).filter((r) => hit(`${r.name} ${r.sym || ''} ${t}`))]).filter(([, r]) => r.length) : [];
+  const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
   const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg }}>
@@ -330,7 +345,42 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
       )}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 }}>
-          {!b ? <Empty title="아직 브리핑이 없습니다" desc="매일 아침 08시(KST)에 전일 시장을 정리해 올립니다." /> : (
+          {b && (
+            <div style={{ padding: desktop ? '0 0 14px' : '12px 20px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 10, border: desktop ? `1px solid ${KB.line}` : 'none' }}>
+                <Ico n="search" size={18} color={KB.mute} />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="시황 검색 (예: 나스닥, 환율, SOFR, 금리)"
+                  style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
+                {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer', display: 'flex' }}><Ico n="close" size={18} /></span>}
+              </div>
+            </div>
+          )}
+          {!b ? <Empty title="아직 브리핑이 없습니다" desc="매일 아침 08시(KST)에 전일 시장을 정리해 올립니다." /> : qa ? (
+            <>
+              <Section first title="지표" sub={`${qMk.reduce((n, [, r]) => n + r.length, 0) + qRates.length}건`}>
+                {qMk.length || qRates.length ? (
+                  <>
+                    {qMk.map(([t, rows]) => <div key={t} style={{ marginBottom: 10 }}><div style={{ font: F(700, 13), color: KB.gray, marginBottom: 2 }}>{t}</div><MarketTable rows={rows} live={lv} onPick={onPick} digits={t === '환율' ? 4 : undefined} /></div>)}
+                    {qRates.map((r, i) => (
+                      <div key={r.group + r.tenor + i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${KB.line2}` }}>
+                        <span style={{ flex: 1, font: F(500, 14.5), color: KB.ink }}>{r.group} {r.tenor}</span>
+                        <span style={{ font: F(700, 15), color: KB.ink }}>{r.rate.toFixed(3)}%</span>
+                        <span style={{ font: F(500, 11.5), color: KB.mute, minWidth: 78, textAlign: 'right' }}>{r.asOf}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : <div style={{ font: F(400, 13.5), color: KB.mute }}>일치하는 지표가 없음</div>}
+              </Section>
+              <Section title="시황 뉴스" sub={`${qNews.length}건`}>
+                {qNews.length ? qNews.map((it, i) => (
+                  <a key={i} href={it.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
+                    <div style={{ font: F(500, 14.5, 1.5), color: KB.ink }}>{nm(stripMedia(it.title, it.source))}</div>
+                    <div style={{ font: F(500, 12), color: KB.mute, marginTop: 5 }}>{it.source}</div>
+                  </a>
+                )) : <div style={{ font: F(400, 13.5), color: KB.mute }}>일치하는 뉴스가 없음</div>}
+              </Section>
+            </>
+          ) : (
             <>
               <Section first title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
                 {top ? (

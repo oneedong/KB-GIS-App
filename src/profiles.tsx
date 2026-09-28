@@ -54,11 +54,18 @@ function DealRow({ c, onOpen, showInst, onInst, first, compact }) {
 
 // ─── 투자내역 목록(필터 포함) ─────────────────────────────────
 // events: investments.json 의 항목 배열(최신순). grouped: 'date' | 'inst'
-function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDesc, defaultOverseas = false, grouped }) {
+// 검색어가 투자내역 한 건에 걸리는지(기관·상대방·행위·금액·제목, 한글 음역도 인정)
+function dealHit(e, q) {
+  if (!q) return true;
+  const t = `${e.inst} ${e.counterpart || ''} ${e.kind} ${e.amount || ''} ${e.title} ${nm(e.title)}`.toLowerCase();
+  const a = q.trim().toLowerCase(), b = (nm(q.trim()) || '').toLowerCase();
+  return t.includes(a) || (!!b && t.includes(b));
+}
+function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDesc, defaultOverseas = false, grouped, query }) {
   const [ov, setOv] = React.useState(defaultOverseas);
   const [fk, setFk] = React.useState('all');
   const [more, setMore] = React.useState(false);
-  const base = events || [];
+  const base = (events || []).filter((e) => dealHit(e, query));
   const filt = DEAL_FILTERS.find((f) => f[0] === fk);
   const list = base.filter((e) => (!ov || e.overseas) && (!filt[2] || filt[2].test(e.kind)));
   const clusters = clusterDeals(list);
@@ -67,7 +74,9 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
   const ovCount = base.filter((e) => e.overseas).length;
   let body;
   if (!clusters.length) {
-    body = <Empty compact icon="briefcase" title={emptyTitle || '해당하는 투자내역이 없습니다'} desc={emptyDesc} />;
+    body = <Empty compact icon="briefcase" title={query ? `'${query}' 검색 결과가 없습니다` : (emptyTitle || '해당하는 투자내역이 없습니다')} desc={query ? '' : emptyDesc} />;
+  } else if (grouped === 'table') {
+    body = <DealTable clusters={clusters} onOpen={onOpen} onInst={onInst} />;
   } else if (grouped === 'inst') {
     const by = {};
     clusters.forEach((c) => { (by[c.inst] = by[c.inst] || []).push(c); });
@@ -108,6 +117,100 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
           {clusters.length - limit}건 더 보기
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── 투자내역 표(기관·운용사별, 거래 유형별) ─────────────────────
+// 거래 유형 — 기사에서 뽑은 행위를 표의 열로 쓰기 좋게 묶는다
+const DEAL_TYPES = [
+  ['출자', /^펀드 출자$|^출자 유치$/],
+  ['결성', /^펀드 결성$/],
+  ['투자', /^투자$|^공동투자$/],
+  ['인수', /^인수$/],
+  ['매각', /^매각$/],
+  ['대출', /^대출/],
+  ['세컨더리', /^세컨더리$/],
+  ['출자사업·선정', /^출자사업$|^위탁운용사 선정$/],
+];
+const dealType = (kind) => (DEAL_TYPES.find(([, re]) => re.test(kind || '')) || ['기타'])[0];
+const ymLabel = (ms) => { const { y, m } = kstYMD(ms); return `${y}년 ${pad2(m)}월`; };
+const TH = { font: F(600, 12), color: KB.sub, textAlign: 'left', padding: '8px 6px', borderBottom: `1px solid ${KB.line}`, whiteSpace: 'nowrap', background: KB.band };
+const TD = { font: F(500, 13, 1.45), color: KB.ink2, padding: '9px 6px', borderBottom: `1px solid ${KB.line2}`, verticalAlign: 'top' };
+function DealTable({ clusters, onOpen, onInst }) {
+  const desktop = useDesktop();
+  const by = {};
+  clusters.forEach((c) => { (by[c.inst] = by[c.inst] || []).push(c); });
+  const insts = Object.keys(by).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b));
+  const typesUsed = DEAL_TYPES.map(([t]) => t).concat('기타').filter((t) => clusters.some((c) => dealType(c.lead.kind) === t));
+  const anchor = (name) => 'dt-' + name.replace(/[^0-9A-Za-z가-힣]/g, '');
+  const jump = (name) => { const el = document.getElementById(anchor(name)); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  return (
+    <div>
+      {/* 요약: 기관 × 거래 유형 건수 */}
+      <div style={{ font: F(700, 14), color: KB.ink, margin: '4px 0 8px' }}>기관별 거래 유형 요약 <span style={{ font: F(500, 12), color: KB.mute }}>이름을 누르면 해당 표로 이동</span></div>
+      <div style={{ overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 120 + typesUsed.length * 62 }}>
+          <thead><tr>
+            <th style={{ ...TH, position: 'sticky', left: 0, zIndex: 1 }}>기관</th>
+            {typesUsed.map((t) => <th key={t} style={{ ...TH, textAlign: 'center' }}>{t}</th>)}
+            <th style={{ ...TH, textAlign: 'center' }}>합계</th>
+          </tr></thead>
+          <tbody>
+            {insts.map((name) => (
+              <tr key={name} onClick={() => jump(name)} style={{ cursor: 'pointer' }}>
+                <td style={{ ...TD, font: F(600, 13), color: KB.ink, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: KB.card }}>{name}</td>
+                {typesUsed.map((t) => { const n = by[name].filter((c) => dealType(c.lead.kind) === t).length; return <td key={t} style={{ ...TD, textAlign: 'center', color: n ? KB.ink : KB.faint, font: n ? F(700, 13) : F(400, 13) }}>{n || '·'}</td>; })}
+                <td style={{ ...TD, textAlign: 'center', font: F(700, 13), color: KB.gray }}>{by[name].length}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* 기관별 상세 표: 거래 유형 → 시기(최신순) */}
+      {insts.map((name) => {
+        const rows = by[name].slice().sort((a, b) => {
+          const ta = DEAL_TYPES.findIndex(([t]) => t === dealType(a.lead.kind)), tb = DEAL_TYPES.findIndex(([t]) => t === dealType(b.lead.kind));
+          return ((ta < 0 ? 99 : ta) - (tb < 0 ? 99 : tb)) || (b.ms - a.ms);
+        });
+        const role = rows[0].role;
+        return (
+          <div key={name} id={anchor(name)} style={{ marginTop: 26, scrollMarginTop: 12 }}>
+            <div onClick={() => onInst && onInst(rows[0].lead)} style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, cursor: onInst ? 'pointer' : 'default' }}>
+              <span style={{ font: F(700, 16), color: KB.ink }}>{name}</span>
+              <Tag tone={role === 'GP' ? 'dark' : 'yellow'}>{role === 'GP' ? '해외 GP' : '국내 LP'}</Tag>
+              <span style={{ marginLeft: 'auto', font: F(600, 12.5), color: KB.sub }}>{rows.length}건</span>
+            </div>
+            <div style={{ overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: desktop ? 0 : 520 }}>
+                <colgroup><col style={{ width: 92 }} /><col style={{ width: 84 }} /><col /><col style={{ width: 92 }} /></colgroup>
+                <thead><tr><th style={TH}>거래 유형</th><th style={TH}>시기</th><th style={TH}>내용</th><th style={{ ...TH, textAlign: 'right' }}>금액</th></tr></thead>
+                <tbody>
+                  {rows.map((c, i) => {
+                    const t = dealType(c.lead.kind);
+                    const first = i === 0 || dealType(rows[i - 1].lead.kind) !== t;
+                    const span = first ? rows.filter((r) => dealType(r.lead.kind) === t).length : 0;
+                    const e = c.lead;
+                    return (
+                      <tr key={c.key + i} onClick={() => onOpen && onOpen(e)} style={{ cursor: 'pointer' }}>
+                        {first && <td rowSpan={span} style={{ ...TD, font: F(700, 13), color: KB.gray, background: KB.band, borderRight: `1px solid ${KB.line2}` }}>{t}{e.kind !== t && span === 1 ? <div style={{ font: F(500, 11), color: KB.mute }}>{e.kind}</div> : null}</td>}
+                        <td style={{ ...TD, whiteSpace: 'nowrap', font: F(500, 12.5), color: KB.sub }}>{ymLabel(c.ms)}</td>
+                        <td style={TD}>
+                          <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{nm(e.title)}</div>
+                          <div style={{ font: F(500, 11.5), color: KB.mute, marginTop: 3 }}>
+                            {[e.status && e.status !== '확정' ? e.status : '', e.counterpart ? (e.role === 'LP' ? `운용사 ${e.counterpart}` : `LP ${e.counterpart}`) : '', c.overseas ? '해외' : '', e.source].filter(Boolean).join(' · ')}
+                          </div>
+                        </td>
+                        <td style={{ ...TD, textAlign: 'right', font: F(700, 13), color: e.amount ? KB.gray : KB.faint }}>{e.amount || '–'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -507,19 +610,33 @@ function AllocBars({ rows, sel, onSelect }) {
 }
 
 function AllocView({ alloc, insights, onOpenLp }) {
-  const rows = (alloc && alloc.institutions) || [];
+  const all = (alloc && alloc.institutions) || [];
   const [sel, setSel] = React.useState(null);
+  const [q, setQ] = React.useState('');
+  const desktop = useDesktop();
+  const qa = q.trim().toLowerCase(), qb = (nm(q.trim()) || '').toLowerCase();
+  const hit = (s) => { if (!qa) return true; const t = String(s || '').toLowerCase(); return t.includes(qa) || (!!qb && t.includes(qb)); };
+  const rows = all.filter((r) => hit(`${r.name} ${r.group}`));
   const cur = rows.find((r) => r.name === sel) || rows[0];
-  if (!rows.length) return <Empty title="배분 데이터를 불러오는 중입니다" />;
-  const ins = insights || {};
+  if (!all.length) return <Empty title="배분 데이터를 불러오는 중입니다" />;
+  const ins0 = insights || {};
+  const ins = qa ? {
+    ...ins0,
+    cios: (ins0.cios || []).filter((c) => hit(`${c.inst} ${c.note} ${c.status}`)),
+    execs: (ins0.execs || []).filter((e) => hit(`${e.inst} ${e.title} ${e.person} ${e.action}`)),
+    relocations: (ins0.relocations || []).filter((m) => hit(`${m.inst} ${m.title} ${m.stage}`)),
+    aums: (ins0.aums || []).filter((x) => hit(x.inst)),
+    assetReturns: (ins0.assetReturns || []).filter((r) => hit(`${r.label} ${r.inst || ''}`)),
+  } : ins0;
   return (
     <>
+      <div style={desktop ? { padding: 4, marginBottom: 14, background: KB.card, borderRadius: 12, border: `1px solid ${KB.line}` } : { padding: '16px 20px 0' }}><SearchField value={q} onChange={setQ} onClear={() => setQ('')} placeholder="기관·인물·이슈 검색 (예: 국민연금, CIO, 전주)" /></div>
       <Section first title="기관별 대체투자 비중" sub={alloc.asOf}
         right={<span style={{ display: 'flex', alignItems: 'center', gap: 10, font: F(500, 12), color: KB.sub }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: KB.yellow }}></span>해외</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: KB.faint }}></span>전체</span>
         </span>}>
-        <AllocBars rows={rows} sel={cur && cur.name} onSelect={setSel} />
+        {rows.length ? <AllocBars rows={rows} sel={cur && cur.name} onSelect={setSel} /> : <Empty compact title="일치하는 기관이 없습니다" />}
         {cur && (
           <div style={{ marginTop: 16, padding: 16, border: `1px solid ${KB.line}`, borderRadius: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -700,15 +817,105 @@ function FundLine({ f, onOpenStage, first }) {
   );
 }
 
+// 펀드레이징 캘린더 — 펀드별 단계(모집 개시·1차·중간·파이널 클로즈)를 날짜에 찍는다
+const stageColor = (st) => (st === '파이널 클로즈' ? KB.ink : st === '모집 중' ? '#9FB0C2' : KB.yellow);
+function FrCalendar({ funds, onOpenStage, onGp }) {
+  const desktop = useDesktop();
+  const evs = [];
+  funds.forEach((f) => f.stages.forEach((st) => { const ms = itemMs(st); if (ms) evs.push({ f, st, ms, ...kstYMD(ms) }); }));
+  evs.sort((a, b) => b.ms - a.ms);
+  const latest = evs[0];
+  const [ym, setYm] = React.useState(() => (latest ? [latest.y, latest.m] : [2026, 1]));
+  const [day, setDay] = React.useState(null);
+  const [y, m] = ym;
+  const monthEvs = evs.filter((e) => e.y === y && e.m === m);
+  const byDay = {};
+  monthEvs.forEach((e) => { (byDay[e.d] = byDay[e.d] || []).push(e); });
+  const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  const move = (dm) => { const t = new Date(Date.UTC(y, m - 1 + dm, 1)); setYm([t.getUTCFullYear(), t.getUTCMonth() + 1]); setDay(null); };
+  const today = kstYMD(Date.now());
+  const shown = day ? (byDay[day] || []) : monthEvs;
+  const cellH = desktop ? 78 : 50;
+  let lastD = null;
+  return (
+    <div>
+      <div style={{ border: `1px solid ${KB.line}`, borderRadius: 12, background: KB.card, padding: desktop ? '12px 12px 10px' : '10px 6px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 8 }}>
+          <span onClick={() => move(-1)} style={{ cursor: 'pointer', color: KB.sub, transform: 'scaleX(-1)', display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
+          <span style={{ font: F(700, 16), color: KB.ink, minWidth: 110, textAlign: 'center' }}>{y}년 {pad2(m)}월</span>
+          <span onClick={() => move(1)} style={{ cursor: 'pointer', color: KB.sub, display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', textAlign: 'center' }}>
+          {['일', '월', '화', '수', '목', '금', '토'].map((w, i) => <div key={w} style={{ font: F(600, 12), color: i === 0 ? KB.up : i === 6 ? KB.down : KB.mute, padding: '4px 0 6px' }}>{w}</div>)}
+          {cells.map((d, i) => {
+            if (!d) return <div key={'e' + i} style={{ height: cellH, borderTop: `1px solid ${KB.line2}` }}></div>;
+            const list = byDay[d] || [];
+            const on = day === d, isToday = today.y === y && today.m === m && today.d === d;
+            return (
+              <div key={d} onClick={() => list.length && setDay(on ? null : d)} style={{ height: cellH, borderTop: `1px solid ${KB.line2}`, padding: '4px 2px', cursor: list.length ? 'pointer' : 'default', background: on ? KB.yellowTint : 'transparent', overflow: 'hidden', boxSizing: 'border-box' }}>
+                <div style={{ font: list.length ? F(700, 13) : F(500, 13), color: isToday ? KB.woodDeep : list.length ? KB.ink : KB.faint, textDecoration: isToday ? 'underline' : 'none' }}>{d}</div>
+                {desktop ? list.slice(0, 2).map((e, j) => (
+                  <div key={j} title={`${e.f.gp} · ${FR_LABEL[e.st.stage]}`} style={{ marginTop: 2, font: F(600, 10.5, 1.3), color: e.st.stage === '파이널 클로즈' ? '#fff' : KB.ink, background: e.st.stage === '파이널 클로즈' ? KB.ink : e.st.stage === '모집 중' ? '#E3E9F0' : KB.yellowTint, borderRadius: 4, padding: '1px 3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' }}>{e.f.gp}</div>
+                )) : (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4, flexWrap: 'wrap' }}>
+                    {list.slice(0, 3).map((e, j) => <span key={j} style={{ width: 6, height: 6, borderRadius: 3, background: stageColor(e.st.stage) }}></span>)}
+                  </div>
+                )}
+                {list.length > (desktop ? 2 : 3) && <div style={{ font: F(600, 10), color: KB.sub, marginTop: 1 }}>+{list.length - (desktop ? 2 : 3)}</div>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8, font: F(500, 11.5), color: KB.sub }}>
+          {[['모집 중', '모집 개시'], ['1차 클로즈', '1차·중간 클로즈'], ['파이널 클로즈', '파이널 클로즈']].map(([k, l]) => (
+            <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 4, background: stageColor(k) }}></span>{l}</span>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '18px 0 4px' }}>
+        <span style={{ font: F(700, 15), color: KB.ink }}>{day ? `${m}월 ${day}일` : `${y}년 ${pad2(m)}월 일정`}</span>
+        <span style={{ font: F(500, 12.5), color: KB.sub }}>{shown.length}건</span>
+        {day && <span onClick={() => setDay(null)} style={{ marginLeft: 'auto', font: F(600, 13), color: KB.gray, cursor: 'pointer' }}>이 달 전체 보기</span>}
+      </div>
+      {shown.length ? shown.map((e, i) => {
+        const head = !day && e.d !== lastD;
+        lastD = e.d;
+        return (
+          <React.Fragment key={e.f.fundKey + e.st.stage + i}>
+            {head && <div style={{ font: F(700, 12.5), color: KB.sub, padding: i ? '14px 0 2px' : '6px 0 2px' }}>{m}월 {e.d}일 ({['일', '월', '화', '수', '목', '금', '토'][new Date(Date.UTC(y, m - 1, e.d)).getUTCDay()]})</div>}
+            <div onClick={() => onOpenStage(e.st)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 0', borderTop: head ? 'none' : `1px solid ${KB.line2}`, cursor: 'pointer' }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: stageColor(e.st.stage), marginTop: 6, flexShrink: 0 }}></span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <Tag tone={frTone(e.st.stage)}>{FR_LABEL[e.st.stage]}</Tag>
+                  <span onClick={(ev) => { ev.stopPropagation(); onGp && onGp(e.f.gp); }} style={{ font: F(700, 14), color: KB.gray }}>{e.f.gp}</span>
+                  {e.st.size && <span style={{ font: F(700, 14), color: KB.ink }}>{e.st.size}</span>}
+                </div>
+                <div style={{ font: F(600, 14, 1.45), color: e.f.fund ? KB.ink : KB.ink2, marginTop: 4, wordBreak: 'keep-all' }}>{fundTitle(e.f)}<Unnamed f={e.f} /></div>
+                <div style={{ font: F(500, 12), color: KB.mute, marginTop: 3 }}>{e.st.dated ? '본문 기재일' : '첫 보도일'} · {e.st.source}{e.st.reports > 1 ? ` 외 ${e.st.reports - 1}건` : ''}</div>
+              </div>
+            </div>
+          </React.Fragment>
+        );
+      }) : <Empty compact icon="calendar" title="이 달에는 기록된 펀드레이징 일정이 없습니다" desc="화살표로 다른 달을 볼 수 있습니다." />}
+    </div>
+  );
+}
+
 function FundraisingView({ data, onOpen, onGp }) {
   const desktop = useDesktop();
-  const [tab, setTab] = React.useState('funds');
+  const [tab, setTab] = React.useState('gp');
   const [st, setSt] = React.useState('all');
   const [q, setQ] = React.useState('');
   const funds = (data && data.funds) || [];
   const items = (data && data.items) || [];
   const ql = q.trim().toLowerCase();
-  const byQ = (f) => !ql || `${f.gp} ${f.fund} ${f.strategy}`.toLowerCase().includes(ql);
+  const qn = (nm(q.trim()) || '').toLowerCase();
+  const hitS = (s) => { const t = String(s || '').toLowerCase(); return t.includes(ql) || (!!qn && qn !== ql && t.includes(qn)); };
+  const byQ = (f) => !ql || hitS(`${f.gp} ${f.fund || ''} ${f.strategy || ''} ${stratOf(f)} ${f.status} ${f.target || ''}`);
+  const feed = items.filter((f) => !ql || hitS(`${f.gp || ''} ${f.fund || ''} ${f.stage} ${f.title} ${nm(f.title)} ${f.tko || ''} ${f.source}`));
   const matchSt = (f) => st === 'all' || f.status === st || (st === '클로즈' && f.status !== '모집 중');
   const list = funds.filter((f) => matchSt(f) && byQ(f));
   const finals = funds.filter((f) => f.status === '파이널 클로즈' && byQ(f)).sort((a, b) => ((a.finalTs || '') < (b.finalTs || '') ? 1 : -1));
@@ -720,16 +927,18 @@ function FundraisingView({ data, onOpen, onGp }) {
   const search = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 10, marginBottom: 12 }}>
       <Ico n="search" size={18} color={KB.mute} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="운용사·펀드명·전략 검색" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="운용사·펀드명·전략 검색 (예: Carlyle, 인프라)" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
+      {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer', display: 'flex' }}><Ico n="close" size={18} /></span>}
     </div>
   );
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
       <TopBar big title="펀드레이징" sub={`운용사 ${gps.length}곳 · 펀드 ${funds.length}개(펀드명 확인 ${funds.filter((f) => f.fund).length}) · 보도 ${items.length}건${data && data.updatedAt ? ` · ${data.updatedAt} 갱신` : ''}`} border={false} />
-      <Tabs items={[['funds', '펀드별', funds.length], ['final', '파이널 클로즈', finals.length], ['gp', '운용사별', gps.length], ['feed', '최신 보도', items.length]]} value={tab} onChange={setTab} scroll pad={20} />
+      <Tabs items={[['gp', '운용사별', gps.length], ['funds', '펀드별', funds.filter(byQ).length], ['final', 'Final Closed', finals.length], ['feed', '최신 보도', feed.length], ['cal', '캘린더']]} value={tab} onChange={setTab} scroll pad={20} />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
-          {tab !== 'feed' && search}
+          {search}
+          {tab === 'cal' && <FrCalendar funds={funds.filter(byQ)} onOpenStage={openStage} onGp={onGp} />}
           {tab === 'funds' && (
             <>
               <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6 }}>
@@ -790,7 +999,8 @@ function FundraisingView({ data, onOpen, onGp }) {
               </div>
             );
           }) : <Empty compact icon="layers" title="해당하는 운용사가 없습니다" />)}
-          {tab === 'feed' && items.map((f, i) => (
+          {tab === 'feed' && !feed.length && <Empty compact icon="layers" title="해당하는 보도가 없습니다" />}
+          {tab === 'feed' && feed.map((f, i) => (
             <div key={f.key || f.id + i} onClick={() => onOpen(f.id, f)} style={{ padding: '14px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Tag tone={frTone(f.stage)}>{f.stage}</Tag>

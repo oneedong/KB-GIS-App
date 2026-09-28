@@ -225,7 +225,7 @@ const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-flash-lite-latest', 
 const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
-const TR_DAYS = 3;
+const TR_DAYS = 5;   // 번역은 최근 5일 기사만(이미 번역된 기사는 다시 하지 않음)
 const TITLE_BATCH = 30, TITLE_CALLS = 8, BODY_CALLS = 20, LLM_GAP_MS = 6500;
 let LLM_BLOCKED = false;
 const claudeOn = () => !!ANTHROPIC_API_KEY && !CLAUDE_BLOCKED;
@@ -365,7 +365,7 @@ async function fundPass(list) {
 // 영문 기사 번역 패스 — 제목(묶음) → 본문(최신 기사부터). 결과: a.tko(한글 제목), a.bodyKo = { h, p: [...] }
 async function translatePass(list) {
   if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) return { titles: 0, bodies: 0 };
-  // 번역은 최근 3일 기사만 — 그보다 오래된 기사는 새로 따라잡지 않는다(이미 된 번역은 유지)
+  // 번역은 최근 5일 기사만 — 그보다 오래된 기사는 새로 따라잡지 않는다(이미 된 번역은 유지)
   const cut = new Date(Date.now() - TR_DAYS * 86400000).toISOString();
   const en = list.filter((a) => a.lang === 'en' && (a.ts || '') >= cut).sort((x, y) => (x.ts < y.ts ? 1 : -1));
   let titles = 0, bodies = 0, calls = 0;
@@ -1115,7 +1115,9 @@ export function extractDeals(a) {
     if (role) {
       const cpLp = lpsIn(lead)[0];
       const clAmount = cl.text !== title ? dealAmount(cl.text) : '';
-      out.push({ ...base, kind: role.kind, amount: clAmount || amount, inst: g.inst, instType: '해외 GP', role: 'GP', counterpart: cpLp ? cpLp.inst : '', overseas: true });
+      // 펀드가 아닌 회사·자산 지분을 '약정(commit)'한 기사는 출자가 아니라 투자다 ("takes 24.7% of Eurowind, commits $2.3B")
+      const rk = role.kind === '펀드 출자' && !/\bfunds?\b|펀드|vehicle|programme/i.test(cl.text) && /\bstakes?\b|\bplatform\b|joint venture|\d+(?:\.\d+)?\s*%\s*(?:of|stake|interest)|지분|플랫폼/i.test(cl.text) ? '투자' : role.kind;
+      out.push({ ...base, kind: rk, amount: clAmount || amount, inst: g.inst, instType: '해외 GP', role: 'GP', counterpart: cpLp ? cpLp.inst : '', overseas: true });
     }
   }
   for (const e of out) e.key = `${e.inst}|${String(e.title).replace(/[^0-9A-Za-z가-힣]/g, '').slice(0, 28)}`;   // 한글 제목도 구분되게

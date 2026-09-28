@@ -121,7 +121,10 @@ function App() {
     const [gpTab, setGpTab] = useState('list');
     const [gpQuery, setGpQuery] = useState('');
     const [dealRole, setDealRole] = useState('all');
-    const [dealView, setDealView] = useState('date');
+    const [dealView, setDealView] = useState('table');
+    const [dealQuery, setDealQuery] = useState('');
+    const [homeQuery, setHomeQuery] = useState('');
+    const [bmQuery, setBmQuery] = useState('');
     const [termSel, setTermSel] = useState(null);
     const [learnFocus, setLearnFocus] = useState(null);
     const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches);
@@ -349,11 +352,30 @@ function App() {
             return (i) => i.region === f;
         return (i) => i.inst === f;
     })();
-    const feedItems = items.filter(filterFn);
+    // 목록 안 검색(한글 표기·영문 표기 모두 맞춤)
+    const textHit = (qq) => {
+        const a = qq.trim().toLowerCase();
+        if (!a)
+            return () => true;
+        const b = (nm(qq.trim()) || '').toLowerCase();
+        return (i) => { const t = `${i.ko} ${nm(i.ko)} ${i.tko || ''} ${i.inst} ${i.source} ${i.assetLabel || ''}`.toLowerCase(); return t.includes(a) || (!!b && b !== a && t.includes(b)); };
+    };
+    const feedItems = items.filter(filterFn).filter(textHit(homeQuery));
     const isHomeTab = HOME_TABS.some(([k]) => k === filter);
     const filterLabel = ASSET[filter] ? ASSET[filter].label : REGION[filter] ? REGION[filter] : filter === 'EN' ? '영문 기사' : filter === '마켓' ? '시장 동향' : filter;
     const sel = (selectedId && byId.get(selectedId)) || (isDesktop ? feedItems[0] : null) || null;
     // ─── 화면 조각 ───────────────────────────────────────────
+    // 투자내역 공통 머리: 검색 + 보기 방식(최신순 / 기관별 / 기관별 표)
+    const dealBar = (lbl, ph) => (React.createElement(React.Fragment, null,
+        React.createElement(SearchField, { value: dealQuery, onChange: setDealQuery, onClear: () => setDealQuery(''), placeholder: ph }),
+        React.createElement("div", { style: { display: 'flex', gap: 6, margin: '12px 0', flexWrap: 'wrap' } },
+            React.createElement(Chip, { active: dealView === 'table', onClick: () => setDealView('table') },
+                lbl,
+                "\uBCC4 \uD45C"),
+            React.createElement(Chip, { active: dealView === 'inst', onClick: () => setDealView('inst') },
+                lbl,
+                "\uBCC4"),
+            React.createElement(Chip, { active: dealView === 'date', onClick: () => setDealView('date') }, "\uCD5C\uC2E0\uC21C"))));
     // 같은 소식은 한 건으로 묶어 보여 준다(북마크 목록은 그대로)
     const feedList = (list, opts = {}) => {
         const out = [];
@@ -392,6 +414,12 @@ function App() {
             React.createElement(Tabs, { scroll: true, pad: 20, items: HOME_TABS.map(([k, l]) => [k, l]), value: isHomeTab ? filter : '', onChange: (k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current)
                     homeScroll.current.scrollTop = 0; } })),
         React.createElement("div", { ref: homeScroll, style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+            React.createElement("div", { style: { padding: '12px 20px 4px' } },
+                React.createElement(SearchField, { value: homeQuery, onChange: (v) => { setHomeQuery(v); setLimit(PAGE); }, onClear: () => setHomeQuery(''), placeholder: `${isHomeTab && filter !== '전체' ? (HOME_TABS.find(([k]) => k === filter) || [, ''])[1] + ' ' : ''}기사 안에서 검색` }),
+                homeQuery.trim() && React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 8 } },
+                    "\uAC80\uC0C9 \uACB0\uACFC ",
+                    feedItems.length,
+                    "\uAC74")),
             !isHomeTab && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', background: KB.yellowTint, borderBottom: `1px solid ${KB.yellowLine}` } },
                 React.createElement(Ico, { n: "filter", size: 16, color: KB.gray }),
                 React.createElement("span", { style: { font: F(600, 13.5), color: KB.ink } }, filterLabel),
@@ -399,7 +427,7 @@ function App() {
                     feedItems.length,
                     "\uAC74"),
                 React.createElement("span", { onClick: () => setFilter('전체'), style: { marginLeft: 'auto', font: F(600, 13), color: KB.gray, cursor: 'pointer' } }, "\uD544\uD130 \uD574\uC81C"))),
-            filter === '전체' && (React.createElement("div", { style: { paddingBottom: 6 } },
+            filter === '전체' && !homeQuery.trim() && (React.createElement("div", { style: { paddingBottom: 6 } },
                 React.createElement(BriefDigest, { market: market, onOpen: () => setScreen('brief') }),
                 React.createElement("div", { style: { height: 14 } }))),
             newCount > 0 && filter === '전체' && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', padding: '12px 20px', borderTop: `1px solid ${KB.line}` } },
@@ -410,7 +438,7 @@ function App() {
                     "\uAC74"),
                 React.createElement("span", { onClick: () => markSeen(items.map((i) => i.id)), style: { marginLeft: 'auto', font: F(600, 13), color: KB.sub, cursor: 'pointer' } }, "\uBAA8\uB450 \uD655\uC778"))),
             feedItems.length === 0
-                ? React.createElement(Empty, { title: `${filterLabel} 관련 최근 기사가 없습니다`, desc: "\uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9\uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4." })
+                ? (homeQuery.trim() ? React.createElement(Empty, { compact: true, title: "\uAC80\uC0C9 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB2E4\uB978 \uB2E8\uC5B4\uB85C \uAC80\uC0C9\uD558\uAC70\uB098 \uC0C1\uB2E8 \uAC80\uC0C9\uC5D0\uC11C \uC804\uCCB4 \uAE30\uC0AC\uB97C \uCC3E\uC544\uBCF4\uC138\uC694." }) : React.createElement(Empty, { title: `${filterLabel} 관련 최근 기사가 없습니다`, desc: "\uC0C8 \uAE30\uC0AC\uAC00 \uC218\uC9D1\uB418\uBA74 \uC790\uB3D9\uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4." }))
                 : feedList(feedItems),
             React.createElement("div", { style: { padding: '14px 20px 26px', font: F(400, 12, 1.7), color: KB.mute, textAlign: 'center' } },
                 "\uAE30\uC0AC ",
@@ -450,10 +478,8 @@ function App() {
                                 r.curated && React.createElement(Tag, { tone: "yellow" }, "\uAC80\uC99D")),
                             React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, marginTop: 4 } }, [r.group, r.aum ? `AUM ${fmtJo(r.aum)}` : '', r.arts ? `기사 ${r.arts}` : '', r.deals ? `투자내역 ${r.deals}${r.ov ? `(해외 ${r.ov})` : ''}` : ''].filter(Boolean).join(' · '))))))),
                     lpTab === 'deals' && (React.createElement("div", { style: { padding: '16px 20px 30px' } },
-                        React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 12 } },
-                            React.createElement(Chip, { active: dealView === 'date', onClick: () => setDealView('date') }, "\uCD5C\uC2E0\uC21C"),
-                            React.createElement(Chip, { active: dealView === 'inst', onClick: () => setDealView('inst') }, "\uAE30\uAD00\uBCC4")),
-                        React.createElement(DealList, { events: lpDeals, onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 40 : null, emptyTitle: "\uC544\uC9C1 \uC218\uC9D1\uB41C \uAD6D\uB0B4 LP \uD22C\uC790\uB0B4\uC5ED\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", emptyDesc: "\uAE30\uAD00\uC758 \uCD9C\uC790\u00B7\uC778\uC218\u00B7\uC704\uD0C1\uC6B4\uC6A9\uC0AC \uC120\uC815 \uAE30\uC0AC\uAC00 \uB098\uC624\uBA74 \uC790\uB3D9\uC73C\uB85C \uC313\uC785\uB2C8\uB2E4." }))),
+                        dealBar('기관', '기관·상대방·거래 검색 (예: 국민연금, 인수)'),
+                        React.createElement(DealList, { events: lpDeals, query: dealQuery, onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 40 : null, emptyTitle: "\uC544\uC9C1 \uC218\uC9D1\uB41C \uAD6D\uB0B4 LP \uD22C\uC790\uB0B4\uC5ED\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", emptyDesc: "\uAE30\uAD00\uC758 \uCD9C\uC790\u00B7\uC778\uC218\u00B7\uC704\uD0C1\uC6B4\uC6A9\uC0AC \uC120\uC815 \uAE30\uC0AC\uAC00 \uB098\uC624\uBA74 \uC790\uB3D9\uC73C\uB85C \uC313\uC785\uB2C8\uB2E4." }))),
                     lpTab === 'alloc' && React.createElement(AllocView, { alloc: alloc, insights: insights, onOpenLp: (n) => setLpSel(n) })))));
     })();
     // Global GP
@@ -502,10 +528,8 @@ function App() {
                                 React.createElement("span", { style: { font: F(700, 14), color: KB.ink } }, r.p.aum || '–')),
                             React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, marginTop: 4, paddingLeft: 30 } }, [(r.p.strengths || []).slice(0, 3).map((s) => (s.k && ASSET[s.k] ? ASSET[s.k].label : s.label)).filter(Boolean).join('·'), r.arts ? `기사 ${r.arts}` : '', r.deals ? `딜 ${r.deals}` : ''].filter(Boolean).join(' · '))))))),
                     gpTab === 'deals' && (React.createElement(React.Fragment, null,
-                        React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 12 } },
-                            React.createElement(Chip, { active: dealView === 'date', onClick: () => setDealView('date') }, "\uCD5C\uC2E0\uC21C"),
-                            React.createElement(Chip, { active: dealView === 'inst', onClick: () => setDealView('inst') }, "\uC6B4\uC6A9\uC0AC\uBCC4")),
-                        React.createElement(DealList, { events: gpDeals, onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 40 : null }))),
+                        dealBar('운용사', '운용사·자산·거래 검색 (예: Blackstone, 매각)'),
+                        React.createElement(DealList, { events: gpDeals, query: dealQuery, onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 40 : null }))),
                     gpTab === 'fr' && (frItems.length === 0 ? React.createElement(Empty, { compact: true, title: "\uC218\uC9D1\uB41C \uBAA8\uC9D1\u00B7\uD074\uB85C\uC9D5 \uC18C\uC2DD\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" }) : (React.createElement(React.Fragment, null,
                         frItems.map((f, i) => (React.createElement("div", { key: f.id + i, onClick: () => openArticle(f.id, f), style: { padding: '14px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' } },
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
@@ -523,10 +547,8 @@ function App() {
         React.createElement(Tabs, { items: [['all', '전체', invItems.length], ['LP', '국내 LP', lpDeals.length], ['GP', '해외 GP', gpDeals.length]], value: dealRole, onChange: setDealRole }),
         React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' } },
-                React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 12 } },
-                    React.createElement(Chip, { active: dealView === 'date', onClick: () => setDealView('date') }, "\uCD5C\uC2E0\uC21C"),
-                    React.createElement(Chip, { active: dealView === 'inst', onClick: () => setDealView('inst') }, "\uAE30\uAD00\uBCC4")),
-                React.createElement(DealList, { key: dealRole, events: dealRole === 'all' ? invItems : invItems.filter((e) => e.role === dealRole), onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 50 : null }),
+                dealBar(dealRole === 'GP' ? '운용사' : dealRole === 'LP' ? '기관' : '운용사·기관', '기관·운용사·거래 검색 (예: KKR, 출자, 국민연금)'),
+                React.createElement(DealList, { key: dealRole, query: dealQuery, events: dealRole === 'all' ? invItems : invItems.filter((e) => e.role === dealRole), onOpen: openDeal, onInst: openInst, showInst: true, grouped: dealView, limit: dealView === 'date' ? 50 : null }),
                 React.createElement("div", { style: { font: F(400, 12, 1.7), color: KB.mute, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${KB.line}` } }, "\uAE30\uC0AC \uC81C\uBAA9\uC5D0 \uCD9C\uC790\u00B7\uC778\uC218\u00B7\uB9E4\uAC01\u00B7\uD380\uB4DC \uACB0\uC131 \uAC19\uC740 \uD589\uC704\uAC00 \uBA85\uC2DC\uB41C \uACBD\uC6B0\uC5D0\uB9CC \uAE30\uB85D\uD569\uB2C8\uB2E4. \uAE08\uC561\uC740 \uAE30\uC0AC \uD45C\uAE30 \uADF8\uB300\uB85C\uC774\uBA70, \uAC80\uD1A0\u00B7\uD611\uC0C1 \uB2E8\uACC4\uB294 \u2018\uCD94\uC9C4\u00B7\uAC80\uD1A0\u2019\uB85C \uB530\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4. \uAC19\uC740 \uB51C\uC744 \uC5EC\uB7EC \uB9E4\uCCB4\uAC00 \uBCF4\uB3C4\uD558\uBA74 \uD55C \uAC74\uC73C\uB85C \uBB36\uC2B5\uB2C8\uB2E4.")))));
     // 전체 메뉴
     const groupCount = (g) => items.filter((i) => i.instGroup === g && i.cat !== '인사').length;
@@ -611,11 +633,16 @@ function App() {
                     "\uAC74"),
                 arts.length ? feedList(arts, { flat: true, all: arts.length <= 200 }) : React.createElement(Empty, { compact: true, title: "\uAC80\uC0C9 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4" }))))));
     })();
-    const bmItems = items.filter((i) => bm[i.id]);
+    const bmAll = items.filter((i) => bm[i.id]);
+    const bmItems = bmAll.filter(textHit(bmQuery));
     const bookmarksScreen = (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
-        React.createElement(TopBar, { big: true, title: "\uBD81\uB9C8\uD06C", sub: `저장한 기사 ${bmItems.length}건` }),
-        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } }, bmItems.length ? feedList(bmItems, { flat: true, all: true, noGroup: true })
-            : React.createElement(Empty, { icon: "bookmark", title: "\uC800\uC7A5\uD55C \uAE30\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uAE30\uC0AC \uBAA9\uB85D\uC758 \uBD81\uB9C8\uD06C \uC544\uC774\uCF58\uC744 \uB20C\uB7EC \uB098\uC911\uC5D0 \uBCFC \uAE30\uC0AC\uB97C \uC800\uC7A5\uD558\uC138\uC694." }))));
+        React.createElement(TopBar, { big: true, title: "\uBD81\uB9C8\uD06C", sub: `저장한 기사 ${bmAll.length}건` }),
+        React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+            bmAll.length > 0 && React.createElement("div", { style: { padding: '12px 20px 4px' } },
+                React.createElement(SearchField, { value: bmQuery, onChange: setBmQuery, onClear: () => setBmQuery(''), placeholder: "\uC800\uC7A5\uD55C \uAE30\uC0AC\uC5D0\uC11C \uAC80\uC0C9" })),
+            bmItems.length ? feedList(bmItems, { flat: true, all: true, noGroup: true })
+                : bmAll.length ? React.createElement(Empty, { compact: true, title: "\uAC80\uC0C9 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4" })
+                    : React.createElement(Empty, { icon: "bookmark", title: "\uC800\uC7A5\uD55C \uAE30\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uAE30\uC0AC \uBAA9\uB85D\uC758 \uBD81\uB9C8\uD06C \uC544\uC774\uCF58\uC744 \uB20C\uB7EC \uB098\uC911\uC5D0 \uBCFC \uAE30\uC0AC\uB97C \uC800\uC7A5\uD558\uC138\uC694." }))));
     const detail = (full) => sel && (React.createElement(ArticleDetail, { sel: sel, bookmarked: !!bm[sel.id], onToggleBm: () => toggleBm(sel.id), onShare: () => onShare(sel), onBack: () => setScreen(prevScreen), showBack: full, deals: dealsByArticle[sel.id] || [], onOpenDeal: openDeal, onOpenInst: (x) => openInst({ inst: x.inst, role: x.role, instType: x.instType }), onOpenTerm: openTerm, onDead: onDead }));
     const screens = {
         home: homeScreen, brief: briefScreen, korlp: lpScreen, gp: gpScreen, menu: menuScreen,

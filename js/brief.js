@@ -299,15 +299,30 @@ function BriefCalendar({ keys, value, onPick }) {
         React.createElement("div", { style: { font: F(500, 12), color: KB.mute, textAlign: 'center', marginTop: 8 } }, "\uC810\uC774 \uC788\uB294 \uB0A0\uC9DC\uB97C \uB204\uB974\uBA74 \uADF8\uB0A0 \uC2DC\uD669\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4")));
 }
 // ─── 시황 화면 ───────────────────────────────────────────────
+const BRIEF_SYN = {
+    나스닥: ['nasdaq'], 다우: ['dow'], 코스피: ['kospi'], 코스닥: ['kosdaq'], 환율: ['usd/krw', 'krw', 'won', '달러', '엔', '유로', 'dollar', 'yen'],
+    달러: ['dollar', 'usd'], 금리: ['rate', 'yield', 'fed', 'sofr', '국채', 'treasury'], 국채: ['treasury', 'yield'], 유가: ['oil', 'wti', 'brent', '원유'],
+    원유: ['oil', 'wti', 'brent'], 금값: ['gold', '금'], 비트코인: ['bitcoin', 'btc'], 연준: ['fed', 'fomc', 'powell'], 엔비디아: ['nvidia'],
+};
 function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBusy, onRefreshLive, onPick }) {
     const desktop = useDesktop();
     const [cal, setCal] = React.useState(false);
+    const [q, setQ] = React.useState('');
     const isLatest = !!(b && market && b.dateKey === market.dateKey);
     const heads = marketHeadlines(b && b.issues);
     const top = heads[0], points = heads.slice(1, 5), rest = heads.slice(5);
     const lv = isLatest ? live : null;
     const grid = desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px', alignItems: 'start' } : {};
     const col = (children) => React.createElement("div", { style: { minWidth: 0 } }, children);
+    // 시황 안 검색: 뉴스 제목·출처, 지표 이름, 금리 테너
+    const qa = q.trim().toLowerCase(), qb = (nm(q.trim()) || '').toLowerCase();
+    // 한글로 찾아도 영문 제목·지표명이 걸리도록 자주 쓰는 말만 짝지어 둔다
+    const qx = (Object.entries(BRIEF_SYN).find(([k]) => qa && (qa.includes(k) || k.includes(qa))) || [, []])[1];
+    const hit = (s) => { const t = String(s || '').toLowerCase(); return !!qa && (t.includes(qa) || (!!qb && t.includes(qb)) || qx.some((w) => t.includes(w))); };
+    const qNews = qa ? heads.filter((h) => hit(`${h.title} ${nm(h.title)} ${h.source}`)) : [];
+    const qMk = qa && b ? [['국내증시', b.kr], ['해외증시', b.global], ['환율', b.fx], ['원자재', b.commodity], ['크립토', b.crypto], ['미국채', b.ust]]
+        .map(([t, rows]) => [t, (rows || []).filter((r) => hit(`${r.name} ${r.sym || ''} ${t}`))]).filter(([, r]) => r.length) : [];
+    const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
     const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
         React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
@@ -327,58 +342,81 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
             cal && (React.createElement("div", { style: { maxWidth: 420, margin: '0 auto', padding: '0 16px 12px' } },
                 React.createElement(BriefCalendar, { keys: briefIndex.map((x) => x.dateKey), value: b && b.dateKey, onPick: (k) => { onSelectDate(k); setCal(false); } }))))),
         React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
-            React.createElement("div", { style: { maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 } }, !b ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." }) : (React.createElement(React.Fragment, null,
-                React.createElement(Section, { first: true, title: "\uD55C\uC904 \uC694\uC57D", sub: "\uC2DC\uC7A5\uC744 \uC6C0\uC9C1\uC778 \uD575\uC2EC \uB274\uC2A4" },
-                    top ? (React.createElement("a", { href: top.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } },
-                        React.createElement("div", { style: { font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(top.title, top.source))),
-                        React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 6 } }, top.source))) : React.createElement("div", { style: { font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } }, b.summary),
-                    React.createElement("div", { style: { font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
-                    points.length ? points.map((w, i) => (React.createElement("a", { key: i, href: w.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
-                        React.createElement("span", { style: { width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 } }),
-                        React.createElement("span", { style: { flex: 1 } },
-                            React.createElement("span", { style: { display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(w.title, w.source))),
-                            React.createElement("span", { style: { display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 } }, w.source))))) : (b.watch && b.watch.length ? b.watch.map((w, i) => React.createElement("div", { key: i, style: { font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' } },
-                        "\u00B7 ",
-                        w)) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC218\uC9D1\uB41C \uD575\uC2EC \uB274\uC2A4\uAC00 \uC5C6\uC74C"))),
-                React.createElement("div", { style: grid },
-                    col(React.createElement(React.Fragment, null,
-                        React.createElement(Section, { title: "\uAD6D\uB0B4\uC99D\uC2DC", sub: "\uB204\uB974\uBA74 5\uB144 \uCD94\uC774" },
-                            React.createElement(MarketTable, { rows: b.kr, live: lv, onPick: onPick })),
-                        React.createElement(Section, { title: "\uD574\uC678\uC99D\uC2DC" },
-                            React.createElement(MarketTable, { rows: b.global, live: lv, onPick: onPick })),
-                        React.createElement(Section, { title: "\uD658\uC728" },
-                            React.createElement(MarketTable, { rows: b.fx, live: lv, onPick: onPick, digits: 4 })),
-                        React.createElement(Section, { title: "\uC6D0\uC790\uC7AC", sub: "USD" },
-                            React.createElement(MarketTable, { rows: b.commodity, live: lv, onPick: onPick })),
-                        React.createElement(Section, { title: "\uD06C\uB9BD\uD1A0", sub: "USD \u00B7 \uC2E4\uC2DC\uAC04" },
-                            React.createElement(MarketTable, { rows: b.crypto, live: lv, onPick: onPick })))),
-                    col(React.createElement(React.Fragment, null,
-                        React.createElement(Section, { title: "\uAE30\uC900\uAE08\uB9AC" },
-                            React.createElement(RateLine, { first: true, label: "\uD55C\uAD6D (\uD55C\uAD6D\uC740\uD589)", value: b.rates && b.rates.kr && b.rates.kr.rate != null ? `${b.rates.kr.rate.toFixed(2)}%` : '', sub: b.rates && b.rates.kr ? `${b.rates.kr.asOf || ''} · ${b.rates.kr.src || '한국은행'}` : '이번 회차 수집 실패', href: b.rates && b.rates.kr && b.rates.kr.url }),
-                            React.createElement(RateLine, { label: "\uBBF8\uAD6D (FOMC \uBAA9\uD45C\uBC94\uC704)", value: b.rates && b.rates.us ? (b.rates.us.target || `${(b.rates.us.effr || 0).toFixed(2)}%`) : '', sub: b.rates && b.rates.us ? `EFFR ${b.rates.us.effr != null ? b.rates.us.effr.toFixed(2) + '%' : '–'} · ${b.rates.us.asOf || ''} · New York Fed` : '이번 회차 수집 실패' }),
-                            b.ust && b.ust[0] && b.ust[0].last != null && (React.createElement("div", { onClick: () => onPick(b.ust[0]), style: { cursor: 'pointer' } },
-                                React.createElement(RateLine, { label: b.ust[0].name, value: `${b.ust[0].last.toFixed(2)}%`, sub: `전일 대비 ${b.ust[0].chg >= 0 ? '+' : '−'}${Math.abs(b.ust[0].chg * 100).toFixed(0)}bp · 누르면 5년 추이` })))),
-                        React.createElement(Section, { title: "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA", sub: "\uC2E4\uBB34 \uC8FC\uC694 \uD14C\uB108" }, rateGroups.length ? rateGroups.map(([g, rows], gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 14 : 0 } },
-                            React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', font: F(700, 13.5), color: KB.gray, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` } },
-                                React.createElement("span", null, g),
-                                React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 11.5), color: KB.mute } }, rows[0].src)),
-                            rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
-                                React.createElement("span", { style: { flex: 1, font: F(500, 14.5), color: KB.ink } }, r.tenor),
-                                React.createElement("span", { style: { font: F(700, 15), color: KB.ink } },
-                                    r.rate.toFixed(3),
-                                    "%"),
-                                React.createElement("span", { style: { font: F(500, 11.5), color: KB.mute, minWidth: 78, textAlign: 'right' } }, r.asOf))))))) : React.createElement(Empty, { compact: true, title: "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C" })),
-                        React.createElement(Section, { title: "\uD658\uD5E4\uC9C0 \uBE44\uC6A9 \u00B7 \uC2A4\uC651\uD3EC\uC778\uD2B8" },
-                            React.createElement(HedgeBlock, { hedge: b.hedge }))))),
-                React.createElement(Section, { title: "\uADF8 \uBC16\uC758 \uC2DC\uD669 \uB274\uC2A4" },
-                    rest.length ? (React.createElement("div", { style: desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {} }, rest.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` } },
+            React.createElement("div", { style: { maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 } },
+                b && (React.createElement("div", { style: { padding: desktop ? '0 0 14px' : '12px 20px 0' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 10, border: desktop ? `1px solid ${KB.line}` : 'none' } },
+                        React.createElement(Ico, { n: "search", size: 18, color: KB.mute }),
+                        React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC2DC\uD669 \uAC80\uC0C9 (\uC608: \uB098\uC2A4\uB2E5, \uD658\uC728, SOFR, \uAE08\uB9AC)", style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } }),
+                        q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer', display: 'flex' } },
+                            React.createElement(Ico, { n: "close", size: 18 }))))),
+                !b ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." }) : qa ? (React.createElement(React.Fragment, null,
+                    React.createElement(Section, { first: true, title: "\uC9C0\uD45C", sub: `${qMk.reduce((n, [, r]) => n + r.length, 0) + qRates.length}건` }, qMk.length || qRates.length ? (React.createElement(React.Fragment, null,
+                        qMk.map(([t, rows]) => React.createElement("div", { key: t, style: { marginBottom: 10 } },
+                            React.createElement("div", { style: { font: F(700, 13), color: KB.gray, marginBottom: 2 } }, t),
+                            React.createElement(MarketTable, { rows: rows, live: lv, onPick: onPick, digits: t === '환율' ? 4 : undefined }))),
+                        qRates.map((r, i) => (React.createElement("div", { key: r.group + r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${KB.line2}` } },
+                            React.createElement("span", { style: { flex: 1, font: F(500, 14.5), color: KB.ink } },
+                                r.group,
+                                " ",
+                                r.tenor),
+                            React.createElement("span", { style: { font: F(700, 15), color: KB.ink } },
+                                r.rate.toFixed(3),
+                                "%"),
+                            React.createElement("span", { style: { font: F(500, 11.5), color: KB.mute, minWidth: 78, textAlign: 'right' } }, r.asOf)))))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC77C\uCE58\uD558\uB294 \uC9C0\uD45C\uAC00 \uC5C6\uC74C")),
+                    React.createElement(Section, { title: "\uC2DC\uD669 \uB274\uC2A4", sub: `${qNews.length}건` }, qNews.length ? qNews.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
                         React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(stripMedia(it.title, it.source))),
-                        React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC704 \uD575\uC2EC \uB274\uC2A4 \uC678 \uCD94\uAC00 \uAE30\uC0AC \uC5C6\uC74C"),
-                    (b.errors && b.errors.length > 0) && React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 12 } },
-                        "\u203B \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9 ",
-                        b.errors.length,
-                        "\uAC74 \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC74C"),
-                    React.createElement("div", { style: { font: F(400, 12, 1.8), color: KB.mute, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${KB.line}` } }, "\uCD9C\uCC98 \u00B7 \uC9C0\uC218\u00B7\uD658\uC728\u00B7\uC6D0\uC790\uC7AC\u00B7\uCD94\uC774 Yahoo Finance(\uD3F4\uBC31 Stooq) \u00B7 \uD06C\uB9BD\uD1A0 Binance(\uD3F4\uBC31 Coinbase) \u00B7 SOFR/EFFR\u00B7FOMC New York Fed \u00B7 SONIA\u00B7\uC601\uAD6D \uC815\uCC45\uAE08\uB9AC Bank of England \u00B7 \u20ACSTR ECB \u00B7 EURIBOR \uC77C\uBCC4 \uACF5\uD45C \u00B7 TONA \uC77C\uBCF8\uC740\uD589 \u00B7 \uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uB274\uC2A4 \uAD6C\uAE00 \uB274\uC2A4 \u00B7 \uD658\uD5E4\uC9C0\uB294 \uC704 \uAE08\uB9AC\uB85C \uAE08\uB9AC\uD3C9\uD615 \uACC4\uC0B0"))))))));
+                        React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC77C\uCE58\uD558\uB294 \uB274\uC2A4\uAC00 \uC5C6\uC74C")))) : (React.createElement(React.Fragment, null,
+                    React.createElement(Section, { first: true, title: "\uD55C\uC904 \uC694\uC57D", sub: "\uC2DC\uC7A5\uC744 \uC6C0\uC9C1\uC778 \uD575\uC2EC \uB274\uC2A4" },
+                        top ? (React.createElement("a", { href: top.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } },
+                            React.createElement("div", { style: { font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(top.title, top.source))),
+                            React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 6 } }, top.source))) : React.createElement("div", { style: { font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } }, b.summary),
+                        React.createElement("div", { style: { font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
+                        points.length ? points.map((w, i) => (React.createElement("a", { key: i, href: w.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
+                            React.createElement("span", { style: { width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 } }),
+                            React.createElement("span", { style: { flex: 1 } },
+                                React.createElement("span", { style: { display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(w.title, w.source))),
+                                React.createElement("span", { style: { display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 } }, w.source))))) : (b.watch && b.watch.length ? b.watch.map((w, i) => React.createElement("div", { key: i, style: { font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' } },
+                            "\u00B7 ",
+                            w)) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC218\uC9D1\uB41C \uD575\uC2EC \uB274\uC2A4\uAC00 \uC5C6\uC74C"))),
+                    React.createElement("div", { style: grid },
+                        col(React.createElement(React.Fragment, null,
+                            React.createElement(Section, { title: "\uAD6D\uB0B4\uC99D\uC2DC", sub: "\uB204\uB974\uBA74 5\uB144 \uCD94\uC774" },
+                                React.createElement(MarketTable, { rows: b.kr, live: lv, onPick: onPick })),
+                            React.createElement(Section, { title: "\uD574\uC678\uC99D\uC2DC" },
+                                React.createElement(MarketTable, { rows: b.global, live: lv, onPick: onPick })),
+                            React.createElement(Section, { title: "\uD658\uC728" },
+                                React.createElement(MarketTable, { rows: b.fx, live: lv, onPick: onPick, digits: 4 })),
+                            React.createElement(Section, { title: "\uC6D0\uC790\uC7AC", sub: "USD" },
+                                React.createElement(MarketTable, { rows: b.commodity, live: lv, onPick: onPick })),
+                            React.createElement(Section, { title: "\uD06C\uB9BD\uD1A0", sub: "USD \u00B7 \uC2E4\uC2DC\uAC04" },
+                                React.createElement(MarketTable, { rows: b.crypto, live: lv, onPick: onPick })))),
+                        col(React.createElement(React.Fragment, null,
+                            React.createElement(Section, { title: "\uAE30\uC900\uAE08\uB9AC" },
+                                React.createElement(RateLine, { first: true, label: "\uD55C\uAD6D (\uD55C\uAD6D\uC740\uD589)", value: b.rates && b.rates.kr && b.rates.kr.rate != null ? `${b.rates.kr.rate.toFixed(2)}%` : '', sub: b.rates && b.rates.kr ? `${b.rates.kr.asOf || ''} · ${b.rates.kr.src || '한국은행'}` : '이번 회차 수집 실패', href: b.rates && b.rates.kr && b.rates.kr.url }),
+                                React.createElement(RateLine, { label: "\uBBF8\uAD6D (FOMC \uBAA9\uD45C\uBC94\uC704)", value: b.rates && b.rates.us ? (b.rates.us.target || `${(b.rates.us.effr || 0).toFixed(2)}%`) : '', sub: b.rates && b.rates.us ? `EFFR ${b.rates.us.effr != null ? b.rates.us.effr.toFixed(2) + '%' : '–'} · ${b.rates.us.asOf || ''} · New York Fed` : '이번 회차 수집 실패' }),
+                                b.ust && b.ust[0] && b.ust[0].last != null && (React.createElement("div", { onClick: () => onPick(b.ust[0]), style: { cursor: 'pointer' } },
+                                    React.createElement(RateLine, { label: b.ust[0].name, value: `${b.ust[0].last.toFixed(2)}%`, sub: `전일 대비 ${b.ust[0].chg >= 0 ? '+' : '−'}${Math.abs(b.ust[0].chg * 100).toFixed(0)}bp · 누르면 5년 추이` })))),
+                            React.createElement(Section, { title: "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA", sub: "\uC2E4\uBB34 \uC8FC\uC694 \uD14C\uB108" }, rateGroups.length ? rateGroups.map(([g, rows], gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 14 : 0 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', font: F(700, 13.5), color: KB.gray, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` } },
+                                    React.createElement("span", null, g),
+                                    React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 11.5), color: KB.mute } }, rows[0].src)),
+                                rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
+                                    React.createElement("span", { style: { flex: 1, font: F(500, 14.5), color: KB.ink } }, r.tenor),
+                                    React.createElement("span", { style: { font: F(700, 15), color: KB.ink } },
+                                        r.rate.toFixed(3),
+                                        "%"),
+                                    React.createElement("span", { style: { font: F(500, 11.5), color: KB.mute, minWidth: 78, textAlign: 'right' } }, r.asOf))))))) : React.createElement(Empty, { compact: true, title: "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C" })),
+                            React.createElement(Section, { title: "\uD658\uD5E4\uC9C0 \uBE44\uC6A9 \u00B7 \uC2A4\uC651\uD3EC\uC778\uD2B8" },
+                                React.createElement(HedgeBlock, { hedge: b.hedge }))))),
+                    React.createElement(Section, { title: "\uADF8 \uBC16\uC758 \uC2DC\uD669 \uB274\uC2A4" },
+                        rest.length ? (React.createElement("div", { style: desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {} }, rest.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` } },
+                            React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(stripMedia(it.title, it.source))),
+                            React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC704 \uD575\uC2EC \uB274\uC2A4 \uC678 \uCD94\uAC00 \uAE30\uC0AC \uC5C6\uC74C"),
+                        (b.errors && b.errors.length > 0) && React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 12 } },
+                            "\u203B \uBC1B\uC9C0 \uBABB\uD55C \uD56D\uBAA9 ",
+                            b.errors.length,
+                            "\uAC74 \u2014 \uAC12\uC744 \uCD94\uC815\uD558\uC9C0 \uC54A\uACE0 \uBE44\uC6CC \uB480\uC74C"),
+                        React.createElement("div", { style: { font: F(400, 12, 1.8), color: KB.mute, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${KB.line}` } }, "\uCD9C\uCC98 \u00B7 \uC9C0\uC218\u00B7\uD658\uC728\u00B7\uC6D0\uC790\uC7AC\u00B7\uCD94\uC774 Yahoo Finance(\uD3F4\uBC31 Stooq) \u00B7 \uD06C\uB9BD\uD1A0 Binance(\uD3F4\uBC31 Coinbase) \u00B7 SOFR/EFFR\u00B7FOMC New York Fed \u00B7 SONIA\u00B7\uC601\uAD6D \uC815\uCC45\uAE08\uB9AC Bank of England \u00B7 \u20ACSTR ECB \u00B7 EURIBOR \uC77C\uBCC4 \uACF5\uD45C \u00B7 TONA \uC77C\uBCF8\uC740\uD589 \u00B7 \uD55C\uAD6D \uAE30\uC900\uAE08\uB9AC \uD55C\uAD6D\uC740\uD589 \u00B7 \uB274\uC2A4 \uAD6C\uAE00 \uB274\uC2A4 \u00B7 \uD658\uD5E4\uC9C0\uB294 \uC704 \uAE08\uB9AC\uB85C \uAE08\uB9AC\uD3C9\uD615 \uACC4\uC0B0"))))))));
 }
 // '20260927' → '9월 27일'
 const briefDay = (k) => { const m = String(k || '').match(/^(\d{4})(\d{2})(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : String(k || ''); };

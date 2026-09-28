@@ -1793,8 +1793,11 @@ export function extractArticle(html, title = '') {
   let best = null;
   for (const [via, r] of cands) {
     const len = r.paragraphs.join('').length;
-    // 길이 + 문단 구조 가점(문단이 살아 있으면 앱에서 읽기 좋다)
-    const score = len + Math.min(r.paragraphs.length, 10) * 40;
+    // 길이 + 문단 구조 가점(문단이 살아 있으면 앱에서 읽기 좋다).
+    // 브라우저 '읽기 모드'와 같은 엔진(Readability)이 찾은 본문을 우선하고, 정규식으로 긁은
+    // 후보는 광고·위젯 문구가 섞이기 쉬워 훨씬 길 때만 쓴다.
+    const w = via === 'readability' && r.paragraphs.length >= 2 ? 1.3 : via === 'regex' ? 0.8 : 1;
+    const score = (len + Math.min(r.paragraphs.length, 10) * 40) * w;
     if (!best || score > best.score) best = { via, r, score, len };
   }
   const paywalled = cands.some(([, r]) => r.paywalled);
@@ -2061,8 +2064,36 @@ async function restoreBodies(list) {
       const j = JSON.parse(await readFile(bodyFile(a.id), 'utf8'));
       if (j && j.body) a.body = j.body;
       if (j && j.ko) a.bodyKo = j.ko;
+      recleanBody(a);
     } catch { /* 파일이 없으면 리드만으로 계속 */ }
   });
+}
+// 저장된 본문도 최신 정제 규칙으로 다시 거른다(새로 알게 된 광고·안내 문구 제거).
+// 번역문(bodyKo.p)은 문단 순서가 원문과 짝이므로 지운 문단의 번역도 함께 지우고,
+// 남은 문단이 그대로면 해시도 맞춰 다시 번역하지 않게 한다.
+const KO_JUNK_RE = /\s*투자자(?:들)?(?:은|는)?\s*(?:지금\s*)?(?:즉시|당장)\s*매도해야\s*할까요\?[^?]{0,80}\?/g;
+export function recleanBody(a) {
+  const paras = enParas(a.body);
+  if (!paras.length) return false;
+  const cleaned = AC.clean(paras, { title: a.ko }).paragraphs;
+  if (cleaned.length === paras.length && cleaned.every((p, i) => p === paras[i])) return false;
+  // 정제 후 문단 → 원래 문단 번호(순서 유지)
+  const idx = []; let j = 0;
+  for (const p of cleaned) {
+    const head = p.slice(0, 40);
+    while (j < paras.length && !paras[j].includes(head)) j++;
+    if (j >= paras.length) return false;   // 짝을 못 찾으면 건드리지 않는다
+    idx.push(j++);
+  }
+  if (cleaned.join('').length < 200) return false;   // 너무 많이 지워지면 규칙 오판으로 보고 둔다
+  a.body = cleaned.join('\n\n');
+  const ko = a.bodyKo;
+  if (ko && Array.isArray(ko.p) && ko.n === ko.p.length) {
+    const kp = idx.filter((i) => i < ko.n).map((i) => String(ko.p[i] || '').replace(KO_JUNK_RE, ''));
+    let acc = 0; const cut = cleaned.filter((p) => (acc += p.length) <= 9000);
+    a.bodyKo = { ...ko, n: kp.length, p: kp, ...(cut.length === kp.length ? { h: parasHash(cut) } : {}) };
+  }
+  return true;
 }
 // 긴 본문은 파일로 쓰고(내용이 같으면 건너뜀) 목록용 사본에는 리드만 남긴다.
 async function splitBodies(list) {

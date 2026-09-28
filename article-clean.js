@@ -45,6 +45,10 @@
     /자동\s*요약한\s*결과|요약\s*보기\s*자동\s*요약|윤리\s*강령|독자\s*편집\s*위원회|정정[‧·ㆍ]?\s*반론\s*보도|해당\s*언론사로\s*이동|에서\s*직접\s*확인하세요|선호\s*출처로?\s*추가|기사를\s*더\s*자주\s*볼\s*수|투자\s*판단의\s*참고용|투자\s*손실에\s*대한\s*책임|건전한\s*토론\s*문화|댓글은\s*표시가\s*제한|알림\s*설정하고|엄선한\s*주요\s*뉴스|글자\s*크기로\s*변경|파란\s*원을\s*좌우로/,
     // 영문 매체 안내문
     /preferred source on Google|MarketBeat|narrative science|instant news alert|translated from its original|^Like this article\?|editorial guidelines|ethics policy|reset your password|username or email|Already have an account|^(?:Log ?In|Sign ?In|Sign ?Up)\b.{0,30}$|^Powered by\b.{0,60}$/i,
+    // 포털 AI 요약·추천 안내, 증권 정보 사이트의 투자 고지·가입 유도 문구
+    /맥락을\s*이해하기\s*위해서는|본문\s*보기를\s*권장|기사를\s*질문\S{0,3}\s*응답\s*구조로|이\s*기사를\s*추천합니다|Simply\s*Wall\s*St.{0,12}(?:이\s*기사는|is general in nature)|arrow_(?:downward|upward|forward|back)|BigGo Finance|for reference only and (?:do|does) not constitute|Not investment advice|Past performance is no guarantee|(?:Seeking Alpha's|Analyst[’']s)\s*Disclosure|^Disclosure:\s*This article was edited|information released\.\s*What[’']s the impact|^Read our updated .{0,40}analysis|Join [\d,]+\+?\s*readers|verification email will be sent/i,
+    // 페이지 코드가 본문에 섞여 들어온 조각 (onclick 스크립트·CSS 유틸리티 클래스)
+    /this\.(?:removeAttribute|setAttribute)\(|class=["'][\w\s:-]{6,}["']|\[&>[\w:>\[\]-]+\]|=>\s*\{|function\s*\(\)\s*\{/,
     // 표 형태로 흩어진 종목 코드 줄 ("en | US0925… | BLACKSTONE INC. | …")
     /^[^|]{0,40}(?:\s\|\s[^|]{1,40}){3,}$/,
   ];
@@ -74,10 +78,12 @@
     [/데이터\s*레터|뉴스레터|매일\s*아침\s*\d+\s*시/, 160],
     [/^(?:Read (?:Earlier|More|Next|Also)|Also Read|Recommended|Related)\s*:/i, 200],
     [/^(?:Price as of|Market capitali[sz]ation|Sector\s*\/\s*Industry|Index membership|Next earnings date|52[- ]week|P\/E ratio|Dividend yield)\b/i, 120],
+    [/free trial|^Check (?:us )?out\b|Interactive Investor Tools|is a team of analysts|^Track .{0,40} performance through|explore our .{0,30}Portfolios/i, 300],
+    [/확인할\s*수\s*있어요!?\s*$|^Price returns through\b|^(?:Month|Year)-to-date\b/i, 120],
     [/\d+\s*분\s*(?:걸림|읽기)|\d+\s*min(?:ute)?s?\s*read|댓글\s*남기기/i, 60],
   ];
 
-  // 첫 단락 앞의 바이라인 접두어: "(서울=연합뉴스) 홍길동 기자 =", "[이데일리 김OO 기자]", "[더벨]"
+  // 단락 앞의 바이라인 접두어(첫 단락은 통신사 표기까지): "(서울=연합뉴스) 홍길동 기자 =", "[이데일리 김OO 기자]", "[더벨]"
   const BYLINE_PREFIXES = [
     /^\s*[\[(【〔]\s*[^\])】〕]{0,30}?(?:=|기자|특파원|통신원)[^\])】〕]{0,30}[\])】〕]\s*/,
     /^\s*[가-힣]{2,4}\s?(?:선임|수석|객원)?\s?기자\s*=\s*/,
@@ -92,6 +98,8 @@
       .replace(/\s*[\[(]\s*(?:사진|그래픽|자료|이미지|영상)\s*=\s*[^\])]{1,40}[\])]\s*/g, ' ')
       .replace(/\s*\/\s*(?:사진|그래픽)\s*=\s*\S+(?:\s*(?:제공|캡처))?\s*$/g, '')
       .replace(/\s*[▶☞]\s*[^.!?。]{0,80}$/g, '')
+      // 증권 정보 사이트가 문단 끝에 붙이는 매수·매도 유도 문구
+      .replace(/\s*Should investors sell immediately\?\s*Or is it worth buying [^?]{1,60}\?/g, '')
       .replace(/[ \t ]{2,}/g, ' ')
       .trim();
   }
@@ -144,7 +152,8 @@
       // 인코딩이 깨진 단락(대체 문자 다수) — 다시 받아야 하므로 버린다
       if ((p.match(/\uFFFD/g) || []).length > 3) continue;
       // 첫 본문 단락의 바이라인 접두어 제거
-      if (!out.length) for (const re of BYLINE_PREFIXES) p = p.replace(re, '');
+      // (포털이 리드 뒤에 기사 전체를 다시 붙이면 가운데 단락에도 바이라인이 나온다)
+      for (const re of (out.length ? BYLINE_PREFIXES.slice(0, 3) : BYLINE_PREFIXES)) p = p.replace(re, '');
       p = scrubInline(p);
       if (p.length < 2) continue;
       // 너무 짧은데 문장도 아닌 조각(버튼·메뉴 잔재) 제거

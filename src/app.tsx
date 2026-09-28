@@ -335,13 +335,14 @@ function App() {
   const feedList = (list, opts = {}) => {
     const out = [];
     let last = null;
-    const stories = opts.noGroup ? list.map((lead) => ({ lead, more: [] })) : clusterStories(list);
+    // 묶음의 대표 기사가 다른 날짜일 수 있어 대표 기사 시각으로 다시 정렬한다(같은 날짜 머리글이 두 번 나오지 않게)
+    const stories = opts.noGroup ? list.map((lead) => ({ lead, more: [] })) : clusterStories(list).map((c, i) => [c, i]).sort((x, y) => (itemMs(y[0].lead) - itemMs(x[0].lead)) || (x[1] - y[1])).map(([c]) => c);
     const shown = opts.all ? stories : stories.slice(0, limit);
     const counts = {};
     shown.forEach((c) => { const k = dayKeyOf(itemMs(c.lead)); counts[k] = (counts[k] || 0) + 1; });
     shown.forEach(({ lead: item, more }) => {
       const k = dayKeyOf(itemMs(item));
-      if (!opts.flat && k !== last) { out.push(<DayHeader key={'d' + k} label={dayLabel(itemMs(item))} count={counts[k]} />); last = k; }
+      if (!opts.flat && k !== last) { out.push(<DayHeader key={'d' + k + '-' + out.length} label={dayLabel(itemMs(item))} count={counts[k]} />); last = k; }
       out.push(<FeedItem key={item.id} item={item} more={more} isNew={!!(seen && !seen[item.id])} selected={isDesktop && sel && (sel.id === item.id || more.some((m) => m.id === sel.id))}
         onOpen={() => openArticle(item.id)} onOpenOther={(id) => openArticle(id)} onPress={() => fetchArchiveBody(item)} onBookmark={(e) => toggleBm(item.id, e)} />);
     });

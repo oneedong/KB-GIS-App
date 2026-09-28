@@ -6,7 +6,7 @@
  * 상세 화면
  *   - 전문: 수집기가 확보한 bodies/<id>.json → 없으면 원문 페이지를 받아 브라우저에서 추출(reader.tsx)
  *   - 광고·관련기사·기자 정보·사진 설명 등 기사와 무관한 부분은 article-clean.js 규칙으로 제외
- *   - 핵심 문장: 글자 전체를 덮는 형광펜
+ *   - 문단별 핵심 주제: 문단마다 한 구절만 형광펜
  *   - 용어: 처음 나온 곳에 점선 밑줄 → 누르면 쉬운 설명·그림, 본문 아래에 '이 기사에 나온 용어'
  */
 // 형광펜 — 글자 높이 전체를 덮도록 인라인 배경 + 위아래 여백, 줄이 바뀌어도 각 줄에 같은 모양
@@ -120,8 +120,17 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     const isEn = sel.lang === 'en';
     const rawParas = ko && fetched ? String(fetched).split(/\n+/).map((x) => x.trim()).filter(Boolean) : toParagraphs(text, sel.ko);
     const paragraphs = rawParas.some((p) => isSentencey(p.replace(/…$/, '')) || p.length > 90) ? rawParas : [];
-    const { paraSents, hl } = keySentences(paragraphs, sel.inst);
     const mark = makeTermMarker(12);
+    // 문단 하나 그리기 — 용어 밑줄 + (있으면) 핵심 주제 구절 형광펜
+    let hlCount = 0;
+    const renderText = (t, withHl) => {
+        const r = withHl ? keyPhrase(t, sel.inst) : null;
+        const run = (x, base) => mark(x).map((y, k) => (y.g ? React.createElement(TermMark, { key: base + k, g: y.g, onOpen: onOpenTerm }, y.t) : React.createElement(React.Fragment, { key: base + k }, y.t)));
+        if (!r)
+            return run(t, 'a');
+        hlCount++;
+        return [...run(t.slice(0, r[0]), 'a'), React.createElement("span", { key: "hl", style: HIGHLIGHT }, run(t.slice(r[0], r[1]), 'h')), ...run(t.slice(r[1]), 'z')];
+    };
     const realUrl = sel.url && /^https?:\/\//i.test(sel.url) ? sel.url : '';
     const viewUrl = sel.gurl && /^https?:\/\//i.test(sel.gurl) ? sel.gurl : realUrl;
     const terms = findTerms(`${sel.ko} ${text}`, 8);
@@ -138,11 +147,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             return null;
         return sub
             ? React.createElement("div", { key: 'k' + pi, style: { font: F(700, 16, 1.5), color: KB.ko, margin: lang === 'ko' ? '28px 0 10px' : '-4px 0 12px' } }, t)
-            : React.createElement("p", { key: 'k' + pi, style: { font: F(400, 16, 1.85), color: KB.ko, margin: lang === 'ko' ? '0 0 20px' : '-8px 0 24px', wordBreak: 'keep-all', overflowWrap: 'anywhere' } }, mark(t).map((x, k) => (x.g ? React.createElement(TermMark, { key: k, g: x.g, onOpen: onOpenTerm }, x.t) : React.createElement(React.Fragment, { key: k }, x.t))));
+            : React.createElement("p", { key: 'k' + pi, style: { font: F(400, 16, 1.85), color: KB.ko, margin: lang === 'ko' ? '0 0 20px' : '-8px 0 24px', wordBreak: 'keep-all', overflowWrap: 'anywhere' } }, renderText(t, true));
     };
     const showEn = !ko || lang !== 'ko';
     const showKo = ko && lang !== 'en';
-    const bodyNodes = paraSents.map((ss, pi) => {
+    const bodyNodes = paragraphs.map((_, pi) => {
         const p = paragraphs[pi];
         const sub = isSubhead(p, paragraphs[pi + 1]);
         if (!showEn)
@@ -153,19 +162,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                 showKo && koNode(pi, true));
         }
         return (React.createElement(React.Fragment, { key: pi },
-            React.createElement("p", { style: { font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px', wordBreak: 'keep-all', overflowWrap: 'anywhere' } }, ss.map((s, si) => {
-                const parts = mark(s).map((x, k) => (x.g
-                    ? React.createElement(TermMark, { key: k, g: x.g, onOpen: onOpenTerm }, x.t)
-                    : React.createElement(React.Fragment, { key: k }, x.t)));
-                const gap = si < ss.length - 1 ? ' ' : '';
-                return hl.has(pi + ':' + si)
-                    ? React.createElement(React.Fragment, { key: si },
-                        React.createElement("span", { style: HIGHLIGHT }, parts),
-                        gap)
-                    : React.createElement(React.Fragment, { key: si },
-                        parts,
-                        gap);
-            })),
+            React.createElement("p", { style: { font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px', wordBreak: 'keep-all', overflowWrap: 'anywhere' } }, renderText(p, !(showKo && koOf(pi)))),
             showKo && koNode(pi, false)));
     });
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
@@ -197,9 +194,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                     loading && !paragraphs.length ? React.createElement("span", null, "\uC6D0\uBB38\uC5D0\uC11C \uBCF8\uBB38\uC744 \uBD88\uB7EC\uC624\uB294 \uC911")
                         : isFull ? React.createElement(Tag, { tone: "outline" }, "\uC804\uBB38")
                             : paragraphs.length ? React.createElement(Tag, null, "\uAE30\uC0AC \uC55E\uBD80\uBD84") : null,
-                    hl.size > 0 && React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 5 } },
+                    hlCount > 0 && React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 5 } },
                         React.createElement("span", { style: { ...HIGHLIGHT, padding: '0 6px', fontWeight: 600, font: F(600, 11.5) } }, "\uD575\uC2EC"),
-                        "\uD575\uC2EC \uBB38\uC7A5"),
+                        "\uBB38\uB2E8\uBCC4 \uD575\uC2EC \uC8FC\uC81C"),
                     terms.length > 0 && React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 5 } },
                         React.createElement("span", { style: { borderBottom: `1.5px dotted ${KB.gray}`, color: KB.ink2 } }, "\uC6A9\uC5B4"),
                         "\uB204\uB974\uBA74 \uC124\uBA85"),

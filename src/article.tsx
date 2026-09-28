@@ -5,7 +5,7 @@
  * 상세 화면
  *   - 전문: 수집기가 확보한 bodies/<id>.json → 없으면 원문 페이지를 받아 브라우저에서 추출(reader.tsx)
  *   - 광고·관련기사·기자 정보·사진 설명 등 기사와 무관한 부분은 article-clean.js 규칙으로 제외
- *   - 핵심 문장: 글자 전체를 덮는 형광펜
+ *   - 문단별 핵심 주제: 문단마다 한 구절만 형광펜
  *   - 용어: 처음 나온 곳에 점선 밑줄 → 누르면 쉬운 설명·그림, 본문 아래에 '이 기사에 나온 용어'
  */
 
@@ -144,8 +144,16 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
   const isEn = sel.lang === 'en';
   const rawParas = ko && fetched ? String(fetched).split(/\n+/).map((x) => x.trim()).filter(Boolean) : toParagraphs(text, sel.ko);
   const paragraphs = rawParas.some((p) => isSentencey(p.replace(/…$/, '')) || p.length > 90) ? rawParas : [];
-  const { paraSents, hl } = keySentences(paragraphs, sel.inst);
   const mark = makeTermMarker(12);
+  // 문단 하나 그리기 — 용어 밑줄 + (있으면) 핵심 주제 구절 형광펜
+  let hlCount = 0;
+  const renderText = (t, withHl) => {
+    const r = withHl ? keyPhrase(t, sel.inst) : null;
+    const run = (x, base) => mark(x).map((y, k) => (y.g ? <TermMark key={base + k} g={y.g} onOpen={onOpenTerm}>{y.t}</TermMark> : <React.Fragment key={base + k}>{y.t}</React.Fragment>));
+    if (!r) return run(t, 'a');
+    hlCount++;
+    return [...run(t.slice(0, r[0]), 'a'), <span key="hl" style={HIGHLIGHT}>{run(t.slice(r[0], r[1]), 'h')}</span>, ...run(t.slice(r[1]), 'z')];
+  };
   const realUrl = sel.url && /^https?:\/\//i.test(sel.url) ? sel.url : '';
   const viewUrl = sel.gurl && /^https?:\/\//i.test(sel.gurl) ? sel.gurl : realUrl;
   const terms = findTerms(`${sel.ko} ${text}`, 8);
@@ -163,12 +171,12 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     return sub
       ? <div key={'k' + pi} style={{ font: F(700, 16, 1.5), color: KB.ko, margin: lang === 'ko' ? '28px 0 10px' : '-4px 0 12px' }}>{t}</div>
       : <p key={'k' + pi} style={{ font: F(400, 16, 1.85), color: KB.ko, margin: lang === 'ko' ? '0 0 20px' : '-8px 0 24px', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
-          {mark(t).map((x, k) => (x.g ? <TermMark key={k} g={x.g} onOpen={onOpenTerm}>{x.t}</TermMark> : <React.Fragment key={k}>{x.t}</React.Fragment>))}
+          {renderText(t, true)}
         </p>;
   };
   const showEn = !ko || lang !== 'ko';
   const showKo = ko && lang !== 'en';
-  const bodyNodes = paraSents.map((ss, pi) => {
+  const bodyNodes = paragraphs.map((_, pi) => {
     const p = paragraphs[pi];
     const sub = isSubhead(p, paragraphs[pi + 1]);
     if (!showEn) return koNode(pi, sub) || (lang === 'ko' && pi >= (ko.n || ko.p.length) ? <p key={pi} style={{ font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px' }}>{p}</p> : null);
@@ -178,15 +186,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
     return (
       <React.Fragment key={pi}>
       <p style={{ font: F(400, 16.5, 1.9), color: KB.ink2, margin: '0 0 20px', wordBreak: 'keep-all', overflowWrap: 'anywhere' }}>
-        {ss.map((s, si) => {
-          const parts = mark(s).map((x, k) => (x.g
-            ? <TermMark key={k} g={x.g} onOpen={onOpenTerm}>{x.t}</TermMark>
-            : <React.Fragment key={k}>{x.t}</React.Fragment>));
-          const gap = si < ss.length - 1 ? ' ' : '';
-          return hl.has(pi + ':' + si)
-            ? <React.Fragment key={si}><span style={HIGHLIGHT}>{parts}</span>{gap}</React.Fragment>
-            : <React.Fragment key={si}>{parts}{gap}</React.Fragment>;
-        })}
+        {renderText(p, !(showKo && koOf(pi)))}
       </p>
       {showKo && koNode(pi, false)}
       </React.Fragment>
@@ -232,7 +232,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
             {loading && !paragraphs.length ? <span>원문에서 본문을 불러오는 중</span>
               : isFull ? <Tag tone="outline">전문</Tag>
               : paragraphs.length ? <Tag>기사 앞부분</Tag> : null}
-            {hl.size > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ ...HIGHLIGHT, padding: '0 6px', fontWeight: 600, font: F(600, 11.5) }}>핵심</span>핵심 문장</span>}
+            {hlCount > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ ...HIGHLIGHT, padding: '0 6px', fontWeight: 600, font: F(600, 11.5) }}>핵심</span>문단별 핵심 주제</span>}
             {terms.length > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ borderBottom: `1.5px dotted ${KB.gray}`, color: KB.ink2 }}>용어</span>누르면 설명</span>}
             {loading && paragraphs.length > 0 && <span>전문 불러오는 중</span>}
           </div>

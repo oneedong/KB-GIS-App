@@ -86,7 +86,7 @@ function parseArticleHtml(html, title) {
             push(Array.isArray(data) ? data : (data['@graph'] || data));
             for (const n of nodes) {
                 if (n.articleBody && String(n.articleBody).trim().length > 120)
-                    cands.push(cleanParas(String(n.articleBody).split(/\n+/), title));
+                    cands.push({ w: 1, p: cleanParas(String(n.articleBody).split(/\n+/), title) });
             }
         }
         // (2) Readability — 본문 컨테이너 추출(광고·위젯 블록 배제)
@@ -97,7 +97,8 @@ function parseArticleHtml(html, title) {
                     const d2 = new DOMParser().parseFromString(`<div id="kbgis-root">${art.content}</div>`, 'text/html');
                     const root = d2.getElementById('kbgis-root');
                     const blocks = (typeof ArticleClean !== 'undefined') ? ArticleClean.paragraphsFromNode(root) : Array.from(root.querySelectorAll('p')).map((p) => p.textContent);
-                    cands.push(cleanParas(blocks, title));
+                    const rp = cleanParas(blocks, title);
+                    cands.push({ w: rp.length >= 2 ? 1.3 : 1, p: rp }); // 읽기 모드 엔진 결과 우선
                 }
             }
             catch { /* 다음 후보로 */ }
@@ -114,10 +115,10 @@ function parseArticleHtml(html, title) {
         }
         const ps = Array.from((bestLen > 250 ? best : doc).querySelectorAll('p')).map((p) => p.textContent.replace(/\s+/g, ' ').trim()).filter((s) => s.length > 30 && isSentencey(s));
         if (ps.length)
-            cands.push(cleanParas(ps, title));
+            cands.push({ w: 0.8, p: cleanParas(ps, title) });
         let pick = null, score = -1;
-        for (const c of cands) {
-            const sc = c.join('').length + Math.min(c.length, 10) * 40;
+        for (const { w, p: c } of cands) {
+            const sc = (c.join('').length + Math.min(c.length, 10) * 40) * w;
             if (sc > score) {
                 score = sc;
                 pick = c;
@@ -314,17 +315,152 @@ function splitSentences(p) {
         .replace(/(다\.|요\.|[.!?。]["'”’)]?)\s+(?=[가-힣A-Z0-9"'“‘(\[])/g, '$1\u0001')
         .split('\u0001').map((s) => s.trim()).filter(Boolean);
 }
-// 문단 → 문장 배열, 핵심 문장 키 집합(최대 3개, 3점 이상)
-function keySentences(paragraphs, inst) {
-    const paraSents = paragraphs.map((p) => splitSentences(p));
-    const cands = [];
-    paraSents.forEach((ss, pi) => ss.forEach((s, si) => {
-        const sc = scoreKeySentence(s, inst);
-        if (sc >= 3 && s.length >= 20 && s.length <= 320)
-            cands.push({ pi, si, sc });
-    }));
-    cands.sort((a, b) => b.sc - a.sc || a.pi - b.pi || a.si - b.si);
-    return { paraSents, hl: new Set(cands.slice(0, 3).map((c) => c.pi + ':' + c.si)) };
+// 문단별 핵심 주제 — 문단마다 '누가 무엇을 (얼마에) 했나'를 담은 절 하나만 돌려준다.
+// 문장을 절(쉼표·연결어미 기준)로 나눠 금액·행위어·주체가 모인 절을 고르고, 앞뒤의
+// 접속어('한편', 'Meanwhile')와 전달 표현('~고 밝혔다', 'the company said')은 뺀다.
+// 금액·행위어가 없는 문단은 첫 문장(주제문)의 핵심 절을 쓴다.
+const TOPIC_ACTION_RE = new RegExp(KEY_ACTION_RE.source + '|대출|주선|펀딩|리파이낸싱|상장|철수|clos(?:e[sd]?|ing)|acquisition|sold|sells?|selling|launch(?:e[sd])?|rais(?:e[sd]?|ing)|hard cap|hires?|hired|named|merg(?:e[sd]?|er)|lend(?:s|ing)?|loans?|financ(?:e[sd]?|ing)|deploy', 'i');
+const TREND_RE = /늘|증가|감소|줄|확대|축소|최고|최대|최저|급증|급감|상승|하락|부상|record|surge|jump|soar|slump|fell|declin|grew|growth|largest|biggest/i;
+const KO_LEAD_RE = /^(?:한편|또한|또|특히|이에\s*따라|이어|아울러|이와\s*함께|그러면서|다만|이번에|앞서|현재|최근|실제로|이로써|이에|이를\s*통해)\s*,?\s*/;
+const KO_SRC_RE = /^[^,]{0,40}(?:에\s*따르면|업계에\s*따르면)\s*,?\s*/;
+const KO_TAIL_RE = /(?:다|라)?고\s*(?:밝혔|전했|말했|설명했|덧붙였|강조했|언급했|발표했)다?\.?$|(?:것으로|것이라고)\s*(?:알려졌|전해졌|파악됐|예상됐|보인)다?\.?$|(?:것)?이라고\s*(?:밝혔|말했)다?\.?$/;
+const EN_LEAD_RE = /^(?:Meanwhile|Additionally|In addition|Separately|However|Also|Further(?:more)?|Moreover|Earlier|Last (?:week|month|year)|This (?:week|month)|On (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))\s*,?\s*/i;
+const EN_TAIL_RE = /,?\s*(?:according to [^,]{2,60}|(?:the (?:company|firm|group|fund|manager)|it|he|she|they|[A-Z][\w.&'’-]*(?:\s[A-Z][\w.&'’-]*){0,3}) (?:said|says|announced|noted|added)(?: (?:on|in) [\w ,]{2,30})?)\.?$/;
+function clauseSpans(s, ko) {
+    const re = ko
+        ? /,\s+|;\s+|(?<=[가-힣])(?:으며|며|면서|지만|는데|으나|했고|하고|되고|됐고|이고)\s+(?!있|싶|나서|말았)/g
+        : /,\s+(?!(?:which|who|Inc|Ltd|LLC|LP|L\.P)\b)|;\s+|\s+[—–]\s+|\s+(?:while|whereas|but)\s+/g;
+    const out = [];
+    let last = 0, m;
+    // 괄호 안에서는 자르지 않는다
+    const depth = (i) => { let d = 0; for (let k = 0; k < i; k++) {
+        if (s[k] === '(' || s[k] === '[')
+            d++;
+        else if ((s[k] === ')' || s[k] === ']') && d > 0)
+            d--;
+    } return d; };
+    while ((m = re.exec(s))) {
+        if (depth(m.index))
+            continue;
+        const end = m.index + (ko && /^[가-힣]/.test(m[0]) ? m[0].trimEnd().length : 0);
+        if (end - last >= 6) {
+            out.push([last, end]);
+            last = m.index + m[0].length;
+        }
+    }
+    out.push([last, s.length]);
+    return out.filter(([a, b]) => b - a >= 4);
+}
+function keyPhrase(p, inst) {
+    const text = String(p || '');
+    if (text.length < 40)
+        return null;
+    const ko = /[가-힣]/.test(text);
+    const sents = [];
+    let cur = 0;
+    for (const s of splitSentences(text)) {
+        const at = text.indexOf(s, cur);
+        if (at < 0)
+            continue;
+        sents.push({ s, at });
+        cur = at + s.length;
+    }
+    let best = null;
+    sents.forEach((x, si) => {
+        for (const [a, b] of clauseSpans(x.s, ko)) {
+            const c = x.s.slice(a, b);
+            let sc = (AMOUNT_RE.test(c) ? 3 : 0) + (TOPIC_ACTION_RE.test(c) ? 2 : 0) + (TREND_RE.test(c) ? 1 : 0)
+                + (inst && inst !== '출처 미상' && c.toLowerCase().includes(String(inst).toLowerCase()) ? 1 : 0)
+                + (/CIO|기금이사|본부장|최고투자책임자|Chief Investment Officer/.test(c) ? 1 : 0)
+                + (si === 0 ? 2.2 : 0) + (a === 0 ? 0.3 : 0) - (ko && b < x.s.length ? 0.5 : 0);
+            if (c.length < (ko ? 10 : 20))
+                sc -= 2;
+            if (sc >= 1.5 && (!best || sc > best.sc))
+                best = { sc, at: x.at, s: x.s, a, b };
+        }
+    });
+    if (!best)
+        return null;
+    let { a, b } = best;
+    const s = best.s;
+    // 너무 짧은 절은 옆 절까지 붙여 뜻이 통하게
+    if (b - a < (ko ? 14 : 30)) {
+        const sp = clauseSpans(s, ko);
+        const k = sp.findIndex(([x]) => x === a);
+        if (k >= 0 && sp[k + 1])
+            b = sp[k + 1][1];
+        else if (k > 0)
+            a = sp[k - 1][0];
+    }
+    let seg = s.slice(a, b);
+    const trimL = (re) => { const m = seg.match(re); if (m && m[0].length < seg.length - 8) {
+        a += m[0].length;
+        seg = seg.slice(m[0].length);
+    } };
+    const trimR = (re) => { const m = seg.match(re); if (m && m.index > 8) {
+        b = a + m.index;
+        seg = seg.slice(0, m.index);
+    } };
+    if (ko) {
+        trimL(KO_SRC_RE);
+        trimL(KO_LEAD_RE);
+        trimR(KO_TAIL_RE);
+    }
+    else {
+        trimL(EN_LEAD_RE);
+        trimR(EN_TAIL_RE);
+    }
+    // 앞뒤 문장부호·짝 없는 괄호 정리
+    const l0 = seg.length - seg.replace(/^[\s,“"‘'(\[]+/, '').length;
+    a += l0;
+    seg = seg.slice(l0);
+    seg = seg.replace(/[\s,.;:”"’'\]]+$/, '');
+    b = a + seg.length;
+    const open = (seg.match(/\(/g) || []).length, close = (seg.match(/\)/g) || []).length;
+    if (open > close) {
+        const k = s.indexOf(')', b);
+        if (k > 0 && k - b < 30)
+            b = k + 1;
+        else {
+            b = a + seg.lastIndexOf('(');
+        }
+        seg = s.slice(a, b).replace(/[\s,]+$/, '');
+        b = a + seg.length;
+    }
+    const cap = ko ? 64 : 120;
+    if (seg.length > cap && ko) {
+        // 한국어는 서술어가 끝에 오므로 끝을 살리고, 앞은 조사 뒤(주어·목적어 경계)에서 시작한다
+        let x0 = seg.length - cap;
+        x0 = Math.max(0, x0 - 12);
+        const win = seg.slice(x0, x0 + 40);
+        const pm = win.match(/[가-힣)](?:은|는|이|가|을|를|에서|에게|에|으로|로|와|과|의|도)\s/);
+        if (pm)
+            x0 += pm.index + pm[0].length;
+        else {
+            while (x0 < seg.length && !/\s/.test(seg[x0 - 1]))
+                x0++;
+        }
+        a += x0;
+        seg = seg.slice(x0);
+        b = a + seg.length;
+    }
+    else if (seg.length > cap) {
+        // 너무 길면 금액·행위어가 있는 쪽을 단어 경계에서 자른다
+        const m = seg.match(AMOUNT_RE) || seg.match(TOPIC_ACTION_RE);
+        const mid = m ? m.index + m[0].length / 2 : 0;
+        let x0 = Math.max(0, Math.min(seg.length - cap, Math.round(mid - cap / 2)));
+        while (x0 > 0 && !/\s/.test(seg[x0 - 1]))
+            x0--;
+        let x1 = Math.min(seg.length, x0 + cap);
+        while (x1 < seg.length && !/\s/.test(seg[x1]))
+            x1++;
+        a += x0;
+        seg = seg.slice(x0, x1).replace(/[\s,.;:]+$/, '');
+        b = a + seg.length;
+    }
+    if (seg.length < 6)
+        return null;
+    return [best.at + a, best.at + b];
 }
 // 소제목 판정 — 짧고 문장이 아니며 바로 뒤에 본문 문단이 이어지는 줄
 function isSubhead(p, next) {

@@ -164,6 +164,10 @@ const QUERIES = [
   '("energy transition" OR renewables OR "battery storage") infrastructure (fund OR investor) (acquire OR invest) when:7d',
   '(logistics OR multifamily OR "student housing" OR hotel OR office) portfolio ("real estate fund" OR "private equity") (acquires OR sells OR buys) when:7d',
   '(aircraft OR aviation) (lessor OR leasing) (acquire OR portfolio OR fund OR financing) when:14d',
+  '("aircraft lessor" OR "aircraft leasing" OR "engine leasing") (acquires OR sells OR raises OR financing OR ABS OR portfolio OR order) when:7d',
+  '("SMBC Aviation" OR "Aviation Capital Group" OR "BOC Aviation" OR "Air Lease" OR AerCap OR Avolon OR "Willis Lease" OR "Aircastle" OR "Azorra" OR "Carlyle Aviation") when:7d',
+  '(aircraft OR aviation) (ABS OR "asset-backed" OR "sale and leaseback" OR "sale-leaseback" OR "private credit") when:14d',
+  '(항공기 OR 항공기엔진) (리스 OR 금융 OR 펀드 OR 투자 OR 매각 OR 인수) when:14d',
   // (21) 글로벌 GP 확대
   '(Hg OR Cinven OR "Thoma Bravo" OR "Vista Equity" OR "Hellman & Friedman" OR "Silver Lake" OR "General Atlantic") (fund OR deal OR acquire) when:14d',
   '(Macquarie OR Stonepeak OR "Global Infrastructure Partners" OR "I Squared" OR "Copenhagen Infrastructure" OR DigitalBridge) (fund OR acquire OR invest) when:14d',
@@ -2340,7 +2344,7 @@ async function main() {
   const deadCount = all.filter(a => a.linkDead).length;
   const merged = dedupe([...all, ...prev])
     .filter(a => !a.linkDead)                          // 존재하지 않는 기사 링크(404/소프트404) 제외
-    .filter(a => !a.stale && !PEI_OLD_URL_RE.test(a.url || ''))   // 원문 발행일이 한참 전인 옛 기사
+    .filter(a => !a.stale && !PEI_OLD_URL_RE.test(a.url || '') && !AC.staleTitle(a.ko, a.ts))   // 원문 발행일이 한참 전인 옛 기사(제목에 옛 거래 시점이 적힌 딜 소개 페이지 포함)
     .filter(a => !NON_ARTICLE_URL_RE.test(a.url || '') && !NON_ARTICLE_TITLE_RE.test(a.ko || ''))   // 태그·목록·기관 소개 페이지
     .filter(a => !SOURCE_BLOCK_RE.test(a.source || '') && !SOURCE_BLOCK_RE.test(a.url || ''))  // 깨진 링크 매체 제외(기존 보관분 포함)
     .filter(inWindow)
@@ -2455,7 +2459,7 @@ async function main() {
   console.log(`insights: ${insights.cios.length} CIO, ${insights.execs.length} 실무인사, ${insights.aums.length} AUM, ${insights.relocations.length} 지방이전, ${insights.assetReturns.length} asset-returns`);
 
   // 옛 기사(발행일 재확인)·삭제된 기사·기사 아닌 페이지에서 나온 누적 항목은 트래커에서도 뺀다
-  const dropIds = new Set([...all, ...prev].filter((a) => a.stale || a.linkDead || PEI_OLD_URL_RE.test(a.url || '') || NON_ARTICLE_URL_RE.test(a.url || '') || NON_ARTICLE_TITLE_RE.test(a.ko || '')).map((a) => a.id));
+  const dropIds = new Set([...all, ...prev].filter((a) => a.stale || a.linkDead || PEI_OLD_URL_RE.test(a.url || '') || AC.staleTitle(a.ko, a.ts) || NON_ARTICLE_URL_RE.test(a.url || '') || NON_ARTICLE_TITLE_RE.test(a.ko || '')).map((a) => a.id));
   const keepPrev = (p) => !dropIds.has(p.id) && !PEI_OLD_URL_RE.test(p.url || '') && !NON_ARTICLE_URL_RE.test(p.url || '') && !NON_ARTICLE_TITLE_RE.test(p.title || '');
   // 펀드레이징 트래커(fundraising.json) — 모집·클로징 이벤트 자동 추출.
   let prevFr = [];

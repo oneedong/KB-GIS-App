@@ -16,8 +16,8 @@ const store = {
 };
 
 // ─── 내비게이션 ──────────────────────────────────────────────
-const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
-const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
+const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['weekly', 'report', '시장현황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
+const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['weekly', 'report', '시장현황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
 const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연기금'], ['공제회', '공제회'], ['중앙회', '중앙회'], ['은행', '은행'], ['보험·캐피탈', '보험·캐피탈'], ['운용·증권', '운용·증권'], ['인사', '인사'], ['이전', '지방이전']];
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
@@ -59,7 +59,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
       })}
       <div style={{ marginTop: 'auto', padding: '16px 10px 0', borderTop: `1px solid ${KB.line}` }}>
         <div onClick={onRefresh} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer', font: F(600, 13.5), color: KB.ink2 }}><Ico n="refresh" size={17} />새로고침</div>
-        <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 }}>{updated ? `최근 기사 ${updated}` : ''}<br />기사 3시간 · 시황 매일 08:00 갱신</div>
+        <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 }}>{updated ? `최근 기사 ${updated}` : ''}<br />기사 3시간 · 시황 매일 · 시장현황 매주</div>
       </div>
     </aside>
   );
@@ -597,6 +597,7 @@ function App() {
           <Shortcut icon="flag" label="지방이전" onClick={() => applyFilter('이전')} />
           <Shortcut icon="globe" label="영문 기사" onClick={() => applyFilter('EN')} />
           <Shortcut icon="market" label="데일리 시황" onClick={() => setScreen('brief')} />
+          <Shortcut icon="report" label="시장현황" onClick={() => setScreen('weekly')} />
         </div>
         <Section title="기관 유형별 기사">
           {GROUPS.map((g, i) => (
@@ -732,9 +733,10 @@ function App() {
     search: searchScreen, bookmarks: bookmarksScreen, deals: dealsScreen,
     fund: <FundraisingView data={fundraising} onOpen={openArticle} onGp={(g) => openInst({ inst: g, role: 'GP' })} />,
     learn: <LearnScreen focus={learnFocus} onFocusDone={() => setLearnFocus(null)} />,
+    weekly: <WeeklyScreen onOpen={openArticle} />,
   };
   const navActive = screen === 'detail' ? prevScreen : screen;
-  const bottomActive = ['home', 'brief', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
+  const bottomActive = ['home', 'brief', 'weekly', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
   const sideActive = navActive === 'menu' ? 'home' : navActive;
   const master = isDesktop && LIST_SCREENS.includes(screen);
 

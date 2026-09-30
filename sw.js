@@ -1,5 +1,5 @@
 /* KB GIS service worker — offline app shell, auto-updating on new deploys */
-const CACHE = 'kbgis-v50';
+const CACHE = 'kbgis-v51';
 
 // Local app shell — precached on install so the app opens offline.
 const SHELL = [
@@ -13,6 +13,7 @@ const SHELL = [
   './js/reader.js',
   './js/brief.js',
   './js/profiles.js',
+  './js/weekly.js',
   './js/article.js',
   './js/app.js',
   './allocations.json',

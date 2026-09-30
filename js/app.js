@@ -24,8 +24,8 @@ const store = {
     catch (e) { /* 저장 공간 부족 등 */ } },
 };
 // ─── 내비게이션 ──────────────────────────────────────────────
-const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
-const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
+const NAV = [['home', 'home', '홈'], ['brief', 'market', '시황'], ['weekly', 'report', '시장현황'], ['fund', 'layers', '펀드레이징'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['menu', 'grid', '전체']];
+const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], ['weekly', 'report', '시장현황'], ['korlp', 'bank', 'Korea LP'], ['gp', 'globe', 'Global GP'], ['fund', 'layers', '펀드레이징'], ['deals', 'briefcase', '투자내역'], ['learn', 'book', '용어·개념'], ['search', 'search', '검색'], ['bookmarks', 'bookmark', '북마크']];
 const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연기금'], ['공제회', '공제회'], ['중앙회', '중앙회'], ['은행', '은행'], ['보험·캐피탈', '보험·캐피탈'], ['운용·증권', '운용·증권'], ['인사', '인사'], ['이전', '지방이전']];
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
@@ -58,7 +58,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
             React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 } },
                 updated ? `최근 기사 ${updated}` : '',
                 React.createElement("br", null),
-                "\uAE30\uC0AC 3\uC2DC\uAC04 \u00B7 \uC2DC\uD669 \uB9E4\uC77C 08:00 \uAC31\uC2E0"))));
+                "\uAE30\uC0AC 3\uC2DC\uAC04 \u00B7 \uC2DC\uD669 \uB9E4\uC77C \u00B7 \uC2DC\uC7A5\uD604\uD669 \uB9E4\uC8FC"))));
 }
 // 검색창 모양(누르면 검색 화면)
 function SearchField({ value, onChange, onFocus, placeholder, autoFocus, onClear }) {
@@ -566,7 +566,8 @@ function App() {
                 React.createElement(Shortcut, { icon: "user", label: "\uC778\uC0AC \uB3D9\uD5A5", onClick: () => applyFilter('인사') }),
                 React.createElement(Shortcut, { icon: "flag", label: "\uC9C0\uBC29\uC774\uC804", onClick: () => applyFilter('이전') }),
                 React.createElement(Shortcut, { icon: "globe", label: "\uC601\uBB38 \uAE30\uC0AC", onClick: () => applyFilter('EN') }),
-                React.createElement(Shortcut, { icon: "market", label: "\uB370\uC77C\uB9AC \uC2DC\uD669", onClick: () => setScreen('brief') })),
+                React.createElement(Shortcut, { icon: "market", label: "\uB370\uC77C\uB9AC \uC2DC\uD669", onClick: () => setScreen('brief') }),
+                React.createElement(Shortcut, { icon: "report", label: "\uC2DC\uC7A5\uD604\uD669", onClick: () => setScreen('weekly') })),
             React.createElement(Section, { title: "\uAE30\uAD00 \uC720\uD615\uBCC4 \uAE30\uC0AC" },
                 GROUPS.map((g, i) => (React.createElement(ListRow, { key: g, first: i === 0, chevron: true, onClick: () => applyFilter(g), pad: "13px 0" },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center' } },
@@ -650,9 +651,10 @@ function App() {
         search: searchScreen, bookmarks: bookmarksScreen, deals: dealsScreen,
         fund: React.createElement(FundraisingView, { data: fundraising, onOpen: openArticle, onGp: (g) => openInst({ inst: g, role: 'GP' }) }),
         learn: React.createElement(LearnScreen, { focus: learnFocus, onFocusDone: () => setLearnFocus(null) }),
+        weekly: React.createElement(WeeklyScreen, { onOpen: openArticle }),
     };
     const navActive = screen === 'detail' ? prevScreen : screen;
-    const bottomActive = ['home', 'brief', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
+    const bottomActive = ['home', 'brief', 'weekly', 'fund', 'korlp', 'gp'].includes(navActive) ? navActive : 'menu';
     const sideActive = navActive === 'menu' ? 'home' : navActive;
     const master = isDesktop && LIST_SCREENS.includes(screen);
     return (React.createElement(UICtx.Provider, { value: { desktop: isDesktop } },

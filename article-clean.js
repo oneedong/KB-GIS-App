@@ -318,5 +318,19 @@
     return hits >= 3 || hits / toks.length >= 0.34 || (hits >= 2 && subjectHit);
   }
 
-  return { clean, cleanText, paragraphsFromNode, isSentencey, matchesTitle, titleTokens, enNames };
+  /**
+   * 제목에 적힌 거래 시점이 게시일보다 한참 이전인 '옛 딜 소개 페이지'인가.
+   * 예) "Apax Digital Fund invests in Pricefx $65M Series C (Jul 2020)", "… for $12.3B (closed February 2026)"
+   */
+  const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  function staleTitle(title, ts, days) {
+    const t = Date.parse(ts);
+    if (isNaN(t)) return false;
+    const m = String(title || '').match(/(?:\((?:closed |announced |completed )?|[—–-]\s)(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+((?:19|20)\d{2})\b/i);
+    if (!m) return false;
+    const when = Date.UTC(+m[2], MONTHS[m[1].toLowerCase().slice(0, 3)], 28);
+    return when < t - (days || 60) * 86400000;
+  }
+
+  return { clean, cleanText, paragraphsFromNode, isSentencey, matchesTitle, titleTokens, enNames, staleTitle };
 });

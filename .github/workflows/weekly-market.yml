@@ -1,0 +1,63 @@
+name: Weekly market report
+
+on:
+  schedule:
+    # 평일 17:40 KST(= 08:40 UTC)마다 깨어나, 오늘이 이번 주 마지막 영업일(공휴일 제외)일 때만 만든다.
+    # 금요일이 공휴일이면 목요일에, 목·금이 모두 쉬면 수요일에 나간다.
+    - cron: '40 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '보고일(YYYY-MM-DD). 비우면 오늘'
+        required: false
+        default: ''
+      force:
+        description: '마지막 영업일이 아니어도 생성'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-market
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci --omit=dev --no-audit --no-fund
+      - name: Build weekly report
+        run: |
+          ARGS=""
+          [ -n "${{ github.event.inputs.date }}" ] && ARGS="$ARGS --date ${{ github.event.inputs.date }}"
+          [ "${{ github.event.inputs.force }}" = "true" ] && ARGS="$ARGS --force"
+          node scripts/weekly-market.mjs $ARGS
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EXTRA_HOLIDAYS: ${{ vars.EXTRA_HOLIDAYS }}
+      - name: Commit report
+        run: |
+          git config user.name  "kbgis-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A weekly
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: 주간 시장현황 갱신 [skip ci]"
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase -X theirs origin main || { git rebase --abort; exit 1; }
+              [ "$i" = "3" ] && exit 1
+            done
+          else
+            echo "No changes."
+          fi

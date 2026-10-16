@@ -85,6 +85,20 @@ async function gemini() {
   }
 }
 
+async function peek() {
+  const news = JSON.parse(await readFile('news.json', 'utf8'));
+  const seen = new Set(); const pick = [];
+  for (const a of news.filter((x) => x.lang === 'ko' && !x.fetched && !/news\.google\.com/.test(x.url || ''))) { const h = host(a.url); if (!seen.has(h)) { seen.add(h); pick.push(a); } if (pick.length >= 16) break; }
+  for (const a of pick) {
+    try {
+      const res = await fetch(a.url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko,en;q=0.8', Accept: 'text/html,application/xhtml+xml' }, redirect: 'manual', signal: AbortSignal.timeout(12000) });
+      const html = await res.text();
+      console.log(`\n### ${host(a.url)} status=${res.status} len=${html.length} set-cookie=${(res.headers.get('set-cookie') || '').slice(0, 160)} location=${res.headers.get('location') || ''}`);
+      console.log(html.length < 3000 ? html.slice(0, 1200) : html.slice(0, 300).replace(/\s+/g, ' ') + ' … [body ' + (html.match(/<body[^>]*>/i) || [''])[0] + ']');
+    } catch (e) { console.log('### ' + host(a.url) + ' ERR ' + e.message); }
+  }
+}
+if (mode === 'peek') await peek();
 if (mode === 'bodies' || mode === 'all') await bodies();
 if (mode === 'translate' || mode === 'all') await translate();
 if (mode === 'gemini' || mode === 'all') await gemini();

@@ -48,7 +48,7 @@ export function extractFigures(sent) {
   const s = String(sent || '').replace(/\s+/g, ' ');
   const out = {};
   if (/대체(?:투자|자산)/.test(s)) {
-    let m = s.match(/대체(?:투자|자산)(?:\s*(?:자산|부문))?\s*(?:비중|비율)\s*(?:은|이|도|을|를)?\s*(?:약\s*)?(\d{1,2}(?:\.\d{1,2})?)\s*%/)
+    let m = s.match(/대체(?:투자|자산)(?:\s*(?:자산|부문))?\s*(?:비중|비율)\s*(?:은|이|도|을|를)?\s*(?:(?:전체|총)\s*)?(?:(?:운용|투자)\s*)?(?:자산의\s*)?(?:약\s*)?(\d{1,2}(?:\.\d{1,2})?)\s*%/)
       || s.match(/(\d{1,2}(?:\.\d{1,2})?)\s*%\s*(?:가|를|이|는)?\s*대체(?:투자|자산)/);
     if (m) {
       const around = s.slice(Math.max(0, (m.index || 0) - 24), (m.index || 0) + m[0].length + 24);
@@ -81,6 +81,7 @@ export function figuresFromArticle(title, body, aliases, pubYear) {
 function selftest() {
   const cases = [
     ['교직원공제회의 대체투자 비중은 62.1%로 다른 공제회 대비 높은 편이다.', { altPct: 62.1 }],
+    ['사학연금의 대체투자 비중은 전체 운용자산의 27.4% 수준이다.', { altPct: 27.4 }],
     ['지난해 말 군인공제회 투자운용자산의 74.8%가 대체투자와 부동산이다.', { altPct: 74.8 }],
     ['사학연금의 금융자산 규모는 전년 대비 약 3조9000억원 증가한 29조7280억원으로 확대됐다.', null],
     ['2024년 말 기준 군인공제회 총자산은 약 20조4569억원으로 운용수익률은 7.2%다.', { aum: 20.4569 }],
@@ -121,20 +122,21 @@ async function main() {
   let changed = 0;
   for (const [name, aliases] of TARGETS) {
     const items = [];
-    for (const q of [`${aliases[0]} 대체투자 비중`, `${aliases[0]} 운용자산 조원`]) {
+    for (const q of [`${aliases[0]} 대체투자 비중`, `${aliases[0]} 대체투자`, `${aliases[0]} 운용자산 조원`]) {
       try { items.push(...(await search(q))); } catch (e) { console.warn(`검색 실패 ${name}: ${e.message}`); }
     }
     const seen = new Set();
     const cands = items.filter((it) => aliases.some((x) => it.title.includes(x)) && /대체|자산|기금|운용|수익률/.test(it.title))
       .filter((it) => (seen.has(it.title) ? false : seen.add(it.title)))
-      .sort((x, y) => (Date.parse(y.pub) || 0) - (Date.parse(x.pub) || 0)).slice(0, 8);
-    let bestPct = null, bestAum = null;
+      .sort((x, y) => (Date.parse(y.pub) || 0) - (Date.parse(x.pub) || 0)).slice(0, 10);
+    let bestPct = null, bestAum = null, opened = 0;
     for (const it of cands) {
       const pubMs = Date.parse(it.pub) || 0, pubYear = pubMs ? new Date(pubMs).getFullYear() : null;
       let url = it.link;
       try { url = await resolveGoogleNewsUrlAsync(it.link); } catch {}
       let body = '';
       if (!/news\.google\.com/.test(url)) { try { body = (await fetchArticleText(url, it.title)).text || ''; } catch {} }
+      if (body.length > 200) opened++;
       for (const f of figuresFromArticle(it.title, body || it.desc || '', aliases, pubYear)) {
         const rec = { ...f, source: it.source || '', sourceUrl: url, pub: pubMs ? new Date(pubMs).toISOString().slice(0, 10) : '' };
         if (f.altPct != null && (!bestPct || rec.pub > bestPct.pub)) bestPct = rec;
@@ -142,7 +144,9 @@ async function main() {
       }
     }
     console.log(`${name}: 비중 ${bestPct ? `${bestPct.altPct}% (${bestPct.asOf || '보도 ' + bestPct.pub}, ${bestPct.source})` : '-'} · 운용자산 ${bestAum ? `${bestAum.aum.toFixed(1)}조 (${bestAum.asOf || '보도 ' + bestAum.pub}, ${bestAum.source})` : '-'}`);
-    if (bestPct) console.log(`   └ "${bestPct.sentence}"`);
+    console.log(`   (후보 기사 ${cands.length}건 · 본문 확보 ${opened}건)`);
+    if (bestPct) console.log(`   └ 비중: "${bestPct.sentence}"`);
+    if (bestAum) console.log(`   └ 운용자산: "${bestAum.sentence}"`);
     if (dry || !bestPct) continue;
     let inst = data.institutions.find((x) => x.name === name);
     if (inst && inst.verified) continue;                       // 공시 확정 수치는 기사로 덮지 않는다

@@ -329,7 +329,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
                         x.born,
                         "\uB144\uC0DD")),
                 (x.bio || x.note) && React.createElement("div", { style: { font: F(400, 13.5, 1.65), color: KB.sub, marginTop: 6 } }, x.bio || x.note)))),
-            cio && !cioIsNewer && (React.createElement(ExtLink, { href: cio.url },
+            cio && !cioIsNewer && !(L.cio && L.cio.name && cio.person === L.cio.name) && (React.createElement(ExtLink, { href: cio.url },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
                     React.createElement(Tag, { tone: "outline" }, "CIO \uC778\uC120"),
                     React.createElement("span", { style: { font: F(600, 14), color: KB.ink } }, cio.note)),

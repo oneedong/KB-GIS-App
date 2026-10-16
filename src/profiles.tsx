@@ -408,7 +408,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
               {(x.bio || x.note) && <div style={{ font: F(400, 13.5, 1.65), color: KB.sub, marginTop: 6 }}>{x.bio || x.note}</div>}
             </div>
           ))}
-          {cio && !cioIsNewer && (
+          {cio && !cioIsNewer && !(L.cio && L.cio.name && cio.person === L.cio.name) && (
             <ExtLink href={cio.url}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Tag tone="outline">CIO 인선</Tag><span style={{ font: F(600, 14), color: KB.ink }}>{cio.note}</span></div>
               <div style={{ font: F(500, 12), color: KB.mute, marginTop: 6 }}>{cio.date} · {cio.source}</div>

@@ -229,15 +229,18 @@ async function main() {
       aum: bestAum && !(bestPct.altAmount != null && bestPct.altAmount > bestAum.aum) ? Math.round(bestAum.aum * 10) / 10 : null,
       overseasAltPct: null, verified: false, basis: 'press',
       asOf: bestPct.asOf || `${bestPct.pub} 보도`, pub: bestPct.pub,
+      aumAsOf: bestAum ? bestAum.asOf || `${bestAum.pub} 보도` : null,
       source: `${bestPct.source} 보도`, sourceUrl: bestPct.sourceUrl,
       sourceNote: `“${bestPct.sentence}”${bestAum && bestAum.sourceUrl !== bestPct.sourceUrl ? ` · 운용자산: “${bestAum.sentence}”(${bestAum.source})` : ''}`,
       checkedAt: today,
     };
+    if (next.aum == null) next.aumAsOf = null;
     if (inst) Object.assign(inst, next); else data.institutions.push({ ...next, trend: [] });
     changed++;
   }
   if (dry) return;
   for (const x of data.institutions) if (x.basis === 'press') x.checkedAt = today;
+  if (data.institutions.some((x) => x.basis === 'press')) data.asOf = '공시 확정치 + 보도 기준(기관별 기준 시점 표기)';
   data.note = '국민연금·KIC는 기관 공시 확정치, 그 밖의 기관은 최근 기사에 인용된 수치(보도 기준 — 기준 시점·근거 문장·출처 링크 함께 표시)입니다. 매주 월요일 자동 확인하며, 공시 확정치는 기사로 덮어쓰지 않습니다.';
   data.institutions.sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0) || b.altPct - a.altPct);
   await writeFile(path, JSON.stringify(data, null, 2) + '\n');

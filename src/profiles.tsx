@@ -325,7 +325,10 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
   const desktop = useDesktop();
   const p = profile || {};
   const aum = alloc && alloc.aum != null ? alloc.aum : (p.aum != null ? p.aum : null);
-  const aumAsOf = alloc && alloc.aum != null ? (alloc.asOf || '공시 기준') : (p.aumAsOf || '');
+  const press = alloc && !alloc.verified && alloc.basis === 'press';
+  const aumAsOf = press
+    ? `보도 기준 · 비중 ${alloc.asOf || ''}${alloc.aum != null && alloc.aumAsOf && alloc.aumAsOf !== alloc.asOf ? ` · AUM ${alloc.aumAsOf}` : ''}`
+    : alloc && alloc.aum != null ? (alloc.asOf || '공시 기준') : (p.aumAsOf || '');
   const latest = articles[0];
   const L = p.leadership || {};
   // 기사에서 확인된 CIO 선임이 프로필 기준일(leadership.asOf)보다 새로우면 그것이 최신 — 프로필의 옛 CIO 줄은 숨긴다

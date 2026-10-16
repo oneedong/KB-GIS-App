@@ -424,7 +424,7 @@ function App() {
       const ins = insights || {};
       return (
         <LpProfile name={lpSel} group={(r && r.group) || (al && al.group) || '국내 LP'} profile={profiles && profiles[lpSel]}
-          alloc={al ? { ...al, asOf: (alloc && alloc.asOf) || '' } : null}
+          alloc={al ? { ...al, asOf: al.asOf || (al.verified && al.source) || (alloc && alloc.asOf) || '' } : null}
           cio={(ins.cios || []).find((c) => c.inst === lpSel)} execs={(ins.execs || []).filter((e) => e.inst === lpSel)}
           aumNews={(ins.aums || []).find((x) => x.inst === lpSel)} move={(ins.relocations || []).find((x) => x.inst === lpSel)}
           returns={(ins.assetReturns || []).filter((x) => x.inst === lpSel)}

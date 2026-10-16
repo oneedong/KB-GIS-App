@@ -996,7 +996,7 @@ export function buildInsights(articles, refAum = null) {
           : c.status === '공모 무산·재공모 수순'
             ? 'CIO 공모 무산 — 재공모 수순 전망'
             : 'CIO 공모·인선 진행 중';
-        cioByInst.set(c.inst, { inst: c.inst, group: grpName(c.instType), status: c.status, person: c.person, background: c.background, note, source: a.source, url: a.url, date: a.date, ts: a.ts });
+        cioByInst.set(c.inst, { inst: c.inst, group: grpName(c.instType), status: c.status, person: c.person, background: c.background, note, source: a.source, url: a.url, gurl: a.gurl, date: a.date, ts: a.ts });
       }
     }
     const r = extractReturn(text);
@@ -1008,7 +1008,7 @@ export function buildInsights(articles, refAum = null) {
     if (ex) {
       const key = `${ex.inst}|${ex.person}|${ex.title}`;
       if (!execByKey.has(key)) {
-        execByKey.set(key, { key, inst: ex.inst, group: grpName(ex.instType), person: ex.person, title: ex.title, action: ex.action, source: a.source, url: a.url, date: a.date, ts: a.ts, n: 1 });
+        execByKey.set(key, { key, inst: ex.inst, group: grpName(ex.instType), person: ex.person, title: ex.title, action: ex.action, source: a.source, url: a.url, gurl: a.gurl, date: a.date, ts: a.ts, n: 1 });
       } else execByKey.get(key).n++;                  // 보도 건수 — 오타·오귀속 판별에 쓴다
     }
     // AUM — 기관별 최신 1건 (귀속 기관은 수치와 같은 문장에서 직접 판별)
@@ -2632,6 +2632,8 @@ async function main() {
     aums: mergeBy('inst', prevIns.aums, fresh.aums).filter((x) => x.unit !== 'KRW' || aumSane(x.amount, refAum.get(x.inst))),
     relocations: mergeBy('inst', prevIns.relocations, fresh.relocations).slice(0, 30),
   };
+  // 예전 회차에 잘린 채 저장된 링크(…?idxno)는 열리지 않으므로 구글 뉴스 링크로 바꿔 둔다(다음 회차 원문 해석 시 갱신)
+  for (const k of ['cios', 'execs', 'aums', 'relocations', 'assetReturns']) for (const x of insights[k] || []) if (truncatedUrl(x.url) && x.gurl) x.url = x.gurl;
   await writeFile(new URL('../insights.json', import.meta.url), JSON.stringify(insights, null, 0));
   console.log(`insights: ${insights.cios.length} CIO, ${insights.execs.length} 실무인사, ${insights.aums.length} AUM, ${insights.relocations.length} 지방이전, ${insights.assetReturns.length} asset-returns`);
 

@@ -326,6 +326,7 @@ const GT_TERMS = [
 ];
 function gtPolish(s) {
   let t = String(s || '');
+  t = t.replace(/\s*(?:\[\s*(?:파라|단락|para)\.?\s*\d+\s*\]\s*)+/gi, ' ').trim();   // 원문 문단 번호 표식이 번역돼 남은 것
   for (const [re, to] of GT_TERMS) t = t.replace(re, to);
   // 기사 문체(~다)로 통일 — 구글 번역은 경어체(~습니다)로 나온다
   t = t.replace(/입니다(?=[.\s"'”’)]|$)/g, '이다').replace(/합니다(?=[.\s"'”’)]|$)/g, '한다').replace(/됩니다(?=[.\s"'”’)]|$)/g, '된다')

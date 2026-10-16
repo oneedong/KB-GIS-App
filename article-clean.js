@@ -100,6 +100,8 @@
       .replace(/\s*[▶☞]\s*[^.!?。]{0,80}$/g, '')
       // 증권 정보 사이트가 문단 끝에 붙이는 매수·매도 유도 문구
       .replace(/\s*Should investors sell immediately\?\s*Or is it worth buying [^?]{1,60}\?/g, '')
+      // Caixin 등 문단 번호 표식 — "[para. 1][para. 2]"
+      .replace(/\s*(?:\[\s*para\.?\s*\d+\s*\]\s*)+/gi, ' ')
       .replace(/[ \t ]{2,}/g, ' ')
       .trim();
   }

@@ -1842,7 +1842,7 @@ const STALE_PRONE_RE = /privateequityinternational\.com|infrastructureinvestor\.
 const PEI_OLD_URL_RE = /\/\/(?:www\.)?(?:privateequityinternational|infrastructureinvestor|privatedebtinvestor|perenews|secondariesinvestor|buyoutsinsider|agendaweek|newprivatemarkets)\.com\/[^/?#]+$/i;
 const NON_ARTICLE_URL_RE = /\/(?:tag|tags|category|categories|author|authors|topics?|institution-profiles|people-profiles|companies)\/|\/page\/\d+\/?$|\/client\/login|[?&]target=/i;
 const NON_ARTICLE_TITLE_RE = /\bArchives\s*$|\bPage \d+ of \d+\b|^\s*-\s|^(?:Private Equity Investors|Institution profile)\b/i;
-async function fetchArticleText(url, title = '') {
+export async function fetchArticleText(url, title = '') {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko,en;q=0.8' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
     // 404/410 = 기사가 삭제됐거나 존재하지 않는 링크 → 호출부가 피드에서 제외한다.
@@ -1888,7 +1888,7 @@ function parseReaderTextSrv(t) {
   const out = AC.clean(stripSiteFooter(paras.join('\n\n')).split(/\n+/)).paragraphs.join('\n\n').slice(0, 12000);
   return looksJunky(out) ? '' : out;
 }
-async function fetchViaReader(url) {
+export async function fetchViaReader(url) {
   try {
     const r = await fetch('https://r.jina.ai/' + url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(18000) });
     if (!r.ok) return '';

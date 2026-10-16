@@ -1,0 +1,26 @@
+name: Diagnose (본문·번역 진단)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'bodies | translate | gemini | all'
+        required: false
+        default: 'all'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: npm ci --omit=dev --no-audit --no-fund
+      - run: node scripts/diagnose.mjs "${{ inputs.mode }}"
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

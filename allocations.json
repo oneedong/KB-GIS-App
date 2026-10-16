@@ -1,25 +1,8 @@
 {
-  "asOf": "기관별 최신 공시",
+  "asOf": "공시 확정치 + 보도 기준(기관별 기준 시점 표기)",
   "unit": "조원",
-  "note": "각 기관의 공식 공시 기준 확정치만 표기합니다(국민연금 2026.3월 말 공시, KIC 2024 연차보고서 — 외화 운용기관은 원화 환산). 공시로 확정되지 않은 기관은 표기하지 않습니다. 연도별 추이의 과거 시점은 추세 참고용입니다.",
+  "note": "국민연금·KIC는 기관 공시 확정치, 그 밖의 기관은 최근 기사에 인용된 수치(보도 기준 — 기준 시점·근거 문장·출처 링크 함께 표시)입니다. 매주 월요일 자동 확인하며, 공시 확정치는 기사로 덮어쓰지 않습니다.",
   "institutions": [
-    {
-      "name": "국민연금",
-      "group": "연기금",
-      "aum": 1528,
-      "altAmount": 248,
-      "altPct": 16.2,
-      "overseasAltPct": 88,
-      "verified": true,
-      "source": "국민연금 공시(2026년 3월 말)",
-      "sourceUrl": "https://fund.nps.or.kr/jsppage/fund/mcs/mcs_04_07_03.jsp",
-      "sourceNote": "2026년 3월 말 공시 — 대체투자 247.6조원(기금의 16.2%): 사모투자 76조 · 부동산 58.2조 · 인프라 52.9조 · 사모대출 16.6조. (해외 비중 88%는 2024년 말 기준)",
-      "trend": [
-        { "year": 2023, "altPct": 15.9, "altAmount": 159 },
-        { "year": 2024, "altPct": 17.1, "altAmount": 207 },
-        { "year": 2026, "altPct": 16.2, "altAmount": 248 }
-      ]
-    },
     {
       "name": "한국투자공사",
       "group": "연기금",
@@ -32,10 +15,159 @@
       "sourceUrl": "https://kic-annualreport.kr/2024/kor/",
       "sourceNote": "2024년 말 운용자산 2,065억 달러(약 304조원), 대체자산 비중 21.9%(약 67조원) — 사모주식·부동산·인프라·헤지펀드·사모채권",
       "trend": [
-        { "year": 2022, "altPct": 20.0, "altAmount": 44 },
-        { "year": 2023, "altPct": 21.0, "altAmount": 50 },
-        { "year": 2024, "altPct": 21.9, "altAmount": 67 }
+        {
+          "year": 2022,
+          "altPct": 20,
+          "altAmount": 44
+        },
+        {
+          "year": 2023,
+          "altPct": 21,
+          "altAmount": 50
+        },
+        {
+          "year": 2024,
+          "altPct": 21.9,
+          "altAmount": 67
+        }
       ]
+    },
+    {
+      "name": "국민연금",
+      "group": "연기금",
+      "aum": 1528,
+      "altAmount": 248,
+      "altPct": 16.2,
+      "overseasAltPct": 88,
+      "verified": true,
+      "source": "국민연금 공시(2026년 3월 말)",
+      "sourceUrl": "https://fund.nps.or.kr/jsppage/fund/mcs/mcs_04_07_03.jsp",
+      "sourceNote": "2026년 3월 말 공시 — 대체투자 247.6조원(기금의 16.2%): 사모투자 76조 · 부동산 58.2조 · 인프라 52.9조 · 사모대출 16.6조. (해외 비중 88%는 2024년 말 기준)",
+      "trend": [
+        {
+          "year": 2023,
+          "altPct": 15.9,
+          "altAmount": 159
+        },
+        {
+          "year": 2024,
+          "altPct": 17.1,
+          "altAmount": 207
+        },
+        {
+          "year": 2026,
+          "altPct": 16.2,
+          "altAmount": 248
+        }
+      ]
+    },
+    {
+      "name": "군인공제회",
+      "group": "공제회",
+      "altPct": 74.8,
+      "altAmount": null,
+      "aum": 24.9,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2025년 말",
+      "pub": "2026-08-10",
+      "aumAsOf": "2026년 6월 말",
+      "source": "Daum 보도",
+      "sourceUrl": "https://v.daum.net/v/20260810072640600?f=p",
+      "sourceNote": "“지난해 말 군인공제회 투자운용자산의 74.8%가 대체투자와 부동산이다.” · 운용자산: “2026년 6월 말 기준 총자산은 24조9433억원으로 집계됐다.”(일간투데이)",
+      "checkedAt": "2026-10-17",
+      "trend": []
+    },
+    {
+      "name": "대한지방행정공제회",
+      "group": "공제회",
+      "altPct": 70.1,
+      "altAmount": 23.7,
+      "aum": 33.8,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2026-08-07 보도",
+      "pub": "2026-08-07",
+      "aumAsOf": "2026-08-07 보도",
+      "source": "아시아경제 보도",
+      "sourceUrl": "https://www.asiae.co.kr/article/2026080609042307948",
+      "sourceNote": "“운용자산은 대체투자가 23조7093억원(70.1%)으로 가장 많고 주식 4조1515억원(12.27%), 단기자금 등 3조6547억원(10.8%), 채권 2조3104억원(6.8%) 순이다.”",
+      "checkedAt": "2026-10-17",
+      "trend": []
+    },
+    {
+      "name": "한국교직원공제회",
+      "group": "공제회",
+      "altPct": 66.8,
+      "altAmount": null,
+      "aum": null,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2025-11-04 보도",
+      "pub": "2025-11-04",
+      "aumAsOf": null,
+      "source": "아시아경제 보도",
+      "sourceUrl": "https://www.asiae.co.kr/article/2025110310301432660",
+      "sourceNote": "“교직원공제회도 대체투자 비중이 66.8%로 연기금·공제회 가운데 가장 높은 편이다.”",
+      "checkedAt": "2026-10-17",
+      "trend": []
+    },
+    {
+      "name": "경찰공제회",
+      "group": "공제회",
+      "altPct": 51,
+      "altAmount": null,
+      "aum": null,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2025년",
+      "pub": "2026-08-12",
+      "aumAsOf": null,
+      "source": "아시아경제 보도",
+      "sourceUrl": "https://www.asiae.co.kr/article/2026081110002086455",
+      "sourceNote": "“투자자산 기준 대체투자 비중은 2022년 68.2%에서 2023년 60.2%, 2024년 53.2%, 지난해 51.0%로 3년 연속 뒷걸음질했다.”",
+      "checkedAt": "2026-10-17",
+      "trend": []
+    },
+    {
+      "name": "사립학교교직원연금공단",
+      "group": "연기금",
+      "altPct": 25.5,
+      "altAmount": null,
+      "aum": 30,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2025년",
+      "pub": "2026-10-06",
+      "aumAsOf": "2026-07-08 보도",
+      "source": "이데일리 보도",
+      "sourceUrl": "https://www.edaily.co.kr/News/Read?newsId=02496086645610624&mediaCodeNo=257",
+      "sourceNote": "“주식·채권·대체투자 등 사학연금의 유가증권 투자 가운데 대체투자 비중은 2016년 16.0%에서 지난해 25.5%까지 상승했다.” · 운용자산: “현재 약 30조원 규모의 기금을 운용하는 사학연금은 이번 CIO 교체를 계기로 글로벌 자산배분 전략과 대체투자 포트폴리오를 재점검하는 한편 리스크 관리 체계도 한층 강화할 것으로 업계는 보고 있다.”(Daum)",
+      "checkedAt": "2026-10-17",
+      "trend": []
+    },
+    {
+      "name": "공무원연금공단",
+      "group": "연기금",
+      "altPct": 14,
+      "altAmount": 2.4,
+      "aum": 17.2,
+      "overseasAltPct": null,
+      "verified": false,
+      "basis": "press",
+      "asOf": "2026년 5월 말",
+      "pub": "2026-08-11",
+      "aumAsOf": "2026년 5월 말",
+      "source": "아시아경제 보도",
+      "sourceUrl": "https://www.asiae.co.kr/article/2026081010560940340",
+      "sourceNote": "“지난 5월 말 기준 공무원연금의 채권 보유액은 3조8727억원(22.5%), 주식은 5조6587억원(32.8%), 대체투자는 2조4054억(14.0%)으로 비중은 대략 2:3:1로 나타났다.”",
+      "checkedAt": "2026-10-17",
+      "trend": []
     }
   ]
 }

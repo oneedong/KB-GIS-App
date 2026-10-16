@@ -102,18 +102,20 @@ export function extractFigures(sent, pubYear = null) {
 }
 // 기사 한 건(제목+본문)에서 기관 수치 찾기 — 기관명이 문장에 있거나, 제목에 있고 문장 주어가 생략된 경우
 export function figuresFromArticle(title, body, aliases, pubYear) {
-  const inTitle = aliases.some((x) => title.includes(x));
-  const all = `${title}. ${body}`;
-  // 이 기관만 다루는 기사(제목에 기관명, 본문에 다른 기관 없음)면 주어가 생략된 문장도 이 기관 이야기로 본다
-  const others = [...TARGETS.map(([, al]) => al).filter((al) => !al.some((x) => aliases.includes(x))), ['국민연금'], ['한국투자공사', 'KIC']];
-  const solo = inTitle && !others.some((al) => al.some((x) => all.includes(x)));
-  const sents = all.split(/(?<=다\.|\.)\s+|\n+/).map((x) => x.trim()).filter(Boolean);
+  // 기관 묶음: 대상 기관들 + 국민연금·KIC(비교 대상으로 자주 나온다)
+  const GROUPS = [...TARGETS.map(([, al]) => al), ['국민연금'], ['한국투자공사', 'KIC']];
+  const self = GROUPS.findIndex((al) => al.some((x) => aliases.includes(x)));
+  const mentioned = (s) => GROUPS.map((al, i) => (al.some((x) => s.includes(x)) ? i : -1)).filter((i) => i >= 0);
+  const sents = `${title}. ${body}`.split(/(?<=다\.|\.)\s+|\n+/).map((x) => x.trim()).filter(Boolean);
   const found = [];
+  // 주어가 생략된 문장은 바로 앞에서 마지막으로 언급된 기관의 이야기로 읽는다(기사 문장의 일반적 흐름).
+  // 다른 기관이 사이에 끼면 그 뒤 생략 문장은 이 기관 수치로 보지 않는다.
+  let last = -1;
   for (const s of sents) {
-    const named = aliases.some((x) => s.includes(x));
-    if (!named && !solo && !(inTitle && /^(?:공제회|공단|연금|기금|본부)(?:는|은|의)|^(?:이|그)\s*(?:공제회|공단)/.test(s))) continue;
-    // 다른 기관과 비교하는 문장("국민연금(16%)보다 높다")에서 다른 기관 수치를 가져오지 않도록 기관명이 둘 이상이면 건너뛴다
-    if (TARGETS.filter(([, al]) => al.some((x) => s.includes(x))).length > 1 || (/국민연금/.test(s) && !aliases.includes('국민연금'))) continue;
+    const ms = mentioned(s);
+    if (ms.length > 1) { last = ms[ms.length - 1]; continue; }   // 두 기관 이상(비교 문장) — 수치를 가져오지 않는다
+    if (ms.length === 1) last = ms[0];
+    if (last !== self) continue;
     const f = extractFigures(s, pubYear);
     if (f) found.push({ ...f, asOf: f.asOf || asOfOf(s, pubYear), sentence: s.slice(0, 220) });
   }
@@ -158,8 +160,10 @@ function selftest() {
   if (!lo || lo.asOf !== '2025년') { ok = false; console.log('localAsOf FAIL', lo); }
   const solo = figuresFromArticle('행정공제회, 대체투자 쏠림 점검', '운용자산은 대체투자가 23조7093억원(70.1%)으로 가장 많다.', ['행정공제회'], 2026);
   if (solo.length !== 1 || solo[0].altPct !== 70.1) { ok = false; console.log('solo FAIL', solo); }
-  const mixed = figuresFromArticle('행정공제회, 대체투자 쏠림 점검', '운용자산은 대체투자가 23조7093억원(70.1%)으로 가장 많다. 교직원공제회도 비슷하다.', ['행정공제회'], 2026);
+  const mixed = figuresFromArticle('행정공제회·교직원공제회 대체투자 점검', '교직원공제회도 비슷하다. 운용자산은 대체투자가 23조7093억원(70.1%)으로 가장 많다.', ['행정공제회'], 2026);
   if (mixed.length !== 0) { ok = false; console.log('mixed FAIL', mixed); }
+  const ante = figuresFromArticle('CIO 공백에 투자 멈춘 경찰공제회', '국민연금 출신 인사가 거론된다. 경찰공제회는 올해 배분안을 내놨다. 투자자산 기준 대체투자 비중은 2022년 68.2%에서 지난해 51.0%로 뒷걸음질했다.', ['경찰공제회'], 2026);
+  if (ante.length !== 1 || ante[0].altPct !== 51) { ok = false; console.log('antecedent FAIL', ante); }
   const art = figuresFromArticle('교직원공제회, 해외 대체투자 확대', '공제회의 대체투자 비중은 62.1%다. 국민연금의 대체투자 비중은 16.2%다.', ['교직원공제회'], 2026);
   if (art.length !== 1 || art[0].altPct !== 62.1) { ok = false; console.log('article FAIL', art); }
   console.log(ok ? 'SELFTEST PASS' : 'SELFTEST FAIL');

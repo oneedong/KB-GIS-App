@@ -225,7 +225,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
               ) : (!loading && paragraphs.length > 0 && (
                 <div style={{ font: F(500, 12.5, 1.6), color: KB.mute }}>본문 번역은 수집할 때 최신 기사부터 차례로 반영됩니다. 아직 번역되지 않아 영문으로 표시합니다.</div>
               ))}
-              {ko && <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 }}><span style={{ color: KB.ko, fontWeight: 600 }}>파란 글씨</span>는 한국어 번역입니다{ko.n && ko.n < paragraphs.length ? ` · 앞 ${ko.n}개 문단 번역` : ''}.</div>}
+              {ko && <div style={{ font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 }}><span style={{ color: KB.ko, fontWeight: 600 }}>파란 글씨</span>는 한국어 번역입니다{ko.src === 'gt' ? '(구글 자동 번역 — 용어만 업계 표현으로 정리)' : ''}{ko.n && ko.n < paragraphs.length ? ` · 앞 ${ko.n}개 문단 번역` : ''}.</div>}
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '18px 0 16px', font: F(500, 12.5), color: KB.mute }}>

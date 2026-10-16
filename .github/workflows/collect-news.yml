@@ -2,7 +2,10 @@ name: Collect news
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    # GitHub 예약 실행은 매시 정각에 몰려 자주 늦거나 빠진다(2026-10 실측: 3~6시간 간격).
+    # 정각을 피한 분(:17)에 매시간 깨우고, 아래 'gate' 단계가 마지막 수집 후 2시간 40분이 지났을 때만 수집한다
+    # → 예약이 하나 빠져도 다음 시간에 따라잡아 실제 간격이 약 3시간으로 유지된다.
+    - cron: '17 * * * *'
   workflow_dispatch: {}
   push:
     branches: [ main ]
@@ -20,23 +23,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50   # 외부 응답이 멈춰도 다음 회차를 막지 않게
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
         with:
-          node-version: '20'
+          fetch-depth: 30
+      - name: Gate (마지막 수집 후 2시간 40분 경과 시에만)
+        id: gate
+        run: |
+          last=$(git log -1 --format=%ct --grep='refresh news feed' || true)
+          now=$(date +%s)
+          if [ "${{ github.event_name }}" != "schedule" ] || [ -z "$last" ] || [ $((now - last)) -ge 9600 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "수집 실행 (마지막 수집: ${last:-기록 없음})"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"; echo "마지막 수집 후 $(( (now - last) / 60 ))분 — 건너뜀"
+          fi
+      - uses: actions/setup-node@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: '22'
           cache: npm
       # 본문 추출 엔진(Readability + linkedom) — package-lock.json 기준 설치
       - name: Install extractor deps
+        if: steps.gate.outputs.run == 'true'
         run: npm ci --omit=dev --no-audit --no-fund
       - name: Collect
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/collect-news.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
       - name: Rebuild LP roster
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/gen-institutions.mjs
       - name: Commit updated feed
+        if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"

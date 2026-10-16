@@ -1,0 +1,51 @@
+name: LP refresh (국내 LP 배분·운용자산 주간 최신화)
+
+on:
+  schedule:
+    - cron: '23 22 * * 0'   # 매주 월요일 07:23 KST
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: '저장하지 않고 찾은 값만 출력'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lp-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: npm ci --omit=dev --no-audit --no-fund
+      - name: Refresh allocations
+        run: node scripts/lp-refresh.mjs ${{ github.event.inputs.dry == 'true' && '--dry' || '' }}
+      - name: Rebuild LP profiles
+        if: github.event.inputs.dry != 'true'
+        run: node scripts/gen-lp-profiles.mjs
+      - name: Commit
+        if: github.event.inputs.dry != 'true'
+        run: |
+          git config user.name  "kbgis-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A allocations.json lp-profiles.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: 국내 LP 배분·운용자산 최신화 [skip ci]"
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase -X theirs origin main || { git rebase --abort; exit 1; }
+              [ "$i" = "3" ] && exit 1
+            done
+          else
+            echo "No changes."
+          fi

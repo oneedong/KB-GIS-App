@@ -225,7 +225,8 @@ QUERIES.push('(칼라일 OR 블랙스톤 OR KKR OR 아폴로 OR 브룩필드 OR 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 // 번역은 모델별 무료 한도가 따로 잡히므로, 한 모델이 한도(429)에 걸리면 다음 모델로 넘어간다.
 // '-latest' 별칭은 구글이 현행 모델로 계속 연결해 주므로 모델 폐기(404)에 강하다.
-const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'].filter(Boolean);
+// 2026-10 진단: gemini-flash-latest 는 503(과부하)이 잦고 gemini-2.5-flash-lite 는 폐기(404). 무료 키로 응답한 모델 순서.
+const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-latest'].filter(Boolean);
 const EXHAUSTED = new Set();
 let WORKING_MODEL = '';
 // 번역 예산(회차당) — 무료 한도(분당·일일 요청 수)를 넘지 않게 제목은 묶어서, 본문은 기사당 1회.
@@ -290,14 +291,77 @@ async function geminiRaw(prompt, maxTok) {
         if (MODEL_CANDIDATES.every((m) => EXHAUSTED.has(m))) { LLM_BLOCKED = true; return null; }
         continue;
       }
+      // 503(과부하)·500 은 같은 모델로 다시 부르면 매번 수십 초씩 기다리다 실패한다 — 이번 회차는 다음 모델로 넘어간다
+      if (res.status >= 500) {
+        console.warn(`gemini ${model} HTTP ${res.status} — 이번 회차는 다음 모델로`);
+        EXHAUSTED.add(model); if (WORKING_MODEL === model) WORKING_MODEL = '';
+        if (MODEL_CANDIDATES.every((m) => EXHAUSTED.has(m))) { LLM_BLOCKED = true; return null; }
+        continue;
+      }
       if (!res.ok) { console.warn(`gemini ${model} HTTP ${res.status}`); return null; }
       const j = await res.json();
       const text = (((j.candidates || [])[0] || {}).content || {}).parts?.[0]?.text || '';
       if (text) { WORKING_MODEL = model; return text; }
       return null;
-    } catch (e) { console.warn(`gemini ${model} error: ${e.message}`); }
+    } catch (e) {
+      console.warn(`gemini ${model} error: ${e.message}`);
+      if (/abort|timeout/i.test(e.name + e.message)) { EXHAUSTED.add(model); if (WORKING_MODEL === model) WORKING_MODEL = ''; }   // 응답 없는 모델은 이번 회차 제외
+    }
   }
   return null;
+}
+
+// ── 무료 번역 폴백: Google 번역(키 없음) ─────────────────────
+// Gemini 무료 한도·과부하로 번역이 비면 쓰는 대체 경로. 2026-10 진단에서 Actions 러너에서 25회 연속 성공,
+// 2,400자 POST 도 정상. 업계 용어는 아래 표로 국내 통용어로 바꾸고, 해외 인명·기관명은 영문으로 되돌린다.
+let GTX_BLOCKED = false;
+const GT_TERMS = [
+  [/민간\s*신용|사모\s*신용|프라이빗\s*크레딧|개인\s*신용(?=\s*(?:펀드|시장|전략|운용사))/g, '사모대출'],
+  [/민간\s*(?:시장|시장들)/g, '사모시장'], [/사모\s*시장/g, '사모시장'], [/민간\s*자본/g, '사모자본'],
+  [/사모\s*펀드/g, '사모펀드'], [/민간\s*주식|사모\s*주식/g, '사모주식(PE)'], [/직접\s*대출/g, '다이렉트 렌딩'],
+  [/(?:연속|계속|지속)\s*(?:기금|펀드)/g, '컨티뉴에이션 펀드'], [/보조\s*시장|2차\s*시장/g, '세컨더리 시장'],
+  [/최종\s*마감/g, '파이널 클로즈'], [/(?:첫\s*번째|첫|1차)\s*마감/g, '1차 클로즈'], [/구조화된\s*솔루션/g, '구조화 솔루션'],
+  [/자산\s*기반\s*금융/g, '자산담보금융(ABF)'], [/운용\s*중인\s*자산/g, '운용자산'], [/관리\s*자산/g, '운용자산'],
+  [/공동\s*투자자/g, '공동투자자'], [/제한된\s*파트너/g, 'LP(유한책임투자자)'], [/일반\s*파트너/g, 'GP(운용사)'],
+];
+function gtPolish(s) {
+  let t = String(s || '');
+  for (const [re, to] of GT_TERMS) t = t.replace(re, to);
+  // 기사 문체(~다)로 통일 — 구글 번역은 경어체(~습니다)로 나온다
+  t = t.replace(/입니다(?=[.\s"'”’)]|$)/g, '이다').replace(/합니다(?=[.\s"'”’)]|$)/g, '한다').replace(/됩니다(?=[.\s"'”’)]|$)/g, '된다')
+    .replace(/있습니다(?=[.\s"'”’)]|$)/g, '있다').replace(/없습니다(?=[.\s"'”’)]|$)/g, '없다').replace(/습니다(?=[.\s"'”’)]|$)/g, '다');
+  return AC.enNames(t);
+}
+async function gtxOne(text) {
+  if (GTX_BLOCKED) return null;
+  try {
+    const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t', {
+      method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: 'q=' + encodeURIComponent(text), signal: AbortSignal.timeout(15000),
+    });
+    if (r.status === 429 || r.status === 403) { GTX_BLOCKED = true; console.warn(`google translate ${r.status} — 이번 회차 중단`); return null; }
+    if (!r.ok) return null;
+    const j = await r.json();
+    return (j[0] || []).map((x) => x[0] || '').join('');
+  } catch { return null; }
+}
+// 문단 배열 → 번역 배열(같은 개수). 4,000자 단위로 묶어 보내고, 문단 수가 어긋나면 그 묶음만 문단별로 다시 보낸다.
+export async function gtxTranslate(paras) {
+  const out = new Array(paras.length).fill(null);
+  let i = 0;
+  while (i < paras.length && !GTX_BLOCKED) {
+    let j = i, len = 0;
+    while (j < paras.length && (j === i || len + paras[j].length < 4000)) { len += paras[j].length + 2; j++; }
+    const chunk = paras.slice(i, j);
+    const res = await gtxOne(chunk.join('\n\n'));
+    const parts = res ? res.split(/\n{2,}/).map((x) => x.trim()) : [];
+    if (parts.length === chunk.length) parts.forEach((x, k) => { out[i + k] = x; });
+    else for (let k = 0; k < chunk.length && !GTX_BLOCKED; k++) { out[i + k] = await gtxOne(chunk[k]); await pause(250); }
+    i = j;
+    await pause(300);
+  }
+  if (out.some((x) => !x)) return null;
+  return out.map(gtPolish);
 }
 const TR_RULES = '해외대체투자(사모펀드·사모대출·인프라·부동산·항공기금융) 전문 기자처럼 자연스러운 한국어로 옮긴다. 사실·숫자·통화 단위는 그대로 두고 금액은 "$5bn → 50억 달러"처럼 한국식으로 쓴다. 사람·회사·운용사·기관·펀드·상품 이름은 한글로 음역하지 말고 원문의 영문 표기를 그대로 쓴다(예: Blackstone, KKR, Apollo, Stephen Schwarzman, CalPERS, Blackstone Real Estate Partners X — "블랙스톤"처럼 쓰지 않는다). 단, 한국 기관·한국 기업·한국인은 한글 공식 명칭을 쓴다(예: National Pension Service → 국민연금, Korea Investment Corp → 한국투자공사, Lee Kyu-hong → 이규홍). 국가·도시 등 지명은 한글로 쓴다. 업계 용어는 국내 통용 표현(LP·GP, 펀드레이징, 캐피탈콜, 세컨더리, 사모대출 등)을 쓴다. 뜻을 더하거나 빼지 않는다.';
 const parseJsonArr = (text) => { const m = String(text || '').match(/\[[\s\S]*\]/); try { const v = JSON.parse(m ? m[0] : text); return Array.isArray(v) ? v : null; } catch { return null; } };
@@ -367,8 +431,8 @@ async function fundPass(list) {
 }
 
 // 영문 기사 번역 패스 — 제목(묶음) → 본문(최신 기사부터). 결과: a.tko(한글 제목), a.bodyKo = { h, p: [...] }
+const GT_TITLE_MAX = 300, GT_BODY_MAX = 60;   // 무료 번역 폴백 회차당 상한(구글 번역 차단 방지)
 async function translatePass(list) {
-  if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) return { titles: 0, bodies: 0 };
   // 번역은 최근 5일 기사만 — 그보다 오래된 기사는 새로 따라잡지 않는다(이미 된 번역은 유지)
   const cut = new Date(Date.now() - TR_DAYS * 86400000).toISOString();
   const en = list.filter((a) => a.lang === 'en' && (a.ts || '') >= cut).sort((x, y) => (x.ts < y.ts ? 1 : -1));
@@ -380,6 +444,14 @@ async function translatePass(list) {
     calls++;
     if (out) chunk.forEach((a, k) => { if (out[k] && /[가-힣]/.test(out[k])) { a.tko = AC.enNames(out[k]); a.tv = TV; titles++; } });
     await pause(claudeOn() ? 300 : LLM_GAP_MS);
+  }
+  // LLM 이 못 한 제목은 무료 번역으로 채운다
+  let gtTitles = 0;
+  const leftT = en.filter((a) => !a.tko || a.tv !== TV).slice(0, GT_TITLE_MAX);
+  for (let i = 0; i < leftT.length && !GTX_BLOCKED; i += 40) {
+    const chunk = leftT.slice(i, i + 40);
+    const out = await gtxTranslate(chunk.map((a) => String(a.ko || '').replace(/\s+/g, ' ').trim()));
+    if (out) chunk.forEach((a, k) => { if (out[k] && /[가-힣]/.test(out[k])) { a.tko = out[k]; a.tv = TV; a.tsrc = 'gt'; titles++; gtTitles++; } });
   }
   let bcalls = 0;
   for (const a of en) {
@@ -396,7 +468,20 @@ async function translatePass(list) {
     if (out) { a.bodyKo = { h, n: paras.length, p: out.map((x) => AC.enNames(x.replace(/[\u4e00-\u9fff]+\(([^()]{1,30})\)/g, '$1'))) }; bodies++; }   // "伦敦(런던)" 같은 한자 섞임 정리
     await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
-  return { titles, bodies };
+  // LLM 한도·과부하로 남은 본문은 무료 번역으로(최신 기사부터)
+  let gtBodies = 0;
+  for (const a of en) {
+    if (gtBodies >= GT_BODY_MAX || GTX_BLOCKED) break;
+    if (!a.body || String(a.body).length < 300) continue;
+    let paras = enParas(a.body);
+    let acc = 0; paras = paras.filter((p) => (acc += p.length) <= 9000);
+    if (!paras.length) continue;
+    const h = parasHash(paras);
+    if (a.bodyKo && a.bodyKo.h === h) continue;
+    const out = await gtxTranslate(paras);
+    if (out) { a.bodyKo = { h, n: paras.length, p: out, src: 'gt' }; bodies++; gtBodies++; }
+  }
+  return { titles, bodies, gtTitles, gtBodies };
 }
 
 // ── 분류 사전 ────────────────────────────────────────────
@@ -1000,13 +1085,17 @@ const NON_EVENT_RE = new RegExp([
 // 딜 금액 — 통화·단위가 붙은 금액만 인정(주당 가격·운용자산(AUM)·면적 수치 제외).
 export function dealAmount(text) {
   const t = String(text || '');
+  // 2026-10 점검: 투자내역 금액 공란의 상당수가 표기 미인식이었다 — 인도 루피(Rs 115 crore·₹1,154 crore·Rs. 43 bn),
+  // 원화 W 표기(W900b), mln·bil 약어, 북유럽·스위스 통화 코드(SEK1.4bn), 국문 '4400억에'·'3천억'.
   const pats = [
-    /(?:US\$|A\$|C\$|S\$|HK\$|\$|€|£|¥|₩)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|T|B|M)\b/i,
-    /(?:USD|EUR|GBP|JPY|KRW|AUD|CAD|SGD)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn)\b/i,
+    /(?:US\$|A\$|C\$|S\$|HK\$|NZ\$|R\$|\$|€|£|¥|₩)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|mln|bil|T|B|M)\b/i,
+    /(?:USD|EUR|GBP|JPY|KRW|AUD|CAD|SGD|CHF|SEK|NOK|DKK|HKD|CNY|RMB|NZD|BRL|ZAR|INR)\s?[\d.,]+\s?(?:trillion|billion|million|tn|bn|mn|mln|bil)\b/i,
+    /(?:Rs\.?|INR|₹)\s?[\d.,]+\s?-?\s?(?:lakh crore|crore|cr|bn|billion|mn|million)\b/i,
+    /\bW\s?[\d.,]+\s?(?:trillion|billion|tn|bn|t|b)\b/,
     /[\d.,]+\s?(?:trillion|billion|million)\s+(?:dollars|euros|pounds|won|yen)\b/i,
     /[\d,.]+\s?조\s?(?:[\d,]+\s?억)?\s?(?:원|달러|유로|파운드|엔)?/,
-    /[\d,.]+\s?억\s?(?:[\d,]+\s?만)?\s?(?:원|달러|유로|파운드|엔)/,
-    /[\d,.]+\s?억(?=\s|\.|,|…|$)/,
+    /[\d,.]+\s?천?\s?억\s?(?:[\d,]+\s?만)?\s?(?:원|달러|유로|파운드|엔)/,
+    /[\d,.]+\s?천?\s?억(?=\s|\.|,|…|$|에|의|을|를|대|\)|·|’|”|')/,
   ];
   for (const re of pats) {
     const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
@@ -1017,8 +1106,11 @@ export function dealAmount(text) {
       const skip = /주당|per share/i.test(before.slice(-6) + after.slice(0, 6))                   // 주가
         || /^\s*(?:굴리|운용|규모의\s*기금|적립)/.test(after)                                        // 운용자산(AUM)
         || /(?:운용\s*자산|운용\s*규모|\bAUM\b|assets under management)[^\d$€£¥₩]{0,20}$/i.test(before)
-        || /(?:manag(?:es|ing)|oversee(?:s|ing)?|with|AUM of|assets of)\s+(?:about |around |roughly |nearly |over |more than |some )?$/i.test(before)
-        || /^\s*(?:in\s+)?(?:assets|AUM|of assets)\b/i.test(after);
+        // 'with $X' 는 AUM 일 때만 건너뛴다("record with $6.6bn first close"·"with $350 Million Commitment"는 거래 금액)
+        || /(?:manag(?:es|ing)|oversee(?:s|ing)?|AUM of|assets of)\s+(?:about |around |roughly |nearly |over |more than |some )?$/i.test(before)
+        || /^\s*(?:in\s+|of\s+)?(?:assets|AUM|of assets|under management)\b/i.test(after)
+        || /^\s*(?:규모의?\s*)?유상\s*증자/.test(after)
+        || /^\s*(?:valuation|평가|기업가치)/i.test(after);                                            // 기업가치(거래 금액 아님)
       if (!skip) return m[0].replace(/\s+/g, ' ').trim();
     }
   }
@@ -1075,6 +1167,22 @@ export function gpRoleInTitle(title, g, kind) {
   if (kind === '투자' && /^[^,…]{0,6}(?:의|가|이)\s/.test(after)) return { kind };
   return null;
 }
+const DEALISH_RE = /\bdeal\b|transaction|acqui|commit|invest|purchase|\bbuy|\bsell|\bsale\b|\bfor (?:about |around |approximately |roughly )?[$€£₹]|거래|인수|매입|매각|투자|출자|약정|규모/i;
+function bodyDealAmount(body, title, kindRe, names = []) {
+  const b = String(body || '').slice(0, 1200);
+  if (!b) return '';
+  const toks = AC.titleTokens(title).map((x) => x.toLowerCase()).filter((x) => x.length >= 3);
+  const nameHit = (low) => names.some((n) => n && low.includes(String(n).toLowerCase().slice(0, Math.max(2, Math.min(6, String(n).length)))));
+  const sents = b.split(/(?<=[.!?。]|다\.)\s+/).slice(0, 6);
+  for (const sn of sents) {
+    const low = sn.toLowerCase();
+    if (!kindRe.test(sn) && !DEALISH_RE.test(sn)) continue;
+    if (!nameHit(low) && toks.filter((x) => low.includes(x)).length < 2) continue;
+    const amt = dealAmount(sn);
+    if (amt) return amt;
+  }
+  return '';
+}
 export function extractDeals(a) {
   if (!a || !a.ko || a.cat === '인사' || a.cat === '이전') return [];
   const title = String(a.en && a.lang === 'en' && !a.translated ? a.en || a.ko : a.ko).replace(/^\s*[\[【][^\]】]{0,20}[\]】]\s*/, '');
@@ -1085,9 +1193,11 @@ export function extractDeals(a) {
   const kind = kindHit[0];
   const text = `${title} ${lead}`;
   const status = DEAL_PENDING_RE.test(title) ? '추진·검토' : '확정';
-  const amount = dealAmount(title) || dealAmount(lead) || '';
+  // 제목에 금액이 없으면 본문 앞부분에서 '같은 거래를 말하는 문장'(행위어 + 제목의 고유명사)에서만 찾는다 —
+  // 리드의 아무 숫자나 가져오면 운용자산·과거 거래 금액이 섞인다.
   const lps = lpsIn(title).slice(0, 3);
   const gps = gpsIn(title);
+  const amount = dealAmount(title) || bodyDealAmount(a.body, title, kindHit[1], [...lps, ...gps].map((x) => x.inst)) || '';
   const gpsLead = gps.length ? gps : gpsIn(lead);
   const base = {
     kind, status, amount,
@@ -1180,11 +1290,12 @@ export function fundNameOf(title, gp) {
     if (/^(?:Fund|Partners|Capital|Equity|Credit|Ventures)\s/i.test(name) && gp) return `${gp} ${name}`;
     if (name && !/^(?:The|A|An)\s/.test(name) && name.split(' ').length >= 2) return name;
   }
-  m = t.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|\d{1,2}(?:st|nd|rd|th))\s+(?:flagship\s+|debut\s+|new\s+)?((?:(?:secondaries|secondary|buyout|growth|infrastructure|infra|credit|debt|lending|real estate|property|venture|opportunities|opportunity|energy|climate|impact|european|europe|asia|asian|global|core|value-add|logistics|special situations|pe|private equity)\s+){0,3})fund\b/i);
+  // 서수("second private credit fund")·첫 펀드("debut/maiden/inaugural … fund") — 전략어는 아래 목록에 있는 것만 이름에 쓴다
+  m = t.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|debut|maiden|inaugural|\d{1,2}(?:st|nd|rd|th))\s+(?:flagship\s+|debut\s+|new\s+|dedicated\s+)?((?:(?:secondaries|secondary|buyout|growth|infrastructure|infra|credit|debt|lending|real estate|property|venture|opportunities|opportunity|energy|climate|impact|european|europe|asia|asian|global|core|value-add|logistics|special situations|pe|private equity|private credit|private debt|private|emerging markets?|biotech|life sciences|healthcare|technology|tech|evergreen|mid-market|small-cap|structured|aviation|housing|residential|data center|digital)\s+){0,4})(?:vehicle|fund)\b/i);
   if (m && gp) {
-    const n = ORDINALS[m[1].toLowerCase()] || parseInt(m[1], 10);
+    const n = /^(?:debut|maiden|inaugural)$/i.test(m[1]) ? 1 : (ORDINALS[m[1].toLowerCase()] || parseInt(m[1], 10));
     // 서수만 알 때는 공식명처럼 지어내지 않고 '(전략) N호 펀드'로 표기한다
-    const kind = m[2].trim().replace(/\b(?:flagship|new|debut)\b/gi, '').trim();
+    const kind = m[2].trim().replace(/\b(?:flagship|new|debut|dedicated|private)\b(?!\s+(?:equity|credit|debt))/gi, '').replace(/\s+/g, ' ').trim();
     const k2 = kind ? kind.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/\bPe\b/g, 'PE').replace(/\bInfra\b/g, 'Infrastructure') + ' ' : '';
     return `${gp} ${k2}${n}호 펀드`;
   }
@@ -1587,6 +1698,8 @@ export function resolveGoogleNewsUrl(link) {
 // 이 경우 Google 의 batchexecute RPC(garturlreq)로 실제 기사 주소를 받아옵니다.
 // (googlenewsdecoder 가 쓰는 표준 방식) — 1) 기사 페이지에서 서명·타임스탬프를
 // 얻고 2) batchexecute 로 원문 URL 을 조회. 실패하면 원래 링크를 그대로 둡니다.
+// 쿼리 값이 빠진 URL("…/articleView.html?idxno", "…?no=") — 기사 번호가 없어 매체가 오류 안내만 돌려준다
+export const truncatedUrl = (u) => /[?&][A-Za-z_]+=?$/.test(String(u || ''));
 export async function resolveGoogleNewsUrlAsync(link) {
   const sync = resolveGoogleNewsUrl(link);
   if (sync && !/news\.google\.com/.test(sync)) return sync;     // 구형식: 즉시 해석됨
@@ -1610,9 +1723,11 @@ export async function resolveGoogleNewsUrlAsync(link) {
       body, signal: AbortSignal.timeout(12000),
     });
     const t = await r2.text();
-    const cleaned = t.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&').replace(/\\\//g, '/').replace(/\\"/g, '"');
+    // 응답은 JSON 안의 JSON 이라 '='·'&'가 두 번 이스케이프(\\\\u003d)돼 온다. 백슬래시가 하나만 지워지면
+    // URL 이 '?idxno' 에서 잘려 국내 매체가 "정상적인 접근이 아닙니다"로 거부했다(2026-10 진단: 보관 기사 148건).
+    const cleaned = t.replace(/\\+u003d/g, '=').replace(/\\+u0026/g, '&').replace(/\\+\//g, '/').replace(/\\+"/g, '"');
     const urls = cleaned.match(/https?:\/\/[^"\\\s]+/g) || [];
-    let real = urls.find(u => !/(^|\.)google\.com|gstatic|googleusercontent|schema\.org|w3\.org/.test(u));
+    let real = urls.find(u => !/(^|\.)google\.com|gstatic|googleusercontent|schema\.org|w3\.org/.test(u) && !truncatedUrl(u));
     if (real) {
       // URL 꼬리 오염 정리 — 이스케이프 잔여물·괄호가 붙으면 일부 사이트가
       // "정상적인 접근이 아닙니다"류로 거부한다. idxno= 형(국내 CMS)은 숫자
@@ -1770,7 +1885,7 @@ export function extractReadable(html) {
 
 // '소프트 404' — 200 응답이지만 "존재하지 않는 링크/기사" 안내만 있는 페이지.
 // (예: todaymild.com 이 alert 로 '존재하지 않는 링크 입니다'를 띄우는 경우)
-const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
+const DEAD_PAGE_RE = /존재하지\s*않는\s*(?:링크|기사|페이지)|기사가\s*존재하지\s*않습니다|삭제된\s*기사|삭제\s*되었거나|기사를\s*찾을\s*수\s*없|페이지를\s*찾을\s*수\s*없|요청하신\s*페이지|page\s*not\s*found|404\s*not\s*found/i;
 
 // 기사 본문 추출 — 세 가지 후보를 만들어 정제(article-clean.js) 후 가장 충실한 것을 쓴다.
 //   1) JSON-LD articleBody  : 매체가 직접 넣어 둔 본문 (가장 깨끗한 경우가 많음)
@@ -1931,7 +2046,10 @@ export function parseFeed(xml) {
 const isForeignGP = (text) => FOREIGN_GPS.some(([re]) => re.test(text));
 const isKoreanLP  = (text) => KOREAN_LPS.some(([re]) => re.test(text));
 // 기사 링크가 상시 깨져 있는(존재하지 않는 링크 안내) 저품질 매체 차단 목록.
-const SOURCE_BLOCK_RE = /마일드경제|todaymild|marketbeat|kalkine|indexbox|stock traders daily|tickerreport|etfdailynews|americanbankingnews|defenseworld/i;   // 깨진 링크·자동 생성 주식 기사 매체
+// 깨진 링크·자동 생성 주식 기사 매체. 2026-10 점검: ad-hoc-news(31건 중 26건이 다른 매체 기사의 주가 해설판,
+// 나머지도 'what it means for … stock'), Simply Wall St(밸류에이션 해설), Stock Titan·GuruFocus(상장 폐쇄형 펀드
+// 시세·배당·보유 종목 페이지), dars.gov.et(시세 스팸)은 대체투자 소식이 아니어서 매체째 제외한다.
+const SOURCE_BLOCK_RE = /마일드경제|todaymild|marketbeat|kalkine|indexbox|stock traders daily|tickerreport|etfdailynews|americanbankingnews|defenseworld|ad-?hoc-?news|ad hoc news|simply ?wall ?st|stock ?titan|gurufocus|dars\.gov\.et/i;
 // 대체투자 맥락과 무관하게 항상 잡음인 제목 — 증권 공시(Form 4·13D)·주식 매매/보유 변동·밸류에이션 지표 페이지,
 // 뮤추얼펀드 분기 코멘터리·분배금 공시, 집단소송 광고, 회사 소개 페이지, 시장조사 보고서, 애널리스트 의견
 const HARD_NOISE_RE = new RegExp([
@@ -1946,6 +2064,12 @@ const HARD_NOISE_RE = new RegExp([
   '\\b(?:price target|analyst rating|(?:upgrades?|downgrades?|reiterates?) (?:\\w+ )?(?:rating|to (?:buy|sell|hold|overweight|underweight)))\\b',
   // 국문: 주식 투자자 대상 해설·애널리스트 의견·시장조사 전망
   '(?:주식|주가)\\s*투자자|투자자들(?:이|에게)\\s*.{0,20}(?:조치|영향)|투자의견|목표\\s*주가|주식\\s*등급|(?:등급|의견)을?\\s*(?:상향|하향)\\s*조정|20[3-4]\\d년까지\\s*(?:성장|연평균)|시장\\s*규모\\s*전망',
+  // 주가 해설·밸류에이션 기사("what it means for EQT stock", "Is The Stock Still Cheap?", "stock trades at EUR …")
+  'what it means for .{0,40}\\b(?:stock|shares)\\b|\\b(?:stock|shares) (?:trades|holds|pre-market|edges|closes) (?:at|near|in|up|down|flat)\\b|is the (?:stock|valuation)(?: premium| discount)? (?:still )?(?:cheap|undervalued|justified|too wide)|stock price,? news (?:&|and) analysis|dividend analysis|holding history|fair value view|주가에 미치는|장외 주가|주식에 대한 (?:강세|약세) 전망',
+  // 상장 폐쇄형 펀드(CEF)·지방채 펀드의 시세·분배·증자 공지, 재무비율 페이지, 지분 공시 — 사모 대체투자와 무관
+  '\\b(?:municipal|muni(?:yield)?)\\b.{0,40}\\b(?:fund|trust)\\b|\\b(?:fund|trust)(?: [ivx]+)? \\((?:nyse: ?)?[a-z]{2,5}\\)[^.]{0,60}\\b(?:returns?|payouts?|distributions?|shares|stock|closes|rises|edges)\\b|\\brights offering\\b|\\b(?:closes flat|edges (?:up|down)|rises|falls) (?:[\\d.]+% )?(?:to|at) \\$[\\d.]+|(?:ratio|per share|cash flow|yield) of .{3,80} [–-] [a-z]{2,6}:[a-z.]{1,12}\\s*$|issues and sells [\\d,]+ (?:common )?shares|[\\d.]+% of (?:its )?common shares',
+  // 이름이 같은 다른 회사: 스팩(Oaktree Acquisition Corp 등), 미국 가스회사 EQT Corp, 호주 통신사 TPG Telecom
+  '\\bacquisition corp(?:oration)?\\b|\\btpg telecom\\b|\\beqt \\(eqt\\)|\\beqt\\b.{0,80}\\b(?:natural gas|gas (?:supply|deal|producer|sales)|lng|appalachia|marcellus|equitrans|toby rice|mountain valley)\\b',
 ].join('|'), 'i');
 // 추적 기관의 자본확충(유상증자 등) — 투자여력 확대라는 placement agent 핵심
 // 신호이므로, EXCLUDE_RE(상장사 잡음 제거)에 걸려도 예외로 수집한다.
@@ -2238,7 +2362,7 @@ async function main() {
     if (old && old.tko) { a.tko = old.tko; if (old.tv) a.tv = old.tv; }   // 번역은 재수집돼도 유지
     if (old && old.bodyKo) a.bodyKo = old.bodyKo;
     if (old && old.frx) a.frx = old.frx;
-    const oldReal = old && old.url && !/news\.google\.com/.test(old.url);
+    const oldReal = old && old.url && !/news\.google\.com/.test(old.url) && !truncatedUrl(old.url);
     if (oldReal) a.url = old.url;                       // 이전에 해석한 실제 URL 재사용
     if (old && old.linkOk) a.linkOk = true;             // 링크 검증 결과 승계
     // 본문 재사용은 '실제 URL로 확보'했고 '오염되지 않은' 경우만. 과거 구글
@@ -2252,6 +2376,9 @@ async function main() {
       if (old.aiSource) a.aiSource = old.aiSource;
       continue;
     }
+    // 같은 주소로 세 번 받아도 본문이 안 나온 기사(유료·봇 차단)는 예산을 계속 잡아먹으므로 건너뛴다
+    a.fetchTries = old && old.url === a.url ? (old.fetchTries || 0) : 0;
+    if (a.fetchTries >= 3) continue;
     if (fetchBudget <= 0) continue;
     fetchBudget--;
     toFetch.push(a);
@@ -2281,6 +2408,7 @@ async function main() {
       if (alt && alt.length > (text || '').length + 100) { text = alt; readerHits++; }
     }
     if (text && !AC.matchesTitle(a.ko, text)) { mismatched++; text = ''; }   // 다른 기사 본문이 딸려온 경우 버림
+    if (!text || text.length < 250) a.fetchTries = (a.fetchTries || 0) + 1;
     if (text && text.length > 60) {                    // 진짜 본문 확보 (og:description 포함)
       a.body = text;
       a.ai = extractiveSummary(text);
@@ -2303,8 +2431,16 @@ async function main() {
   //     몇 회차면 아카이브 전체가 전문으로 채워진다. 유료 기사는 반복 시도하지 않는다.
   const realUrl = (p) => p.url && /^https?:\/\//.test(p.url) && !/news\.google\.com/.test(p.url);
   // 구글 뉴스 주소가 아직 해석되지 않은 보관 기사도 회차마다 다시 해석해 원문을 받는다.
-  let gResolved = 0;
-  const gPending = prev.filter(p => !allIds.has(p.id) && !p.pinned && !p.linkDead && /news\.google\.com/.test(p.url || '') && (p.resolveTries || 0) < 4).slice(0, 70);
+  let gResolved = 0, unTrunc = 0;
+  for (const p of prev) {
+    if (truncatedUrl(p.url) && /news\.google\.com/.test(p.gurl || '')) {
+      p.url = p.gurl; p.resolveTries = 0; unTrunc++;
+      delete p.linkOk; delete p.pubChecked; delete p.upgradeTries; delete p.bodyMismatch;   // 잘린 주소로 받은 판정은 무효
+      if (!p.fetched || (p.body || '').length < 400) p.fetched = false;
+    }
+  }
+  if (unTrunc) console.log(`archive truncated urls reset for re-resolve: ${unTrunc}`);
+  const gPending = prev.filter(p => !allIds.has(p.id) && !p.pinned && !p.linkDead && /news\.google\.com/.test(p.url || '') && (p.resolveTries || 0) < 4).slice(0, 160);
   await pool(gPending, 4, async (p) => {
     p.resolveTries = (p.resolveTries || 0) + 1;
     const real = await resolveGoogleNewsUrlAsync(p.url);
@@ -2407,7 +2543,7 @@ async function main() {
   const tr = await translatePass(merged);
   const frxN = await fundPass(merged);
   console.log(`fund details (본문 추출): ${frxN} articles`);
-  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${ANTHROPIC_API_KEY ? 'Claude ' + CLAUDE_MODEL : 'Gemini'})${llmDone() ? ' — 한도 도달로 중단' : ''}`);
+  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${ANTHROPIC_API_KEY ? 'Claude ' + CLAUDE_MODEL : 'Gemini'}${tr.gtTitles || tr.gtBodies ? ` + 무료 번역 ${tr.gtTitles || 0}/${tr.gtBodies || 0}` : ''})${llmDone() ? ' — LLM 한도·과부하로 중단' : ''}${GTX_BLOCKED ? ' — 구글 번역 제한' : ''}`);
   const listing = await splitBodies(merged);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(listing, null, 0));
   console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);

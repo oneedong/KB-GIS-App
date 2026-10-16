@@ -13,8 +13,9 @@
  */
 import { readFile, writeFile } from 'fs/promises';
 
-// 프로필을 손봤을 때 이 날짜를 갱신한다. (KST 기준 표기)
+// 프로필을 손봤을 때 이 날짜를 갱신한다. (KST 기준 표기) — 기관별로 다시 검증한 날은 CURATED_DATES 에 따로 적는다
 const UPDATED = '2026.07.06';
+const CURATED_DATES = { '국민연금': '2026.10.16' };
 
 // ── 영문명 자동 추출 (collect-news.mjs 사전 정규식에서) ──────────
 const src = await readFile(new URL('./collect-news.mjs', import.meta.url), 'utf8');
@@ -92,7 +93,7 @@ const TYPE_TEMPLATE = {
 // aum 은 공시 근사치이며 aumAsOf 로 기준 시점을 표기(국민연금·KIC 는 verified).
 const CURATED = {
   '국민연금': {
-    founded: 1987, hq: '전북 전주', aum: 1208, aumAsOf: '2024년 말', aumVerified: true,
+    founded: 1987, hq: '전북 전주', aum: 1528, aumAsOf: '2026년 3월 말', aumVerified: true,
     summary: '국내 최대이자 세계 3대 연기금. 기금운용본부(전주)가 국내외 주식·채권·대체투자를 직접·위탁 병행 운용한다.',
     altFocus: '대체투자는 사모투자·부동산·인프라 부문이 직접투자, 블라인드펀드 출자, 코인베스트로 운용. 해외 비중이 약 88%로 글로벌 GP 출자를 지속 확대.',
     mandate: '블라인드펀드 출자 · 코인베스트 · 직접투자',
@@ -339,9 +340,9 @@ const FOUNDED = {
 // 까지 담는다. 인사는 자주 바뀌므로 asOf 로 확인 시점을 함께 표기한다.
 const LEADERSHIP = {
   '국민연금': {
-    asOf: '2026.06',
+    asOf: '2026.10',
     ceo: { title: '이사장', name: '김성주', born: 1964, bio: '서울대 국사학과 졸업, 제19·21대 국회의원. 2017~2020년 16대 이사장에 이어 2025.12 제19대 이사장 재임명(임기 2028.12).' },
-    cio: { title: '기금이사(CIO)', note: '공모·인선 진행 중 — 전직 CIO 다수 지원, 2026 하반기 선임 예정.' },
+    cio: { title: '기금이사(CIO)', name: '이규홍', note: '2026.9.15 취임(임기 2년). 직전 사학연금 자금운용 총괄 — Mingtiandi·국내 보도 기준.' },
   },
   '한국교직원공제회': {
     asOf: '2026.06',
@@ -387,10 +388,18 @@ let curatedCount = 0;
 // 리더십(이사장/CEO·CIO) 구조를 프로필에 붙인다.
 function attachLeadership(p, name) {
   const L = LEADERSHIP[name];
-  if (!L) return p;
-  p.leadership = { asOf: L.asOf || UPDATED, ceo: L.ceo || null, cio: L.cio || null };
+  if (L) p.leadership = { asOf: L.asOf || UPDATED, ceo: L.ceo || null, cio: L.cio || null };
+  // 기사에서 확인된 CIO 선임(insights.json)이 프로필과 다르면 자동 반영 — 수집기가 3시간마다, 이 생성기가
+  // 매주(lp-refresh) 돈다. 사람이 검증한 이름과 같으면 그대로 두고, 다르면 '기사 기준'으로 표시해 덮는다.
+  const c = (INSIGHTS.cios || []).find((x) => x.inst === name && x.status === '선임' && x.person);
+  if (c && (!p.leadership || !p.leadership.cio || p.leadership.cio.name !== c.person)) {
+    const ym = String(c.ts || '').slice(0, 7).replace('-', '.');
+    p.leadership = { ...(p.leadership || { ceo: null }), asOf: ym || (p.leadership && p.leadership.asOf) || UPDATED,
+      cio: { title: (p.leadership && p.leadership.cio && p.leadership.cio.title) || 'CIO', name: c.person, note: `${ym} 선임 — 기사 기준(${c.source || '뉴스'})${c.background ? ` · ${c.background} 출신` : ''}`, auto: true } };
+  }
   return p;
 }
+const INSIGHTS = await readFile(new URL('../insights.json', import.meta.url), 'utf8').then(JSON.parse).catch(() => ({}));
 
 for (const inst of roster) {
   const { name, type } = inst;
@@ -403,7 +412,7 @@ for (const inst of roster) {
       eng: cur.eng || eng,
       ...cur,
       curated: true,
-      updatedAt: UPDATED,
+      updatedAt: CURATED_DATES[name] || UPDATED,
       asOf: cur.aumAsOf ? `${cur.aumAsOf} 공시·기관 자료 기준` : '기관 공시·연차보고서 기준',
     };
   } else {

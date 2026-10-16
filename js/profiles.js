@@ -281,7 +281,8 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
     const aumAsOf = alloc && alloc.aum != null ? (alloc.asOf || '공시 기준') : (p.aumAsOf || '');
     const latest = articles[0];
     const L = p.leadership || {};
-    const cioIsNewer = cio && cio.status === '선임' && cio.person;
+    // 기사에서 확인된 CIO 선임이 프로필 기준일(leadership.asOf)보다 새로우면 그것이 최신 — 프로필의 옛 CIO 줄은 숨긴다
+    const cioIsNewer = cio && cio.status === '선임' && cio.person && (!L.cio || !L.cio.name || L.cio.name !== cio.person);
     const ovDeals = deals.filter((d) => d.overseas).length;
     const head = (React.createElement(ProfileHead, { kicker: React.createElement(React.Fragment, null,
             React.createElement(Tag, { tone: "dark" }, group || '국내 LP'),
@@ -320,7 +321,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
                     cio.date,
                     " \u00B7 ",
                     cio.source))),
-            [['대표', L.ceo], ['CIO', L.cio]].filter(([, x]) => x).map(([badge, x], i) => (React.createElement("div", { key: badge, style: { padding: '13px 0', borderTop: cioIsNewer || i ? `1px solid ${KB.line2}` : 'none' } },
+            [['대표', L.ceo], ['CIO', cioIsNewer ? null : L.cio]].filter(([, x]) => x).map(([badge, x], i) => (React.createElement("div", { key: badge, style: { padding: '13px 0', borderTop: cioIsNewer || i ? `1px solid ${KB.line2}` : 'none' } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
                     React.createElement(Tag, null, x.title || badge),
                     x.name ? React.createElement("span", { style: { font: F(700, 15.5), color: KB.ink } }, x.name) : React.createElement("span", { style: { font: F(600, 14), color: KB.gray } }, "\uACF5\uC11D\u00B7\uC778\uC120 \uC9C4\uD589"),
@@ -426,7 +427,9 @@ function AllocBars({ rows, sel, onSelect }) {
         const on = sel === r.name;
         return (React.createElement("div", { key: r.name, onClick: () => onSelect(r.name), style: { padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' } },
             React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7 } },
-                React.createElement("span", { style: { font: on ? F(700, 14.5) : F(500, 14.5), color: KB.ink, flex: 1 } }, r.name),
+                React.createElement("span", { style: { font: on ? F(700, 14.5) : F(500, 14.5), color: KB.ink, flex: 1 } },
+                    r.name,
+                    !r.verified && React.createElement("span", { style: { font: F(500, 11), color: KB.mute, marginLeft: 6 } }, "\uBCF4\uB3C4 \uAE30\uC900")),
                 React.createElement("span", { style: { font: F(700, 14.5), color: KB.ink } }, fmtPct(r.altPct)),
                 React.createElement("span", { style: { font: F(500, 12), color: KB.mute, minWidth: 64, textAlign: 'right' } }, fmtJo(r.altAmount))),
             React.createElement("div", { style: { position: 'relative', height: 8, borderRadius: 4, background: KB.band, overflow: 'hidden' } },
@@ -470,12 +473,18 @@ function AllocView({ alloc, insights, onOpenLp }) {
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 } },
                     React.createElement("span", { style: { font: F(700, 17), color: KB.ink } }, cur.name),
                     React.createElement(Tag, null, cur.group),
-                    cur.verified ? React.createElement(Tag, { tone: "yellow" }, "\uACF5\uC2DC \uD655\uC815") : React.createElement(Tag, { tone: "outline" }, "\uACF5\uC2DC \uCD94\uC815\uCE58")),
+                    cur.verified ? React.createElement(Tag, { tone: "yellow" }, "\uACF5\uC2DC \uD655\uC815") : React.createElement(Tag, { tone: "outline" }, cur.basis === 'press' ? `보도 기준 · ${cur.asOf || ''}` : '공시 추정치')),
                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement(Metric, { label: "\uC6B4\uC6A9\uC790\uC0B0(AUM)", value: fmtJo(cur.aum) }),
                     React.createElement(Metric, { accent: true, label: "\uB300\uCCB4\uD22C\uC790 \uAE08\uC561", value: fmtJo(cur.altAmount) }),
                     React.createElement(Metric, { label: "\uB300\uCCB4\uD22C\uC790 \uBE44\uC911", value: fmtPct(cur.altPct) }),
                     React.createElement(Metric, { label: "\uB300\uCCB4\uD22C\uC790 \uC911 \uD574\uC678", value: fmtPct(cur.overseasAltPct) })),
+                (cur.sourceNote || cur.source) && (React.createElement("div", { style: { font: F(400, 12.5, 1.65), color: KB.sub, marginTop: 10 } },
+                    cur.sourceNote && React.createElement("div", null, cur.sourceNote),
+                    cur.source && React.createElement("div", { style: { marginTop: 4, color: KB.mute } },
+                        "\uCD9C\uCC98 ",
+                        cur.sourceUrl ? React.createElement("a", { href: cur.sourceUrl, target: "_blank", rel: "noopener noreferrer", style: { color: KB.sub } }, cur.source) : cur.source,
+                        cur.checkedAt ? ` · ${cur.checkedAt} 확인` : ''))),
                 React.createElement("div", { style: { marginTop: 12 } },
                     React.createElement(Btn, { kind: "dark", full: true, onClick: () => onOpenLp(cur.name) },
                         cur.name,

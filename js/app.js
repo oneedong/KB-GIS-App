@@ -466,7 +466,7 @@ function App() {
         const ql = lpQuery.trim();
         const rows = lpRows.filter((r) => (lpGroup === '전체' || r.group === lpGroup) && (!ql || r.name.includes(ql)));
         return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
-            React.createElement(TopBar, { big: true, title: "Korea LP", sub: `국내 기관 ${(roster || []).length}곳 · 프로필 ${profilesAt || '-'} 기준 · 투자내역 자동 갱신`, border: false }),
+            React.createElement(TopBar, { big: true, title: "Korea LP", sub: `국내 기관 ${(roster || []).length}곳 · 기관 개요 ${profilesAt || '-'} 검증 · 배분·운용자산 매주, CIO·투자내역 수시 자동 갱신`, border: false }),
             React.createElement(Tabs, { items: [['inst', '기관', (roster || []).length], ['deals', '투자내역', lpDeals.length], ['alloc', '배분·인사']], value: lpTab, onChange: setLpTab }),
             React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto', background: isDesktop && lpTab === 'alloc' ? KB.band : KB.bg } },
                 React.createElement("div", { style: { maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: isDesktop && lpTab === 'alloc' ? '20px 24px 40px' : 0 } },

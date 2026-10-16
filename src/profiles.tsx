@@ -328,7 +328,8 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
   const aumAsOf = alloc && alloc.aum != null ? (alloc.asOf || '공시 기준') : (p.aumAsOf || '');
   const latest = articles[0];
   const L = p.leadership || {};
-  const cioIsNewer = cio && cio.status === '선임' && cio.person;
+  // 기사에서 확인된 CIO 선임이 프로필 기준일(leadership.asOf)보다 새로우면 그것이 최신 — 프로필의 옛 CIO 줄은 숨긴다
+  const cioIsNewer = cio && cio.status === '선임' && cio.person && (!L.cio || !L.cio.name || L.cio.name !== cio.person);
   const ovDeals = deals.filter((d) => d.overseas).length;
   const head = (
     <ProfileHead
@@ -397,7 +398,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
               <div style={{ font: F(500, 12), color: KB.mute, marginTop: 6 }}>{cio.date} · {cio.source}</div>
             </ExtLink>
           )}
-          {[['대표', L.ceo], ['CIO', L.cio]].filter(([, x]) => x).map(([badge, x], i) => (
+          {[['대표', L.ceo], ['CIO', cioIsNewer ? null : L.cio]].filter(([, x]) => x).map(([badge, x], i) => (
             <div key={badge} style={{ padding: '13px 0', borderTop: cioIsNewer || i ? `1px solid ${KB.line2}` : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <Tag>{x.title || badge}</Tag>
@@ -594,7 +595,7 @@ function AllocBars({ rows, sel, onSelect }) {
         return (
           <div key={r.name} onClick={() => onSelect(r.name)} style={{ padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7 }}>
-              <span style={{ font: on ? F(700, 14.5) : F(500, 14.5), color: KB.ink, flex: 1 }}>{r.name}</span>
+              <span style={{ font: on ? F(700, 14.5) : F(500, 14.5), color: KB.ink, flex: 1 }}>{r.name}{!r.verified && <span style={{ font: F(500, 11), color: KB.mute, marginLeft: 6 }}>보도 기준</span>}</span>
               <span style={{ font: F(700, 14.5), color: KB.ink }}>{fmtPct(r.altPct)}</span>
               <span style={{ font: F(500, 12), color: KB.mute, minWidth: 64, textAlign: 'right' }}>{fmtJo(r.altAmount)}</span>
             </div>
@@ -642,7 +643,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               <span style={{ font: F(700, 17), color: KB.ink }}>{cur.name}</span>
               <Tag>{cur.group}</Tag>
-              {cur.verified ? <Tag tone="yellow">공시 확정</Tag> : <Tag tone="outline">공시 추정치</Tag>}
+              {cur.verified ? <Tag tone="yellow">공시 확정</Tag> : <Tag tone="outline">{cur.basis === 'press' ? `보도 기준 · ${cur.asOf || ''}` : '공시 추정치'}</Tag>}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <Metric label="운용자산(AUM)" value={fmtJo(cur.aum)} />
@@ -650,6 +651,12 @@ function AllocView({ alloc, insights, onOpenLp }) {
               <Metric label="대체투자 비중" value={fmtPct(cur.altPct)} />
               <Metric label="대체투자 중 해외" value={fmtPct(cur.overseasAltPct)} />
             </div>
+            {(cur.sourceNote || cur.source) && (
+              <div style={{ font: F(400, 12.5, 1.65), color: KB.sub, marginTop: 10 }}>
+                {cur.sourceNote && <div>{cur.sourceNote}</div>}
+                {cur.source && <div style={{ marginTop: 4, color: KB.mute }}>출처 {cur.sourceUrl ? <a href={cur.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: KB.sub }}>{cur.source}</a> : cur.source}{cur.checkedAt ? ` · ${cur.checkedAt} 확인` : ''}</div>}
+              </div>
+            )}
             <div style={{ marginTop: 12 }}><Btn kind="dark" full onClick={() => onOpenLp(cur.name)}>{cur.name} 프로필 보기</Btn></div>
           </div>
         )}

@@ -1,0 +1,39 @@
+name: App check (배포 전 점검)
+
+# 화면 코드(src·js·index.html 등)가 바뀌면 ① TypeScript 원본으로 다시 빌드한 결과가 올라간 js/ 와
+# 같은지(빌드 누락 방지), ② 실제 브라우저로 주요 화면을 모두 열어 오류가 없는지 확인한다.
+# 실패하면 GitHub 이 저장소 관리자에게 메일로 알린다.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'src/**', 'js/**', 'index.html', 'sw.js', 'article-clean.js', 'vendor/**', 'manifest.webmanifest', 'tests/**', 'package.json', '.github/workflows/app-check.yml' ]
+  workflow_dispatch: {}
+  schedule:
+    - cron: '37 22 * * *'   # 매일 07:37 KST — 데이터 갱신으로 화면이 깨지지 않았는지도 확인
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install build & test tools
+        run: npm i --no-save --no-audit --no-fund typescript@6.0.2 playwright@1.56.1
+      - name: Build from source and compare
+        run: |
+          npm run -s build
+          if ! git diff --quiet -- js/; then
+            echo "::error::src/*.tsx 를 바꾸고 빌드(npm run build)한 js/ 를 함께 올리지 않았습니다."
+            git --no-pager diff --stat -- js/
+            exit 1
+          fi
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Smoke test
+        run: node tests/smoke.mjs

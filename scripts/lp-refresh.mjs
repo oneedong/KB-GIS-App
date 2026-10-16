@@ -130,6 +130,7 @@ async function main() {
       .filter((it) => (seen.has(it.title) ? false : seen.add(it.title)))
       .sort((x, y) => (Date.parse(y.pub) || 0) - (Date.parse(x.pub) || 0)).slice(0, 10);
     let bestPct = null, bestAum = null, opened = 0;
+    const near = [];                                   // 못 뽑았을 때 원인 확인용 — 대체·% 가 함께 나온 문장
     for (const it of cands) {
       const pubMs = Date.parse(it.pub) || 0, pubYear = pubMs ? new Date(pubMs).getFullYear() : null;
       let url = it.link;
@@ -137,6 +138,7 @@ async function main() {
       let body = '';
       if (!/news\.google\.com/.test(url)) { try { body = (await fetchArticleText(url, it.title)).text || ''; } catch {} }
       if (body.length > 200) opened++;
+      if (dry) for (const x of `${it.title}. ${body}`.split(/(?<=다\.)\s+|\n+/)) if (/대체/.test(x) && /\d\s*%|\d\s*조/.test(x) && near.length < 6) near.push(x.trim().slice(0, 200));
       for (const f of figuresFromArticle(it.title, body || it.desc || '', aliases, pubYear)) {
         const rec = { ...f, source: it.source || '', sourceUrl: url, pub: pubMs ? new Date(pubMs).toISOString().slice(0, 10) : '' };
         if (f.altPct != null && (!bestPct || rec.pub > bestPct.pub)) bestPct = rec;
@@ -147,6 +149,7 @@ async function main() {
     console.log(`   (후보 기사 ${cands.length}건 · 본문 확보 ${opened}건)`);
     if (bestPct) console.log(`   └ 비중: "${bestPct.sentence}"`);
     if (bestAum) console.log(`   └ 운용자산: "${bestAum.sentence}"`);
+    if (dry && !bestPct) for (const x of near) console.log(`   · 미추출 후보: ${x}`);
     if (dry || !bestPct) continue;
     let inst = data.institutions.find((x) => x.name === name);
     if (inst && inst.verified) continue;                       // 공시 확정 수치는 기사로 덮지 않는다

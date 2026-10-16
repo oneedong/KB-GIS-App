@@ -859,7 +859,40 @@ const EXEC_NAME_BLOCK = /건설|전략|금융|기획|총괄|사업|정책|경영
 // 같은 수식어·회사명이 이름 자리에 잡히는 것을 막는다.
 const SURNAME_RE = /^[김이박최정강조윤장임한오서신권황안송류유전홍고문양손배백허남심노하곽성차주우구민나진지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용예경봉사부가복태목형피두감음빈동온호좌]/;
 const looksLikeName = (n) => SURNAME_RE.test(n) && (n.length <= 3 || /^(?:남궁|황보|제갈|선우|독고|사공|서문)/.test(n));
-const badExecName = (n) => NAME_BLOCK.test(n) || EXEC_NAME_BLOCK.test(n) || !looksLikeName(n);
+// '임기를'·'이번에' 처럼 조사로 끝나는 말은 이름이 아니다(한국 이름이 를·을·에·의·와·과·로로 끝나는 일은 사실상 없다).
+const badExecName = (n) => NAME_BLOCK.test(n) || EXEC_NAME_BLOCK.test(n) || CIO_WORD_BLOCK.test(n) || /[를을에의와과로]$/.test(n) || !looksLikeName(n);
+// 인사 기사에서 '전 사학연금 CIO'·'사학연금 출신'처럼 그 사람의 이전 직장으로 나온 기관은 귀속 대상이 아니다.
+const BG_BEFORE = /(?:^|[\s(·,])(?:전|前|직전|현)\s?$/;
+const BG_AFTER = /^[^.。]{0,14}?(?:출신|을\s?거쳐|를\s?거쳐|에서\s?(?:옮|자리를))/;
+function pickExecTarget(text) {
+  let best = null, bestIdx = -1;
+  for (const [re, name, type] of KOREAN_LPS) {
+    const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+    for (const m of text.matchAll(g)) {
+      const bg = BG_BEFORE.test(text.slice(Math.max(0, m.index - 4), m.index)) || BG_AFTER.test(text.slice(m.index + m[0].length, m.index + m[0].length + 24));
+      if (!bg && m.index >= bestIdx) { bestIdx = m.index; best = { inst: name, instType: type }; }
+    }
+  }
+  return best;
+}
+// 한 글자만 다른 같은 성 이름(이규홍/이기홍) — 오타 판별용
+export const nearName = (a, b) => a && b && a !== b && a.length === b.length && a[0] === b[0] && [...a].filter((c, i) => c !== b[i]).length === 1;
+// 실무 인사 목록 정리 — ① 같은 기관·직함에서 한 글자 다른 이름은 보도가 적은 쪽(오타)을 버리고,
+// ② 같은 사람·직함이 7일 안에 두 기관에 잡히면(이전 직장 오귀속) 한 곳만 남긴다.
+// knownByInst: 기관 → 확인된 이름 집합(CIO 트랙 선임자·프로필 리더십)
+export function tidyExecs(list, knownByInst = new Map()) {
+  const n = (x) => x.n || 1;
+  const known = (x) => (knownByInst.get(x.inst) || new Set()).has(x.person);
+  const out = list.filter((x) => {
+    const kn = knownByInst.get(x.inst) || new Set();
+    if (!kn.has(x.person) && [...kn].some((k) => nearName(k, x.person))) return false;   // 확인된 이름의 오타
+    return known(x) || !list.some((y) => y !== x && y.inst === x.inst && y.title === x.title && nearName(y.person, x.person)
+      && (known(y) || n(y) > n(x) || (n(y) === n(x) && (y.ts || '') > (x.ts || ''))));
+  });
+  const days = (a, b) => Math.abs(Date.parse(a.ts || 0) - Date.parse(b.ts || 0)) / 86400000;
+  return out.filter((x) => !out.some((y) => y !== x && y.person === x.person && y.title === x.title && y.inst !== x.inst && days(x, y) <= 7
+    && (known(y) && !known(x) || (known(y) === known(x) && (n(y) > n(x) || (n(y) === n(x) && (y.ts || '') > (x.ts || '')))))));
+}
 // 실무 인사 추출 → { inst, person, title, action } | null
 export function extractExec(text) {
   const tm = text.match(EXEC_TITLE);
@@ -867,7 +900,7 @@ export function extractExec(text) {
   if (!EXEC_ACTION.test(text)) return null;
   const title = tm[0].replace(/\s+/g, '');
   const head = text.slice(0, tm.index + tm[0].length + 12);
-  const target = pickKoreanLpLast(head) || pickKoreanLpLast(text);
+  const target = pickExecTarget(head) || pickExecTarget(text);
   if (!target || target.instType === '해외 GP') return null;
   let person = '';
   // (a) "…본부장에 홍길동" (직함 뒤 이름)
@@ -975,8 +1008,8 @@ export function buildInsights(articles, refAum = null) {
     if (ex) {
       const key = `${ex.inst}|${ex.person}|${ex.title}`;
       if (!execByKey.has(key)) {
-        execByKey.set(key, { key, inst: ex.inst, group: grpName(ex.instType), person: ex.person, title: ex.title, action: ex.action, source: a.source, url: a.url, date: a.date, ts: a.ts });
-      }
+        execByKey.set(key, { key, inst: ex.inst, group: grpName(ex.instType), person: ex.person, title: ex.title, action: ex.action, source: a.source, url: a.url, date: a.date, ts: a.ts, n: 1 });
+      } else execByKey.get(key).n++;                  // 보도 건수 — 오타·오귀속 판별에 쓴다
     }
     // AUM — 기관별 최신 1건 (귀속 기관은 수치와 같은 문장에서 직접 판별)
     const au = extractAum(text, a.instType === '해외 GP' && a.inst ? [a.inst] : []);
@@ -2571,6 +2604,14 @@ async function main() {
     for (const n of newArr) { const old = map.get(n[key]); if (!old || (n.ts || '') >= (old.ts || '')) map.set(n[key], n); }
     return [...map.values()].sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
   };
+  // 기관별 확인된 이름(CIO 트랙 선임자 + 검증된 프로필 리더십) — 실무 인사 오타·오귀속 판별 기준
+  const knownNames = new Map();
+  const addKnown = (inst, name) => { if (inst && name) { if (!knownNames.has(inst)) knownNames.set(inst, new Set()); knownNames.get(inst).add(name); } };
+  for (const c of [...(prevIns.cios || []), ...fresh.cios]) if (c.status === '선임') addKnown(c.inst, c.person);
+  try {
+    const lp = JSON.parse(await readFile(new URL('../lp-profiles.json', import.meta.url), 'utf8'));
+    for (const [name, pr] of Object.entries(lp.profiles || {})) for (const r of ['ceo', 'cio']) addKnown(name, pr.leadership && pr.leadership[r] && pr.leadership[r].name);
+  } catch {}
   const insights = {
     updatedAt: fresh.updatedAt,
     cios: (() => {                                                    // 이전 값도 새 기준(이름 모양·선임 우선)으로 다시 고른다
@@ -2586,7 +2627,7 @@ async function main() {
       return [...map.values()].sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
     })(),
     assetReturns: mergeBy('asset', prevIns.assetReturns, fresh.assetReturns),
-    execs: mergeBy('key', prevIns.execs, fresh.execs).filter((e) => !badExecName(e.person)).slice(0, 40),
+    execs: tidyExecs(mergeBy('key', prevIns.execs, fresh.execs).filter((e) => !badExecName(e.person)), knownNames).slice(0, 40),
     // 이전 회차에 남은 값도 같은 기준으로 다시 거른다(기준 강화 전 수치 정리)
     aums: mergeBy('inst', prevIns.aums, fresh.aums).filter((x) => x.unit !== 'KRW' || aumSane(x.amount, refAum.get(x.inst))),
     relocations: mergeBy('inst', prevIns.relocations, fresh.relocations).slice(0, 30),

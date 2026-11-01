@@ -2425,6 +2425,7 @@ async function main() {
   prev = prev.filter(p => {
     const txt = `${p.ko || ''} ${p.body || ''}`;
     if (p.pinned) return true;
+    if (obviousNoise(p.ko || '', p.source || '')) return false;   // 명백한 잡음(차단 매체·제목 패턴)은 인사·조직 예외보다 먼저
     if ((PEOPLE_RE.test(txt) || ORG_RE.test(txt) || MOVE_RE.test(txt)) && p.instType && p.instType !== '기타' && p.inst && p.inst !== '출처 미상') return true;
     // 이미 수집된 기사는 '잡음' 규칙(리테일 상품·상장주식·국내 잡음)에 새로 걸릴 때만 뺀다.
     // 수집 시점엔 RSS 요약까지 보고 통과했으므로, 제목+리드만으로 관련성을 다시 요구하면

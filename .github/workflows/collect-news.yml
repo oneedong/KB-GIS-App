@@ -26,6 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          # 트리거 커밋이 아니라 최신 main 에서 시작한다(대기 중에 앞선 회차가 데이터를 갱신했을 수 있음).
+          ref: main
           fetch-depth: 30
       - name: Gate (마지막 수집 후 2시간 40분 경과 시에만)
         id: gate
@@ -67,7 +69,14 @@ jobs:
             # 수집이 길어진 사이 main 이 앞서가면 리베이스 후 재시도 (푸시 경합 방지)
             for i in 1 2 3; do
               git push && break
-              git pull --rebase -X theirs origin main || { git rebase --abort; exit 1; }   # 데이터 파일 충돌은 이번 회차 결과(전체 스냅샷)로 해결
+              # 데이터 파일 충돌은 이번 회차 결과(전체 스냅샷)로 해결. -X theirs 로 안 풀리는 '수정/삭제' 충돌(bodies/*.json)은
+              # 이번 회차에 지운 파일이면 지우고, 이번 회차에 남긴 파일이면 이번 회차 것으로 둔다.
+              if ! git pull --rebase -X theirs origin main; then
+                git diff --name-only --diff-filter=U | while read -r f; do
+                  if git cat-file -e ":3:$f" 2>/dev/null; then git checkout --theirs -- "$f" && git add -- "$f"; else git rm -q -- "$f"; fi
+                done
+                GIT_EDITOR=true git rebase --continue || { git rebase --abort; exit 1; }
+              fi
               [ "$i" = "3" ] && exit 1
             done
           else

@@ -478,6 +478,7 @@ export function parseRss(xml) {
     let source = strip((b.match(/<source[^>]*>([\s\S]*?)<\/source>/i) || [])[1] || '');
     const dash = title.lastIndexOf(' - ');
     if (dash > 0) { if (!source) source = title.slice(dash + 3).trim(); title = title.slice(0, dash).trim(); }
+    title = title.replace(/\s*[|｜]\s*$/, '').replace(/\s+>\s*(?:뉴스|기사|News)\s*$/i, '').trim();   // 매체명을 떼고 남은 꼬리("… |")
     if (title && link) items.push({ title, url: link, source: source || '출처 미상', desc, ts: pub ? new Date(pub).toISOString() : '' });
   }
   return items;

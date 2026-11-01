@@ -10,6 +10,7 @@
  */
 import { readFile, writeFile, mkdir, readdir, unlink } from 'fs/promises';
 import { createRequire } from 'module';
+import { fmtSize } from './money.mjs';
 const require = createRequire(import.meta.url);
 // 본문 정제 규칙은 앱과 같은 파일을 쓴다(article-clean.js) — 기준이 어긋나지 않게.
 const AC = require('../article-clean.js');
@@ -1402,6 +1403,15 @@ function fundCore(f, gp) {
 }
 const normFund = (f) => fundCore(f, '');
 const normAmt = (x) => String(x || '').toLowerCase().replace(/\s+/g, '').replace(/us\$/, '$').replace(/billion/, 'bn').replace(/million/, 'm');
+// 금액을 숫자로(백만 단위) — "$4.2B"·"$4.2 billion"·"$4,200m" 을 같은 값으로 본다
+export function amtNum(x) {
+  const m = String(x || '').replace(/,/g, '').match(/(us\$|a\$|c\$|\$|€|£)?\s?(\d+(?:\.\d+)?)\s?(trillion|tn|t|billion|bn|b|million|mn|m)\b/i);
+  if (!m) return null;
+  const u = m[3].toLowerCase();
+  return { cur: (m[1] || '$').toLowerCase().replace('us$', '$'), v: Number(m[2]) * (/^t/.test(u) ? 1e6 : /^b/.test(u) ? 1e3 : 1) };
+}
+const amtKey = (x) => { const a = amtNum(x); return a ? `${a.cur}${Math.round(a.v)}` : normAmt(x); };
+const sameAmt = (x, y) => { const a = amtNum(x), b = amtNum(y); return !!(a && b && a.cur === b.cur && Math.abs(a.v - b.v) / Math.max(a.v, b.v) < 0.02); };
 // 본문에서 펀드명 찾기(LLM 결과가 없을 때): 운용사 이름이 나온 문장 안의 "…Fund IV / Partners X"
 function fundNameFromBody(body, gp) {
   if (!body) return '';
@@ -1569,9 +1579,9 @@ export function buildFundraising(articles, prevItems = []) {
   const items = [...map.values()].sort((x, y) => ((x.pubTs || x.ts) < (y.pubTs || y.ts) ? 1 : -1)).slice(0, 2000);
   // 이름을 못 뽑은 보도는 같은 운용사의 이름 있는 펀드와 금액이 같으면 그 펀드로 합친다
   const named = new Map();
-  for (const e of items) if (e.gp && e.fund && e.size) named.set(`${e.gp}|${normAmt(e.size)}`, e.fundKey);
+  for (const e of items) if (e.gp && e.fund && e.size) named.set(`${e.gp}|${amtKey(e.size)}`, e.fundKey);
   for (const e of items) {
-    if (e.gp && !e.fund && e.size) { const k = named.get(`${e.gp}|${normAmt(e.size)}`); if (k) e.fundKey = k; }
+    if (e.gp && !e.fund && e.size) { const k = named.get(`${e.gp}|${amtKey(e.size)}`); if (k) e.fundKey = k; }
   }
   const funds = new Map();
   for (const e of items.slice().reverse()) {
@@ -1633,6 +1643,31 @@ export function buildFundraising(articles, prevItems = []) {
         || (pa.letters.length >= 5 && pb.letters.includes(pa.letters)) || (pb.letters.length >= 5 && pa.letters.includes(pb.letters)));
     })());
     if (b) mergeFund(a, b);
+  }
+  // 같은 운용사·같은 단계·같은 금액(±2%)이 열흘 안에 두 펀드로 잡히면 표기만 다른 같은 펀드다
+  //   "Ares Global Structured Solutions Fund (AGSS)" = "Ares Structured 1호 펀드"($4.2bn 파이널),
+  //   "FFL Capital Partners VI" = "FFL Partners Buyout 6호 펀드", "Hg Orion 1" = "Hg Secondary 1호 펀드" (2026-10 실측 18쌍)
+  // 남기는 쪽: 영문 정식 이름 > 국문·일반 명칭("second fund", "Incline strategy"), 같으면 더 온전한(긴) 이름
+  const nameScore = (f) => !f.fund ? 0 : 1 + (!/[가-힣]/.test(f.fund) ? 2 : 0) + (/^[a-z]/.test(f.fund) ? -2 : 0) + Math.min(f.fund.length, 60) / 100;
+  for (const a of [...funds.values()]) {
+    if (!funds.has(a.fundKey)) continue;
+    for (const b of [...funds.values()]) {
+      if (b === a || !funds.has(b.fundKey) || b.gp !== a.gp) continue;
+      // 단계가 같거나, 한쪽이 단계 미상 '클로즈'이고 다른 쪽이 구체적 클로즈(1차·중간·파이널)면 같은 사건으로 본다
+      const compat = (x, y) => x === y || (x === '클로즈' && /클로즈$/.test(y)) || (y === '클로즈' && /클로즈$/.test(x));
+      const near = (sa, sb) => sameAmt(sa.size, sb.size) && Math.abs(Date.parse(sa.ts) - Date.parse(sb.ts)) <= 10 * 864e5;
+      const dup = Object.values(a.stages).some((sa) => Object.values(b.stages).some((sb) => compat(sa.stage, sb.stage) && near(sa, sb)));
+      if (!dup) continue;
+      const [keep, drop] = nameScore(a) >= nameScore(b) ? [a, b] : [b, a];
+      const name = keep.fund;
+      mergeFund(drop, keep);
+      if (name) keep.fund = name;
+      // 합친 뒤 단계 미상 '클로즈'가 같은 금액의 구체적 클로즈와 겹치면 구체적인 쪽만 남긴다
+      const gen = keep.stages['클로즈'];
+      const spec = gen && Object.values(keep.stages).find((x) => x !== gen && /클로즈$/.test(x.stage) && near(gen, x));
+      if (spec) { spec.reports = (spec.reports || 1) + (gen.reports || 1); delete keep.stages['클로즈']; }
+      if (drop === a) break;
+    }
   }
   // 운용사 자리에 펀드 이름이 들어간 경우("Nigeria Infrastructure Debt Fund" 가 GP) → 그 이름의 펀드를 가진 운용사로
   for (const f of [...funds.values()]) {
@@ -2058,6 +2093,8 @@ function extractiveSummary(text) {
 }
 
 // ── RSS 파싱 + 기사 객체화 ───────────────────────────────
+// 매체 이름을 떼고 남는 제목 꼬리 — "… |"(구분자만 남음), "… > 뉴스"(사이트 경로)
+export const cleanTitle = (t) => String(t || '').replace(/\s*[|｜]\s*$/, '').replace(/\s+>\s*(?:뉴스|기사|News|경제|사회|정치|국제|산업|금융|증권|IT)\s*$/i, '').trim();
 export function parseFeed(xml) {
   const items = [];
   const blocks = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
@@ -2071,6 +2108,7 @@ export function parseFeed(xml) {
     const dash = title.lastIndexOf(' - ');
     if (dash > 0 && !source) source = title.slice(dash + 3).trim();
     if (dash > 0) title = title.slice(0, dash).trim();
+    title = cleanTitle(title);
     if (!title || !link) continue;
     items.push({ title, link, pub, desc, source: source || '출처 미상' });
   }
@@ -2359,6 +2397,7 @@ async function main() {
   // news.json 에는 리드만 두고 전문은 bodies/<id>.json 에 따로 둔다(목록 로딩을 가볍게).
   // 수집기 안에서는 예전처럼 전문을 들고 다니도록 파일에서 복원한다.
   await restoreBodies(prev);
+  for (const p of prev) if (p.lang === 'ko' && p.ko) p.ko = cleanTitle(p.ko);   // 예전에 저장된 제목 꼬리('… |', '> 뉴스')도 정리
   // 보관된 과거 기사도 강화된 관련성 기준으로 다시 거릅니다(상장주식·국내 잡음 제거).
   // 단, (1) 수동 고정(pinned) 기사와 (2) 추적 대상 기관의 조직/인사 변경 뉴스는
   // 펀드 키워드가 없어도 보존합니다(예: 국민연금 '기금운용과' 신설).
@@ -2840,11 +2879,12 @@ function selftest() {
 // news/fundraising/investments.json 은 수집기의 상태 저장소(재시도 횟수·구글 뉴스 링크 등)를 겸해 크다.
 // 앱은 그중 일부만 쓰므로, 수집기 전용 필드와 이미 원문 주소로 풀린 구글 뉴스 링크(gurl)를 뺀 사본을 따로 낸다.
 const COLLECTOR_ONLY = new Set(['metric', 'fetched', 'fetchTries', 'pubChecked', 'linkOk', 'tv', 'bl', 'frx', 'upgradeTries', 'tsrc', 'bodyMismatch', 'sizeLlm', 'resolveTries', 'stale', 'linkDead', 'pinned']);
+const SIZE_KEYS = new Set(['size', 'target', 'hardcap', 'finalSize', 'amount']);   // 금액 표기 통일("$8 Billion" → "$8bn")
 export function slimForApp(x) {
   if (Array.isArray(x)) return x.map(slimForApp);
   if (!x || typeof x !== 'object') return x;
   const o = {};
-  for (const [k, v] of Object.entries(x)) if (!COLLECTOR_ONLY.has(k)) o[k] = slimForApp(v);
+  for (const [k, v] of Object.entries(x)) if (!COLLECTOR_ONLY.has(k)) o[k] = SIZE_KEYS.has(k) && typeof v === 'string' ? fmtSize(v) : slimForApp(v);
   // 원문 주소가 확인된 항목은 구글 뉴스 링크가 필요 없다(본문 불일치로 의심되는 항목만 남긴다)
   if (o.gurl && /^https?:\/\//.test(o.url || '') && !/news\.google\.com/.test(o.url) && !x.bodyMismatch) delete o.gurl;
   return o;

@@ -24,6 +24,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { fmtSize } from './money.mjs';
 const AC = createRequire(import.meta.url)('../article-clean.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -152,9 +153,9 @@ async function gather(reportDay) {
     const dealTypes = {};
     deals.forEach((e) => { const t = DEAL_TYPE(e.kind); dealTypes[t] = (dealTypes[t] || 0) + 1; });
     const frs = stageEvents.filter(({ f }) => (FR_ASSET[f.strategy] || f.asset) === k);
-    const finals = frs.filter(({ s }) => s.stage === '파이널 클로즈').map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', size: s.size || f.finalSize || '', id: s.id }));
-    const launches = frs.filter(({ s }) => s.stage === '모집 중').map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', size: s.size || f.target || '', id: s.id }));
-    const closes = frs.filter(({ s }) => /1차|중간|^클로즈$/.test(s.stage)).map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', stage: s.stage, size: s.size || '', id: s.id }));
+    const finals = frs.filter(({ s }) => s.stage === '파이널 클로즈').map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', size: fmtSize(s.size || f.finalSize || ''), id: s.id }));
+    const launches = frs.filter(({ s }) => s.stage === '모집 중').map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', size: fmtSize(s.size || f.target || ''), id: s.id }));
+    const closes = frs.filter(({ s }) => /1차|중간|^클로즈$/.test(s.stage)).map(({ f, s }) => ({ gp: f.gp, fund: f.fund || '', stage: s.stage, size: fmtSize(s.size || ''), id: s.id }));
     // 운용사 언급 순위
     const gpCount = {};
     arts.filter((a) => a.instType === '해외 GP' && a.inst).forEach((a) => { (gpCount[a.inst] = gpCount[a.inst] || []).push(a); });

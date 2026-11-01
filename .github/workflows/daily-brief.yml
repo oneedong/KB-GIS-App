@@ -2,8 +2,9 @@ name: Daily market brief
 
 on:
   schedule:
-    # 매일 08:00 KST (= 23:00 UTC 전일) — 전일 시장 마감 기준 브리핑
-    - cron: '0 23 * * *'
+    # 전일 시장 마감 기준 브리핑. 정각 예약은 2026-10 실측 약 3시간 늦게(11시 전후) 돌아,
+    # 미국 장 마감(06:00 KST) 직후인 06:23 KST 로 앞당겨 아침 출근 시간대에 맞춘다.
+    - cron: '23 21 * * *'
   workflow_dispatch: {}
   push:
     branches: [ main ]

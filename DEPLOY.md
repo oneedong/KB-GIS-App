@@ -1,54 +1,56 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+# KB GIS 운영 안내
 
-const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 404, height: 872 } });
-const errors = [];
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+GitHub Pages(main 브랜치)로 배포되는 PWA입니다. 데이터는 GitHub Actions가 자동으로 갱신해 main에 커밋합니다.
 
-await page.goto('http://localhost:8099/index.html', { waitUntil: 'networkidle' });
-await page.waitForTimeout(400);
+## 자동 작업
 
-// Home rendered?
-const headerText = await page.locator('text=오늘의 브리프').count();
-const feedCards = await page.locator('text=국민연금').count();
-console.log('home header present:', headerText > 0);
-console.log('feed shows 국민연금:', feedCards > 0);
-await page.screenshot({ path: 'scripts/_home.png' });
+| 작업 | 워크플로 | 예약(KST) | 하는 일 |
+|---|---|---|---|
+| 기사 수집 | `collect-news.yml` | 30분마다 깨움 → 마지막 수집 후 2시간 40분 지났을 때만 수집 | 기사·본문·번역·투자내역·펀드레이징·인사이트, 앱용 경량 피드(`feed/`) |
+| 데일리 시황 | `daily-brief.yml` | 매일 06:23 | 전일 마감 기준 시황(`market.json`, `briefs/`) |
+| 주간 시장현황 | `weekly-market.yml` | 금 12:13 · 평일 17:40 · 토·일 10:23 | 이번 주 마지막 영업일 16:00 이후에만 생성(그 전 생성분은 재생성) |
+| 국내 LP 배분 | `lp-refresh.yml` | 매주 월 07:23 | 기관별 대체투자 비중·운용자산(보도 기준) |
+| 배포 전 점검 | `app-check.yml` | 매일 07:37 · 코드 변경 시 | 빌드 비교 + 화면 스모크 테스트 |
 
-// Filter chip
-await page.locator('text=공제회').first().click();
-await page.waitForTimeout(200);
-const filterBanner = await page.locator('text=필터 ·').count();
-console.log('filter banner after chip click:', filterBanner > 0);
+GitHub 예약 실행은 늦거나 빠지는 일이 잦습니다(2026-10 실측: 매시간 예약이 실제로는 4~7시간 간격, 정각 예약은 3~6시간 지연).
+그래서 각 작업은 "언제 깨어나도 맞게" 만들어져 있습니다(수집 간격 게이트, 주간 보고 시각 판단).
 
-// Open a detail
-await page.locator('text=해제 ✕').first().click(); // clear filter via banner
-await page.waitForTimeout(150);
-await page.locator('text=국민연금').first().click();
-await page.waitForTimeout(250);
-const aiSummary = await page.locator('text=3줄 요약').count();
-console.log('detail AI summary present:', aiSummary > 0);
-await page.screenshot({ path: 'scripts/_detail.png' });
+## 비밀값 (Settings → Secrets and variables → Actions)
 
-// English original toggle
-const origToggle = await page.locator('text=원문 보기 ▼').count();
-console.log('EN original toggle present:', origToggle > 0);
-if (origToggle > 0) {
-  await page.locator('text=원문 보기 ▼').first().click();
-  await page.waitForTimeout(150);
-  const expanded = await page.locator('text=기사 원문으로 이동 ↗').count();
-  console.log('original expanded:', expanded > 0);
-}
+- `GEMINI_API_KEY` — 번역·시장현황 요약(무료 등급). 한도 초과 시 무료 구글 번역으로 대체됩니다.
+- `ANTHROPIC_API_KEY` — 선택. 있으면 Claude를 먼저 씁니다.
+- 변수 `EXTRA_HOLIDAYS` — 선택. 공휴일 추가(예: `2026-12-31,2027-01-02`).
 
-// Share sheet
-await page.locator('text=↗ 공유하기').first().click();
-await page.waitForTimeout(200);
-const shareSheet = await page.locator('text=링크 복사').count();
-console.log('share sheet opened:', shareSheet > 0);
-await page.screenshot({ path: 'scripts/_share.png' });
+## 외부 예약으로 정시 실행 (선택)
 
-console.log('CONSOLE ERRORS:', errors.length ? errors : 'none');
-await browser.close();
+수집을 정확히 3시간마다 돌리고 싶으면, 무료 외부 크론 서비스가 GitHub API로 수집 워크플로를 깨우게 할 수 있습니다.
+
+1. GitHub → Settings → Developer settings → Fine-grained personal access tokens → 새 토큰
+   - Repository access: `oneedong/KB-GIS-App` 하나만
+   - Permissions: **Actions — Read and write** (그 외 없음)
+2. 외부 크론(예: cron-job.org)에서 작업 추가
+   - URL: `https://api.github.com/repos/oneedong/KB-GIS-App/actions/workflows/collect-news.yml/dispatches`
+   - Method: `POST`
+   - Headers: `Authorization: Bearer <토큰>`, `Accept: application/vnd.github+json`
+   - Body: `{"ref":"main"}`
+   - 일정: 3시간마다
+3. 수동·외부 실행(workflow_dispatch)은 게이트를 건너뛰고 바로 수집합니다.
+
+토큰은 이 저장소의 Actions 실행 권한만 가지므로, 유출돼도 코드·데이터를 바꿀 수는 없습니다(워크플로 실행만 가능).
+
+## 수동 실행
+
+Actions 탭 → 워크플로 선택 → Run workflow.
+
+- 주간 시장현황 특정 주 재생성: `date`에 보고일(예: `2026-10-30`), `force` 체크
+- 국내 LP 배분 미리보기: `dry` 체크(저장하지 않고 찾은 값과 근거 문장만 출력)
+
+## 로컬 점검
+
+```bash
+npm run build                          # src/*.tsx → js/*.js
+node scripts/collect-news.mjs --selftest
+node scripts/collect-news.mjs --feeds  # 수집 없이 앱용 경량 피드만 다시 만들기
+node scripts/lp-refresh.mjs --selftest
+node tests/smoke.mjs                   # Playwright 화면 점검
+```

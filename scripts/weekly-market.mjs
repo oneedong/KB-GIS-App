@@ -324,10 +324,31 @@ function tidy(s) {
     .replace(/입니다(?=[.\s]|$)/g, '임').replace(/합니다(?=[.\s]|$)/g, '함').replace(/됩니다(?=[.\s]|$)/g, '됨')
     .replace(/습니다(?=[.\s]|$)/g, '음').replace(/\s{2,}/g, ' ').trim();
 }
+// 금액을 한국식으로: "$27 billion" → "270억 달러", "$460m" → "4억 6000만 달러", "$12조원" → "12조 원".
+// 숫자 검증(numbersOk)은 원문 표기 그대로 한 뒤에 바꾼다(바꾼 수치는 원문 숫자와 달라 보이므로).
+const CUR = { '$': '달러', 'US$': '달러', '€': '유로', '£': '파운드' };
+function manWon(totalMan) {   // 만 단위 정수 → "4억 6000만" / "16억" / "5000만"
+  const eok = Math.floor(totalMan / 10000), man = Math.round(totalMan % 10000);
+  return [eok ? `${eok.toLocaleString('en-US')}억` : '', man ? `${man}만` : ''].filter(Boolean).join(' ') || '0';
+}
+export function koMoney(s) {
+  return String(s || '')
+    .replace(/(US\$|\$|€|£)\s?(\d[\d,]*(?:\.\d+)?)\s?(조|억|만)\s?원/g, '$2$3 원')
+    .replace(/(US\$|\$|€|£)\s?(\d[\d,]*(?:\.\d+)?)\s?(trillion|tn|T|billion|bn|B|million|mn|m|M)\b(\+?)/g, (m, c, n, u, plus) => {
+      const v = Number(n.replace(/,/g, ''));
+      if (!isFinite(v)) return m;
+      const cur = CUR[c] || '달러';
+      let txt;
+      if (/^(?:trillion|tn|T)$/.test(u)) txt = `${Math.round(v * 100) / 100}조`;
+      else if (/^(?:billion|bn|B)$/.test(u)) txt = manWon(Math.round(v * 100000));
+      else txt = manWon(Math.round(v * 100));
+      return `${txt} ${cur}${plus ? ' 이상' : ''}`;
+    });
+}
 const splitSent = (s) => String(s || '').split(/(?<=[.!?。]|[다음함임됨])\s+/).filter(Boolean);
 function cleanText(s, bag, dropped) {
   const keep = splitSent(tidy(s)).filter((x) => { const ok = numbersOk(x, bag); if (!ok) dropped.push(x); return ok; });
-  return keep.join(' ').trim();
+  return koMoney(keep.join(' ').trim());
 }
 function validate(ans, ctx, sourceText) {
   const bag = numberBag(sourceText);
@@ -342,7 +363,7 @@ function validate(ans, ctx, sourceText) {
       summary: cleanText(a.summary, bag, dropped),
       status: cleanText(a.status, bag, dropped),
       korea: cleanText(a.korea, bag, dropped),
-      strategies: (Array.isArray(a.strategies) ? a.strategies : []).map((x) => tidy(String(x))).filter((x) => x && numbersOk(x, bag)).slice(0, 5),
+      strategies: (Array.isArray(a.strategies) ? a.strategies : []).map((x) => tidy(String(x))).filter((x) => x && numbersOk(x, bag)).map(koMoney).slice(0, 5),
       gpIssues: (Array.isArray(a.gpIssues) ? a.gpIssues : []).map((g) => ({ gp: tidy(String(g.gp || '')), issue: cleanText(g.issue, bag, dropped), refs: refsOk(g.refs) }))
         .filter((g) => g.gp && g.issue && g.refs.length).slice(0, 8),
       trends: (Array.isArray(a.trends) ? a.trends : []).map((t) => ({ trend: cleanText(t.trend, bag, dropped), why: cleanText(t.why, bag, dropped), refs: refsOk(t.refs) }))
@@ -375,10 +396,35 @@ function autoReport(ctx) {
   };
 }
 
+// 언제 만들지 — GitHub 예약 실행은 몇 시간씩 늦게(2026-10 실측 약 6시간) 깨어나, 목요일 회차가 금요일 00시 30분에
+// 돌면 '금요일 보고서'가 금요일 기사 없이 나갔다. 그래서 날짜만 보지 않고 시각으로 판단한다:
+//  · 이번 주 마지막 영업일 16:00 KST(국내 장 마감·주요 보도 이후)가 지나야 만든다.
+//  · 이미 있는 보고서가 그 시각 이전에 만들어졌으면(조기 생성) 다시 만든다. 이후에 만들어졌으면 건너뛴다.
+//  · 주말에 깨어나도 지난 금요일분이 없거나 조기 생성분이면 만든다(따라잡기).
+export const CUTOFF_KST_H = 16;
+export function buildDecision(nowMs, existingGeneratedAt) {
+  const today = ymd(new Date(nowMs + 9 * 3600 * 1000));
+  const target = lastBizOfWeek(today);
+  if (!target) return { build: false, target: '', why: '이번 주 영업일 없음' };
+  const cutoff = Date.parse(`${target}T${String(CUTOFF_KST_H).padStart(2, '0')}:00:00+09:00`);
+  if (nowMs < cutoff) return { build: false, target, why: `${target} ${CUTOFF_KST_H}:00 KST 이후에 만듦` };
+  if (existingGeneratedAt && Date.parse(existingGeneratedAt) >= cutoff) return { build: false, target, why: '마감 후 생성된 보고서가 이미 있음' };
+  return { build: true, target, why: existingGeneratedAt ? '마감 전에 만들어진 보고서를 다시 만듦' : '새로 만듦' };
+}
+
 async function main() {
-  const reportDay = arg('--date') || kstToday();
-  const target = lastBizOfWeek(reportDay);
-  if (!has('--force') && target !== reportDay) { console.log(`${reportDay}: 이번 주 마지막 영업일(${target || '없음'})이 아니므로 건너뜀`); return; }
+  let reportDay;
+  if (arg('--date')) {
+    reportDay = arg('--date');
+    if (!has('--force') && lastBizOfWeek(reportDay) !== reportDay) { console.log(`${reportDay}: 이번 주 마지막 영업일이 아니므로 건너뜀`); return; }
+  } else {
+    const today = kstToday(), target = lastBizOfWeek(today);
+    const existing = target ? await readJson(path.join(OUT_DIR, `${target.replace(/-/g, '')}.json`), null) : null;
+    const d = buildDecision(Date.now(), existing && existing.generatedAt);
+    console.log(`${today}: 대상 ${d.target || '-'} — ${d.why}`);
+    if (!d.build && !has('--force')) return;
+    reportDay = d.target || today;
+  }
   const ctx = await gather(reportDay);
   const prompt = buildPrompt(ctx);
   if (arg('--dump')) { await writeFile(arg('--dump'), JSON.stringify({ system: SYSTEM, prompt, ids: Object.keys(ctx.refs) }, null, 1)); console.log('dumped', arg('--dump'), prompt.length, 'chars'); }
@@ -423,4 +469,4 @@ async function main() {
 if (process.argv[1] && process.argv[1].endsWith('weekly-market.mjs')) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }
-export { lastBizOfWeek, prevReportDay, isBiz, gather, validate, autoReport, tidy };
+export { lastBizOfWeek, prevReportDay, isBiz, gather, validate, autoReport, tidy, koMoney as _koMoney };

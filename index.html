@@ -8,7 +8,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#FBF8F2">
+<meta name="theme-color" content="#FFFFFF">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
 
@@ -18,22 +18,22 @@
 <meta name="apple-mobile-web-app-title" content="KB GIS">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
   * { box-sizing: border-box; }
   ::-webkit-scrollbar { width: 0; height: 0; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: #EDE5D8;   /* 회벽보다 한 톤 깊은 바탕 */
-    color: #2B2520;
-    font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #F2F2F2;   /* 미팅노트와 같은 지면 바깥 회색 */
+    color: #222222;
+    font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans CJK KR', -apple-system, sans-serif;
+    word-break: keep-all;
     font-variant-numeric: tabular-nums;
     -webkit-tap-highlight-color: transparent;
   }
   input { font-family: inherit; }
-  input::placeholder { color: #A3988A; }
+  input::placeholder { color: #9A9A9A; }
   a { -webkit-tap-highlight-color: transparent; }
-  ::selection { background: rgba(196, 154, 104, .35); }
+  ::selection { background: rgba(255, 188, 0, .35); }
 
   /* #root centers the phone frame and fills the viewport */
   #root {
@@ -52,10 +52,10 @@
     width: 404px;
     height: 872px;
     min-width: 0;
-    background: #FBF8F2;
+    background: #FFFFFF;
     border-radius: 36px;
-    border: 1px solid #DCD1C1;
-    box-shadow: 0 24px 60px rgba(60,42,25,.16);
+    border: 1px solid #D9D9D9;
+    box-shadow: 0 24px 60px rgba(0,0,0,.14);
     overflow: hidden;
     position: relative;
     display: flex;
@@ -64,7 +64,7 @@
 
   /* On actual phones / installed app: fill the whole screen, drop the frame chrome */
   @media (max-width: 480px) {
-    body { background: #FBF8F2; }
+    body { background: #FFFFFF; }
     #root { padding: 0; align-items: stretch; }
     .app-frame {
       width: 100%;

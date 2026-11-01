@@ -135,8 +135,9 @@ const DEAL_TYPES = [
 ];
 const dealType = (kind) => (DEAL_TYPES.find(([, re]) => re.test(kind || '')) || ['기타'])[0];
 const ymLabel = (ms) => { const { y, m } = kstYMD(ms); return `${y}년 ${pad2(m)}월`; };
-const TH = { font: F(600, 12), color: KB.sub, textAlign: 'left', padding: '8px 6px', borderBottom: `1px solid ${KB.line}`, whiteSpace: 'nowrap', background: KB.band };
-const TD = { font: F(500, 13, 1.45), color: KB.ink2, padding: '9px 6px', borderBottom: `1px solid ${KB.line2}`, verticalAlign: 'top' };
+// 미팅노트 표 양식: 회색 머리(가운데·굵게) + 모든 칸 테두리
+const TH = { ...GRID.th, font: F(700, 12.5), padding: '6px 6px' };
+const TD = { ...GRID.td, font: F(500, 13, 1.45), padding: '7px 7px', verticalAlign: 'top' };
 function DealTable({ clusters, onOpen, onInst }) {
   const desktop = useDesktop();
   const by = {};
@@ -148,8 +149,8 @@ function DealTable({ clusters, onOpen, onInst }) {
   return (
     <div>
       {/* 요약: 기관 × 거래 유형 건수 */}
-      <div style={{ font: F(700, 14), color: KB.ink, margin: '4px 0 8px' }}>기관별 거래 유형 요약 <span style={{ font: F(500, 12), color: KB.mute }}>이름을 누르면 해당 표로 이동</span></div>
-      <div style={{ overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card }}>
+      <div style={{ font: F(700, 14.5), color: KB.blue, margin: '4px 0 8px' }}>기관별 거래 유형 요약 <span style={{ font: F(500, 12), color: KB.mute }}>이름을 누르면 해당 표로 이동</span></div>
+      <div style={{ overflowX: 'auto', background: KB.card }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 120 + typesUsed.length * 62 }}>
           <thead><tr>
             <th style={{ ...TH, position: 'sticky', left: 0, zIndex: 1 }}>기관</th>
@@ -181,7 +182,7 @@ function DealTable({ clusters, onOpen, onInst }) {
               <Tag tone={role === 'GP' ? 'dark' : 'yellow'}>{role === 'GP' ? '해외 GP' : '국내 LP'}</Tag>
               <span style={{ marginLeft: 'auto', font: F(600, 12.5), color: KB.sub }}>{rows.length}건</span>
             </div>
-            <div style={{ overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card }}>
+            <div style={{ overflowX: 'auto', background: KB.card }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: desktop ? 0 : 520 }}>
                 <colgroup><col style={{ width: 92 }} /><col style={{ width: 84 }} /><col /><col style={{ width: 92 }} /></colgroup>
                 <thead><tr><th style={TH}>거래 유형</th><th style={TH}>시기</th><th style={TH}>내용</th><th style={{ ...TH, textAlign: 'right' }}>금액</th></tr></thead>
@@ -193,7 +194,7 @@ function DealTable({ clusters, onOpen, onInst }) {
                     const e = c.lead;
                     return (
                       <tr key={c.key + i} onClick={() => onOpen && onOpen(e)} style={{ cursor: 'pointer' }}>
-                        {first && <td rowSpan={span} style={{ ...TD, font: F(700, 13), color: KB.gray, background: KB.band, borderRight: `1px solid ${KB.line2}` }}>{t}{e.kind !== t && span === 1 ? <div style={{ font: F(500, 11), color: KB.mute }}>{e.kind}</div> : null}</td>}
+                        {first && <td rowSpan={span} style={{ ...GRID.tag, verticalAlign: 'middle' }}>{t}{e.kind !== t && span === 1 ? <div style={{ font: F(500, 11), color: KB.mute }}>{e.kind}</div> : null}</td>}
                         <td style={{ ...TD, whiteSpace: 'nowrap', font: F(500, 12.5), color: KB.sub }}>{ymLabel(c.ms)}</td>
                         <td style={TD}>
                           <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{nm(e.title)}</div>
@@ -264,15 +265,15 @@ function AltTrend({ trend }) {
       {[lo, lo + span / 2, hi].map((g, i) => (
         <g key={i}>
           <line x1={L} y1={y(g)} x2={W - R} y2={y(g)} stroke={KB.line2} strokeWidth="1" />
-          <text x={L - 6} y={y(g) + 4} textAnchor="end" fontSize="11" fill={KB.mute} fontFamily="Pretendard">{Math.round(g)}%</text>
+          <text x={L - 6} y={y(g) + 4} textAnchor="end" fontSize="11" fill={KB.mute} fontFamily={FONT_STACK}>{Math.round(g)}%</text>
         </g>
       ))}
       <polyline points={pts} fill="none" stroke={KB.gray} strokeWidth="2.2" strokeLinejoin="round" />
       {trend.map((t, i) => (
         <g key={i}>
           <circle cx={x(i)} cy={y(t.altPct)} r="4" fill={i === trend.length - 1 ? KB.yellow : KB.card} stroke={KB.gray} strokeWidth="2" />
-          <text x={x(i)} y={y(t.altPct) - 9} textAnchor="middle" fontSize="11" fontWeight="600" fill={KB.ink} fontFamily="Pretendard">{t.altPct}</text>
-          <text x={x(i)} y={H - 7} textAnchor="middle" fontSize="11" fill={KB.mute} fontFamily="Pretendard">{t.year}</text>
+          <text x={x(i)} y={y(t.altPct) - 9} textAnchor="middle" fontSize="11" fontWeight="600" fill={KB.ink} fontFamily={FONT_STACK}>{t.altPct}</text>
+          <text x={x(i)} y={H - 7} textAnchor="middle" fontSize="11" fill={KB.mute} fontFamily={FONT_STACK}>{t.year}</text>
         </g>
       ))}
     </svg>
@@ -349,7 +350,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
   );
   return (
     <ProfileFrame backLabel="Korea LP" onBack={onBack} title={name}>
-      {desktop ? <div style={{ background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, overflow: 'hidden' }}>{head}</div> : head}
+      {desktop ? <div style={{ background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden' }}>{head}</div> : head}
 
       <Section first={!desktop} title="핵심 지표" sub={aumAsOf}>
         <div style={{ display: 'grid', gridTemplateColumns: desktop ? 'repeat(4, 1fr)' : '1fr 1fr', gap: 8 }}>
@@ -380,7 +381,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
         <Section title="운용 개요">
           {p.summary && <div style={{ font: F(400, 14.5, 1.75), color: KB.ink2 }}>{p.summary}</div>}
           {p.altFocus && (
-            <div style={{ marginTop: 12, padding: '13px 15px', background: KB.band, borderRadius: 10 }}>
+            <div style={{ marginTop: 12, padding: '13px 15px', background: KB.band, borderRadius: 2 }}>
               <div style={{ font: F(700, 12.5), color: KB.gray, marginBottom: 5 }}>대체투자 접근</div>
               <div style={{ font: F(400, 14, 1.7), color: KB.ink2 }}>{p.altFocus}</div>
             </div>
@@ -492,9 +493,9 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
   );
   return (
     <ProfileFrame backLabel="Global GP" onBack={onBack} title={name}>
-      {desktop ? <div style={{ background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, overflow: 'hidden' }}>{head}</div> : head}
+      {desktop ? <div style={{ background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden' }}>{head}</div> : head}
       {p.summary && (
-        <div style={{ background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 12 : 0 }}>
+        <div style={{ background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 2 : 0 }}>
           <div style={{ font: F(400, 14.5, 1.75), color: KB.ink2 }}>{p.summary}</div>
         </div>
       )}
@@ -548,7 +549,7 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
             </div>
           ))}
           {p.note && (
-            <div style={{ marginTop: p.people && p.people.length ? 10 : 0, padding: '13px 15px', background: KB.yellowTint, borderRadius: 10 }}>
+            <div style={{ marginTop: p.people && p.people.length ? 10 : 0, padding: '13px 15px', background: KB.yellowTint, borderRadius: 2 }}>
               <div style={{ font: F(700, 12.5), color: KB.gray, marginBottom: 5 }}>커버리지 노트</div>
               <div style={{ font: F(500, 14, 1.65), color: KB.ink2 }}>{p.note}</div>
             </div>
@@ -559,7 +560,7 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
       {(p.flagship || (p.strengths && p.strengths.length)) && (
         <Section title="강점 전략" sub="근거 포함">
           {p.flagship && (
-            <div style={{ padding: '12px 14px', background: KB.band, borderRadius: 10, marginBottom: 6 }}>
+            <div style={{ padding: '12px 14px', background: KB.band, borderRadius: 2, marginBottom: 6 }}>
               <div style={{ font: F(700, 12.5), color: KB.gray, marginBottom: 4 }}>플래그십 펀드</div>
               <div style={{ font: F(500, 14, 1.6), color: KB.ink2 }}>{p.flagship}</div>
             </div>
@@ -634,7 +635,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
   } : ins0;
   return (
     <>
-      <div style={desktop ? { padding: 4, marginBottom: 14, background: KB.card, borderRadius: 12, border: `1px solid ${KB.line}` } : { padding: '16px 20px 0' }}><SearchField value={q} onChange={setQ} onClear={() => setQ('')} placeholder="기관·인물·이슈 검색 (예: 국민연금, CIO, 전주)" /></div>
+      <div style={desktop ? { padding: 4, marginBottom: 14, background: KB.card, borderRadius: 2, border: `1px solid ${KB.line}` } : { padding: '16px 20px 0' }}><SearchField value={q} onChange={setQ} onClear={() => setQ('')} placeholder="기관·인물·이슈 검색 (예: 국민연금, CIO, 전주)" /></div>
       <Section first title="기관별 대체투자 비중" sub={alloc.asOf}
         right={<span style={{ display: 'flex', alignItems: 'center', gap: 10, font: F(500, 12), color: KB.sub }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: KB.yellow }}></span>해외</span>
@@ -642,7 +643,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
         </span>}>
         {rows.length ? <AllocBars rows={rows} sel={cur && cur.name} onSelect={setSel} /> : <Empty compact title="일치하는 기관이 없습니다" />}
         {cur && (
-          <div style={{ marginTop: 16, padding: 16, border: `1px solid ${KB.line}`, borderRadius: 12 }}>
+          <div style={{ marginTop: 16, padding: 16, border: `1px solid ${KB.line}`, borderRadius: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               <span style={{ font: F(700, 17), color: KB.ink }}>{cur.name}</span>
               <Tag>{cur.group}</Tag>
@@ -774,7 +775,7 @@ function FundTimeline({ f, onOpenStage }) {
         );
       })}
       {f.dropped && f.dropped.length > 0 && (
-        <div style={{ font: F(500, 12, 1.55), color: KB.mute, marginTop: 6, padding: '8px 10px', background: KB.band, borderRadius: 8 }}>
+        <div style={{ font: F(500, 12, 1.55), color: KB.mute, marginTop: 6, padding: '8px 10px', background: KB.band, borderRadius: 2 }}>
           시간 순서가 맞지 않는 보도 {f.dropped.length}건(예: 클로즈 이후의 ‘모집’ 기사)은 다른 빈티지이거나 재보도로 보고 타임라인에서 제외했습니다.
         </div>
       )}
@@ -851,7 +852,7 @@ function FrCalendar({ funds, onOpenStage, onGp }) {
   let lastD = null;
   return (
     <div>
-      <div style={{ border: `1px solid ${KB.line}`, borderRadius: 12, background: KB.card, padding: desktop ? '12px 12px 10px' : '10px 6px 8px' }}>
+      <div style={{ border: `1px solid ${KB.line}`, borderRadius: 2, background: KB.card, padding: desktop ? '12px 12px 10px' : '10px 6px 8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 8 }}>
           <span onClick={() => move(-1)} style={{ cursor: 'pointer', color: KB.sub, transform: 'scaleX(-1)', display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
           <span style={{ font: F(700, 16), color: KB.ink, minWidth: 110, textAlign: 'center' }}>{y}년 {pad2(m)}월</span>
@@ -935,7 +936,7 @@ function FundraisingView({ data, onOpen, onGp }) {
   funds.filter(byQ).forEach((f) => { (byGp[f.gp] = byGp[f.gp] || []).push(f); });
   const gps = Object.keys(byGp).sort((a, b) => byGp[b].length - byGp[a].length || a.localeCompare(b));
   const search = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 10, marginBottom: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 2, marginBottom: 12 }}>
       <Ico n="search" size={18} color={KB.mute} />
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="운용사·펀드명·전략 검색 (예: Carlyle, 인프라)" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
       {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer', display: 'flex' }}><Ico n="close" size={18} /></span>}
@@ -985,7 +986,7 @@ function FundraisingView({ data, onOpen, onGp }) {
             const open = byGp[g].filter((f) => f.status === '모집 중');
             const closed = byGp[g].filter((f) => f.status !== '모집 중');
             return (
-              <div key={g} style={{ marginTop: gi ? 18 : 2, border: `1px solid ${KB.line}`, borderRadius: 12, padding: '4px 16px 8px' }}>
+              <div key={g} style={{ marginTop: gi ? 18 : 2, border: `1px solid ${KB.line}`, borderRadius: 2, padding: '4px 16px 8px' }}>
                 <div onClick={() => onGp && onGp(g)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0 10px', cursor: 'pointer' }}>
                   <span style={{ font: F(700, 17), color: KB.ink }}>{g}</span>
                   <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>

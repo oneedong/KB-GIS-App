@@ -31,7 +31,7 @@ function WkRefs({ ids, refs, onOpen }) {
         const r = refs[id];
         return (
           <span key={id + i} onClick={() => onOpen(id, { url: r.u })} title={nm(r.t)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 9px', borderRadius: 14, border: `1px solid ${KB.line}`, background: KB.card, cursor: 'pointer', font: F(500, 12), color: KB.ink2 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 9px', borderRadius: 2, border: `1px solid ${KB.line}`, background: KB.card, cursor: 'pointer', font: F(500, 12), color: KB.ink2 }}>
             <Ico n="external" size={12} color={KB.gray} />
             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260 }}>{r.s || '기사'} · {nm(r.t)}</span>
           </span>
@@ -61,13 +61,11 @@ function WkAsset({ A, rep, onOpen, q }) {
   const P = ({ children }) => <div style={{ font: F(400, 14.5, 1.8), color: KB.ink2, wordBreak: 'keep-all' }}>{children}</div>;
   return (
     <>
-      <Section first title={A.label} sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
-        {A.summary ? (
-          <div style={{ padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}`, font: F(500, 15, 1.75), color: KB.ink, wordBreak: 'keep-all' }}>{nm(A.summary)}</div>
-        ) : <Empty compact title="이번 주 요약이 없습니다" />}
+      <Section no={1} title={`${A.label} 요약`} sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
+        {A.summary ? <FocusNote style={{ font: F(500, 15, 1.75) }}>{nm(A.summary)}</FocusNote> : <Empty compact title="이번 주 요약이 없습니다" />}
       </Section>
 
-      <Section title="시장 현황" sub="이번 주 수집 기준">
+      <Section no={2} title="시장 현황" sub="이번 주 수집 기준">
         <div style={grid}>
           <Metric label="관련 보도" value={`${S.articles || 0}건`} note={<WkDelta cur={S.articles || 0} prev={S.prevArticles} />} />
           <Metric label="딜(투자·인수·매각 등)" value={`${S.deals || 0}건`} />
@@ -80,34 +78,28 @@ function WkAsset({ A, rep, onOpen, q }) {
           </div>
         )}
         {A.status && <div style={{ marginTop: 14 }}><P>{nm(A.status)}</P></div>}
-        {(A.finals || []).length > 0 && (
-          <div style={{ marginTop: 14 }}>
-            <div style={{ font: F(700, 13), color: KB.gray, marginBottom: 4 }}>파이널 클로즈</div>
-            {A.finals.map((x, i) => (
-              <div key={x.id + i} onClick={() => onOpen(x.id, rep.refs && rep.refs[x.id] ? { url: rep.refs[x.id].u } : null)} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '8px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
-                <span style={{ font: F(700, 14), color: KB.ink }}>{x.gp}</span>
-                <span style={{ flex: 1, minWidth: 0, font: F(500, 13.5), color: KB.ink2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.fund && x.fund !== x.gp ? x.fund : ''}</span>
-                <span style={{ font: F(700, 14), color: KB.gray, whiteSpace: 'nowrap' }}>{x.size || '규모 미상'}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {(A.launches || []).length + (A.closes || []).length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ font: F(700, 13), color: KB.gray, marginBottom: 4 }}>모집 개시·중간 클로즈</div>
-            {[...(A.launches || []).map((x) => ({ ...x, stage: '모집 개시' })), ...(A.closes || [])].map((x, i) => (
-              <div key={x.id + i} onClick={() => onOpen(x.id, rep.refs && rep.refs[x.id] ? { url: rep.refs[x.id].u } : null)} style={{ display: 'flex', gap: 8, alignItems: 'baseline', padding: '7px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
-                <Tag tone="outline">{x.stage}</Tag>
-                <span style={{ font: F(600, 13.5), color: KB.ink }}>{x.gp}</span>
-                <span style={{ flex: 1, minWidth: 0, font: F(500, 13), color: KB.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.fund && x.fund !== x.gp ? x.fund : ''}</span>
-                {x.size && <span style={{ font: F(700, 13), color: KB.gray, whiteSpace: 'nowrap' }}>{x.size}</span>}
-              </div>
-            ))}
-          </div>
+        {(A.finals || []).length + (A.launches || []).length + (A.closes || []).length > 0 && (
+          <>
+            <SubHead>펀드레이징</SubHead>
+            <table style={GRID.table}>
+              <colgroup><col style={{ width: desktop ? 110 : 76 }} /><col style={{ width: desktop ? 180 : 92 }} /><col /><col style={{ width: desktop ? 120 : 78 }} /></colgroup>
+              <thead><tr>{['단계', '운용사', '펀드', '규모'].map((h) => <th key={h} style={GRID.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {[...(A.finals || []).map((x) => ({ ...x, stage: '파이널 클로즈', fin: true })), ...(A.launches || []).map((x) => ({ ...x, stage: '모집 개시' })), ...(A.closes || [])].map((x, i) => (
+                  <tr key={x.id + i} onClick={() => onOpen(x.id, rep.refs && rep.refs[x.id] ? { url: rep.refs[x.id].u } : null)} style={{ cursor: 'pointer', background: x.fin ? KB.yellowTint : undefined }}>
+                    <td style={{ ...GRID.tag, font: F(700, 12.5), color: x.fin ? KB.yellowText : KB.blue, background: x.fin ? '#FFF3CC' : KB.cell }}>{x.stage}</td>
+                    <td style={{ ...GRID.td, font: F(700, 13.5), color: KB.ink }}>{x.gp}</td>
+                    <td style={{ ...GRID.td, font: F(400, 13, 1.45) }}>{x.fund && x.fund !== x.gp ? x.fund : '–'}</td>
+                    <td style={{ ...GRID.td, textAlign: 'center', font: F(700, 13), color: KB.ink, whiteSpace: 'nowrap' }}>{x.size || '미상'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </Section>
 
-      <Section title="한국 투자자" sub="선호 자산·전략과 현황">
+      <Section no={3} title="한국 투자자" sub="선호 자산·전략과 현황">
         {A.korea ? <P>{nm(A.korea)}</P> : <div style={{ font: F(400, 13.5), color: KB.mute }}>이번 주 국내 투자자 관련 보도 없음</div>}
         {(A.strategies || []).length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
@@ -117,7 +109,7 @@ function WkAsset({ A, rep, onOpen, q }) {
         )}
         {(A.krDeals || []).length > 0 && (
           <div style={{ marginTop: 14 }}>
-            <div style={{ font: F(700, 13), color: KB.gray, marginBottom: 4 }}>국내 기관 딜</div>
+            <SubHead style={{ marginTop: 0 }}>국내 기관 딜</SubHead>
             {A.krDeals.map((x, i) => (
               <div key={x.id + x.inst + i} onClick={() => onOpen(x.id, rep.refs && rep.refs[x.id] ? { url: rep.refs[x.id].u } : null)} style={{ padding: '9px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -133,79 +125,57 @@ function WkAsset({ A, rep, onOpen, q }) {
         )}
       </Section>
 
-      <Section title="운용사별 이슈" sub={`${gpIssues.length}곳`}>
+      <Section no={4} title="운용사별 이슈" sub={`${gpIssues.length}곳`}>
         {gpIssues.length ? (
-          desktop ? (
-            <div style={{ border: `1px solid ${KB.line}`, borderRadius: 10, overflow: 'hidden', background: KB.card }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
-                <colgroup><col style={{ width: 150 }} /><col /></colgroup>
-                <thead><tr>
-                  <th style={{ font: F(600, 12), color: KB.sub, textAlign: 'left', padding: '9px 12px', background: KB.band, borderBottom: `1px solid ${KB.line}` }}>운용사</th>
-                  <th style={{ font: F(600, 12), color: KB.sub, textAlign: 'left', padding: '9px 12px', background: KB.band, borderBottom: `1px solid ${KB.line}` }}>이번 주 이슈 · 근거 기사</th>
-                </tr></thead>
-                <tbody>
-                  {gpIssues.map((g, i) => (
-                    <tr key={g.gp + i}>
-                      <td style={{ font: F(700, 14), color: KB.ink, padding: '12px', verticalAlign: 'top', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>{g.gp}</td>
-                      <td style={{ padding: '12px', verticalAlign: 'top', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
-                        <div style={{ font: F(400, 14, 1.7), color: KB.ink2, wordBreak: 'keep-all' }}>{nm(g.issue)}</div>
-                        <WkRefs ids={g.refs} refs={rep.refs} onOpen={onOpen} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : gpIssues.map((g, i) => (
-            <div key={g.gp + i} style={{ padding: '12px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
-              <div style={{ font: F(700, 15), color: KB.ink }}>{g.gp}</div>
-              <div style={{ font: F(400, 14, 1.7), color: KB.ink2, marginTop: 4, wordBreak: 'keep-all' }}>{nm(g.issue)}</div>
-              <WkRefs ids={g.refs} refs={rep.refs} onOpen={onOpen} />
-            </div>
-          ))
+          <table style={GRID.table}>
+            <colgroup><col style={{ width: desktop ? 150 : 84 }} /><col /></colgroup>
+            <thead><tr><th style={GRID.th}>운용사</th><th style={GRID.th}>이번 주 이슈 · 근거 기사</th></tr></thead>
+            <tbody>
+              {gpIssues.map((g, i) => (
+                <tr key={g.gp + i}>
+                  <td style={{ ...GRID.tag, wordBreak: 'keep-all' }}>{g.gp}</td>
+                  <td style={{ ...GRID.td, verticalAlign: 'top' }}>
+                    <div style={{ font: F(400, 14, 1.65), color: KB.ink2, wordBreak: 'keep-all' }}>{nm(g.issue)}</div>
+                    <WkRefs ids={g.refs} refs={rep.refs} onOpen={onOpen} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : <Empty compact title={q ? '검색 결과가 없습니다' : '이번 주 정리된 운용사 이슈가 없습니다'} />}
       </Section>
 
-      <Section title="트렌드와 그 이유" sub={`${trends.length}건`}>
+      <Section no={5} title="트렌드와 그 이유" sub={`${trends.length}건`}>
         {trends.length ? trends.map((t, i) => (
-          <div key={i} style={{ padding: '14px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 11, background: KB.woodDeep, color: '#fff', font: F(700, 12), display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>{i + 1}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ font: F(700, 15, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(t.trend)}</div>
-                {t.why && (
-                  <div style={{ marginTop: 8, padding: '10px 12px', background: KB.band, borderRadius: 8 }}>
-                    <span style={{ font: F(700, 12), color: KB.gray, marginRight: 6 }}>이유</span>
-                    <span style={{ font: F(400, 14, 1.75), color: KB.ink2, wordBreak: 'keep-all' }}>{nm(t.why)}</span>
-                  </div>
-                )}
-                <WkRefs ids={t.refs} refs={rep.refs} onOpen={onOpen} />
-              </div>
-            </div>
+          <div key={i} style={{ padding: '12px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
+            <SubHead style={{ margin: '0 0 4px', wordBreak: 'keep-all' }}>{`5-${i + 1}. `}{nm(t.trend)}</SubHead>
+            {t.why && <Bullets items={[<><span style={{ font: F(700, 13.5), color: KB.ink }}>이유: </span>{nm(t.why)}</>]} />}
+            <WkRefs ids={t.refs} refs={rep.refs} onOpen={onOpen} />
           </div>
         )) : <Empty compact title={q ? '검색 결과가 없습니다' : '이번 주 정리된 트렌드가 없습니다'} />}
       </Section>
 
       {themes.length > 0 && (
-        <Section title="테마별 보도 추이" sub="이번 주 · 직전 주 · 국내 보도">
-          <div style={{ border: `1px solid ${KB.line}`, borderRadius: 10, overflow: 'hidden', background: KB.card }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <Section no={6} title="테마별 보도 추이" sub="이번 주 · 직전 주 · 국내 보도">
+          <div>
+            <table style={GRID.table}>
+              <colgroup><col /><col style={{ width: desktop ? 80 : 52 }} /><col style={{ width: desktop ? 80 : 52 }} /><col style={{ width: desktop ? 90 : 58 }} /><col style={{ width: desktop ? 70 : 44 }} /></colgroup>
               <thead><tr>
-                {['테마', '이번 주', '직전 주', '변화', '국내'].map((h, i) => <th key={h} style={{ font: F(600, 12), color: KB.sub, textAlign: i ? 'right' : 'left', padding: '8px 10px', background: KB.band, borderBottom: `1px solid ${KB.line}`, whiteSpace: 'nowrap' }}>{h}</th>)}
+                {['테마', '이번 주', '직전 주', '변화', '국내'].map((h) => <th key={h} style={{ ...GRID.th, padding: '6px 4px' }}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {themes.filter((t) => hit(t.name)).map((t, i) => {
                   const max = Math.max(...themes.map((x) => x.n), 1);
                   return (
                     <tr key={t.name}>
-                      <td style={{ padding: '9px 10px', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
-                        <div style={{ font: F(600, 13.5), color: KB.ink }}>{t.name}</div>
-                        <div style={{ height: 4, borderRadius: 2, background: KB.line2, marginTop: 5 }}><div style={{ width: `${(t.n / max) * 100}%`, height: 4, borderRadius: 2, background: KB.yellow }}></div></div>
+                      <td style={GRID.td}>
+                        <div style={{ font: F(700, 13.5), color: KB.ink }}>{t.name}</div>
+                        <div style={{ height: 4, background: KB.line2, marginTop: 5 }}><div style={{ width: `${(t.n / max) * 100}%`, height: 4, background: KB.yellow }}></div></div>
                       </td>
-                      <td style={{ textAlign: 'right', padding: '9px 10px', font: F(700, 13.5), color: KB.ink, borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>{t.n}</td>
-                      <td style={{ textAlign: 'right', padding: '9px 10px', font: F(500, 13), color: KB.sub, borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>{t.prev}</td>
-                      <td style={{ textAlign: 'right', padding: '9px 10px', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}><WkDelta cur={t.n} prev={t.prev} /></td>
-                      <td style={{ textAlign: 'right', padding: '9px 10px', font: F(500, 13), color: KB.sub, borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>{t.kr}</td>
+                      <td style={{ ...GRID.td, textAlign: 'center', font: F(700, 13.5), color: KB.ink, padding: '7px 4px' }}>{t.n}</td>
+                      <td style={{ ...GRID.td, textAlign: 'center', font: F(500, 13), color: KB.sub, padding: '7px 4px' }}>{t.prev == null ? '–' : t.prev}</td>
+                      <td style={{ ...GRID.td, textAlign: 'center', padding: '7px 4px' }}><WkDelta cur={t.n} prev={t.prev} /></td>
+                      <td style={{ ...GRID.td, textAlign: 'center', font: F(500, 13), color: KB.sub, padding: '7px 4px' }}>{t.kr}</td>
                     </tr>
                   );
                 })}
@@ -228,22 +198,22 @@ function WkOverview({ rep, onAsset, onOpen, q }) {
   const rows = WK_ASSETS.map(([k, label]) => ({ k, label, A: (rep.assets || {})[k] || {} })).filter(({ label, A }) => hit(`${label} ${A.summary || ''} ${A.korea || ''} ${(A.gpIssues || []).map((g) => g.gp + ' ' + g.issue).join(' ')}`));
   return (
     <>
-      <Section first title="이번 주 한 줄" sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
-        <div style={{ padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}`, font: F(700, 16, 1.65), color: KB.ink, wordBreak: 'keep-all' }}>{nm(rep.headline || '')}</div>
+      <Section no={1} title="이번 주 한 줄" sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
+        <FocusNote style={{ font: F(700, 16, 1.65) }}>{nm(rep.headline || '')}</FocusNote>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: F(500, 12.5), color: KB.sub }}>
           <span>보도 {rep.totals ? rep.totals.articles : 0}건 <WkDelta cur={rep.totals ? rep.totals.articles : 0} prev={rep.totals ? rep.totals.prevArticles : null} /></span>
           <span>딜 {rep.totals ? rep.totals.deals : 0}건</span>
         </div>
       </Section>
 
-      <Section title="한국 투자자 동향" sub="선호 자산군·전략">
+      <Section no={2} title="한국 투자자 동향" sub="선호 자산군·전략">
         {rep.korea && <div style={{ font: F(400, 14.5, 1.8), color: KB.ink2, wordBreak: 'keep-all' }}>{nm(rep.korea)}</div>}
         <div style={{ marginTop: 14 }}>
-          <div style={{ font: F(700, 13), color: KB.gray, marginBottom: 8 }}>자산군별 국내 관련 보도·국내 LP 딜</div>
+          <SubHead style={{ marginTop: 0 }}>자산군별 국내 관련 보도·국내 LP 딜</SubHead>
           {kr.map((x) => (
             <div key={x.k} onClick={() => onAsset(x.k)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: 'pointer' }}>
               <span style={{ width: desktop ? 130 : 104, flexShrink: 0, font: F(600, 13), color: KB.ink }}>{x.label}</span>
-              <div style={{ flex: 1, height: 10, background: KB.line2, borderRadius: 5, overflow: 'hidden', display: 'flex' }}>
+              <div style={{ flex: 1, height: 10, background: KB.line2, overflow: 'hidden', display: 'flex' }}>
                 <div style={{ width: `${(x.articles / maxKr) * 100}%`, background: KB.yellow }}></div>
                 <div style={{ width: `${(x.deals / maxKr) * 100}%`, background: KB.woodDeep }}></div>
               </div>
@@ -257,7 +227,7 @@ function WkOverview({ rep, onAsset, onOpen, q }) {
         </div>
       </Section>
 
-      <Section title="자산군별 한눈에" sub="누르면 상세">
+      <Section no={3} title="자산군별 한눈에" sub="누르면 상세">
         {rows.length ? rows.map(({ k, label, A }, i) => {
           const S = A.stats || {};
           return (
@@ -309,7 +279,7 @@ function WeeklyScreen({ onOpen }) {
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px 10px', background: KB.bg }}>
           <span onClick={() => go(1)} style={{ cursor: pos < index.length - 1 ? 'pointer' : 'default', color: pos < index.length - 1 ? KB.sub : KB.faint, transform: 'scaleX(-1)', display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
           <select value={key} onChange={(e) => { setKey(e.target.value); if (scrollRef.current) scrollRef.current.scrollTop = 0; }}
-            style={{ flex: desktop ? '0 0 auto' : 1, minWidth: 0, height: 36, padding: '0 10px', borderRadius: 8, border: `1px solid ${KB.line}`, background: KB.card, font: F(600, 14), color: KB.ink }}>
+            style={{ flex: desktop ? '0 0 auto' : 1, minWidth: 0, height: 36, padding: '0 10px', borderRadius: 2, border: `1px solid ${KB.line}`, background: KB.card, font: F(600, 14), color: KB.ink }}>
             {index.map((x) => <option key={x.key} value={x.key}>{wkDate(x.date)} 주간 ({wkShort(x.from)}~{wkShort(x.to)})</option>)}
           </select>
           <span onClick={() => go(-1)} style={{ cursor: pos > 0 ? 'pointer' : 'default', color: pos > 0 ? KB.sub : KB.faint, display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
@@ -322,13 +292,20 @@ function WeeklyScreen({ onOpen }) {
       <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 960 : 'none', margin: '0 auto', padding: desktop ? '18px 24px 40px' : '0 0 30px' }}>
           <div style={{ padding: desktop ? '0 0 14px' : '12px 20px 4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 10, border: desktop ? `1px solid ${KB.line}` : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 2, border: desktop ? `1px solid ${KB.line}` : 'none' }}>
               <Ico n="search" size={18} color={KB.mute} />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="운용사·이슈·트렌드 검색 (예: Blackstone, 세컨더리)"
                 style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
               {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer', display: 'flex' }}><Ico n="close" size={18} /></span>}
             </div>
           </div>
+          {rep && (
+            <div style={desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' }}>
+              <DocHeader
+                title={tab === 'all' ? '해외대체 주간 시장현황' : `${(WK_ASSETS.find(([k]) => k === tab) || [])[1]} 주간 시장현황`}
+                date={`${wkDate(rep.date)}(${'일월화수목금토'[new Date(rep.date + 'T00:00:00Z').getUTCDay()]}) · ${wkShort(rep.from)}~${wkShort(rep.to)}`} />
+            </div>
+          )}
           {!index ? <Empty title="시장현황을 불러오는 중입니다" />
             : !index.length ? <Empty title="아직 발행된 시장현황이 없습니다" desc="매주 마지막 영업일 오후에 한 주를 정리해 올립니다." />
             : !rep ? <Empty title="보고서를 불러오는 중입니다" />

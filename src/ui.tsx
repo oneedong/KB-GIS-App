@@ -1,41 +1,49 @@
 // @ts-nocheck
 /*
- * KB GIS — 디자인 시스템 (화이트 앤 우드)
+ * KB GIS — 디자인 시스템 (KB증권 글로벌상품영업부 문서 양식 = GP 미팅노트와 같은 디자인)
  *
- * 바탕은 디아망 회벽 크림화이트(따뜻한 석회 벽 같은 미색), 포인트는 미디엄 우드(오크·티크 중간 톤).
- * 글자는 순흑 대신 따뜻한 차콜, 선·띠도 베이지 계열로 맞춰 전체가 한 공간처럼 보이게 한다.
- * 강조색은 우드 한 가지만 쓰고(주요 버튼·선택 표시·형광펜), 상승/하락은 국내 관행대로 빨강/파랑.
- * (예전 KB 노랑 토큰 이름 yellow* 는 호환을 위해 그대로 두고 값만 우드로 바꿨다.)
+ * 흰 지면 + 옅은 회색 바탕, 섹션 제목은 KB 노랑(#FFBC00) 막대와 웜그레이(#71685D) 밑줄,
+ * 소제목·태그·강조 라벨은 블루(#2F5597), 표 머리·제목 띠는 회색(#E7E6E6), 강조 박스는 옅은 노랑(#FFF8E1).
+ * 글꼴은 맑은 고딕(없으면 Apple SD Gothic Neo·Noto Sans KR). 모서리는 각지게(문서 느낌).
+ * 상승/하락은 국내 관행대로 빨강/파랑.
+ * (예전 토큰 이름 yellow*·wood*·gray 는 호환을 위해 그대로 두고 값만 바꿨다.)
  *
  * 이 파일은 app.tsx 보다 먼저 로드되는 일반 스크립트다(index.html 참고).
  * 최상위 const/function 은 전역으로 공유되므로 React 훅은 React.useState 처럼 쓴다.
  */
 
 const KB = {
-  yellow: '#A47A4F',      // 미디엄 우드 — 표시선·점·막대·로고
-  yellowPress: '#8B633D',
-  wood: '#A47A4F',
-  woodDeep: '#8B633D',    // 흰 글자를 올리는 버튼 바탕(대비 5.3:1)
-  yellowTint: '#F1E6D6',  // 옅은 나뭇결 — 선택 배경·요약 박스
-  yellowLine: '#DDC8AB',
-  gray: '#6B4E33',        // 짙은 월넛 — 기관명·강조 라벨
-  ink: '#2B2520',         // 제목 — 따뜻한 차콜
-  ink2: '#3E3630',        // 본문
-  sub: '#6F655A',         // 보조 텍스트
-  mute: '#8F8577',        // 캡션·메타
-  faint: '#C9BDAC',
-  line: '#E7DED0',        // 구분선
-  line2: '#EFE8DC',
-  band: '#F3EDE3',        // 섹션 사이 띠(한 톤 깊은 회벽)
-  bg: '#FBF8F2',          // 디아망 회벽 크림화이트
-  card: '#FFFDF9',        // 카드·그림 바탕(바탕보다 살짝 밝은 미색)
+  yellow: '#FFBC00',      // KB 노랑 — 섹션 막대·선택 표시·막대그래프
+  yellowPress: '#C99400', // 노랑 버튼 테두리
+  wood: '#FFBC00',
+  woodDeep: '#2F5597',    // 흰 글자를 올리는 바탕(번호 원·강조 막대) — 블루
+  yellowTint: '#FFF8E1',  // 강조 박스 바탕(미팅노트 focusnote·keybox)
+  yellowLine: '#E8C25A',  // 강조 박스 테두리
+  yellowText: '#9A7300',  // 노란 박스 위 글자·번호
+  gray: '#2F5597',        // 블루 — 기관명·강조 라벨(미팅노트 제목·태그 색)
+  blue: '#2F5597',
+  warm: '#71685D',        // 웜그레이 — 섹션 밑줄(KB 로고 글자색)
+  ink: '#222222',         // 제목·본문
+  ink2: '#333333',
+  sub: '#555555',         // 보조 텍스트
+  mute: '#7F7F7F',        // 캡션·메타
+  faint: '#BFBFBF',
+  line: '#D9D9D9',        // 구분선
+  line2: '#E7E6E6',
+  rule: '#888888',        // 표 테두리(미팅노트 표와 같은 선)
+  head: '#E7E6E6',        // 표 머리·제목 띠
+  cell: '#F5F5F5',        // 표 머리열(태그 칸) 바탕
+  band: '#F2F2F2',        // 지면 바깥 바탕·섹션 사이 띠
+  bg: '#FFFFFF',          // 지면
+  card: '#FFFFFF',
   up: '#D2382F',          // 상승
   down: '#2A62C4',        // 하락
   pos: '#3F7A4E',
-  ko: '#2F5F9E',          // 영문 기사 한글 번역(병기)
+  ko: '#2F5597',          // 영문 기사 한글 번역(병기)
 };
-// 폰트 단축: F(굵기, 크기, 행간)
-const F = (w, size, lh) => `${w} ${size}px${lh ? '/' + lh : ''} Pretendard, -apple-system, sans-serif`;
+// 폰트 단축: F(굵기, 크기, 행간) — 미팅노트와 같은 맑은 고딕
+const FONT_STACK = "'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans CJK KR', -apple-system, sans-serif";
+const F = (w, size, lh) => `${w} ${size}px${lh ? '/' + lh : ''} ${FONT_STACK}`;
 
 // 화면 모드(모바일/데스크톱)를 하위 컴포넌트가 알 수 있게
 const UICtx = React.createContext({ desktop: false });
@@ -82,14 +90,65 @@ function Ico({ n, size = 22, color = 'currentColor', sw = 1.7, fill = 'none', st
   );
 }
 
-// ─── 로고 — 미니멀 워드마크 "KB GIS" (우드 포인트 하나) ─────────────
+// ─── 로고 — KB증권 로고(미팅노트 헤더와 같은 벡터) + GIS ─────────────
 function Logo({ size = 18, onClick }) {
   return (
-    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: Math.round(size * 0.42), cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }} aria-label="KB GIS">
-      <span style={{ width: Math.round(size * 0.5), height: Math.round(size * 0.5), borderRadius: 3, background: 'linear-gradient(135deg, #B98D5F 0%, #A47A4F 55%, #8B633D 100%)', flexShrink: 0 }}></span>
-      <span style={{ font: F(800, size), color: KB.ink, letterSpacing: '-.01em' }}>KB<span style={{ fontWeight: 500, marginLeft: Math.round(size * 0.28) }}>GIS</span></span>
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: Math.round(size * 0.5), cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }} aria-label="KB증권 GIS">
+      <img src="./icons/kb-logo.svg" alt="KB증권" style={{ height: Math.round(size * 1.25), width: 'auto', display: 'block', flexShrink: 0 }} />
+      <span style={{ font: F(700, Math.round(size * 0.9)), color: KB.warm, paddingLeft: Math.round(size * 0.5), borderLeft: `1px solid ${KB.faint}`, lineHeight: 1, letterSpacing: '.02em' }}>GIS</span>
     </div>
   );
+}
+
+// ─── 문서 머리 — 미팅노트·월간보고 헤더(좌 KB증권 로고 / 가운데 제목+날짜 / 우 부서) ─────
+function DocHeader({ title, date, dept = '글로벌상품영업부', style }) {
+  const desktop = useDesktop();
+  const bd = `1px solid ${KB.rule}`;
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', ...(style || {}) }}>
+      <colgroup><col style={{ width: '23%' }} /><col style={{ width: '53%' }} /><col style={{ width: '24%' }} /></colgroup>
+      <tbody>
+        <tr>
+          <td rowSpan={2} style={{ border: bd, height: desktop ? 64 : 52, padding: '0 6px', textAlign: 'center', verticalAlign: 'middle' }}>
+            <img src="./icons/kb-logo.svg" alt="KB증권" style={{ width: '92%', maxWidth: 150, height: 'auto', display: 'block', margin: '0 auto' }} />
+          </td>
+          <td style={{ border: bd, background: KB.head, color: KB.blue, textAlign: 'center', verticalAlign: 'middle', font: F(700, desktop ? 20 : 15.5, 1.25), padding: desktop ? '8px 6px' : '6px 4px', letterSpacing: '-.01em' }}>{title}</td>
+          <td rowSpan={2} style={{ border: bd, textAlign: 'center', verticalAlign: 'middle', font: F(500, desktop ? 15 : 12, 1.35), color: KB.ink, padding: '0 4px', wordBreak: 'keep-all' }}>{!desktop && dept === '글로벌상품영업부' ? <>글로벌상품<br />영업부</> : dept}</td>
+        </tr>
+        <tr>
+          <td style={{ border: bd, color: KB.blue, textAlign: 'center', verticalAlign: 'middle', font: F(500, desktop ? 14 : 12), padding: desktop ? '4px 6px' : '3px 4px' }}>{date}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+// ─── 문서 요소 — 미팅노트의 표·불릿·강조 박스 ───────────────────────
+// 그리드 표 칸 스타일: 머리(회색 바탕·굵게·가운데) / 칸(테두리) / 태그 칸(블루 굵게·옅은 회색)
+const GRID = {
+  table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' },
+  th: { border: `1px solid ${KB.rule}`, background: KB.head, font: F(700, 13), color: KB.ink, textAlign: 'center', padding: '6px 8px', whiteSpace: 'nowrap' },
+  td: { border: `1px solid ${KB.rule}`, font: F(400, 13.5, 1.5), color: KB.ink2, padding: '7px 9px', verticalAlign: 'middle' },
+  tag: { border: `1px solid ${KB.rule}`, background: KB.cell, font: F(700, 13), color: KB.blue, textAlign: 'center', padding: '7px 6px', verticalAlign: 'middle' },
+};
+// 개조식 불릿 — 1단 ○, 2단 -
+function Bullets({ items, sub, style }) {
+  const list = (items || []).filter(Boolean);
+  if (!list.length) return null;
+  return (
+    <ul style={{ listStyle: 'none', margin: 0, padding: sub ? '0 0 0 2px' : 0, ...(style || {}) }}>
+      {list.map((x, i) => (
+        <li key={i} style={{ position: 'relative', paddingLeft: sub ? 13 : 17, margin: sub ? '2px 0' : '5px 0', font: F(400, sub ? 13.5 : 14.5, 1.65), color: sub ? KB.ink2 : KB.ink }}>
+          <span style={{ position: 'absolute', left: 0, top: 0, font: F(400, sub ? 13.5 : 12.5, sub ? 1.65 : 1.95), color: sub ? KB.ink2 : '#444' }}>{sub ? '-' : '○'}</span>
+          {x}
+        </li>
+      ))}
+    </ul>
+  );
+}
+// 강조 박스 — 미팅노트 focusnote(왼쪽 노란 막대 + 옅은 노랑)
+function FocusNote({ children, style }) {
+  return <div style={{ borderLeft: `4px solid ${KB.yellow}`, background: KB.yellowTint, padding: '10px 14px', font: F(500, 14.5, 1.65), color: KB.ink, ...(style || {}) }}>{children}</div>;
 }
 
 // ─── 화면 뼈대 ──────────────────────────────────────────────────
@@ -118,13 +177,13 @@ function TopBar({ title, sub, onBack, backLabel, right, border = true, big }) {
 function IconBtn({ n, onClick, label, active, size = 22 }) {
   return (
     <div onClick={onClick} role="button" aria-label={label} title={label}
-         style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: active ? KB.ink : KB.ink2, borderRadius: 8 }}>
+         style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: active ? KB.ink : KB.ink2, borderRadius: 4 }}>
       <Ico n={n} size={size} fill={active && n === 'bookmark' ? KB.yellow : 'none'} color={active && n === 'bookmark' ? KB.gray : 'currentColor'} />
     </div>
   );
 }
 
-// 탭(밑줄형) — KB 앱의 상단 탭처럼 선택 탭에 우드 막대
+// 탭(밑줄형) — 선택 탭에 KB 노랑 막대
 function Tabs({ items, value, onChange, scroll, pad = 20 }) {
   return (
     <div style={{ display: 'flex', gap: scroll ? 20 : 0, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, overflowX: scroll ? 'auto' : 'visible', whiteSpace: 'nowrap', background: KB.bg, flexShrink: 0 }}>
@@ -133,7 +192,7 @@ function Tabs({ items, value, onChange, scroll, pad = 20 }) {
         return (
           <div key={k} onClick={() => onChange(k)} style={{ flex: scroll ? '0 0 auto' : 1, textAlign: 'center', padding: '12px 2px 11px', cursor: 'pointer', position: 'relative', font: on ? F(700, 14.5) : F(500, 14.5), color: on ? KB.ink : KB.mute }}>
             {label}{count != null && <span style={{ font: F(600, 12), color: on ? KB.gray : KB.faint, marginLeft: 4 }}>{count}</span>}
-            {on && <div style={{ position: 'absolute', left: scroll ? 0 : '18%', right: scroll ? 0 : '18%', bottom: -1, height: 3, background: KB.yellow, borderRadius: 2 }}></div>}
+            {on && <div style={{ position: 'absolute', left: scroll ? 0 : '18%', right: scroll ? 0 : '18%', bottom: -1, height: 3, background: KB.yellow }}></div>}
           </div>
         );
       })}
@@ -141,11 +200,11 @@ function Tabs({ items, value, onChange, scroll, pad = 20 }) {
   );
 }
 
-// 필터 칩 — 선택: 우드 채움 / 미선택: 테두리
+// 필터 칩 — 선택: KB 노랑 채움(미팅노트 툴바 '켜짐'과 같은 모양) / 미선택: 테두리
 function Chip({ active, onClick, children, count }) {
   return (
-    <div onClick={onClick} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 13px', borderRadius: 16, cursor: 'pointer', font: active ? F(600, 13) : F(500, 13), background: active ? KB.woodDeep : KB.card, color: active ? '#fff' : KB.ink2, border: `1px solid ${active ? KB.woodDeep : KB.line}`, whiteSpace: 'nowrap' }}>
-      {children}{count != null && <span style={{ font: F(600, 11.5), color: active ? '#F1E6D6' : KB.mute }}>{count}</span>}
+    <div onClick={onClick} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 12px', borderRadius: 4, cursor: 'pointer', font: active ? F(700, 13) : F(500, 13), background: active ? KB.yellow : KB.card, color: active ? KB.ink : KB.ink2, border: `1px solid ${active ? KB.yellowPress : KB.faint}`, whiteSpace: 'nowrap' }}>
+      {children}{count != null && <span style={{ font: F(600, 11.5), color: active ? '#5C4500' : KB.mute }}>{count}</span>}
     </div>
   );
 }
@@ -153,30 +212,32 @@ function Chip({ active, onClick, children, count }) {
 // 작은 라벨. tone: base | yellow | dark | outline | up | down | pos
 function Tag({ children, tone = 'base', style }) {
   const T = {
-    base: { background: KB.band, color: KB.sub },
-    yellow: { background: KB.yellowTint, color: KB.gray },
-    dark: { background: KB.gray, color: '#fff' },   // 짙은 월넛
-    outline: { background: KB.card, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.line}` },
+    base: { background: KB.cell, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.line2}` },
+    yellow: { background: '#FFF3CC', color: '#7A5C00' },          // 미팅노트 강조 표의 태그 칸
+    dark: { background: KB.blue, color: '#fff' },
+    outline: { background: KB.card, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.faint}` },
     up: { background: '#FDECEB', color: KB.up },
     down: { background: '#E9F0FC', color: KB.down },
     pos: { background: '#E7F4EC', color: KB.pos },
   }[tone] || {};
-  return <span style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 7px', borderRadius: 4, font: F(600, 11.5), whiteSpace: 'nowrap', flexShrink: 0, ...T, ...(style || {}) }}>{children}</span>;
+  return <span style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 7px', borderRadius: 2, font: F(600, 11.5), whiteSpace: 'nowrap', flexShrink: 0, ...T, ...(style || {}) }}>{children}</span>;
 }
 
-// 섹션 — 모바일은 회색 띠로 구분된 흰 블록, 데스크톱은 카드
-function Section({ title, sub, right, children, first, pad = true, id }) {
+// 섹션 — 미팅노트의 섹션 제목(왼쪽 KB 노랑 막대 + 웜그레이 밑줄). 모바일은 회색 띠로 나뉜 흰 지면, 데스크톱은 흰 지면 카드.
+// no: 번호("1.")를 붙이면 문서처럼 번호 매긴 제목이 된다.
+function Section({ title, sub, right, children, first, pad = true, id, no }) {
   const desktop = useDesktop();
   const head = (title || right) && (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: pad ? (desktop ? '18px 20px 10px' : '20px 20px 10px') : '0 0 10px' }}>
-      <div style={{ font: F(700, 16.5), color: KB.ink, letterSpacing: '-.02em', whiteSpace: 'nowrap', flexShrink: 0 }}>{title}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: pad ? (desktop ? '18px 20px 12px' : '18px 20px 12px') : '0 0 12px', paddingBottom: 7, borderBottom: `1.5px solid ${KB.warm}` }}>
+      <span style={{ width: 4, height: 16, background: KB.yellow, flexShrink: 0 }}></span>
+      <div style={{ font: F(700, 16), color: KB.ink, letterSpacing: '-.01em', whiteSpace: 'nowrap', flexShrink: 0 }}>{no != null && <span style={{ marginRight: 5 }}>{no}.</span>}{title}</div>
       {sub && <div style={{ font: F(500, 12), color: KB.mute, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
       {right && <div style={{ marginLeft: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}>{right}</div>}
     </div>
   );
   if (desktop) {
     return (
-      <div id={id} style={{ background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, marginTop: first ? 0 : 16, overflow: 'hidden' }}>
+      <div id={id} style={{ background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginTop: first ? 0 : 16, overflow: 'hidden' }}>
         {head}
         <div style={{ padding: pad ? '0 20px 18px' : 0 }}>{children}</div>
       </div>
@@ -188,6 +249,10 @@ function Section({ title, sub, right, children, first, pad = true, id }) {
       <div style={{ padding: pad ? '0 20px 20px' : 0 }}>{children}</div>
     </div>
   );
+}
+// 소제목 — 미팅노트 h3(블루 굵게)
+function SubHead({ children, style }) {
+  return <div style={{ font: F(700, 14.5), color: KB.blue, margin: '14px 0 6px', ...(style || {}) }}>{children}</div>;
 }
 // 섹션 머리 오른쪽의 '더보기' 링크
 function More({ onClick, children = '전체보기' }) {
@@ -207,8 +272,8 @@ function ListRow({ children, onClick, first, pad = '14px 0', chevron, style }) {
 // 핵심 수치 타일
 function Metric({ value, label, note, accent, onClick }) {
   return (
-    <div onClick={onClick} style={{ padding: '14px 14px 13px', borderRadius: 10, background: accent ? KB.yellowTint : KB.band, cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
-      <div style={{ font: F(500, 12), color: accent ? KB.gray : KB.sub }}>{label}</div>
+    <div onClick={onClick} style={{ padding: '12px 14px 11px', background: accent ? KB.yellowTint : KB.cell, border: `1px solid ${accent ? KB.yellowLine : KB.line2}`, cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
+      <div style={{ font: F(600, 12), color: accent ? KB.yellowText : KB.sub }}>{label}</div>
       <div style={{ font: F(700, 20), color: KB.ink, marginTop: 5, letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
       {note && <div style={{ font: F(500, 11.5), color: KB.mute, marginTop: 3, lineHeight: 1.45 }}>{note}</div>}
     </div>
@@ -226,14 +291,14 @@ function Empty({ title, desc, icon = 'info', compact }) {
   );
 }
 
-// 버튼 — primary(우드)·secondary(테두리)·dark
+// 버튼 — primary(KB 노랑·검은 글자)·secondary(테두리)·dark(블루)
 function Btn({ children, onClick, kind = 'primary', href, full, style, icon }) {
   const S = {
-    primary: { background: KB.woodDeep, color: '#fff', border: `1px solid ${KB.woodDeep}` },
-    secondary: { background: KB.bg, color: KB.ink2, border: `1px solid ${KB.line}` },
-    dark: { background: KB.ink, color: '#fff', border: `1px solid ${KB.ink}` },
+    primary: { background: KB.yellow, color: KB.ink, border: `1px solid ${KB.yellowPress}` },
+    secondary: { background: KB.bg, color: KB.ink, border: `1px solid ${KB.rule}` },
+    dark: { background: KB.blue, color: '#fff', border: `1px solid ${KB.blue}` },
   }[kind];
-  const st = { height: 48, padding: '0 18px', borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: F(700, 15), cursor: 'pointer', textDecoration: 'none', boxSizing: 'border-box', flex: full ? 1 : undefined, width: full ? '100%' : undefined, ...S, ...(style || {}) };
+  const st = { height: 48, padding: '0 18px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: F(700, 15), cursor: 'pointer', textDecoration: 'none', boxSizing: 'border-box', flex: full ? 1 : undefined, width: full ? '100%' : undefined, ...S, ...(style || {}) };
   const inner = <>{icon && <Ico n={icon} size={18} sw={2} />}{children}</>;
   return href
     ? <a href={href} target="_blank" rel="noopener noreferrer" style={st}>{inner}</a>
@@ -257,7 +322,7 @@ function Sheet({ open, onClose, title, children, wide }) {
   if (!open) return null;
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(15,16,18,.45)', zIndex: 50, display: 'flex', alignItems: desktop ? 'center' : 'flex-end', justifyContent: 'center', padding: desktop ? 24 : 0 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: desktop ? (wide ? 880 : 560) : 'none', maxHeight: desktop ? '88vh' : '86vh', display: 'flex', flexDirection: 'column', background: KB.bg, borderRadius: desktop ? 14 : '16px 16px 0 0', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: desktop ? (wide ? 880 : 560) : 'none', maxHeight: desktop ? '88vh' : '86vh', display: 'flex', flexDirection: 'column', background: KB.bg, borderRadius: desktop ? 4 : '8px 8px 0 0', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 12px 20px', borderBottom: `1px solid ${KB.line}`, flexShrink: 0 }}>
           <div style={{ flex: 1, font: F(700, 16.5), color: KB.ink }}>{title}</div>
           <IconBtn n="close" onClick={onClose} label="닫기" />

@@ -129,8 +129,9 @@ const DEAL_TYPES = [
 ];
 const dealType = (kind) => (DEAL_TYPES.find(([, re]) => re.test(kind || '')) || ['기타'])[0];
 const ymLabel = (ms) => { const { y, m } = kstYMD(ms); return `${y}년 ${pad2(m)}월`; };
-const TH = { font: F(600, 12), color: KB.sub, textAlign: 'left', padding: '8px 6px', borderBottom: `1px solid ${KB.line}`, whiteSpace: 'nowrap', background: KB.band };
-const TD = { font: F(500, 13, 1.45), color: KB.ink2, padding: '9px 6px', borderBottom: `1px solid ${KB.line2}`, verticalAlign: 'top' };
+// 미팅노트 표 양식: 회색 머리(가운데·굵게) + 모든 칸 테두리
+const TH = { ...GRID.th, font: F(700, 12.5), padding: '6px 6px' };
+const TD = { ...GRID.td, font: F(500, 13, 1.45), padding: '7px 7px', verticalAlign: 'top' };
 function DealTable({ clusters, onOpen, onInst }) {
     const desktop = useDesktop();
     const by = {};
@@ -141,10 +142,10 @@ function DealTable({ clusters, onOpen, onInst }) {
     const jump = (name) => { const el = document.getElementById(anchor(name)); if (el)
         el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { font: F(700, 14), color: KB.ink, margin: '4px 0 8px' } },
+        React.createElement("div", { style: { font: F(700, 14.5), color: KB.blue, margin: '4px 0 8px' } },
             "\uAE30\uAD00\uBCC4 \uAC70\uB798 \uC720\uD615 \uC694\uC57D ",
             React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, "\uC774\uB984\uC744 \uB204\uB974\uBA74 \uD574\uB2F9 \uD45C\uB85C \uC774\uB3D9")),
-        React.createElement("div", { style: { overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card } },
+        React.createElement("div", { style: { overflowX: 'auto', background: KB.card } },
             React.createElement("table", { style: { borderCollapse: 'collapse', width: '100%', minWidth: 120 + typesUsed.length * 62 } },
                 React.createElement("thead", null,
                     React.createElement("tr", null,
@@ -168,7 +169,7 @@ function DealTable({ clusters, onOpen, onInst }) {
                     React.createElement("span", { style: { marginLeft: 'auto', font: F(600, 12.5), color: KB.sub } },
                         rows.length,
                         "\uAC74")),
-                React.createElement("div", { style: { overflowX: 'auto', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card } },
+                React.createElement("div", { style: { overflowX: 'auto', background: KB.card } },
                     React.createElement("table", { style: { borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: desktop ? 0 : 520 } },
                         React.createElement("colgroup", null,
                             React.createElement("col", { style: { width: 92 } }),
@@ -187,7 +188,7 @@ function DealTable({ clusters, onOpen, onInst }) {
                             const span = first ? rows.filter((r) => dealType(r.lead.kind) === t).length : 0;
                             const e = c.lead;
                             return (React.createElement("tr", { key: c.key + i, onClick: () => onOpen && onOpen(e), style: { cursor: 'pointer' } },
-                                first && React.createElement("td", { rowSpan: span, style: { ...TD, font: F(700, 13), color: KB.gray, background: KB.band, borderRight: `1px solid ${KB.line2}` } },
+                                first && React.createElement("td", { rowSpan: span, style: { ...GRID.tag, verticalAlign: 'middle' } },
                                     t,
                                     e.kind !== t && span === 1 ? React.createElement("div", { style: { font: F(500, 11), color: KB.mute } }, e.kind) : null),
                                 React.createElement("td", { style: { ...TD, whiteSpace: 'nowrap', font: F(500, 12.5), color: KB.sub } }, ymLabel(c.ms)),
@@ -240,14 +241,14 @@ function AltTrend({ trend }) {
     return (React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, style: { width: '100%', height: 'auto', display: 'block' } },
         [lo, lo + span / 2, hi].map((g, i) => (React.createElement("g", { key: i },
             React.createElement("line", { x1: L, y1: y(g), x2: W - R, y2: y(g), stroke: KB.line2, strokeWidth: "1" }),
-            React.createElement("text", { x: L - 6, y: y(g) + 4, textAnchor: "end", fontSize: "11", fill: KB.mute, fontFamily: "Pretendard" },
+            React.createElement("text", { x: L - 6, y: y(g) + 4, textAnchor: "end", fontSize: "11", fill: KB.mute, fontFamily: FONT_STACK },
                 Math.round(g),
                 "%")))),
         React.createElement("polyline", { points: pts, fill: "none", stroke: KB.gray, strokeWidth: "2.2", strokeLinejoin: "round" }),
         trend.map((t, i) => (React.createElement("g", { key: i },
             React.createElement("circle", { cx: x(i), cy: y(t.altPct), r: "4", fill: i === trend.length - 1 ? KB.yellow : KB.card, stroke: KB.gray, strokeWidth: "2" }),
-            React.createElement("text", { x: x(i), y: y(t.altPct) - 9, textAnchor: "middle", fontSize: "11", fontWeight: "600", fill: KB.ink, fontFamily: "Pretendard" }, t.altPct),
-            React.createElement("text", { x: x(i), y: H - 7, textAnchor: "middle", fontSize: "11", fill: KB.mute, fontFamily: "Pretendard" }, t.year))))));
+            React.createElement("text", { x: x(i), y: y(t.altPct) - 9, textAnchor: "middle", fontSize: "11", fontWeight: "600", fill: KB.ink, fontFamily: FONT_STACK }, t.altPct),
+            React.createElement("text", { x: x(i), y: H - 7, textAnchor: "middle", fontSize: "11", fill: KB.mute, fontFamily: FONT_STACK }, t.year))))));
 }
 // 링크 줄(외부 기사) — 근거 기사로 이동
 const ExtLink = ({ href, children, first }) => {
@@ -291,7 +292,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
             React.createElement(Tag, { tone: "dark" }, group || '국내 LP'),
             p.curated ? React.createElement(Tag, { tone: "yellow" }, "\uAC80\uC99D \uD504\uB85C\uD544") : React.createElement(Tag, null, "\uC5C5\uAD8C \uC77C\uBC18 \uC815\uBCF4")), name: name, sub: p.eng, meta: [p.founded ? `설립 ${p.founded}년` : '', p.hq || '', p.mandate ? `출자 방식 ${p.mandate}` : ''].filter(Boolean).join(' · '), tags: p.tags, updated: `투자내역·인사·AUM 자동 갱신 · 최근 ${[invUpdatedAt, insUpdatedAt].filter(Boolean).sort().pop() || '-'}` }));
     return (React.createElement(ProfileFrame, { backLabel: "Korea LP", onBack: onBack, title: name },
-        desktop ? React.createElement("div", { style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, overflow: 'hidden' } }, head) : head,
+        desktop ? React.createElement("div", { style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden' } }, head) : head,
         React.createElement(Section, { first: !desktop, title: "\uD575\uC2EC \uC9C0\uD45C", sub: aumAsOf },
             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: desktop ? 'repeat(4, 1fr)' : '1fr 1fr', gap: 8 } },
                 React.createElement(Metric, { label: "\uC6B4\uC6A9\uC790\uC0B0(AUM)", value: aum == null ? '–' : (alloc && alloc.aum != null ? '' : '약 ') + fmtJo(aum), note: aumNews && aumNews.display ? `기사 기준 ${aumNews.display} (${aumNews.date})` : '' }),
@@ -308,7 +309,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
             React.createElement(RecentActivity, { articles: articles })),
         (p.summary || p.altFocus) && (React.createElement(Section, { title: "\uC6B4\uC6A9 \uAC1C\uC694" },
             p.summary && React.createElement("div", { style: { font: F(400, 14.5, 1.75), color: KB.ink2 } }, p.summary),
-            p.altFocus && (React.createElement("div", { style: { marginTop: 12, padding: '13px 15px', background: KB.band, borderRadius: 10 } },
+            p.altFocus && (React.createElement("div", { style: { marginTop: 12, padding: '13px 15px', background: KB.band, borderRadius: 2 } },
                 React.createElement("div", { style: { font: F(700, 12.5), color: KB.gray, marginBottom: 5 } }, "\uB300\uCCB4\uD22C\uC790 \uC811\uADFC"),
                 React.createElement("div", { style: { font: F(400, 14, 1.7), color: KB.ink2 } }, p.altFocus))),
             !p.curated && React.createElement("div", { style: { font: F(400, 12, 1.6), color: KB.mute, marginTop: 10 } }, "\uC5C5\uAD8C(\uC720\uD615)\uC758 \uC77C\uBC18\uC801\uC778 \uC6B4\uC6A9 \uBC29\uC2DD \uAE30\uC900 \uC124\uBA85\uC785\uB2C8\uB2E4. \uAE30\uAD00\uBCC4 \uC218\uCE58\u00B7\uB3D9\uD5A5\uC740 \uC704 \uD22C\uC790\uB0B4\uC5ED\u00B7\uAE30\uC0AC\uB97C \uCC38\uACE0\uD558\uC138\uC694."))),
@@ -380,8 +381,8 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
             React.createElement(Tag, { tone: "dark" }, "Global GP"),
             p.listed && React.createElement(Tag, { tone: "outline" }, p.listed)), name: name, meta: [p.founded ? `설립 ${p.founded}년` : '', p.hq || ''].filter(Boolean).join(' · '), tags: p.tags, updated: `딜·펀드·기사 자동 갱신 · 최근 ${invUpdatedAt || '-'}` }));
     return (React.createElement(ProfileFrame, { backLabel: "Global GP", onBack: onBack, title: name },
-        desktop ? React.createElement("div", { style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 12, overflow: 'hidden' } }, head) : head,
-        p.summary && (React.createElement("div", { style: { background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 12 : 0 } },
+        desktop ? React.createElement("div", { style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden' } }, head) : head,
+        p.summary && (React.createElement("div", { style: { background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 2 : 0 } },
             React.createElement("div", { style: { font: F(400, 14.5, 1.75), color: KB.ink2 } }, p.summary))),
         React.createElement(Section, { title: "\uD575\uC2EC \uC9C0\uD45C" },
             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: desktop ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 8 } },
@@ -406,11 +407,11 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
                     React.createElement("span", { style: { font: F(700, 15.5), color: KB.ink } }, pp.name),
                     React.createElement("span", { style: { font: F(500, 13), color: KB.sub } }, nm(pp.title))),
                 pp.note && React.createElement("div", { style: { font: F(400, 13.5, 1.65), color: KB.sub, marginTop: 6 } }, pp.note)))),
-            p.note && (React.createElement("div", { style: { marginTop: p.people && p.people.length ? 10 : 0, padding: '13px 15px', background: KB.yellowTint, borderRadius: 10 } },
+            p.note && (React.createElement("div", { style: { marginTop: p.people && p.people.length ? 10 : 0, padding: '13px 15px', background: KB.yellowTint, borderRadius: 2 } },
                 React.createElement("div", { style: { font: F(700, 12.5), color: KB.gray, marginBottom: 5 } }, "\uCEE4\uBC84\uB9AC\uC9C0 \uB178\uD2B8"),
                 React.createElement("div", { style: { font: F(500, 14, 1.65), color: KB.ink2 } }, p.note))))),
         (p.flagship || (p.strengths && p.strengths.length)) && (React.createElement(Section, { title: "\uAC15\uC810 \uC804\uB7B5", sub: "\uADFC\uAC70 \uD3EC\uD568" },
-            p.flagship && (React.createElement("div", { style: { padding: '12px 14px', background: KB.band, borderRadius: 10, marginBottom: 6 } },
+            p.flagship && (React.createElement("div", { style: { padding: '12px 14px', background: KB.band, borderRadius: 2, marginBottom: 6 } },
                 React.createElement("div", { style: { font: F(700, 12.5), color: KB.gray, marginBottom: 4 } }, "\uD50C\uB798\uADF8\uC2ED \uD380\uB4DC"),
                 React.createElement("div", { style: { font: F(500, 14, 1.6), color: KB.ink2 } }, p.flagship))),
             (p.strengths || []).map((st, i) => (React.createElement("div", { key: i, style: { padding: '13px 0', borderTop: i || p.flagship ? `1px solid ${KB.line2}` : 'none' } },
@@ -462,7 +463,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
         assetReturns: (ins0.assetReturns || []).filter((r) => hit(`${r.label} ${r.inst || ''}`)),
     } : ins0;
     return (React.createElement(React.Fragment, null,
-        React.createElement("div", { style: desktop ? { padding: 4, marginBottom: 14, background: KB.card, borderRadius: 12, border: `1px solid ${KB.line}` } : { padding: '16px 20px 0' } },
+        React.createElement("div", { style: desktop ? { padding: 4, marginBottom: 14, background: KB.card, borderRadius: 2, border: `1px solid ${KB.line}` } : { padding: '16px 20px 0' } },
             React.createElement(SearchField, { value: q, onChange: setQ, onClear: () => setQ(''), placeholder: "\uAE30\uAD00\u00B7\uC778\uBB3C\u00B7\uC774\uC288 \uAC80\uC0C9 (\uC608: \uAD6D\uBBFC\uC5F0\uAE08, CIO, \uC804\uC8FC)" })),
         React.createElement(Section, { first: true, title: "\uAE30\uAD00\uBCC4 \uB300\uCCB4\uD22C\uC790 \uBE44\uC911", sub: alloc.asOf, right: React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: 10, font: F(500, 12), color: KB.sub } },
                 React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: 4 } },
@@ -472,7 +473,7 @@ function AllocView({ alloc, insights, onOpenLp }) {
                     React.createElement("span", { style: { width: 10, height: 10, borderRadius: 2, background: KB.faint } }),
                     "\uC804\uCCB4")) },
             rows.length ? React.createElement(AllocBars, { rows: rows, sel: cur && cur.name, onSelect: setSel }) : React.createElement(Empty, { compact: true, title: "\uC77C\uCE58\uD558\uB294 \uAE30\uAD00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" }),
-            cur && (React.createElement("div", { style: { marginTop: 16, padding: 16, border: `1px solid ${KB.line}`, borderRadius: 12 } },
+            cur && (React.createElement("div", { style: { marginTop: 16, padding: 16, border: `1px solid ${KB.line}`, borderRadius: 2 } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 } },
                     React.createElement("span", { style: { font: F(700, 17), color: KB.ink } }, cur.name),
                     React.createElement(Tag, null, cur.group),
@@ -582,7 +583,7 @@ function FundTimeline({ f, onOpenStage }) {
                         " \u00B7 ",
                         nm(s.tko || s.title)))));
         }),
-        f.dropped && f.dropped.length > 0 && (React.createElement("div", { style: { font: F(500, 12, 1.55), color: KB.mute, marginTop: 6, padding: '8px 10px', background: KB.band, borderRadius: 8 } },
+        f.dropped && f.dropped.length > 0 && (React.createElement("div", { style: { font: F(500, 12, 1.55), color: KB.mute, marginTop: 6, padding: '8px 10px', background: KB.band, borderRadius: 2 } },
             "\uC2DC\uAC04 \uC21C\uC11C\uAC00 \uB9DE\uC9C0 \uC54A\uB294 \uBCF4\uB3C4 ",
             f.dropped.length,
             "\uAC74(\uC608: \uD074\uB85C\uC988 \uC774\uD6C4\uC758 \u2018\uBAA8\uC9D1\u2019 \uAE30\uC0AC)\uC740 \uB2E4\uB978 \uBE48\uD2F0\uC9C0\uC774\uAC70\uB098 \uC7AC\uBCF4\uB3C4\uB85C \uBCF4\uACE0 \uD0C0\uC784\uB77C\uC778\uC5D0\uC11C \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4."))));
@@ -650,7 +651,7 @@ function FrCalendar({ funds, onOpenStage, onGp }) {
     const cellH = desktop ? 78 : 50;
     let lastD = null;
     return (React.createElement("div", null,
-        React.createElement("div", { style: { border: `1px solid ${KB.line}`, borderRadius: 12, background: KB.card, padding: desktop ? '12px 12px 10px' : '10px 6px 8px' } },
+        React.createElement("div", { style: { border: `1px solid ${KB.line}`, borderRadius: 2, background: KB.card, padding: desktop ? '12px 12px 10px' : '10px 6px 8px' } },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 8 } },
                 React.createElement("span", { onClick: () => move(-1), style: { cursor: 'pointer', color: KB.sub, transform: 'scaleX(-1)', display: 'flex' } },
                     React.createElement(Ico, { n: "chevron", size: 20, sw: 2 })),
@@ -732,7 +733,7 @@ function FundraisingView({ data, onOpen, onGp }) {
     const byGp = {};
     funds.filter(byQ).forEach((f) => { (byGp[f.gp] = byGp[f.gp] || []).push(f); });
     const gps = Object.keys(byGp).sort((a, b) => byGp[b].length - byGp[a].length || a.localeCompare(b));
-    const search = (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 10, marginBottom: 12 } },
+    const search = (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: KB.band, borderRadius: 2, marginBottom: 12 } },
         React.createElement(Ico, { n: "search", size: 18, color: KB.mute }),
         React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC6B4\uC6A9\uC0AC\u00B7\uD380\uB4DC\uBA85\u00B7\uC804\uB7B5 \uAC80\uC0C9 (\uC608: Carlyle, \uC778\uD504\uB77C)", style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } }),
         q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer', display: 'flex' } },
@@ -775,7 +776,7 @@ function FundraisingView({ data, onOpen, onGp }) {
                 tab === 'gp' && (gps.length ? gps.map((g, gi) => {
                     const open = byGp[g].filter((f) => f.status === '모집 중');
                     const closed = byGp[g].filter((f) => f.status !== '모집 중');
-                    return (React.createElement("div", { key: g, style: { marginTop: gi ? 18 : 2, border: `1px solid ${KB.line}`, borderRadius: 12, padding: '4px 16px 8px' } },
+                    return (React.createElement("div", { key: g, style: { marginTop: gi ? 18 : 2, border: `1px solid ${KB.line}`, borderRadius: 2, padding: '4px 16px 8px' } },
                         React.createElement("div", { onClick: () => onGp && onGp(g), style: { display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0 10px', cursor: 'pointer' } },
                             React.createElement("span", { style: { font: F(700, 17), color: KB.ink } }, g),
                             React.createElement("span", { style: { marginLeft: 'auto', display: 'flex', gap: 6 } },

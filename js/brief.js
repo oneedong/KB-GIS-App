@@ -129,7 +129,7 @@ function TrendModal({ series, name, unit, onClose }) {
                 const v = min + span * (1 - f), yy = PT + (H - PT - PB) * f;
                 return (React.createElement("g", { key: f },
                     React.createElement("line", { x1: PL, y1: yy, x2: W - PR, y2: yy, stroke: KB.line2, strokeWidth: "1.5" }),
-                    React.createElement("text", { x: PL - 10, y: yy + 5, textAnchor: "end", fontSize: "14", fill: KB.mute, fontFamily: "Pretendard" }, fmtV(v))));
+                    React.createElement("text", { x: PL - 10, y: yy + 5, textAnchor: "end", fontSize: "14", fill: KB.mute, fontFamily: FONT_STACK }, fmtV(v))));
             }),
             React.createElement("path", { d: area, fill: "url(#tmFill)" }),
             React.createElement("path", { d: path, fill: "none", stroke: col, strokeWidth: "2.4", strokeLinejoin: "round" }),
@@ -138,9 +138,9 @@ function TrendModal({ series, name, unit, onClose }) {
                 React.createElement("circle", { cx: x(hi), cy: y(hv), r: "6.5", fill: KB.card, stroke: col, strokeWidth: "3" }),
                 React.createElement("g", { transform: `translate(${tipX - 70}, ${Math.max(PT, y(hv) - 58)})` },
                     React.createElement("rect", { width: "140", height: "46", rx: "8", fill: KB.ink, opacity: "0.92" }),
-                    React.createElement("text", { x: "70", y: "19", textAnchor: "middle", fontSize: "13", fill: "#cfd1d6", fontFamily: "Pretendard" }, fmtD(hd)),
-                    React.createElement("text", { x: "70", y: "37", textAnchor: "middle", fontSize: "16", fill: "#fff", fontWeight: "700", fontFamily: "Pretendard" }, fmtV(hv))))),
-            [0, Math.floor((d.length - 1) / 4), Math.floor((d.length - 1) / 2), Math.floor((d.length - 1) * 3 / 4), d.length - 1].map((i, k) => (React.createElement("text", { key: k, x: x(i), y: H - 12, textAnchor: k === 0 ? 'start' : k === 4 ? 'end' : 'middle', fontSize: "14", fill: KB.mute, fontFamily: "Pretendard" }, fmtDs(d[i]))))),
+                    React.createElement("text", { x: "70", y: "19", textAnchor: "middle", fontSize: "13", fill: "#cfd1d6", fontFamily: FONT_STACK }, fmtD(hd)),
+                    React.createElement("text", { x: "70", y: "37", textAnchor: "middle", fontSize: "16", fill: "#fff", fontWeight: "700", fontFamily: FONT_STACK }, fmtV(hv))))),
+            [0, Math.floor((d.length - 1) / 4), Math.floor((d.length - 1) / 2), Math.floor((d.length - 1) * 3 / 4), d.length - 1].map((i, k) => (React.createElement("text", { key: k, x: x(i), y: H - 12, textAnchor: k === 0 ? 'start' : k === 4 ? 'end' : 'middle', fontSize: "14", fill: KB.mute, fontFamily: FONT_STACK }, fmtDs(d[i]))))),
         React.createElement("div", { style: { font: F(500, 11.5), color: KB.mute, marginTop: 8 } },
             "\uC77C\uBCC4 \uC885\uAC00 \u00B7 \uCD9C\uCC98 Yahoo Finance \u00B7 ",
             d.length,
@@ -151,20 +151,28 @@ function MarketTable({ rows, live, onPick, digits }) {
     const list = rows || [];
     if (!list.length)
         return React.createElement(Empty, { compact: true, title: "\uC2DC\uC138\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C" });
-    return (React.createElement("div", null, list.map((x0, i) => {
-        const lv = live && live[x0.symbol];
-        const x = lv ? { ...x0, ...lv } : x0;
-        const dg = x.unit === '$' ? (x.last != null && x.last < 10 ? 3 : 2) : (digits && !/원|엔/.test(x.unit || '') ? digits : 2);
-        return (React.createElement("div", { key: x.name + i, onClick: () => onPick && onPick(x0), style: { display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: onPick ? 'pointer' : 'default' } },
-            React.createElement("span", { style: { flex: 1, minWidth: 0, font: F(500, 15), color: KB.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
-                x.name,
-                lv && React.createElement("span", { title: "\uC2E4\uC2DC\uAC04", style: { display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: KB.pos, marginLeft: 6, verticalAlign: 'middle' } })),
-            React.createElement("span", { style: { font: F(700, 15.5), color: KB.ink, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' } },
-                x.unit === '$' ? '$' : '',
-                x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: dg, maximumFractionDigits: dg })),
-            React.createElement("span", { style: { minWidth: 72, textAlign: 'right' } },
-                React.createElement(Delta, { v: x.chgPct }))));
-    })));
+    // 미팅노트 표 양식: 회색 머리·테두리, 첫 열(지표)은 굵게
+    return (React.createElement("table", { style: GRID.table },
+        React.createElement("colgroup", null,
+            React.createElement("col", null),
+            React.createElement("col", { style: { width: '34%' } }),
+            React.createElement("col", { style: { width: 92 } })),
+        React.createElement("thead", null,
+            React.createElement("tr", null, ['지표', '종가', '등락'].map((h) => React.createElement("th", { key: h, style: GRID.th }, h)))),
+        React.createElement("tbody", null, list.map((x0, i) => {
+            const lv = live && live[x0.symbol];
+            const x = lv ? { ...x0, ...lv } : x0;
+            const dg = x.unit === '$' ? (x.last != null && x.last < 10 ? 3 : 2) : (digits && !/원|엔/.test(x.unit || '') ? digits : 2);
+            return (React.createElement("tr", { key: x.name + i, onClick: () => onPick && onPick(x0), style: { cursor: onPick ? 'pointer' : 'default' } },
+                React.createElement("td", { style: { ...GRID.td, font: F(700, 14), color: KB.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+                    x.name,
+                    lv && React.createElement("span", { title: "\uC2E4\uC2DC\uAC04", style: { display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: KB.pos, marginLeft: 6, verticalAlign: 'middle' } })),
+                React.createElement("td", { style: { ...GRID.td, textAlign: 'right', font: F(700, 14.5), color: KB.ink, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' } },
+                    x.unit === '$' ? '$' : '',
+                    x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: dg, maximumFractionDigits: dg })),
+                React.createElement("td", { style: { ...GRID.td, textAlign: 'right', padding: '7px 8px' } },
+                    React.createElement(Delta, { v: x.chgPct }))));
+        }))));
 }
 // 금리 한 줄 — 값이 없으면 지어내지 않고 비운다
 function RateLine({ label, value, sub, href, first }) {
@@ -182,7 +190,7 @@ function HedgeBlock({ hedge }) {
     const [open, setOpen] = React.useState(false);
     const legs = (hedge && hedge.legs) || [];
     return (React.createElement("div", null,
-        React.createElement("div", { onClick: () => setOpen((o) => !o), style: { display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', background: KB.band, borderRadius: 8, cursor: 'pointer', marginBottom: 12 } },
+        React.createElement("div", { onClick: () => setOpen((o) => !o), style: { display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', background: KB.band, borderRadius: 2, cursor: 'pointer', marginBottom: 12 } },
             React.createElement(Ico, { n: "info", size: 17, color: KB.gray }),
             React.createElement("span", { style: { flex: 1, font: F(600, 13.5), color: KB.ink2 } }, "\uC2A4\uC651\uD3EC\uC778\uD2B8\uB780? \uC65C \uC774\uB7F0 \uAC12\uC774 \uB098\uC624\uB098\uC694"),
             React.createElement("span", { style: { color: KB.mute, transform: open ? 'rotate(180deg)' : 'none' } },
@@ -325,7 +333,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
     const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
     const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
-        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
+        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 아침 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
                 liveAt && React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.pos } }),
                 liveBusy ? '조회 중…' : liveAt ? `실시간 ${liveAt}` : '실시간 조회')) }),
         briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { flexShrink: 0, background: KB.bg, borderBottom: `1px solid ${KB.line}` } },
@@ -344,12 +352,12 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
         React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 } },
                 b && (React.createElement("div", { style: { padding: desktop ? '0 0 14px' : '12px 20px 0' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 10, border: desktop ? `1px solid ${KB.line}` : 'none' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 2, border: desktop ? `1px solid ${KB.line}` : 'none' } },
                         React.createElement(Ico, { n: "search", size: 18, color: KB.mute }),
                         React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC2DC\uD669 \uAC80\uC0C9 (\uC608: \uB098\uC2A4\uB2E5, \uD658\uC728, SOFR, \uAE08\uB9AC)", style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } }),
                         q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer', display: 'flex' } },
                             React.createElement(Ico, { n: "close", size: 18 }))))),
-                !b ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC77C \uC544\uCE68 08\uC2DC(KST)\uC5D0 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." }) : qa ? (React.createElement(React.Fragment, null,
+                !b ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBE0C\uB9AC\uD551\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC77C \uC544\uCE68 \uC804\uC77C \uC2DC\uC7A5\uC744 \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." }) : qa ? (React.createElement(React.Fragment, null,
                     React.createElement(Section, { first: true, title: "\uC9C0\uD45C", sub: `${qMk.reduce((n, [, r]) => n + r.length, 0) + qRates.length}건` }, qMk.length || qRates.length ? (React.createElement(React.Fragment, null,
                         qMk.map(([t, rows]) => React.createElement("div", { key: t, style: { marginBottom: 10 } },
                             React.createElement("div", { style: { font: F(700, 13), color: KB.gray, marginBottom: 2 } }, t),
@@ -366,38 +374,36 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                     React.createElement(Section, { title: "\uC2DC\uD669 \uB274\uC2A4", sub: `${qNews.length}건` }, qNews.length ? qNews.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
                         React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(stripMedia(it.title, it.source))),
                         React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC77C\uCE58\uD558\uB294 \uB274\uC2A4\uAC00 \uC5C6\uC74C")))) : (React.createElement(React.Fragment, null,
-                    React.createElement(Section, { first: true, title: "\uD55C\uC904 \uC694\uC57D", sub: "\uC2DC\uC7A5\uC744 \uC6C0\uC9C1\uC778 \uD575\uC2EC \uB274\uC2A4" },
-                        top ? (React.createElement("a", { href: top.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } },
+                    React.createElement("div", { style: desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' } },
+                        React.createElement(DocHeader, { title: "\uB370\uC77C\uB9AC \uC2DC\uD669", date: b.dateKey ? `${b.dateKey.slice(0, 4)}.${b.dateKey.slice(4, 6)}.${b.dateKey.slice(6, 8)}(${'일월화수목금토'[dk2d(b.dateKey).getUTCDay()]}) · 전일 마감 기준` : b.asOf })),
+                    React.createElement(Section, { no: 1, title: "\uD55C\uC904 \uC694\uC57D", sub: "\uC2DC\uC7A5\uC744 \uC6C0\uC9C1\uC778 \uD575\uC2EC \uB274\uC2A4" },
+                        top ? (React.createElement("a", { href: top.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 2, borderLeft: `4px solid ${KB.yellow}` } },
                             React.createElement("div", { style: { font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(top.title, top.source))),
-                            React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 6 } }, top.source))) : React.createElement("div", { style: { font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` } }, b.summary),
-                        React.createElement("div", { style: { font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
-                        points.length ? points.map((w, i) => (React.createElement("a", { key: i, href: w.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
-                            React.createElement("span", { style: { width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 } }),
-                            React.createElement("span", { style: { flex: 1 } },
-                                React.createElement("span", { style: { display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(w.title, w.source))),
-                                React.createElement("span", { style: { display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 } }, w.source))))) : (b.watch && b.watch.length ? b.watch.map((w, i) => React.createElement("div", { key: i, style: { font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' } },
-                            "\u00B7 ",
-                            w)) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC218\uC9D1\uB41C \uD575\uC2EC \uB274\uC2A4\uAC00 \uC5C6\uC74C"))),
+                            React.createElement("div", { style: { font: F(500, 12.5), color: KB.sub, marginTop: 6 } }, top.source))) : React.createElement("div", { style: { font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 2, borderLeft: `4px solid ${KB.yellow}` } }, b.summary),
+                        React.createElement(SubHead, { style: { marginTop: 18 } }, "\uAD00\uCC30 \uD3EC\uC778\uD2B8"),
+                        points.length ? (React.createElement(Bullets, { items: points.map((w, i) => (React.createElement("a", { key: i, href: w.url, target: "_blank", rel: "noopener noreferrer", style: { textDecoration: 'none', color: 'inherit' } },
+                                React.createElement("span", { style: { font: F(600, 14.5, 1.6), color: KB.ink, wordBreak: 'keep-all' } }, nm(stripMedia(w.title, w.source))),
+                                React.createElement("span", { style: { font: F(500, 12), color: KB.mute, marginLeft: 6 } }, w.source)))) })) : (b.watch && b.watch.length ? React.createElement(Bullets, { items: b.watch }) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC218\uC9D1\uB41C \uD575\uC2EC \uB274\uC2A4\uAC00 \uC5C6\uC74C"))),
                     React.createElement("div", { style: grid },
                         col(React.createElement(React.Fragment, null,
-                            React.createElement(Section, { title: "\uAD6D\uB0B4\uC99D\uC2DC", sub: "\uB204\uB974\uBA74 5\uB144 \uCD94\uC774" },
+                            React.createElement(Section, { no: 2, title: "\uAD6D\uB0B4\uC99D\uC2DC", sub: "\uB204\uB974\uBA74 5\uB144 \uCD94\uC774" },
                                 React.createElement(MarketTable, { rows: b.kr, live: lv, onPick: onPick })),
-                            React.createElement(Section, { title: "\uD574\uC678\uC99D\uC2DC" },
+                            React.createElement(Section, { no: 3, title: "\uD574\uC678\uC99D\uC2DC" },
                                 React.createElement(MarketTable, { rows: b.global, live: lv, onPick: onPick })),
-                            React.createElement(Section, { title: "\uD658\uC728" },
+                            React.createElement(Section, { no: 4, title: "\uD658\uC728" },
                                 React.createElement(MarketTable, { rows: b.fx, live: lv, onPick: onPick, digits: 4 })),
-                            React.createElement(Section, { title: "\uC6D0\uC790\uC7AC", sub: "USD" },
+                            React.createElement(Section, { no: 5, title: "\uC6D0\uC790\uC7AC", sub: "USD" },
                                 React.createElement(MarketTable, { rows: b.commodity, live: lv, onPick: onPick })),
-                            React.createElement(Section, { title: "\uD06C\uB9BD\uD1A0", sub: "USD \u00B7 \uC2E4\uC2DC\uAC04" },
+                            React.createElement(Section, { no: 6, title: "\uD06C\uB9BD\uD1A0", sub: "USD \u00B7 \uC2E4\uC2DC\uAC04" },
                                 React.createElement(MarketTable, { rows: b.crypto, live: lv, onPick: onPick })))),
                         col(React.createElement(React.Fragment, null,
-                            React.createElement(Section, { title: "\uAE30\uC900\uAE08\uB9AC" },
+                            React.createElement(Section, { no: 7, title: "\uAE30\uC900\uAE08\uB9AC" },
                                 React.createElement(RateLine, { first: true, label: "\uD55C\uAD6D (\uD55C\uAD6D\uC740\uD589)", value: b.rates && b.rates.kr && b.rates.kr.rate != null ? `${b.rates.kr.rate.toFixed(2)}%` : '', sub: b.rates && b.rates.kr ? `${b.rates.kr.asOf || ''} · ${b.rates.kr.src || '한국은행'}` : '이번 회차 수집 실패', href: b.rates && b.rates.kr && b.rates.kr.url }),
                                 React.createElement(RateLine, { label: "\uBBF8\uAD6D (FOMC \uBAA9\uD45C\uBC94\uC704)", value: b.rates && b.rates.us ? (b.rates.us.target || `${(b.rates.us.effr || 0).toFixed(2)}%`) : '', sub: b.rates && b.rates.us ? `EFFR ${b.rates.us.effr != null ? b.rates.us.effr.toFixed(2) + '%' : '–'} · ${b.rates.us.asOf || ''} · New York Fed` : '이번 회차 수집 실패' }),
                                 b.ust && b.ust[0] && b.ust[0].last != null && (React.createElement("div", { onClick: () => onPick(b.ust[0]), style: { cursor: 'pointer' } },
                                     React.createElement(RateLine, { label: b.ust[0].name, value: `${b.ust[0].last.toFixed(2)}%`, sub: `전일 대비 ${b.ust[0].chg >= 0 ? '+' : '−'}${Math.abs(b.ust[0].chg * 100).toFixed(0)}bp · 누르면 5년 추이` })))),
-                            React.createElement(Section, { title: "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA", sub: "\uC2E4\uBB34 \uC8FC\uC694 \uD14C\uB108" }, rateGroups.length ? rateGroups.map(([g, rows], gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 14 : 0 } },
-                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', font: F(700, 13.5), color: KB.gray, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` } },
+                            React.createElement(Section, { no: 8, title: "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA", sub: "\uC2E4\uBB34 \uC8FC\uC694 \uD14C\uB108" }, rateGroups.length ? rateGroups.map(([g, rows], gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 14 : 0 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', font: F(700, 14), color: KB.blue, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` } },
                                     React.createElement("span", null, g),
                                     React.createElement("span", { style: { marginLeft: 'auto', font: F(500, 11.5), color: KB.mute } }, rows[0].src)),
                                 rows.map((r, i) => (React.createElement("div", { key: r.tenor + i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' } },
@@ -406,9 +412,9 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                                         r.rate.toFixed(3),
                                         "%"),
                                     React.createElement("span", { style: { font: F(500, 11.5), color: KB.mute, minWidth: 78, textAlign: 'right' } }, r.asOf))))))) : React.createElement(Empty, { compact: true, title: "\uAE08\uB9AC \uB370\uC774\uD130\uB97C \uBC1B\uC9C0 \uBABB\uD588\uC74C" })),
-                            React.createElement(Section, { title: "\uD658\uD5E4\uC9C0 \uBE44\uC6A9 \u00B7 \uC2A4\uC651\uD3EC\uC778\uD2B8" },
+                            React.createElement(Section, { no: 9, title: "\uD658\uD5E4\uC9C0 \uBE44\uC6A9 \u00B7 \uC2A4\uC651\uD3EC\uC778\uD2B8" },
                                 React.createElement(HedgeBlock, { hedge: b.hedge }))))),
-                    React.createElement(Section, { title: "\uADF8 \uBC16\uC758 \uC2DC\uD669 \uB274\uC2A4" },
+                    React.createElement(Section, { no: 10, title: "\uADF8 \uBC16\uC758 \uC2DC\uD669 \uB274\uC2A4" },
                         rest.length ? (React.createElement("div", { style: desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {} }, rest.map((it, i) => (React.createElement("a", { key: i, href: it.url, target: "_blank", rel: "noopener noreferrer", style: { display: 'block', textDecoration: 'none', color: 'inherit', padding: '13px 0', borderTop: `1px solid ${KB.line2}` } },
                             React.createElement("div", { style: { font: F(500, 14.5, 1.5), color: KB.ink } }, nm(stripMedia(it.title, it.source))),
                             React.createElement("div", { style: { font: F(500, 12), color: KB.mute, marginTop: 5 } }, it.source)))))) : React.createElement("div", { style: { font: F(400, 13.5), color: KB.mute } }, "\uC704 \uD575\uC2EC \uB274\uC2A4 \uC678 \uCD94\uAC00 \uAE30\uC0AC \uC5C6\uC74C"),
@@ -426,7 +432,7 @@ function BriefDigest({ market, onOpen }) {
         return null;
     const pickRow = (list, name) => (list || []).find((x) => x.name === name);
     const rows = [pickRow(market.kr, '코스피'), pickRow(market.global, 'S&P 500'), pickRow(market.global, '나스닥'), pickRow(market.fx, '달러/원')].filter(Boolean);
-    return (React.createElement("div", { onClick: onOpen, style: { margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 12, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' } },
+    return (React.createElement("div", { onClick: onOpen, style: { margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 2, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' } },
         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
             React.createElement("span", { style: { font: F(700, 14.5), color: KB.ink } }, "\uC624\uB298\uC758 \uC2DC\uD669"),
             React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, briefDay(market.dateKey)),

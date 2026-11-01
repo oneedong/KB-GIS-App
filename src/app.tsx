@@ -22,7 +22,7 @@ const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
 
-const badgeStyle = { minWidth: 17, height: 17, padding: '0 5px', borderRadius: 9, background: KB.up, color: '#fff', font: F(700, 10.5), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' };
+const badgeStyle = { minWidth: 17, height: 17, padding: '0 5px', borderRadius: 2, background: KB.up, color: '#fff', font: F(700, 10.5), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' };
 
 function BottomNav({ active, onGo, badge }) {
   return (
@@ -49,7 +49,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
       {SIDE.map(([k, ic, label]) => {
         const on = active === k;
         return (
-          <div key={k} onClick={() => onGo(k)} style={{ display: 'flex', alignItems: 'center', gap: 12, height: 44, padding: '0 12px', marginBottom: 2, borderRadius: 8, cursor: 'pointer', position: 'relative', background: on ? KB.yellowTint : 'transparent', color: on ? KB.ink : KB.ink2, font: on ? F(700, 14.5) : F(500, 14.5) }}>
+          <div key={k} onClick={() => onGo(k)} style={{ display: 'flex', alignItems: 'center', gap: 12, height: 44, padding: '0 12px', marginBottom: 2, borderRadius: 2, cursor: 'pointer', position: 'relative', background: on ? KB.yellowTint : 'transparent', color: on ? KB.ink : KB.ink2, font: on ? F(700, 14.5) : F(500, 14.5) }}>
             {on && <span style={{ position: 'absolute', left: 0, top: 11, bottom: 11, width: 3, borderRadius: 2, background: KB.yellow }}></span>}
             <Ico n={ic} size={20} sw={on ? 2 : 1.7} color={on ? KB.gray : KB.sub} />
             <span>{label}</span>
@@ -68,7 +68,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
 // 검색창 모양(누르면 검색 화면)
 function SearchField({ value, onChange, onFocus, placeholder, autoFocus, onClear }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 10 }} onClick={onFocus}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 2 }} onClick={onFocus}>
       <Ico n="search" size={19} color={KB.mute} />
       {onChange
         ? <input value={value} autoFocus={autoFocus} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
@@ -82,8 +82,8 @@ function SearchField({ value, onChange, onFocus, placeholder, autoFocus, onClear
 // 바로가기 타일(전체 메뉴)
 function Shortcut({ icon, label, onClick, note }) {
   return (
-    <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 4px 12px', cursor: 'pointer', borderRadius: 10 }}>
-      <span style={{ width: 46, height: 46, borderRadius: 14, background: KB.band, display: 'flex', alignItems: 'center', justifyContent: 'center', color: KB.gray }}><Ico n={icon} size={23} sw={1.8} /></span>
+    <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 4px 12px', cursor: 'pointer', borderRadius: 2 }}>
+      <span style={{ width: 46, height: 46, borderRadius: 2, background: KB.band, display: 'flex', alignItems: 'center', justifyContent: 'center', color: KB.gray }}><Ico n={icon} size={23} sw={1.8} /></span>
       <span style={{ font: F(600, 12.5), color: KB.ink2, textAlign: 'center', whiteSpace: 'nowrap' }}>{label}</span>
       {note != null && <span style={{ font: F(500, 11), color: KB.mute, marginTop: -5 }}>{note}</span>}
     </div>
@@ -762,7 +762,7 @@ function App() {
         <TermSheet id={termSel} onClose={() => setTermSel(null)} onOpenTerm={openTerm} onLearn={() => openLearn(termSel)} />
         <ShareSheet open={!!shareItem} item={shareItem} onClose={() => setShareItem(null)} onCopied={() => { setShareItem(null); flash('기사 링크를 복사했습니다'); }} />
         {toast && (
-          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: isDesktop ? 32 : 82, background: KB.ink, color: '#fff', font: F(600, 13.5), padding: '12px 18px', borderRadius: 10, zIndex: 60, boxShadow: '0 8px 24px rgba(0,0,0,.2)', whiteSpace: 'nowrap' }}>{toast}</div>
+          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: isDesktop ? 32 : 82, background: KB.ink, color: '#fff', font: F(600, 13.5), padding: '12px 18px', borderRadius: 2, zIndex: 60, boxShadow: '0 8px 24px rgba(0,0,0,.2)', whiteSpace: 'nowrap' }}>{toast}</div>
         )}
       </div>
     </UICtx.Provider>

@@ -333,15 +333,15 @@ function findTerms(text, limit = 8) {
 // ─── 개념 도식 (SVG, 모바일 폭 360 기준 좌표) ───────────────────
 // 글자 크기가 폰에서 그대로 읽히도록 좌표계를 휴대폰 폭에 맞췄다.
 const D = {
-    box: KB.band, line: '#DCD1C1', ink: KB.ink, sub: KB.sub, faint: '#A3988A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
+    box: KB.cell, line: KB.rule, ink: KB.ink, sub: KB.sub, faint: '#9A9A9A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
 };
 function Arrow({ id }) {
     return (React.createElement("defs", null,
         React.createElement("marker", { id: id, viewBox: "0 0 10 10", refX: "8.5", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" },
             React.createElement("path", { d: "M0 0 L10 5 L0 10 z", fill: D.g }))));
 }
-const T = (x, y, s, o = {}) => React.createElement("text", { x: x, y: y, fontSize: o.size || 12, fontWeight: o.w || 500, fill: o.c || D.ink, textAnchor: o.a || 'middle', fontFamily: "Pretendard, sans-serif" }, s);
-const Box = (x, y, w, h, o = {}) => React.createElement("rect", { x: x, y: y, width: w, height: h, rx: o.r == null ? 8 : o.r, fill: o.f || D.box, stroke: o.s || D.line, strokeWidth: o.sw || 1 });
+const T = (x, y, s, o = {}) => React.createElement("text", { x: x, y: y, fontSize: o.size || 12, fontWeight: o.w || 500, fill: o.c || D.ink, textAnchor: o.a || 'middle', fontFamily: FONT_STACK }, s);
+const Box = (x, y, w, h, o = {}) => React.createElement("rect", { x: x, y: y, width: w, height: h, rx: o.r == null ? 2 : o.r, fill: o.f || D.box, stroke: o.s || D.line, strokeWidth: o.sw || 1 });
 const Ln = (x1, y1, x2, y2, id, o = {}) => React.createElement("line", { x1: x1, y1: y1, x2: x2, y2: y2, stroke: o.c || D.g, strokeWidth: o.w || 1.5, strokeDasharray: o.dash, markerEnd: id ? `url(#${id})` : undefined });
 const DIAGRAMS = {
     // 1) 펀드 구조
@@ -619,7 +619,7 @@ function Diagram({ id, compact }) {
     if (!d)
         return null;
     const key = `arr-${id}-${compact ? 'c' : 'f'}`;
-    return (React.createElement("figure", { style: { margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card } },
+    return (React.createElement("figure", { style: { margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 2, background: KB.card } },
         React.createElement("figcaption", { style: { font: F(700, 13.5), color: KB.ink, marginBottom: 10 } }, d.title),
         React.createElement("div", { style: { maxWidth: 520, margin: '0 auto' } }, d.render(key)),
         React.createElement("div", { style: { font: F(400, 12.5, 1.65), color: KB.sub, marginTop: 8 } }, d.cap)));
@@ -958,7 +958,7 @@ const GLOSSARY_CALC = {
     },
 };
 function CalcBlock({ c }) {
-    return (React.createElement("div", { style: { marginTop: 10, border: `1px solid ${KB.line}`, borderRadius: 10, overflow: 'hidden', background: KB.card } },
+    return (React.createElement("div", { style: { marginTop: 10, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden', background: KB.card } },
         React.createElement("div", { style: { padding: '10px 13px', background: KB.yellowTint, borderBottom: `1px solid ${KB.line}` } },
             React.createElement("span", { style: { font: F(700, 12), color: KB.woodDeep, marginRight: 6 } }, "\uC22B\uC790\uB85C \uB530\uB77C\uAC00\uAE30"),
             React.createElement("span", { style: { font: F(600, 13, 1.5), color: KB.ink } }, c.title)),
@@ -981,7 +981,7 @@ function TermCard({ g, open, onToggle, onOpenTerm, showDiagram = true }) {
                 React.createElement(Ico, { n: "down", size: 18, sw: 2 }))),
         open && (React.createElement("div", { style: { padding: '0 0 16px' } },
             React.createElement("div", { style: { font: F(400, 14, 1.8), color: KB.ink2 } }, g.body),
-            g.ex && (React.createElement("div", { style: { marginTop: 10, padding: '11px 13px', background: KB.band, borderRadius: 8, font: F(400, 13, 1.65), color: KB.ink2 } },
+            g.ex && (React.createElement("div", { style: { marginTop: 10, padding: '11px 13px', background: KB.band, borderRadius: 2, font: F(400, 13, 1.65), color: KB.ink2 } },
                 React.createElement("span", { style: { font: F(700, 12), color: KB.gray, marginRight: 6 } }, "\uC608\uC2DC"),
                 g.ex)),
             GLOSSARY_CALC[g.id] && React.createElement(CalcBlock, { c: GLOSSARY_CALC[g.id] }),
@@ -989,7 +989,7 @@ function TermCard({ g, open, onToggle, onOpenTerm, showDiagram = true }) {
                 React.createElement(Diagram, { id: g.dia, compact: true })),
             g.rel && g.rel.length > 0 && (React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 12 } },
                 React.createElement("span", { style: { font: F(600, 12), color: KB.mute, marginRight: 2 } }, "\uD568\uAED8 \uBCF4\uAE30"),
-                g.rel.map((r) => GLOSSARY_BY_ID[r] && (React.createElement("span", { key: r, onClick: () => onOpenTerm && onOpenTerm(r), style: { font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 14, border: `1px solid ${KB.line}`, cursor: 'pointer' } }, GLOSSARY_BY_ID[r].term.split(' (')[0])))))))));
+                g.rel.map((r) => GLOSSARY_BY_ID[r] && (React.createElement("span", { key: r, onClick: () => onOpenTerm && onOpenTerm(r), style: { font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer' } }, GLOSSARY_BY_ID[r].term.split(' (')[0])))))))));
 }
 // ─── 용어·개념 학습 화면 ─────────────────────────────────────
 // 처음 보는 사람을 위한 순서: 누가(LP·GP) → 돈이 어떻게 오가나(약정·캐피탈콜·분배·워터폴)
@@ -1026,15 +1026,15 @@ function LearnScreen({ focus, onFocusDone }) {
         React.createElement(Tabs, { items: [['terms', '용어 사전'], ['diagrams', '그림으로 이해하기']], value: tab, onChange: setTab }),
         React.createElement("div", { ref: scrollRef, style: { flex: 1, minHeight: 0, overflowY: 'auto', position: 'relative' } },
             React.createElement("div", { style: { maxWidth: 820, margin: '0 auto', padding: desktop ? '20px 24px 48px' : '16px 20px 40px' } }, tab === 'terms' ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 10 } },
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 2 } },
                     React.createElement(Ico, { n: "search", size: 19, color: KB.mute }),
                     React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC6A9\uC5B4 \uAC80\uC0C9 (\uC608: \uCE90\uD53C\uD0C8\uCF5C, IRR, \uC6CC\uD130\uD3F4)", style: { flex: 1, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink, minWidth: 0 } }),
                     q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer' } },
                         React.createElement(Ico, { n: "close", size: 18 }))),
-                !ql && cat === 'all' && (React.createElement("div", { style: { marginTop: 18, padding: '16px 16px 12px', border: `1px solid ${KB.yellowLine}`, background: KB.yellowTint, borderRadius: 12 } },
+                !ql && cat === 'all' && (React.createElement("div", { style: { marginTop: 18, padding: '16px 16px 12px', border: `1px solid ${KB.yellowLine}`, background: KB.yellowTint, borderRadius: 2 } },
                     React.createElement("div", { style: { font: F(700, 15), color: KB.ink } }, "\uCC98\uC74C\uC774\uB77C\uBA74 \uC774 \uC21C\uC11C\uB85C \uC77D\uC5B4 \uBCF4\uC138\uC694"),
                     React.createElement("div", { style: { font: F(400, 13, 1.6), color: KB.sub, marginTop: 4 } }, "\uB204\uAC00 \uB3C8\uC744 \uB0B4\uACE0(LP) \uB204\uAC00 \uAD74\uB9AC\uB294\uC9C0(GP)\uBD80\uD130, \uB3C8\uC774 \uC624\uAC00\uB294 \uD750\uB984\uACFC \uC131\uACFC\uB97C \uC7AC\uB294 \uBC29\uBC95\uAE4C\uC9C0."),
-                    React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 } }, LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (React.createElement("span", { key: id, onClick: () => jump(id), style: { display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 16, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 } },
+                    React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 } }, LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (React.createElement("span", { key: id, onClick: () => jump(id), style: { display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 2, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 } },
                         React.createElement("span", { style: { width: 20, height: 20, borderRadius: 10, background: KB.woodDeep, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: F(700, 11) } }, i + 1),
                         GLOSSARY_BY_ID[id].term.split(' (')[0])))))),
                 React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', margin: '18px 0 6px', paddingBottom: 2 } },
@@ -1049,7 +1049,7 @@ function LearnScreen({ focus, onFocusDone }) {
                     React.createElement(Diagram, { id: id }),
                     rel.length > 0 && (React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 } },
                         React.createElement("span", { style: { font: F(600, 12), color: KB.mute } }, "\uAD00\uB828 \uC6A9\uC5B4"),
-                        rel.map((g) => (React.createElement("span", { key: g.id, onClick: () => jump(g.id), style: { font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 14, border: `1px solid ${KB.line}`, cursor: 'pointer' } }, g.term.split(' (')[0])))))));
+                        rel.map((g) => (React.createElement("span", { key: g.id, onClick: () => jump(g.id), style: { font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer' } }, g.term.split(' (')[0])))))));
             })))))));
 }
 // 오늘의 용어 — 날짜마다 하나씩 돌아가며 보여 준다(같은 날엔 같은 용어)

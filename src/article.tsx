@@ -11,7 +11,7 @@
 
 // 형광펜 — 글자 높이 전체를 덮도록 인라인 배경 + 위아래 여백, 줄이 바뀌어도 각 줄에 같은 모양
 const HIGHLIGHT = {
-  background: 'rgba(196, 154, 104, .34)',   // 나뭇결 색 형광펜
+  background: 'rgba(255, 188, 0, .32)',     // KB 노랑 형광펜
   color: KB.ink,
   fontWeight: 600,
   padding: '3px 1px',
@@ -49,7 +49,7 @@ function FeedItem({ item, more = [], onOpen, onOpenOther, onPress, onBookmark, i
     </div>
     {more.length > 0 && (
       <div style={{ padding: '0 20px 12px' }}>
-        <div onClick={() => setOpen((o) => !o)} role="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 14, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' }}>
+        <div onClick={() => setOpen((o) => !o)} role="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 2, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' }}>
           <span style={{ whiteSpace: 'nowrap' }}>같은 소식 {more.length}건</span>
           <span style={{ font: F(500, 12), color: KB.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>· {srcs.slice(0, 3).join(', ')}{srcs.length > 3 ? ' 외' : ''}</span>
           <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', color: KB.faint }}><Ico n="down" size={14} sw={2} /></span>
@@ -217,9 +217,9 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
           {isEn && (
             <div style={{ margin: '16px 0 0' }}>
               {ko ? (
-                <div style={{ display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 }}>
+                <div style={{ display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 2 }}>
                   {[['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (
-                    <div key={k} onClick={() => setLang(k)} style={{ padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }}>{l}</div>
+                    <div key={k} onClick={() => setLang(k)} style={{ padding: '7px 14px', borderRadius: 2, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }}>{l}</div>
                   ))}
                 </div>
               ) : (!loading && paragraphs.length > 0 && (
@@ -240,14 +240,14 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
           {paragraphs.length ? bodyNodes
             : loading ? <BodySkeleton />
             : (mine && st.dead)
-              ? <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>원문 기사가 삭제되어 더 이상 볼 수 없습니다. 다음 수집 때 목록에서 빠집니다.</div>
-              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 }}>
+              ? <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 2, font: F(500, 14, 1.65), color: KB.ink2 }}>원문 기사가 삭제되어 더 이상 볼 수 없습니다. 다음 수집 때 목록에서 빠집니다.</div>
+              : <div style={{ padding: '14px 16px', background: KB.band, borderRadius: 2, font: F(500, 14, 1.65), color: KB.ink2 }}>
                   언론사 보안 정책(유료·접근 제한)으로 본문을 가져오지 못했습니다. 아래 ‘원문 보기’로 확인하세요.
                   {realUrl && <span onClick={() => setRetryOf({ id: sel.id, n: retry + 1 })} role="button" style={{ display: 'inline-block', marginLeft: 6, font: F(600, 13.5), color: KB.gray, textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' }}>다시 시도</span>}
                 </div>}
 
           {!loading && paragraphs.length > 0 && !isFull && realUrl && (
-            <div style={{ font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 }}>
+            <div style={{ font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 2, marginTop: 4 }}>
               {sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '언론사 보안 정책(유료·접근 제한)으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.'}
             </div>
           )}
@@ -314,7 +314,7 @@ function ShareSheet({ open, item, onClose, onCopied }) {
     <Sheet open={open} onClose={onClose} title="공유">
       <div style={{ font: F(600, 15, 1.5), color: KB.ink }}>{item.ko}</div>
       <div style={{ font: F(500, 12.5), color: KB.mute, marginTop: 4 }}>{item.source}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, padding: '10px 10px 10px 14px', background: KB.band, borderRadius: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, padding: '10px 10px 10px 14px', background: KB.band, borderRadius: 2 }}>
         <span style={{ flex: 1, minWidth: 0, font: F(500, 13), color: KB.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{url}</span>
         <Btn onClick={copy} style={{ height: 36, padding: '0 14px', font: F(700, 13) }}>복사</Btn>
       </div>

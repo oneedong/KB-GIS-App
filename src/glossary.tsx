@@ -341,7 +341,7 @@ function findTerms(text, limit = 8) {
 // ─── 개념 도식 (SVG, 모바일 폭 360 기준 좌표) ───────────────────
 // 글자 크기가 폰에서 그대로 읽히도록 좌표계를 휴대폰 폭에 맞췄다.
 const D = {
-  box: KB.band, line: '#DCD1C1', ink: KB.ink, sub: KB.sub, faint: '#A3988A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
+  box: KB.cell, line: KB.rule, ink: KB.ink, sub: KB.sub, faint: '#9A9A9A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
 };
 function Arrow({ id }) {
   return (
@@ -352,8 +352,8 @@ function Arrow({ id }) {
     </defs>
   );
 }
-const T = (x, y, s, o = {}) => <text x={x} y={y} fontSize={o.size || 12} fontWeight={o.w || 500} fill={o.c || D.ink} textAnchor={o.a || 'middle'} fontFamily="Pretendard, sans-serif">{s}</text>;
-const Box = (x, y, w, h, o = {}) => <rect x={x} y={y} width={w} height={h} rx={o.r == null ? 8 : o.r} fill={o.f || D.box} stroke={o.s || D.line} strokeWidth={o.sw || 1} />;
+const T = (x, y, s, o = {}) => <text x={x} y={y} fontSize={o.size || 12} fontWeight={o.w || 500} fill={o.c || D.ink} textAnchor={o.a || 'middle'} fontFamily={FONT_STACK}>{s}</text>;
+const Box = (x, y, w, h, o = {}) => <rect x={x} y={y} width={w} height={h} rx={o.r == null ? 2 : o.r} fill={o.f || D.box} stroke={o.s || D.line} strokeWidth={o.sw || 1} />;
 const Ln = (x1, y1, x2, y2, id, o = {}) => <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={o.c || D.g} strokeWidth={o.w || 1.5} strokeDasharray={o.dash} markerEnd={id ? `url(#${id})` : undefined} />;
 
 const DIAGRAMS = {
@@ -635,7 +635,7 @@ function Diagram({ id, compact }) {
   if (!d) return null;
   const key = `arr-${id}-${compact ? 'c' : 'f'}`;
   return (
-    <figure style={{ margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 10, background: KB.card }}>
+    <figure style={{ margin: 0, padding: compact ? '12px 12px 10px' : '16px 16px 12px', border: `1px solid ${KB.line}`, borderRadius: 2, background: KB.card }}>
       <figcaption style={{ font: F(700, 13.5), color: KB.ink, marginBottom: 10 }}>{d.title}</figcaption>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>{d.render(key)}</div>
       <div style={{ font: F(400, 12.5, 1.65), color: KB.sub, marginTop: 8 }}>{d.cap}</div>
@@ -979,7 +979,7 @@ const GLOSSARY_CALC = {
 
 function CalcBlock({ c }) {
   return (
-    <div style={{ marginTop: 10, border: `1px solid ${KB.line}`, borderRadius: 10, overflow: 'hidden', background: KB.card }}>
+    <div style={{ marginTop: 10, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden', background: KB.card }}>
       <div style={{ padding: '10px 13px', background: KB.yellowTint, borderBottom: `1px solid ${KB.line}` }}>
         <span style={{ font: F(700, 12), color: KB.woodDeep, marginRight: 6 }}>숫자로 따라가기</span>
         <span style={{ font: F(600, 13, 1.5), color: KB.ink }}>{c.title}</span>
@@ -1017,7 +1017,7 @@ function TermCard({ g, open, onToggle, onOpenTerm, showDiagram = true }) {
         <div style={{ padding: '0 0 16px' }}>
           <div style={{ font: F(400, 14, 1.8), color: KB.ink2 }}>{g.body}</div>
           {g.ex && (
-            <div style={{ marginTop: 10, padding: '11px 13px', background: KB.band, borderRadius: 8, font: F(400, 13, 1.65), color: KB.ink2 }}>
+            <div style={{ marginTop: 10, padding: '11px 13px', background: KB.band, borderRadius: 2, font: F(400, 13, 1.65), color: KB.ink2 }}>
               <span style={{ font: F(700, 12), color: KB.gray, marginRight: 6 }}>예시</span>{g.ex}
             </div>
           )}
@@ -1027,7 +1027,7 @@ function TermCard({ g, open, onToggle, onOpenTerm, showDiagram = true }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 12 }}>
               <span style={{ font: F(600, 12), color: KB.mute, marginRight: 2 }}>함께 보기</span>
               {g.rel.map((r) => GLOSSARY_BY_ID[r] && (
-                <span key={r} onClick={() => onOpenTerm && onOpenTerm(r)} style={{ font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 14, border: `1px solid ${KB.line}`, cursor: 'pointer' }}>{GLOSSARY_BY_ID[r].term.split(' (')[0]}</span>
+                <span key={r} onClick={() => onOpenTerm && onOpenTerm(r)} style={{ font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer' }}>{GLOSSARY_BY_ID[r].term.split(' (')[0]}</span>
               ))}
             </div>
           )}
@@ -1069,19 +1069,19 @@ function LearnScreen({ focus, onFocusDone }) {
         <div style={{ maxWidth: 820, margin: '0 auto', padding: desktop ? '20px 24px 48px' : '16px 20px 40px' }}>
           {tab === 'terms' ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 2 }}>
                 <Ico n="search" size={19} color={KB.mute} />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="용어 검색 (예: 캐피탈콜, IRR, 워터폴)"
                        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink, minWidth: 0 }} />
                 {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer' }}><Ico n="close" size={18} /></span>}
               </div>
               {!ql && cat === 'all' && (
-                <div style={{ marginTop: 18, padding: '16px 16px 12px', border: `1px solid ${KB.yellowLine}`, background: KB.yellowTint, borderRadius: 12 }}>
+                <div style={{ marginTop: 18, padding: '16px 16px 12px', border: `1px solid ${KB.yellowLine}`, background: KB.yellowTint, borderRadius: 2 }}>
                   <div style={{ font: F(700, 15), color: KB.ink }}>처음이라면 이 순서로 읽어 보세요</div>
                   <div style={{ font: F(400, 13, 1.6), color: KB.sub, marginTop: 4 }}>누가 돈을 내고(LP) 누가 굴리는지(GP)부터, 돈이 오가는 흐름과 성과를 재는 방법까지.</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
                     {LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (
-                      <span key={id} onClick={() => jump(id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 16, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 }}>
+                      <span key={id} onClick={() => jump(id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 2, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 }}>
                         <span style={{ width: 20, height: 20, borderRadius: 10, background: KB.woodDeep, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: F(700, 11) }}>{i + 1}</span>
                         {GLOSSARY_BY_ID[id].term.split(' (')[0]}
                       </span>
@@ -1112,7 +1112,7 @@ function LearnScreen({ focus, onFocusDone }) {
                       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 }}>
                         <span style={{ font: F(600, 12), color: KB.mute }}>관련 용어</span>
                         {rel.map((g) => (
-                          <span key={g.id} onClick={() => jump(g.id)} style={{ font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 14, border: `1px solid ${KB.line}`, cursor: 'pointer' }}>{g.term.split(' (')[0]}</span>
+                          <span key={g.id} onClick={() => jump(g.id)} style={{ font: F(500, 12.5), color: KB.ink2, padding: '4px 10px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer' }}>{g.term.split(' (')[0]}</span>
                         ))}
                       </div>
                     )}

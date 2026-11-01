@@ -117,7 +117,7 @@ function TrendModal({ series, name, unit, onClose }) {
           return (
             <g key={f}>
               <line x1={PL} y1={yy} x2={W - PR} y2={yy} stroke={KB.line2} strokeWidth="1.5" />
-              <text x={PL - 10} y={yy + 5} textAnchor="end" fontSize="14" fill={KB.mute} fontFamily="Pretendard">{fmtV(v)}</text>
+              <text x={PL - 10} y={yy + 5} textAnchor="end" fontSize="14" fill={KB.mute} fontFamily={FONT_STACK}>{fmtV(v)}</text>
             </g>
           );
         })}
@@ -129,13 +129,13 @@ function TrendModal({ series, name, unit, onClose }) {
             <circle cx={x(hi)} cy={y(hv)} r="6.5" fill={KB.card} stroke={col} strokeWidth="3" />
             <g transform={`translate(${tipX - 70}, ${Math.max(PT, y(hv) - 58)})`}>
               <rect width="140" height="46" rx="8" fill={KB.ink} opacity="0.92" />
-              <text x="70" y="19" textAnchor="middle" fontSize="13" fill="#cfd1d6" fontFamily="Pretendard">{fmtD(hd)}</text>
-              <text x="70" y="37" textAnchor="middle" fontSize="16" fill="#fff" fontWeight="700" fontFamily="Pretendard">{fmtV(hv)}</text>
+              <text x="70" y="19" textAnchor="middle" fontSize="13" fill="#cfd1d6" fontFamily={FONT_STACK}>{fmtD(hd)}</text>
+              <text x="70" y="37" textAnchor="middle" fontSize="16" fill="#fff" fontWeight="700" fontFamily={FONT_STACK}>{fmtV(hv)}</text>
             </g>
           </g>
         )}
         {[0, Math.floor((d.length - 1) / 4), Math.floor((d.length - 1) / 2), Math.floor((d.length - 1) * 3 / 4), d.length - 1].map((i, k) => (
-          <text key={k} x={x(i)} y={H - 12} textAnchor={k === 0 ? 'start' : k === 4 ? 'end' : 'middle'} fontSize="14" fill={KB.mute} fontFamily="Pretendard">{fmtDs(d[i])}</text>
+          <text key={k} x={x(i)} y={H - 12} textAnchor={k === 0 ? 'start' : k === 4 ? 'end' : 'middle'} fontSize="14" fill={KB.mute} fontFamily={FONT_STACK}>{fmtDs(d[i])}</text>
         ))}
       </svg>
       <div style={{ font: F(500, 11.5), color: KB.mute, marginTop: 8 }}>일별 종가 · 출처 Yahoo Finance · {d.length}거래일</div>
@@ -147,26 +147,31 @@ function TrendModal({ series, name, unit, onClose }) {
 function MarketTable({ rows, live, onPick, digits }) {
   const list = rows || [];
   if (!list.length) return <Empty compact title="시세를 받지 못했음" />;
+  // 미팅노트 표 양식: 회색 머리·테두리, 첫 열(지표)은 굵게
   return (
-    <div>
-      {list.map((x0, i) => {
-        const lv = live && live[x0.symbol];
-        const x = lv ? { ...x0, ...lv } : x0;
-        const dg = x.unit === '$' ? (x.last != null && x.last < 10 ? 3 : 2) : (digits && !/원|엔/.test(x.unit || '') ? digits : 2);
-        return (
-          <div key={x.name + i} onClick={() => onPick && onPick(x0)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: onPick ? 'pointer' : 'default' }}>
-            <span style={{ flex: 1, minWidth: 0, font: F(500, 15), color: KB.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {x.name}
-              {lv && <span title="실시간" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: KB.pos, marginLeft: 6, verticalAlign: 'middle' }}></span>}
-            </span>
-            <span style={{ font: F(700, 15.5), color: KB.ink, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-              {x.unit === '$' ? '$' : ''}{x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: dg, maximumFractionDigits: dg })}
-            </span>
-            <span style={{ minWidth: 72, textAlign: 'right' }}><Delta v={x.chgPct} /></span>
-          </div>
-        );
-      })}
-    </div>
+    <table style={GRID.table}>
+      <colgroup><col /><col style={{ width: '34%' }} /><col style={{ width: 92 }} /></colgroup>
+      <thead><tr>{['지표', '종가', '등락'].map((h) => <th key={h} style={GRID.th}>{h}</th>)}</tr></thead>
+      <tbody>
+        {list.map((x0, i) => {
+          const lv = live && live[x0.symbol];
+          const x = lv ? { ...x0, ...lv } : x0;
+          const dg = x.unit === '$' ? (x.last != null && x.last < 10 ? 3 : 2) : (digits && !/원|엔/.test(x.unit || '') ? digits : 2);
+          return (
+            <tr key={x.name + i} onClick={() => onPick && onPick(x0)} style={{ cursor: onPick ? 'pointer' : 'default' }}>
+              <td style={{ ...GRID.td, font: F(700, 14), color: KB.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {x.name}
+                {lv && <span title="실시간" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: KB.pos, marginLeft: 6, verticalAlign: 'middle' }}></span>}
+              </td>
+              <td style={{ ...GRID.td, textAlign: 'right', font: F(700, 14.5), color: KB.ink, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                {x.unit === '$' ? '$' : ''}{x.last == null ? '–' : x.last.toLocaleString('ko-KR', { minimumFractionDigits: dg, maximumFractionDigits: dg })}
+              </td>
+              <td style={{ ...GRID.td, textAlign: 'right', padding: '7px 8px' }}><Delta v={x.chgPct} /></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -191,7 +196,7 @@ function HedgeBlock({ hedge }) {
   const legs = (hedge && hedge.legs) || [];
   return (
     <div>
-      <div onClick={() => setOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', background: KB.band, borderRadius: 8, cursor: 'pointer', marginBottom: 12 }}>
+      <div onClick={() => setOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', background: KB.band, borderRadius: 2, cursor: 'pointer', marginBottom: 12 }}>
         <Ico n="info" size={17} color={KB.gray} />
         <span style={{ flex: 1, font: F(600, 13.5), color: KB.ink2 }}>스왑포인트란? 왜 이런 값이 나오나요</span>
         <span style={{ color: KB.mute, transform: open ? 'rotate(180deg)' : 'none' }}><Ico n="down" size={17} sw={2} /></span>
@@ -321,9 +326,9 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
   const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg }}>
-      <TopBar big title={b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황'} sub={b ? `${b.asOf} 기준 · 매일 08:00 갱신` : '브리핑을 불러오는 중입니다'}
+      <TopBar big title={b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황'} sub={b ? `${b.asOf} 기준 · 매일 아침 갱신` : '브리핑을 불러오는 중입니다'}
         right={isLatest && (
-          <div onClick={onRefreshLive} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 16, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub }}>
+          <div onClick={onRefreshLive} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub }}>
             {liveAt && <span style={{ width: 6, height: 6, borderRadius: 3, background: KB.pos }}></span>}
             {liveBusy ? '조회 중…' : liveAt ? `실시간 ${liveAt}` : '실시간 조회'}
           </div>
@@ -347,7 +352,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
         <div style={{ maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 }}>
           {b && (
             <div style={{ padding: desktop ? '0 0 14px' : '12px 20px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 10, border: desktop ? `1px solid ${KB.line}` : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 44, padding: '0 14px', background: desktop ? KB.card : KB.band, borderRadius: 2, border: desktop ? `1px solid ${KB.line}` : 'none' }}>
                 <Ico n="search" size={18} color={KB.mute} />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="시황 검색 (예: 나스닥, 환율, SOFR, 금리)"
                   style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink }} />
@@ -355,7 +360,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
               </div>
             </div>
           )}
-          {!b ? <Empty title="아직 브리핑이 없습니다" desc="매일 아침 08시(KST)에 전일 시장을 정리해 올립니다." /> : qa ? (
+          {!b ? <Empty title="아직 브리핑이 없습니다" desc="매일 아침 전일 시장을 정리해 올립니다." /> : qa ? (
             <>
               <Section first title="지표" sub={`${qMk.reduce((n, [, r]) => n + r.length, 0) + qRates.length}건`}>
                 {qMk.length || qRates.length ? (
@@ -382,34 +387,36 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
             </>
           ) : (
             <>
-              <Section first title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
+              <div style={desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' }}>
+                <DocHeader title="데일리 시황" date={b.dateKey ? `${b.dateKey.slice(0, 4)}.${b.dateKey.slice(4, 6)}.${b.dateKey.slice(6, 8)}(${'일월화수목금토'[dk2d(b.dateKey).getUTCDay()]}) · 전일 마감 기준` : b.asOf} />
+              </div>
+              <Section no={1} title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
                 {top ? (
-                  <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>
+                  <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 2, borderLeft: `4px solid ${KB.yellow}` }}>
                     <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(top.title, top.source))}</div>
                     <div style={{ font: F(500, 12.5), color: KB.sub, marginTop: 6 }}>{top.source}</div>
                   </a>
-                ) : <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 10, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>}
-                <div style={{ font: F(700, 13.5), color: KB.ink, margin: '18px 0 4px' }}>관찰 포인트</div>
-                {points.length ? points.map((w, i) => (
-                  <a key={i} href={w.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 10, textDecoration: 'none', padding: '10px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none' }}>
-                    <span style={{ width: 5, height: 5, borderRadius: 3, background: KB.gray, marginTop: 10, flexShrink: 0 }}></span>
-                    <span style={{ flex: 1 }}>
-                      <span style={{ display: 'block', font: F(600, 15, 1.55), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(w.title, w.source))}</span>
-                      <span style={{ display: 'block', font: F(500, 12), color: KB.mute, marginTop: 3 }}>{w.source}</span>
-                    </span>
-                  </a>
-                )) : (b.watch && b.watch.length ? b.watch.map((w, i) => <div key={i} style={{ font: F(400, 14, 1.7), color: KB.ink2, padding: '3px 0' }}>· {w}</div>) : <div style={{ font: F(400, 13.5), color: KB.mute }}>수집된 핵심 뉴스가 없음</div>)}
+                ) : <div style={{ font: F(500, 15.5, 1.75), color: KB.ink, padding: '14px 16px', background: KB.yellowTint, borderRadius: 2, borderLeft: `4px solid ${KB.yellow}` }}>{b.summary}</div>}
+                <SubHead style={{ marginTop: 18 }}>관찰 포인트</SubHead>
+                {points.length ? (
+                  <Bullets items={points.map((w, i) => (
+                    <a key={i} href={w.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <span style={{ font: F(600, 14.5, 1.6), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(w.title, w.source))}</span>
+                      <span style={{ font: F(500, 12), color: KB.mute, marginLeft: 6 }}>{w.source}</span>
+                    </a>
+                  ))} />
+                ) : (b.watch && b.watch.length ? <Bullets items={b.watch} /> : <div style={{ font: F(400, 13.5), color: KB.mute }}>수집된 핵심 뉴스가 없음</div>)}
               </Section>
               <div style={grid}>
                 {col(<>
-                  <Section title="국내증시" sub="누르면 5년 추이"><MarketTable rows={b.kr} live={lv} onPick={onPick} /></Section>
-                  <Section title="해외증시"><MarketTable rows={b.global} live={lv} onPick={onPick} /></Section>
-                  <Section title="환율"><MarketTable rows={b.fx} live={lv} onPick={onPick} digits={4} /></Section>
-                  <Section title="원자재" sub="USD"><MarketTable rows={b.commodity} live={lv} onPick={onPick} /></Section>
-                  <Section title="크립토" sub="USD · 실시간"><MarketTable rows={b.crypto} live={lv} onPick={onPick} /></Section>
+                  <Section no={2} title="국내증시" sub="누르면 5년 추이"><MarketTable rows={b.kr} live={lv} onPick={onPick} /></Section>
+                  <Section no={3} title="해외증시"><MarketTable rows={b.global} live={lv} onPick={onPick} /></Section>
+                  <Section no={4} title="환율"><MarketTable rows={b.fx} live={lv} onPick={onPick} digits={4} /></Section>
+                  <Section no={5} title="원자재" sub="USD"><MarketTable rows={b.commodity} live={lv} onPick={onPick} /></Section>
+                  <Section no={6} title="크립토" sub="USD · 실시간"><MarketTable rows={b.crypto} live={lv} onPick={onPick} /></Section>
                 </>)}
                 {col(<>
-                  <Section title="기준금리">
+                  <Section no={7} title="기준금리">
                     <RateLine first label="한국 (한국은행)" value={b.rates && b.rates.kr && b.rates.kr.rate != null ? `${b.rates.kr.rate.toFixed(2)}%` : ''} sub={b.rates && b.rates.kr ? `${b.rates.kr.asOf || ''} · ${b.rates.kr.src || '한국은행'}` : '이번 회차 수집 실패'} href={b.rates && b.rates.kr && b.rates.kr.url} />
                     <RateLine label="미국 (FOMC 목표범위)" value={b.rates && b.rates.us ? (b.rates.us.target || `${(b.rates.us.effr || 0).toFixed(2)}%`) : ''} sub={b.rates && b.rates.us ? `EFFR ${b.rates.us.effr != null ? b.rates.us.effr.toFixed(2) + '%' : '–'} · ${b.rates.us.asOf || ''} · New York Fed` : '이번 회차 수집 실패'} />
                     {b.ust && b.ust[0] && b.ust[0].last != null && (
@@ -418,10 +425,10 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                       </div>
                     )}
                   </Section>
-                  <Section title="SOFR · SONIA · EURIBOR · TONA" sub="실무 주요 테너">
+                  <Section no={8} title="SOFR · SONIA · EURIBOR · TONA" sub="실무 주요 테너">
                     {rateGroups.length ? rateGroups.map(([g, rows], gi) => (
                       <div key={g} style={{ marginTop: gi ? 14 : 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', font: F(700, 13.5), color: KB.gray, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', font: F(700, 14), color: KB.blue, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` }}>
                           <span>{g}</span><span style={{ marginLeft: 'auto', font: F(500, 11.5), color: KB.mute }}>{rows[0].src}</span>
                         </div>
                         {rows.map((r, i) => (
@@ -434,10 +441,10 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                       </div>
                     )) : <Empty compact title="금리 데이터를 받지 못했음" />}
                   </Section>
-                  <Section title="환헤지 비용 · 스왑포인트"><HedgeBlock hedge={b.hedge} /></Section>
+                  <Section no={9} title="환헤지 비용 · 스왑포인트"><HedgeBlock hedge={b.hedge} /></Section>
                 </>)}
               </div>
-              <Section title="그 밖의 시황 뉴스">
+              <Section no={10} title="그 밖의 시황 뉴스">
                 {rest.length ? (
                   <div style={desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 24 } : {}}>
                     {rest.map((it, i) => (
@@ -470,7 +477,7 @@ function BriefDigest({ market, onOpen }) {
   const pickRow = (list, name) => (list || []).find((x) => x.name === name);
   const rows = [pickRow(market.kr, '코스피'), pickRow(market.global, 'S&P 500'), pickRow(market.global, '나스닥'), pickRow(market.fx, '달러/원')].filter(Boolean);
   return (
-    <div onClick={onOpen} style={{ margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 12, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' }}>
+    <div onClick={onOpen} style={{ margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 2, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ font: F(700, 14.5), color: KB.ink }}>오늘의 시황</span>
         <span style={{ font: F(500, 12), color: KB.mute }}>{briefDay(market.dateKey)}</span>

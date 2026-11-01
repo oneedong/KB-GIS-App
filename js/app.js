@@ -29,7 +29,7 @@ const SIDE = [['home', 'home', '홈'], ['brief', 'market', '데일리 시황'], 
 const HOME_TABS = [['전체', '전체'], ['GP', 'Global GP'], ['연기금', '연기금'], ['공제회', '공제회'], ['중앙회', '중앙회'], ['은행', '은행'], ['보험·캐피탈', '보험·캐피탈'], ['운용·증권', '운용·증권'], ['인사', '인사'], ['이전', '지방이전']];
 const LIST_SCREENS = ['home', 'search', 'bookmarks'];
 const PAGE = 120;
-const badgeStyle = { minWidth: 17, height: 17, padding: '0 5px', borderRadius: 9, background: KB.up, color: '#fff', font: F(700, 10.5), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' };
+const badgeStyle = { minWidth: 17, height: 17, padding: '0 5px', borderRadius: 2, background: KB.up, color: '#fff', font: F(700, 10.5), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' };
 function BottomNav({ active, onGo, badge }) {
     return (React.createElement("nav", { style: { flexShrink: 0, display: 'flex', background: KB.bg, borderTop: `1px solid ${KB.line}`, paddingBottom: 'env(safe-area-inset-bottom)' } }, NAV.map(([k, ic, label]) => {
         const on = active === k;
@@ -45,7 +45,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
             React.createElement(Logo, { size: 19, onClick: () => onGo('home') })),
         SIDE.map(([k, ic, label]) => {
             const on = active === k;
-            return (React.createElement("div", { key: k, onClick: () => onGo(k), style: { display: 'flex', alignItems: 'center', gap: 12, height: 44, padding: '0 12px', marginBottom: 2, borderRadius: 8, cursor: 'pointer', position: 'relative', background: on ? KB.yellowTint : 'transparent', color: on ? KB.ink : KB.ink2, font: on ? F(700, 14.5) : F(500, 14.5) } },
+            return (React.createElement("div", { key: k, onClick: () => onGo(k), style: { display: 'flex', alignItems: 'center', gap: 12, height: 44, padding: '0 12px', marginBottom: 2, borderRadius: 2, cursor: 'pointer', position: 'relative', background: on ? KB.yellowTint : 'transparent', color: on ? KB.ink : KB.ink2, font: on ? F(700, 14.5) : F(500, 14.5) } },
                 on && React.createElement("span", { style: { position: 'absolute', left: 0, top: 11, bottom: 11, width: 3, borderRadius: 2, background: KB.yellow } }),
                 React.createElement(Ico, { n: ic, size: 20, sw: on ? 2 : 1.7, color: on ? KB.gray : KB.sub }),
                 React.createElement("span", null, label),
@@ -62,7 +62,7 @@ function Sidebar({ active, onGo, badge, onRefresh, updated }) {
 }
 // 검색창 모양(누르면 검색 화면)
 function SearchField({ value, onChange, onFocus, placeholder, autoFocus, onClear }) {
-    return (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 10 }, onClick: onFocus },
+    return (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 14px', background: KB.band, borderRadius: 2 }, onClick: onFocus },
         React.createElement(Ico, { n: "search", size: 19, color: KB.mute }),
         onChange
             ? React.createElement("input", { value: value, autoFocus: autoFocus, onChange: (e) => onChange(e.target.value), placeholder: placeholder, style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } })
@@ -72,8 +72,8 @@ function SearchField({ value, onChange, onFocus, placeholder, autoFocus, onClear
 }
 // 바로가기 타일(전체 메뉴)
 function Shortcut({ icon, label, onClick, note }) {
-    return (React.createElement("div", { onClick: onClick, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 4px 12px', cursor: 'pointer', borderRadius: 10 } },
-        React.createElement("span", { style: { width: 46, height: 46, borderRadius: 14, background: KB.band, display: 'flex', alignItems: 'center', justifyContent: 'center', color: KB.gray } },
+    return (React.createElement("div", { onClick: onClick, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 4px 12px', cursor: 'pointer', borderRadius: 2 } },
+        React.createElement("span", { style: { width: 46, height: 46, borderRadius: 2, background: KB.band, display: 'flex', alignItems: 'center', justifyContent: 'center', color: KB.gray } },
             React.createElement(Ico, { n: icon, size: 23, sw: 1.8 })),
         React.createElement("span", { style: { font: F(600, 12.5), color: KB.ink2, textAlign: 'center', whiteSpace: 'nowrap' } }, label),
         note != null && React.createElement("span", { style: { font: F(500, 11), color: KB.mute, marginTop: -5 } }, note)));
@@ -672,6 +672,6 @@ function App() {
             trendSel && React.createElement(TrendModal, { series: histSeries && histSeries[trendSel.symbol], name: trendSel.name, unit: trendSel.unit, onClose: () => setTrendSel(null) }),
             React.createElement(TermSheet, { id: termSel, onClose: () => setTermSel(null), onOpenTerm: openTerm, onLearn: () => openLearn(termSel) }),
             React.createElement(ShareSheet, { open: !!shareItem, item: shareItem, onClose: () => setShareItem(null), onCopied: () => { setShareItem(null); flash('기사 링크를 복사했습니다'); } }),
-            toast && (React.createElement("div", { style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: isDesktop ? 32 : 82, background: KB.ink, color: '#fff', font: F(600, 13.5), padding: '12px 18px', borderRadius: 10, zIndex: 60, boxShadow: '0 8px 24px rgba(0,0,0,.2)', whiteSpace: 'nowrap' } }, toast)))));
+            toast && (React.createElement("div", { style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: isDesktop ? 32 : 82, background: KB.ink, color: '#fff', font: F(600, 13.5), padding: '12px 18px', borderRadius: 2, zIndex: 60, boxShadow: '0 8px 24px rgba(0,0,0,.2)', whiteSpace: 'nowrap' } }, toast)))));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));

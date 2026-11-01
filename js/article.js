@@ -11,7 +11,7 @@
  */
 // 형광펜 — 글자 높이 전체를 덮도록 인라인 배경 + 위아래 여백, 줄이 바뀌어도 각 줄에 같은 모양
 const HIGHLIGHT = {
-    background: 'rgba(196, 154, 104, .34)', // 나뭇결 색 형광펜
+    background: 'rgba(255, 188, 0, .32)', // KB 노랑 형광펜
     color: KB.ink,
     fontWeight: 600,
     padding: '3px 1px',
@@ -41,7 +41,7 @@ function FeedItem({ item, more = [], onOpen, onOpenOther, onPress, onBookmark, i
             React.createElement("div", { onClick: onBookmark, role: "button", "aria-label": "\uBD81\uB9C8\uD06C", style: { alignSelf: 'flex-start', padding: 4, margin: '-2px -6px 0 0', cursor: 'pointer' } },
                 React.createElement(Ico, { n: "bookmark", size: 20, sw: 1.7, fill: item.bookmarked ? KB.yellow : 'none', color: item.bookmarked ? KB.gray : KB.faint }))),
         more.length > 0 && (React.createElement("div", { style: { padding: '0 20px 12px' } },
-            React.createElement("div", { onClick: () => setOpen((o) => !o), role: "button", style: { display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 14, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' } },
+            React.createElement("div", { onClick: () => setOpen((o) => !o), role: "button", style: { display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', padding: '4px 10px', borderRadius: 2, background: KB.band, font: F(600, 12), color: KB.sub, cursor: 'pointer' } },
                 React.createElement("span", { style: { whiteSpace: 'nowrap' } },
                     "\uAC19\uC740 \uC18C\uC2DD ",
                     more.length,
@@ -184,7 +184,7 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                     " \u00B7 ",
                     when),
                 isEn && (React.createElement("div", { style: { margin: '16px 0 0' } },
-                    ko ? (React.createElement("div", { style: { display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 10 } }, [['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (React.createElement("div", { key: k, onClick: () => setLang(k), style: { padding: '7px 14px', borderRadius: 8, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' } }, l))))) : (!loading && paragraphs.length > 0 && (React.createElement("div", { style: { font: F(500, 12.5, 1.6), color: KB.mute } }, "\uBCF8\uBB38 \uBC88\uC5ED\uC740 \uC218\uC9D1\uD560 \uB54C \uCD5C\uC2E0 \uAE30\uC0AC\uBD80\uD130 \uCC28\uB840\uB85C \uBC18\uC601\uB429\uB2C8\uB2E4. \uC544\uC9C1 \uBC88\uC5ED\uB418\uC9C0 \uC54A\uC544 \uC601\uBB38\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4."))),
+                    ko ? (React.createElement("div", { style: { display: 'inline-flex', padding: 3, background: KB.band, borderRadius: 2 } }, [['both', '한영 병기'], ['ko', '한글'], ['en', 'English']].map(([k, l]) => (React.createElement("div", { key: k, onClick: () => setLang(k), style: { padding: '7px 14px', borderRadius: 2, cursor: 'pointer', font: lang === k ? F(700, 13) : F(500, 13), color: lang === k ? KB.ink : KB.sub, background: lang === k ? KB.card : 'transparent', boxShadow: lang === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' } }, l))))) : (!loading && paragraphs.length > 0 && (React.createElement("div", { style: { font: F(500, 12.5, 1.6), color: KB.mute } }, "\uBCF8\uBB38 \uBC88\uC5ED\uC740 \uC218\uC9D1\uD560 \uB54C \uCD5C\uC2E0 \uAE30\uC0AC\uBD80\uD130 \uCC28\uB840\uB85C \uBC18\uC601\uB429\uB2C8\uB2E4. \uC544\uC9C1 \uBC88\uC5ED\uB418\uC9C0 \uC54A\uC544 \uC601\uBB38\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4."))),
                     ko && React.createElement("div", { style: { font: F(500, 12, 1.6), color: KB.mute, marginTop: 8 } },
                         React.createElement("span", { style: { color: KB.ko, fontWeight: 600 } }, "\uD30C\uB780 \uAE00\uC528"),
                         "\uB294 \uD55C\uAD6D\uC5B4 \uBC88\uC5ED\uC785\uB2C8\uB2E4",
@@ -205,11 +205,11 @@ function ArticleDetail({ sel, bookmarked, onToggleBm, onShare, onBack, showBack,
                 paragraphs.length ? bodyNodes
                     : loading ? React.createElement(BodySkeleton, null)
                         : (mine && st.dead)
-                            ? React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 } }, "\uC6D0\uBB38 \uAE30\uC0AC\uAC00 \uC0AD\uC81C\uB418\uC5B4 \uB354 \uC774\uC0C1 \uBCFC \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC74C \uC218\uC9D1 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uBE60\uC9D1\uB2C8\uB2E4.")
-                            : React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 10, font: F(500, 14, 1.65), color: KB.ink2 } },
+                            ? React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 2, font: F(500, 14, 1.65), color: KB.ink2 } }, "\uC6D0\uBB38 \uAE30\uC0AC\uAC00 \uC0AD\uC81C\uB418\uC5B4 \uB354 \uC774\uC0C1 \uBCFC \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC74C \uC218\uC9D1 \uB54C \uBAA9\uB85D\uC5D0\uC11C \uBE60\uC9D1\uB2C8\uB2E4.")
+                            : React.createElement("div", { style: { padding: '14px 16px', background: KB.band, borderRadius: 2, font: F(500, 14, 1.65), color: KB.ink2 } },
                                 "\uC5B8\uB860\uC0AC \uBCF4\uC548 \uC815\uCC45(\uC720\uB8CC\u00B7\uC811\uADFC \uC81C\uD55C)\uC73C\uB85C \uBCF8\uBB38\uC744 \uAC00\uC838\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC544\uB798 \u2018\uC6D0\uBB38 \uBCF4\uAE30\u2019\uB85C \uD655\uC778\uD558\uC138\uC694.",
                                 realUrl && React.createElement("span", { onClick: () => setRetryOf({ id: sel.id, n: retry + 1 }), role: "button", style: { display: 'inline-block', marginLeft: 6, font: F(600, 13.5), color: KB.gray, textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' } }, "\uB2E4\uC2DC \uC2DC\uB3C4")),
-                !loading && paragraphs.length > 0 && !isFull && realUrl && (React.createElement("div", { style: { font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 10, marginTop: 4 } }, sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '언론사 보안 정책(유료·접근 제한)으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.')),
+                !loading && paragraphs.length > 0 && !isFull && realUrl && (React.createElement("div", { style: { font: F(500, 13.5, 1.6), color: KB.sub, padding: '12px 14px', background: KB.band, borderRadius: 2, marginTop: 4 } }, sel.paywalled ? '유료 기사라 앞부분만 제공됩니다. 전체 내용은 원문에서 확인하세요.' : '언론사 보안 정책(유료·접근 제한)으로 전문을 가져오지 못해 앞부분만 표시했습니다. 전체 내용은 원문에서 확인하세요.')),
                 React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 22 } },
                     viewUrl && React.createElement(Btn, { href: viewUrl, icon: "external", full: true }, "\uC6D0\uBB38 \uBCF4\uAE30"),
                     React.createElement(Btn, { kind: "secondary", icon: "share", onClick: onShare, style: { flex: viewUrl ? '0 0 auto' : 1, width: viewUrl ? 'auto' : '100%' } }, "\uACF5\uC720")),
@@ -249,7 +249,7 @@ function ShareSheet({ open, item, onClose, onCopied }) {
     return (React.createElement(Sheet, { open: open, onClose: onClose, title: "\uACF5\uC720" },
         React.createElement("div", { style: { font: F(600, 15, 1.5), color: KB.ink } }, item.ko),
         React.createElement("div", { style: { font: F(500, 12.5), color: KB.mute, marginTop: 4 } }, item.source),
-        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, padding: '10px 10px 10px 14px', background: KB.band, borderRadius: 10 } },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, padding: '10px 10px 10px 14px', background: KB.band, borderRadius: 2 } },
             React.createElement("span", { style: { flex: 1, minWidth: 0, font: F(500, 13), color: KB.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, url),
             React.createElement(Btn, { onClick: copy, style: { height: 36, padding: '0 14px', font: F(700, 13) } }, "\uBCF5\uC0AC")),
         React.createElement("div", { style: { marginTop: 10 } },

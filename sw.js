@@ -1,5 +1,5 @@
 /* KB GIS service worker — offline app shell, auto-updating on new deploys */
-const CACHE = 'kbgis-v56';
+const CACHE = 'kbgis-v57';
 
 // Local app shell — precached on install so the app opens offline.
 const SHELL = [
@@ -29,6 +29,7 @@ const SHELL = [
   './icons/icon-512.png',
   './icons/maskable-512.png',
   './icons/apple-touch-icon.png',
+  './icons/kb-logo.svg',
 ];
 
 self.addEventListener('install', (event) => {
@@ -67,7 +68,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cross-origin (e.g. Pretendard font): cache-first.
+  // Cross-origin: cache-first.
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       if (res && (res.ok || res.type === 'opaque')) {

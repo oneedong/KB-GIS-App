@@ -344,6 +344,7 @@ function manWon(totalMan) {   // 만 단위 정수 → "4억 6000만" / "16억" 
 export function koMoney(s) {
   return String(s || '')
     .replace(/(US\$|\$|€|£)\s?(\d[\d,]*(?:\.\d+)?)\s?(조|억|만)\s?원/g, '$2$3 원')
+    .replace(/(US\$|\$|€|£)\s?(\d[\d,]*(?:\.\d+)?)\s?(조|억|만)(?!\s?원)/g, (m, c, n, u) => `${n}${u} ${CUR[c] || '달러'}`)
     .replace(/(US\$|\$|€|£)\s?(\d[\d,]*(?:\.\d+)?)\s?(trillion|tn|T|billion|bn|B|million|mn|m|M)\b(\+?)/g, (m, c, n, u, plus) => {
       const v = Number(n.replace(/,/g, ''));
       if (!isFinite(v)) return m;
@@ -353,7 +354,9 @@ export function koMoney(s) {
       else if (/^(?:billion|bn|B)$/.test(u)) txt = manWon(Math.round(v * 100000));
       else txt = manWon(Math.round(v * 100));
       return `${txt} ${cur}${plus ? ' 이상' : ''}`;
-    });
+    })
+    // 받침 없는 '달러·유로·파운드' 뒤 조사 맞춤("4.75억 달러을" → "달러를")
+    .replace(/(달러|유로|파운드)(을|은|과)(?=[\s.,)]|$)/g, (m, w, j) => w + ({ 을: '를', 은: '는', 과: '와' })[j]);
 }
 const splitSent = (s) => String(s || '').split(/(?<=[.!?。]|[다음함임됨])\s+/).filter(Boolean);
 function cleanText(s, bag, dropped) {

@@ -2149,6 +2149,10 @@ const HARD_NOISE_RE = new RegExp([
   '\\bformer cvc\\b|\\bcvc\\b.{0,40}\\b(?:vigilance|commissioner)\\b|central vigilance',
   '\\btarget price\\b|\\bmaintains\\b.{0,60}\\bwith (?:a )?(?:buy|sell|hold|neutral|overweight|underweight|outperform|market perform) rating\\b|\\b(?:upgrades?|downgrades?)\\b.{0,50}\\b(?:stock )?rating\\b',
   '^key (?:deals|facts)\\b|\\bof .{3,80} [–-] (?:nasdaq|nyse|amex|otc|lse|tsx|asx|cboe|bats)[a-z]*:[a-z.]{1,12}\\s*$|\\((?:nasdaq|nyse|amex):[a-z.]{1,6}\\):|^list of \\d+ (?:acquisitions|investments|exits|portfolio)|\\bstock \\([a-z]{2,5}\\) investors\\b|\\b(?:trust|reit|finance|income fund|bdc)\\b.{0,40}\\(q[1-4] 20\\d\\d\\) earnings call highlights',
+  // 가상자산 상품(블랙록 비트코인·이더리움 ETF 자금 유출입, 코인 프리세일) — 대체투자와 무관
+  '\\b(?:bitcoin|ethereum|ether|solana|crypto(?:currency)?|xrp|btc|ibit|etha)\\b.{0,60}\\b(?:etfs?|etps?|fund|trust|outflows?|inflows?|presales?|price prediction|protection)\\b|\\b(?:etfs?|fund|ibit|etha)\\b.{0,40}\\b(?:bitcoin|ethereum|crypto|btc)\\b|crypto presales?|(?:비트코인|이더리움|솔라나|가상자산|암호화폐).{0,40}(?:ETF|펀드|상품|유출|유입|이체|AUM)',
+  // 상장 REIT·BDC 분기 실적(주당 손익·EPS·실적 콜 녹취) — 상장 운용사(TPG·Ares 등) 실적 콜은 펀드레이징 정보가 있어 남긴다
+  '\\b(?:trust|reit|bdc)\\b.{0,60}\\b(?:eps (?:beat|miss)|distributable (?:earnings|loss)|posts? \\$[\\d.]+ per-share)|earnings call transcript:.{0,60}\\b(?:trust|reit)\\b',
   // 국문: 종목 시세 기사("…계약 소식에 5%대 강세"), 스테이블코인
   '소식에\\s*(?:장중\\s*)?\\d+(?:\\.\\d+)?%\\s*(?:대\\s*)?(?:강세|약세|급등|급락|상승|하락)|스테이블\\s*코인|\\bstablecoin',
 ].join('|'), 'i');
@@ -2853,6 +2857,13 @@ function selftest() {
     ['SBI, 99%가 달러인 스테이블코인 시장에 201억 엔 JPYSC로 블랙록과 손잡았다', '위키트리'],
     ["국민연금 수급자 800만명 돌파…재정 안정·노후 보장 '딜레마' > 뉴스", '지데일리'],
     ['NH투자증권 THE100리포트, 국민연금 수령액 높이는 방법 발간', '뉴스'],
+    ["Ethereum Price Prediction: BlackRock's Ether Fund Loses $44.8M While Fidelity's Gains", 'openPR.com'],
+    ['비트코인, 이더리움, 솔라나 투자 상품 출시…블랙록 전략 활용', '민심뉴스'],
+    ["BlackRock’s IBIT adds $276M in Bitcoin – Can BTC escape its downtrend?", 'AMBCrypto'],
+    ['BlackRock seeks to shield bitcoin investors from losses after rival fund weathers 50% crash', 'CoinDesk'],
+    ['BlackRock 3분기 실적: IBIT, ETHA와 1,100억 달러 규모 암호화폐 AUM', 'FinanceFeeds'],
+    ['[KKR Real Estate Finance Trust Q3 2026 Earnings Call] KREF Posts $2.64 Per-Share Distributable Loss', 'BigGo Finance'],
+    ['Earnings call transcript: TPG Real Estate Finance Trust posts q3 2026 EPS miss', 'Investing.com'],
   ];
   const NOISE_NO = [
     ['QIAGEN Agrees to $12.1 Billion Takeover Offer From EQT Private Equity', 'BioBuzz'],
@@ -2862,6 +2873,10 @@ function selftest() {
     ['Ares heads for record fundraising year on private credit, real assets strength', 'Reuters'],
     ['CVC DIF completes acquisition of Spanish repair yard Cernaval', 'Seatrade Maritime'],
     ['Ares Management Corp (ARES) (Q3 2026) Earnings Call Highlights: Record Fundraising, $691 ...', 'Yahoo Finance'],
+    ['Bitcoin mining infrastructure firm Luxor raises $16 million to expand AI business', 'The Block'],
+    ['Partners Group Confirms Tokenized Asset Infrastructure', 'Coinfomania'],
+    ['Earnings call transcript: TPG tops Q3 2026 estimates as fundraising surges', 'Investing.com'],
+    ['LXP Industrial Trust Shareholders Approve $61.20 Per-Share Brookfield, CPP Acquisition', 'GlobeNewswire'],
     ['연금연구회 “국민연금 리밸런싱 유예 결정, 판단근거·위험평가 공개해야”… 공단 “한 달 새 적립금 181조 4천억 감소”', '천지일보'],
     ['19억달러 도쿄 사무실 매각 협상…블랙스톤($BX) 수익권 토큰화 검토', '토큰포스트'],
     ['페블스톤, 3488억 서울역 T타워 인수 완료…국민연금 펀드 첫 투자', '한국경제'],

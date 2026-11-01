@@ -6,7 +6,7 @@
  */
 // ─── 데이터 파일 ─────────────────────────────────────────────
 const API = {
-    news: './news.json', // 기사 목록(리드) — 3시간마다 수집기가 갱신
+    news: './feed/news.json', // 기사 목록(리드) — 수집기가 갱신하는 앱용 경량본(feed/)
     alloc: './allocations.json', // 기관별 대체투자 배분(공시)
     insights: './insights.json', // CIO·실무 인사·AUM·지방이전·수익률(기사 자동 추출)
     market: './market.json', // 데일리 시황(매일 08:00)
@@ -16,10 +16,12 @@ const API = {
     roster: './institutions.json', // 국내 LP 로스터
     lpProfiles: './lp-profiles.json',
     gpProfiles: './gp-profiles.json',
-    fundraising: './fundraising.json',
-    investments: './investments.json', // 투자내역 누적 DB
+    fundraising: './feed/fundraising.json',
+    investments: './feed/investments.json', // 투자내역 누적 DB(앱용 경량본)
 };
-const getJson = (url) => fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+// 매번 새 주소(?t=…)로 받으면 바뀌지 않은 파일도 통째로 다시 내려받고 서비스워커 캐시에 사본이 쌓인다.
+// 'no-cache' 는 서버에 바뀌었는지만 물어(ETag) 그대로면 304 로 캐시본을 쓰고, 바뀌었으면 새로 받는다.
+const getJson = (url) => fetch(url, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 // ─── 분류 ────────────────────────────────────────────────────
 // 자산군 표기는 업계 용어 그대로(영문)
 const ASSET = {

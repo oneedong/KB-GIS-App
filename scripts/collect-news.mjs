@@ -2104,7 +2104,21 @@ const HARD_NOISE_RE = new RegExp([
   '\\b(?:municipal|muni(?:yield)?)\\b.{0,40}\\b(?:fund|trust)\\b|\\b(?:fund|trust)(?: [ivx]+)? \\((?:nyse: ?)?[a-z]{2,5}\\)[^.]{0,60}\\b(?:returns?|payouts?|distributions?|shares|stock|closes|rises|edges)\\b|\\brights offering\\b|\\b(?:closes flat|edges (?:up|down)|rises|falls) (?:[\\d.]+% )?(?:to|at) \\$[\\d.]+|(?:ratio|per share|cash flow|yield) of .{3,80} [–-] [a-z]{2,6}:[a-z.]{1,12}\\s*$|issues and sells [\\d,]+ (?:common )?shares|[\\d.]+% of (?:its )?common shares',
   // 이름이 같은 다른 회사: 스팩(Oaktree Acquisition Corp 등), 미국 가스회사 EQT Corp, 호주 통신사 TPG Telecom
   '\\bacquisition corp(?:oration)?\\b|\\btpg telecom\\b|\\beqt \\(eqt\\)|\\beqt\\b.{0,80}\\b(?:natural gas|gas (?:supply|deal|producer|sales)|lng|appalachia|marcellus|equitrans|toby rice|mountain valley)\\b',
+  // 2026-10 점검: 미국 가스회사 EQT Corp 의 Range Resources 인수(사모 EQT 와 무관), 인도 리테일 공모펀드(JioBlackRock),
+  // 인도 중앙감찰위원(CVC), 증권사 목표주가·등급 노트, 종목 묶음·재무비율·인수 목록 페이지, 상장 REIT 실적 콜 요약
+  '\\beqt\\b.{0,80}\\b(?:range(?: resources)?|natgas|shale|utica|haynesville)\\b|\\brange resources\\b|레인지\\s*리소시스',
+  '\\bjio ?blackrock\\b|\\bmutual fund\\b.{0,60}\\b(?:sebi|nfo|draft documents?|folios?)\\b|\\bnfo\\b',
+  '\\bformer cvc\\b|\\bcvc\\b.{0,40}\\b(?:vigilance|commissioner)\\b|central vigilance',
+  '\\btarget price\\b|\\bmaintains\\b.{0,60}\\bwith (?:a )?(?:buy|sell|hold|neutral|overweight|underweight|outperform|market perform) rating\\b|\\b(?:upgrades?|downgrades?)\\b.{0,50}\\b(?:stock )?rating\\b',
+  '^key (?:deals|facts)\\b|\\bof .{3,80} [–-] (?:nasdaq|nyse|amex|otc|lse|tsx|asx|cboe|bats)[a-z]*:[a-z.]{1,12}\\s*$|\\((?:nasdaq|nyse|amex):[a-z.]{1,6}\\):|^list of \\d+ (?:acquisitions|investments|exits|portfolio)|\\bstock \\([a-z]{2,5}\\) investors\\b|\\b(?:trust|reit|finance|income fund|bdc)\\b.{0,40}\\(q[1-4] 20\\d\\d\\) earnings call highlights',
+  // 국문: 종목 시세 기사("…계약 소식에 5%대 강세"), 스테이블코인
+  '소식에\\s*(?:장중\\s*)?\\d+(?:\\.\\d+)?%\\s*(?:대\\s*)?(?:강세|약세|급등|급락|상승|하락)|스테이블\\s*코인|\\bstablecoin',
 ].join('|'), 'i');
+// 국민연금 연금제도·복지 기사(수급자·보험료·연금개혁 등) — 기금 운용·투자 내용이 없으면 대체투자와 무관
+const NPS_WELFARE_RE = /수급자|가입자|보험료|연금\s*개혁|노후|수령액|출산\s*크레딧|기초연금|사각지대|체납|지역가입|소득대체율|반환일시금|추납|임의가입|고갈|재정\s*추계|지급\s*보장/;
+const NPS_INVEST_RE = /투자|운용|출자|수익률|자산|주식|채권|대체|리밸런싱|적립금|위탁|펀드|CIO|본부장|환헤지|외환|스와프|매입|매각|지분|의결권|주주/;
+export const obviousNoise = (t, source = '') => SOURCE_BLOCK_RE.test(source) || HARD_NOISE_RE.test(t) || npsWelfare(t);
+const npsWelfare = (t) => /국민연금/.test(t) && NPS_WELFARE_RE.test(t) && !NPS_INVEST_RE.test(t.replace(/\S*(?:투자증권|자산운용|금융투자)/g, ''));
 // 추적 기관의 자본확충(유상증자 등) — 투자여력 확대라는 placement agent 핵심
 // 신호이므로, EXCLUDE_RE(상장사 잡음 제거)에 걸려도 예외로 수집한다.
 const CAPITAL_RE = /유상\s*증자|자본\s*확충|자본금\s*(?:확대|증액)|출자\s*전환/;
@@ -2118,6 +2132,7 @@ export function isNoise(raw) {
   const t = raw.title || '';
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return true;
   if (HARD_NOISE_RE.test(t)) return true;
+  if (npsWelfare(t)) return true;
   if (/[가-힣]/.test(t)) {
     if (RETAIL_NOISE_RE.test(t) && !RETAIL_KEEP_RE.test(t) && !CIO_TITLE.test(t) && !EXEC_TITLE.test(t)) return true;
   } else if (EN_NOISE_RE.test(t) && !EN_ALT_CONTEXT_RE.test(t.replace(EN_NOISE_RE, ''))) return true;
@@ -2130,6 +2145,7 @@ const RETAIL_KEEP_RE = /매입|인수|매각|출자|약정|대체투자|사모�
 export function isRelevant(raw) {
   if (raw.source && SOURCE_BLOCK_RE.test(raw.source)) return false;   // 깨진 링크 매체 제외
   if (HARD_NOISE_RE.test(raw.title || '')) return false;             // 공시·주식 데이터·코멘터리 등
+  if (npsWelfare(raw.title || '')) return false;                     // 연금제도·복지 기사
   if (/[가-힣]/.test(raw.title) && RETAIL_NOISE_RE.test(raw.title) && !RETAIL_KEEP_RE.test(raw.title) && !CIO_TITLE.test(raw.title) && !EXEC_TITLE.test(raw.title)) return false;
   const text = `${raw.title} ${raw.desc}`;
   // 영문 주가·실적·ETF 기사는 대체투자 맥락(펀드·딜)이 제목에 없으면 제외
@@ -2327,6 +2343,7 @@ async function fetchQuery(q) {
 
 async function main() {
   if (process.argv.includes('--selftest')) return selftest();
+  if (process.argv.includes('--feeds')) return writeFeeds();      // 수집 없이 앱용 피드만 다시 만들기
 
   let all = [];
   for (const q of QUERIES) {
@@ -2640,7 +2657,8 @@ async function main() {
 
   // 옛 기사(발행일 재확인)·삭제된 기사·기사 아닌 페이지에서 나온 누적 항목은 트래커에서도 뺀다
   const dropIds = new Set([...all, ...prev].filter((a) => a.stale || a.linkDead || PEI_OLD_URL_RE.test(a.url || '') || AC.staleTitle(a.ko, a.ts) || NON_ARTICLE_URL_RE.test(a.url || '') || NON_ARTICLE_TITLE_RE.test(a.ko || '')).map((a) => a.id));
-  const keepPrev = (p) => !dropIds.has(p.id) && !PEI_OLD_URL_RE.test(p.url || '') && !NON_ARTICLE_URL_RE.test(p.url || '') && !NON_ARTICLE_TITLE_RE.test(p.title || '');
+  // 누적 트래커 항목도 매 회차 명백한 잡음 규칙(차단 매체·제목 패턴)으로 다시 거른다 — 규칙이 생기기 전에 들어온 항목 정리
+  const keepPrev = (p) => !dropIds.has(p.id) && !PEI_OLD_URL_RE.test(p.url || '') && !NON_ARTICLE_URL_RE.test(p.url || '') && !NON_ARTICLE_TITLE_RE.test(p.title || '') && !obviousNoise(p.title || '', p.source || '');
   // 펀드레이징 트래커(fundraising.json) — 모집·클로징 이벤트 자동 추출.
   let prevFr = [];
   try { prevFr = ((JSON.parse(await readFile(new URL('../fundraising.json', import.meta.url), 'utf8')).items) || []).filter(keepPrev); } catch {}
@@ -2654,6 +2672,7 @@ async function main() {
   const inv = buildInvestments(merged, prevInv);
   await writeFile(new URL('../investments.json', import.meta.url), JSON.stringify(inv, null, 0));
   console.log(`investments: ${inv.count} events (+${inv.added} new), overseas ${inv.items.filter(e => e.overseas).length}`);
+  await writeFeeds();
 }
 
 function selftest() {
@@ -2771,9 +2790,76 @@ function selftest() {
   const ok9 = ex.text.startsWith('행정공제회가') && !/@|ⓒ|기자 =/.test(ex.text) && ex.text.split('\n\n').length === 2 && lead.length <= LEAD_MAX;
   console.log(`extract: via=${ex.via} paras=${ex.text.split('\n\n').length} readability=${!!Readability}`);
 
-  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9;
-  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7} ok8=${ok8} ok9=${ok9})`);
+  // 잡음 — 2026-10 실제 제목(걸러야 할 것 / 남겨야 할 것)
+  const NOISE_YES = [
+    ['EQT to buy Range Resources for $13 billion in all-stock deal', 'Big News Network.com'],
+    ['EQT-Range Deal Casts Fresh Light on US Shale Gas M&A', 'Energy Intelligence'],
+    ["EQT's acquisition of Range underscores race to dominate US natgas market", 'Reuters'],
+    ['Fort Worth-Based Range Resources to Be Acquired by EQT in $13B All-Stock Deal', 'Dallas Innovates'],
+    ['EQT CEO "레인지 리소시스 인수로 6억 2500만 달러 시너지…AI 수요 수혜"', '데이터투자'],
+    ['JioBlackRock Advantage World Equity Fund Opens Global Market Access', 'SMEStreet'],
+    ['JioBlackRock MF folios jump 261%: Can new fund houses challenge established AMCs?', 'Business Today'],
+    ['Former CVC Suresh N Patel to lead high-level committee on banking reforms for Viksit Bharat', 'Rediff'],
+    ['BMO Capital Maintains TPG Inc(TPG.US) With Buy Rating, Raises Target Price to $52', 'Moomoo'],
+    ['Raymond James downgrades MidCap Financial stock rating after Ares deal', 'Investing.com'],
+    ['Key deals this week: INTC, EQT, DASH, GEV, and more', 'TradingView'],
+    ['Interest paid of Oaktree Diversified Income Fund Inc Class D – NASDAQ:ODIDX', 'TradingView'],
+    ['EBITDA margin % of Oaktree Diversified Income Fund Inc. Class A – NASDAQ:ODIAX', 'TradingView'],
+    ['Hamilton Lane Inc-Class A (NASDAQ:HLNE): Affordable Growth at a Reasonable Valuation', 'ChartMill'],
+    ['List of 235 Acquisitions by Blackstone (Oct 2026)', 'Tracxn'],
+    ['How Record Fundraising Will Impact Blue Owl Capital Stock (OWL) Investors', 'Yahoo Finance'],
+    ['KKR Real Estate Finance Trust Inc (KREF) (Q3 2026) Earnings Call Highlights: Repayments Surpass Fundings', 'Yahoo Finance'],
+    ['네이버, 브룩필드와 12조원 규모 계약 소식에 5%대 강세', '이코노뉴스'],
+    ['SBI, 99%가 달러인 스테이블코인 시장에 201억 엔 JPYSC로 블랙록과 손잡았다', '위키트리'],
+    ["국민연금 수급자 800만명 돌파…재정 안정·노후 보장 '딜레마' > 뉴스", '지데일리'],
+    ['NH투자증권 THE100리포트, 국민연금 수령액 높이는 방법 발간', '뉴스'],
+  ];
+  const NOISE_NO = [
+    ['QIAGEN Agrees to $12.1 Billion Takeover Offer From EQT Private Equity', 'BioBuzz'],
+    ['EQT-backed Madison Energy Infrastructure and CORE Electric Cooperative strike partnership', 'IREI'],
+    ['EQT, Bain $5 billion Kakaku showdown heralds contested Japan buyout era', 'Reuters'],
+    ['TPG holds first close on $5bn for fifth flagship fund', 'PERE'],
+    ['Ares heads for record fundraising year on private credit, real assets strength', 'Reuters'],
+    ['CVC DIF completes acquisition of Spanish repair yard Cernaval', 'Seatrade Maritime'],
+    ['Ares Management Corp (ARES) (Q3 2026) Earnings Call Highlights: Record Fundraising, $691 ...', 'Yahoo Finance'],
+    ['연금연구회 “국민연금 리밸런싱 유예 결정, 판단근거·위험평가 공개해야”… 공단 “한 달 새 적립금 181조 4천억 감소”', '천지일보'],
+    ['19억달러 도쿄 사무실 매각 협상…블랙스톤($BX) 수익권 토큰화 검토', '토큰포스트'],
+    ['페블스톤, 3488억 서울역 T타워 인수 완료…국민연금 펀드 첫 투자', '한국경제'],
+  ];
+  const noiseFails = [...NOISE_YES.filter(([t, src]) => !isNoise({ title: t, source: src })).map(([t]) => 'MISS ' + t), ...NOISE_NO.filter(([t, src]) => isNoise({ title: t, source: src })).map(([t]) => 'FALSE ' + t)];
+  if (noiseFails.length) console.log('noise:\n  ' + noiseFails.join('\n  '));
+  const ok10 = noiseFails.length === 0;
+  console.log(`noise: ${NOISE_YES.length + NOISE_NO.length - noiseFails.length}/${NOISE_YES.length + NOISE_NO.length} ok`);
+
+  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10;
+  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7} ok8=${ok8} ok9=${ok9} ok10=${ok10})`);
   if (!all7) process.exit(1);
+}
+
+// ── 앱용 경량 피드(feed/*.json) ─────────────────────────────
+// news/fundraising/investments.json 은 수집기의 상태 저장소(재시도 횟수·구글 뉴스 링크 등)를 겸해 크다.
+// 앱은 그중 일부만 쓰므로, 수집기 전용 필드와 이미 원문 주소로 풀린 구글 뉴스 링크(gurl)를 뺀 사본을 따로 낸다.
+const COLLECTOR_ONLY = new Set(['metric', 'fetched', 'fetchTries', 'pubChecked', 'linkOk', 'tv', 'bl', 'frx', 'upgradeTries', 'tsrc', 'bodyMismatch', 'sizeLlm', 'resolveTries', 'stale', 'linkDead', 'pinned']);
+export function slimForApp(x) {
+  if (Array.isArray(x)) return x.map(slimForApp);
+  if (!x || typeof x !== 'object') return x;
+  const o = {};
+  for (const [k, v] of Object.entries(x)) if (!COLLECTOR_ONLY.has(k)) o[k] = slimForApp(v);
+  // 원문 주소가 확인된 항목은 구글 뉴스 링크가 필요 없다(본문 불일치로 의심되는 항목만 남긴다)
+  if (o.gurl && /^https?:\/\//.test(o.url || '') && !/news\.google\.com/.test(o.url) && !x.bodyMismatch) delete o.gurl;
+  return o;
+}
+export async function writeFeeds() {
+  await mkdir(new URL('../feed/', import.meta.url), { recursive: true });
+  const sizes = [];
+  for (const f of ['news', 'fundraising', 'investments']) {
+    let data;
+    try { data = JSON.parse(await readFile(new URL(`../${f}.json`, import.meta.url), 'utf8')); } catch { continue; }
+    const out = JSON.stringify(slimForApp(data));
+    await writeFile(new URL(`../feed/${f}.json`, import.meta.url), out);
+    sizes.push(`${f} ${Math.round(out.length / 1024)}KB`);
+  }
+  console.log(`feed: ${sizes.join(' · ')}`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('collect-news.mjs')) {

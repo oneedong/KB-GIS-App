@@ -138,6 +138,13 @@ async function gather(reportDay) {
   const live = (a) => !a.stale && !AC.staleTitle(a.ko, a.ts);
   const wk = news.filter((a) => inRange(tsMs(a), ...win) && live(a));
   const pw = news.filter((a) => inRange(tsMs(a), ...pwin) && live(a));
+  // 직전 주 수치: 아카이브(최근 1,500건 ≈ 12일)에는 직전 주 앞부분이 이미 밀려나 있을 수 있어, 그대로 세면 직전 주가
+  // 적게 잡혀 '▲' 가 부풀었다(2026-10-30 판: 직전 주 655건 → 실제보다 적음). 직전 보고서가 그 주가 온전할 때 센 값을
+  // 우선 쓰고, 없으면 아카이브가 직전 주를 모두 담고 있을 때만 센다(아니면 비교하지 않음).
+  const prevRep = await readJson(path.join(OUT_DIR, `${prevDay.replace(/-/g, '')}.json`), null);
+  const oldestMs = Math.min(...news.map(tsMs).filter((x) => x > 0));
+  const pwFull = oldestMs <= pwin[0];
+  const prevOf = (fromRep, counted) => (fromRep != null ? fromRep : pwFull ? counted : null);
   const wkDeals = inv.filter((e) => inRange(tsMs(e), ...win));
   const stageEvents = [];
   for (const f of fr.funds || []) for (const s of f.stages || []) if (inRange(tsMs(s), ...win)) stageEvents.push({ f, s });
@@ -169,7 +176,8 @@ async function gather(reportDay) {
     // 테마 신호
     const themes = (THEMES[k] || []).map(([name, re]) => {
       const cur = arts.filter((a) => re.test(`${a.ko} ${a.tko || ''} ${String(a.body || '').slice(0, 400)}`));
-      const prev = prevArts.filter((a) => re.test(`${a.ko} ${a.tko || ''} ${String(a.body || '').slice(0, 400)}`)).length;
+      const repTheme = prevRep && prevRep.assets && prevRep.assets[k] && (prevRep.assets[k].themes || []).find((t) => t.name === name);
+      const prev = prevOf(prevRep && prevRep.assets && prevRep.assets[k] ? (repTheme ? repTheme.n : 0) : null, prevArts.filter((a) => re.test(`${a.ko} ${a.tko || ''} ${String(a.body || '').slice(0, 400)}`)).length);
       return { name, n: cur.length, prev, kr: cur.filter((a) => a.lang === 'ko' || KR_LP_TYPES.has(a.instType)).length, ids: cur.filter((a) => titleAssetsOf(a).has(k)).slice(0, 3).map(ref) };
     }).filter((t) => t.n || t.prev).sort((x, y) => y.n - x.n);
     // LLM 에 보여 줄 기사(중요도: 금액·딜·펀드·한국 LP → 최신순)
@@ -182,7 +190,7 @@ async function gather(reportDay) {
     const top = uniq.slice(0, 70);
     perAsset[k] = {
       label,
-      stats: { articles: arts.length, prevArticles: prevArts.length, deals: deals.length, dealTypes, finals: finals.length, launches: launches.length, otherCloses: closes.length, krArticles: krArts.length },
+      stats: { articles: arts.length, prevArticles: prevOf(prevRep && prevRep.assets && prevRep.assets[k] && prevRep.assets[k].stats ? prevRep.assets[k].stats.articles : null, prevArts.length), deals: deals.length, dealTypes, finals: finals.length, launches: launches.length, otherCloses: closes.length, krArticles: krArts.length },
       finals, launches, closes, gps, krDeals, themes,
       items: top.map((a) => ({ id: ref(a), t: titleOf(a), o: a.lang === 'en' ? a.ko : '', inst: a.inst, src: a.source, d: String(a.ts || '').slice(5, 10), lead: AC.cleanText(String(a.body || ''), { title: a.ko }).replace(/\s+/g, ' ').slice(0, 280) })),
     };
@@ -193,7 +201,7 @@ async function gather(reportDay) {
   }
   // 한국 투자자 관심도: 자산군별 한국어 보도·국내 LP 딜 비중
   const krShare = ASSETS.map(([k, label]) => ({ k, label, articles: perAsset[k].stats.krArticles, deals: perAsset[k].krDeals.length }));
-  return { reportDay, from, prevDay, window: [from, reportDay], perAsset, krShare, refs, totals: { articles: wk.length, prevArticles: pw.length, deals: wkDeals.length } };
+  return { reportDay, from, prevDay, window: [from, reportDay], perAsset, krShare, refs, totals: { articles: wk.length, prevArticles: prevOf(prevRep && prevRep.totals ? prevRep.totals.articles : null, pw.length), deals: wkDeals.length } };
 }
 
 // ── LLM 분석 ───────────────────────────────────────────────
@@ -214,17 +222,18 @@ const SYSTEM = `당신은 한국 기관투자자(연기금·공제회·보험·�
 function buildPrompt(ctx) {
   const lines = [];
   lines.push(`보고 기간: ${ctx.window[0]} ~ ${ctx.window[1]} (보고일 ${ctx.reportDay}, 직전 보고일 ${ctx.prevDay})`);
-  lines.push(`전체 보도 ${ctx.totals.articles}건(직전 주 ${ctx.totals.prevArticles}건), 딜 ${ctx.totals.deals}건`);
+  const pv = (v) => (v == null ? '비교 불가' : `${v}건`);
+  lines.push(`전체 보도 ${ctx.totals.articles}건(직전 주 ${pv(ctx.totals.prevArticles)}), 딜 ${ctx.totals.deals}건`);
   lines.push(`자산군별 국내 투자자 관련 보도·국내 LP 딜: ${ctx.krShare.map((x) => `${x.label} ${x.articles}건/${x.deals}건`).join(', ')}`);
   for (const [k, label] of ASSETS) {
     const A = ctx.perAsset[k];
     lines.push(`\n## ${k} — ${label}`);
-    lines.push(`집계: 보도 ${A.stats.articles}건(직전 주 ${A.stats.prevArticles}건) · 딜 ${A.stats.deals}건 ${JSON.stringify(A.stats.dealTypes)} · 파이널 클로즈 ${A.stats.finals}건 · 모집 개시 ${A.stats.launches}건 · 기타 클로즈 ${A.stats.otherCloses}건 · 국내 투자자 관련 보도 ${A.stats.krArticles}건`);
+    lines.push(`집계: 보도 ${A.stats.articles}건(직전 주 ${pv(A.stats.prevArticles)}) · 딜 ${A.stats.deals}건 ${JSON.stringify(A.stats.dealTypes)} · 파이널 클로즈 ${A.stats.finals}건 · 모집 개시 ${A.stats.launches}건 · 기타 클로즈 ${A.stats.otherCloses}건 · 국내 투자자 관련 보도 ${A.stats.krArticles}건`);
     if (A.finals.length) lines.push('파이널 클로즈: ' + A.finals.map((x) => `[${x.id}] ${x.gp} ${x.fund} ${x.size}`).join(' / '));
     if (A.launches.length) lines.push('모집 개시: ' + A.launches.map((x) => `[${x.id}] ${x.gp} ${x.fund} ${x.size}`).join(' / '));
     if (A.closes.length) lines.push('1차·중간 클로즈: ' + A.closes.map((x) => `[${x.id}] ${x.gp} ${x.fund} ${x.stage} ${x.size}`).join(' / '));
     if (A.krDeals.length) lines.push('국내 LP 딜: ' + A.krDeals.map((x) => `[${x.id}] ${x.inst} ${x.kind} ${x.amount} ${x.cp ? '← ' + x.cp : ''} ${x.overseas ? '(해외)' : '(국내)'} (${x.t})`).join(' / '));
-    if (A.themes.length) lines.push('테마 보도 건수(이번 주/직전 주/국내): ' + A.themes.map((t) => `${t.name} ${t.n}/${t.prev}/${t.kr}`).join(', '));
+    if (A.themes.length) lines.push('테마 보도 건수(이번 주/직전 주/국내): ' + A.themes.map((t) => `${t.name} ${t.n}/${t.prev == null ? '-' : t.prev}/${t.kr}`).join(', '));
     if (A.gps.length) {
       lines.push('운용사 언급: ' + A.gps.map((g) => `${g.gp} ${g.n}건`).join(', '));
       for (const g of A.gps) lines.push(`  · ${g.gp}: ` + g.items.map((x) => `[${x.id}] ${x.t}`).join(' / '));
@@ -381,17 +390,17 @@ function autoReport(ctx) {
     const A = ctx.perAsset[k], S = A.stats;
     const dt = Object.entries(S.dealTypes).map(([t, n]) => `${t} ${n}`).join('·');
     assets[k] = {
-      summary: S.articles ? `${label} 관련 보도 ${S.articles}건(직전 주 ${S.prevArticles}건), 딜 ${S.deals}건${dt ? `(${dt})` : ''}, 파이널 클로즈 ${S.finals}건·모집 개시 ${S.launches}건이 집계됨.` : '이번 주 수집된 관련 보도 없음.',
+      summary: S.articles ? `${label} 관련 보도 ${S.articles}건${S.prevArticles == null ? '' : `(직전 주 ${S.prevArticles}건)`}, 딜 ${S.deals}건${dt ? `(${dt})` : ''}, 파이널 클로즈 ${S.finals}건·모집 개시 ${S.launches}건이 집계됨.` : '이번 주 수집된 관련 보도 없음.',
       status: A.finals.length ? `파이널 클로즈: ${A.finals.map((x) => `${x.gp}${x.size ? ` ${x.size}` : ''}`).join(', ')}.` : '',
       korea: A.krDeals.length ? `국내 LP 딜: ${A.krDeals.map((x) => `${x.inst} ${x.kind}${x.amount ? ` ${x.amount}` : ''}`).join(', ')}.` : (S.krArticles ? `국내 투자자 관련 보도 ${S.krArticles}건.` : '이번 주 국내 투자자 관련 보도 없음.'),
       strategies: A.themes.filter((t) => t.kr).slice(0, 4).map((t) => t.name),
       gpIssues: A.gps.slice(0, 5).map((g) => ({ gp: g.gp, issue: g.items[0].t, refs: g.items.map((x) => x.id).slice(0, 3) })),
-      trends: A.themes.filter((t) => t.n >= 2).slice(0, 4).map((t) => ({ trend: `${t.name} 관련 보도 ${t.n}건(직전 주 ${t.prev}건)`, why: '', refs: t.ids })),
+      trends: A.themes.filter((t) => t.n >= 2).slice(0, 4).map((t) => ({ trend: `${t.name} 관련 보도 ${t.n}건${t.prev == null ? '' : `(직전 주 ${t.prev}건)`}`, why: '', refs: t.ids })),
     };
   }
   const top = ctx.krShare.slice().sort((x, y) => (y.articles + y.deals * 3) - (x.articles + x.deals * 3));
   return {
-    headline: `이번 주 보도 ${ctx.totals.articles}건(직전 주 ${ctx.totals.prevArticles}건), 딜 ${ctx.totals.deals}건 집계.`,
+    headline: `이번 주 보도 ${ctx.totals.articles}건${ctx.totals.prevArticles == null ? '' : `(직전 주 ${ctx.totals.prevArticles}건)`}, 딜 ${ctx.totals.deals}건 집계.`,
     korea: `국내 투자자 관련 보도는 ${top.filter((x) => x.articles).map((x) => `${x.label} ${x.articles}건`).join(', ') || '없음'}.`,
     assets,
   };

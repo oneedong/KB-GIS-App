@@ -100,29 +100,6 @@ function Logo({ size = 18, onClick }) {
   );
 }
 
-// ─── 문서 머리 — 미팅노트·월간보고 헤더(좌 KB증권 로고 / 가운데 제목+날짜 / 우 부서) ─────
-function DocHeader({ title, date, dept = '글로벌상품영업부', style }) {
-  const desktop = useDesktop();
-  const bd = `1px solid ${KB.rule}`;
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', ...(style || {}) }}>
-      <colgroup><col style={{ width: '23%' }} /><col style={{ width: '53%' }} /><col style={{ width: '24%' }} /></colgroup>
-      <tbody>
-        <tr>
-          <td rowSpan={2} style={{ border: bd, height: desktop ? 64 : 52, padding: '0 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-            <img src="./icons/kb-logo.svg" alt="KB증권" style={{ width: '92%', maxWidth: 150, height: 'auto', display: 'block', margin: '0 auto' }} />
-          </td>
-          <td style={{ border: bd, background: KB.head, color: KB.blue, textAlign: 'center', verticalAlign: 'middle', font: F(700, desktop ? 20 : 15.5, 1.25), padding: desktop ? '8px 6px' : '6px 4px', letterSpacing: '-.01em' }}>{title}</td>
-          <td rowSpan={2} style={{ border: bd, textAlign: 'center', verticalAlign: 'middle', font: F(500, desktop ? 15 : 12, 1.35), color: KB.ink, padding: '0 4px', wordBreak: 'keep-all' }}>{!desktop && dept === '글로벌상품영업부' ? <>글로벌상품<br />영업부</> : dept}</td>
-        </tr>
-        <tr>
-          <td style={{ border: bd, color: KB.blue, textAlign: 'center', verticalAlign: 'middle', font: F(500, desktop ? 14 : 12), padding: desktop ? '4px 6px' : '3px 4px' }}>{date}</td>
-        </tr>
-      </tbody>
-    </table>
-  );
-}
-
 // ─── 문서 요소 — 미팅노트의 표·불릿·강조 박스 ───────────────────────
 // 그리드 표 칸 스타일: 머리(회색 바탕·굵게·가운데) / 칸(테두리) / 태그 칸(블루 굵게·옅은 회색)
 const GRID = {

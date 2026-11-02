@@ -58,7 +58,7 @@ function WkAsset({ A, rep, onOpen, q }) {
     const grid = desktop ? { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 } : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 };
     const P = ({ children }) => React.createElement("div", { style: { font: F(400, 14.5, 1.8), color: KB.ink2, wordBreak: 'keep-all' } }, children);
     return (React.createElement(React.Fragment, null,
-        React.createElement(Section, { no: 1, title: `${A.label} 요약`, sub: `${wkDate(rep.from)} ~ ${wkDate(rep.to)}` }, A.summary ? React.createElement(FocusNote, { style: { font: F(500, 15, 1.75) } }, nm(A.summary)) : React.createElement(Empty, { compact: true, title: "\uC774\uBC88 \uC8FC \uC694\uC57D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" })),
+        React.createElement(Section, { first: true, no: 1, title: `${A.label} 요약`, sub: `${wkDate(rep.from)} ~ ${wkDate(rep.to)}` }, A.summary ? React.createElement(FocusNote, { style: { font: F(500, 15, 1.75) } }, nm(A.summary)) : React.createElement(Empty, { compact: true, title: "\uC774\uBC88 \uC8FC \uC694\uC57D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" })),
         React.createElement(Section, { no: 2, title: "\uC2DC\uC7A5 \uD604\uD669", sub: "\uC774\uBC88 \uC8FC \uC218\uC9D1 \uAE30\uC900" },
             React.createElement("div", { style: grid },
                 React.createElement(Metric, { label: "\uAD00\uB828 \uBCF4\uB3C4", value: `${S.articles || 0}건`, note: React.createElement(WkDelta, { cur: S.articles || 0, prev: S.prevArticles }) }),
@@ -155,7 +155,7 @@ function WkOverview({ rep, onAsset, onOpen, q }) {
     const maxKr = Math.max(1, ...kr.map((x) => x.articles + x.deals));
     const rows = WK_ASSETS.map(([k, label]) => ({ k, label, A: (rep.assets || {})[k] || {} })).filter(({ label, A }) => hit(`${label} ${A.summary || ''} ${A.korea || ''} ${(A.gpIssues || []).map((g) => g.gp + ' ' + g.issue).join(' ')}`));
     return (React.createElement(React.Fragment, null,
-        React.createElement(Section, { no: 1, title: "\uC774\uBC88 \uC8FC \uD55C \uC904", sub: `${wkDate(rep.from)} ~ ${wkDate(rep.to)}` },
+        React.createElement(Section, { first: true, no: 1, title: "\uC774\uBC88 \uC8FC \uD55C \uC904", sub: `${wkDate(rep.from)} ~ ${wkDate(rep.to)}` },
             React.createElement(FocusNote, { style: { font: F(700, 16, 1.65) } }, nm(rep.headline || '')),
             React.createElement("div", { style: { display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: F(500, 12.5), color: KB.sub } },
                 React.createElement("span", null,
@@ -261,8 +261,6 @@ function WeeklyScreen({ onOpen }) {
                         React.createElement("input", { value: q, onChange: (e) => setQ(e.target.value), placeholder: "\uC6B4\uC6A9\uC0AC\u00B7\uC774\uC288\u00B7\uD2B8\uB80C\uB4DC \uAC80\uC0C9 (\uC608: Blackstone, \uC138\uCEE8\uB354\uB9AC)", style: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: F(500, 15), color: KB.ink } }),
                         q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer', display: 'flex' } },
                             React.createElement(Ico, { n: "close", size: 18 })))),
-                rep && (React.createElement("div", { style: desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' } },
-                    React.createElement(DocHeader, { title: tab === 'all' ? '해외대체 주간 시장현황' : `${(WK_ASSETS.find(([k]) => k === tab) || [])[1]} 주간 시장현황`, date: `${wkDate(rep.date)}(${'일월화수목금토'[new Date(rep.date + 'T00:00:00Z').getUTCDay()]}) · ${wkShort(rep.from)}~${wkShort(rep.to)}` }))),
                 !index ? React.createElement(Empty, { title: "\uC2DC\uC7A5\uD604\uD669\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" })
                     : !index.length ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBC1C\uD589\uB41C \uC2DC\uC7A5\uD604\uD669\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC8FC \uB9C8\uC9C0\uB9C9 \uC601\uC5C5\uC77C \uC624\uD6C4\uC5D0 \uD55C \uC8FC\uB97C \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." })
                         : !rep ? React.createElement(Empty, { title: "\uBCF4\uACE0\uC11C\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" })

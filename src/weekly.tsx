@@ -61,7 +61,7 @@ function WkAsset({ A, rep, onOpen, q }) {
   const P = ({ children }) => <div style={{ font: F(400, 14.5, 1.8), color: KB.ink2, wordBreak: 'keep-all' }}>{children}</div>;
   return (
     <>
-      <Section no={1} title={`${A.label} 요약`} sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
+      <Section first no={1} title={`${A.label} 요약`} sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
         {A.summary ? <FocusNote style={{ font: F(500, 15, 1.75) }}>{nm(A.summary)}</FocusNote> : <Empty compact title="이번 주 요약이 없습니다" />}
       </Section>
 
@@ -198,7 +198,7 @@ function WkOverview({ rep, onAsset, onOpen, q }) {
   const rows = WK_ASSETS.map(([k, label]) => ({ k, label, A: (rep.assets || {})[k] || {} })).filter(({ label, A }) => hit(`${label} ${A.summary || ''} ${A.korea || ''} ${(A.gpIssues || []).map((g) => g.gp + ' ' + g.issue).join(' ')}`));
   return (
     <>
-      <Section no={1} title="이번 주 한 줄" sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
+      <Section first no={1} title="이번 주 한 줄" sub={`${wkDate(rep.from)} ~ ${wkDate(rep.to)}`}>
         <FocusNote style={{ font: F(700, 16, 1.65) }}>{nm(rep.headline || '')}</FocusNote>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: F(500, 12.5), color: KB.sub }}>
           <span>보도 {rep.totals ? rep.totals.articles : 0}건 <WkDelta cur={rep.totals ? rep.totals.articles : 0} prev={rep.totals ? rep.totals.prevArticles : null} /></span>
@@ -299,13 +299,6 @@ function WeeklyScreen({ onOpen }) {
               {q && <span onClick={() => setQ('')} style={{ color: KB.mute, cursor: 'pointer', display: 'flex' }}><Ico n="close" size={18} /></span>}
             </div>
           </div>
-          {rep && (
-            <div style={desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' }}>
-              <DocHeader
-                title={tab === 'all' ? '해외대체 주간 시장현황' : `${(WK_ASSETS.find(([k]) => k === tab) || [])[1]} 주간 시장현황`}
-                date={`${wkDate(rep.date)}(${'일월화수목금토'[new Date(rep.date + 'T00:00:00Z').getUTCDay()]}) · ${wkShort(rep.from)}~${wkShort(rep.to)}`} />
-            </div>
-          )}
           {!index ? <Empty title="시장현황을 불러오는 중입니다" />
             : !index.length ? <Empty title="아직 발행된 시장현황이 없습니다" desc="매주 마지막 영업일 오후에 한 주를 정리해 올립니다." />
             : !rep ? <Empty title="보고서를 불러오는 중입니다" />

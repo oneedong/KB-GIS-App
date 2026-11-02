@@ -387,10 +387,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
             </>
           ) : (
             <>
-              <div style={desktop ? { background: KB.bg, border: `1px solid ${KB.line}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '18px 20px', marginBottom: 16 } : { background: KB.bg, padding: '12px 20px 14px' }}>
-                <DocHeader title="데일리 시황" date={b.dateKey ? `${b.dateKey.slice(0, 4)}.${b.dateKey.slice(4, 6)}.${b.dateKey.slice(6, 8)}(${'일월화수목금토'[dk2d(b.dateKey).getUTCDay()]}) · 전일 마감 기준` : b.asOf} />
-              </div>
-              <Section no={1} title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
+              <Section first no={1} title="한줄 요약" sub="시장을 움직인 핵심 뉴스">
                 {top ? (
                   <a href={top.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', padding: '14px 16px', background: KB.yellowTint, borderRadius: 2, borderLeft: `4px solid ${KB.yellow}` }}>
                     <div style={{ font: F(700, 17, 1.5), color: KB.ink, wordBreak: 'keep-all' }}>{nm(stripMedia(top.title, top.source))}</div>

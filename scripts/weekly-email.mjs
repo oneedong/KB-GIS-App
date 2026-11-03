@@ -166,7 +166,7 @@ const Y = '#FFBC00', YS = '#FFF6DB', GR = '#60584C', INK = '#2B2722', MUT = '#7A
 const FT = "font-family:'Malgun Gothic','맑은 고딕',sans-serif;";
 const TB = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"';
 const X = (size, lh, color = INK) => `${FT}font-size:${size}px;line-height:${lh};color:${color};`;   // 글자 칸 공통
-const ROW = (inner, st = '', bg = '') => `<tr><td${bg ? ` bgcolor="${bg}"` : ''} style="${FT}${st}">${inner}</td></tr>`;
+const ROW = (inner, st = '', bg = '') => `<tr><td${bg ? ` bgcolor="${bg}"` : ''} style="${st.includes('font-family') ? '' : FT}${st}">${inner}</td></tr>`;
 const dChip = (cur, prev) => {
   if (!prev) return '';
   const p = Math.round(((cur - prev) / prev) * 100);

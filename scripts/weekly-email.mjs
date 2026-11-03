@@ -62,11 +62,16 @@ export function shape(rep) {
       ...(A.finals || []).map((x) => ({ ...x, stage: '파이널 클로즈', fin: true })),
       ...(A.launches || []).map((x) => ({ ...x, stage: '모집 개시' })),
       ...(A.closes || []).map((x) => ({ ...x, stage: x.stage || '클로즈' })),
-    ].map((x) => ({ stage: x.stage, fin: !!x.fin, gp: x.gp || '', fund: x.fund && x.fund !== x.gp ? x.fund : '', size: x.size || '미상', src: src([x.id], 1) }));
+    ].map((x) => ({ stage: x.stage, fin: !!x.fin, gp: x.gp || '', fund: x.fund && x.fund !== x.gp ? x.fund : '', size: x.size || '미상', src: src([x.id], 1) }))
+      // 같은 운용사·같은 단계·같은 금액이 이름만 달리 두 번 잡힌 펀드는 하나로(기사마다 펀드명 표기가 달라 생김)
+      .filter((f, i, arr) => {
+        const key = (g) => `${g.gp.toLowerCase().replace(/[^0-9a-z가-힣]/g, '').slice(0, 8)}|${g.stage}|${g.size.toLowerCase().replace(/\s/g, '')}`;
+        return f.size === '미상' || arr.findIndex((g) => key(g) === key(f)) === i;
+      });
     return {
       k, label: A.label || k, summary: A.summary || '', status: A.status || '', korea: A.korea || '',
       strategies: A.strategies || [],
-      stats: { articles: S.articles || 0, prev: S.prevArticles || 0, deals: S.deals || 0, finals: S.finals || 0, launches: (S.launches || 0) + (S.otherCloses || 0), kr: S.krArticles || 0 },
+      stats: { articles: S.articles || 0, prev: S.prevArticles || 0, deals: S.deals || 0, finals: funds.filter((f) => f.fin).length, launches: funds.filter((f) => !f.fin).length, kr: S.krArticles || 0 },
       gp: (A.gpIssues || []).map((g) => ({ gp: g.gp, text: g.issue, src: src(g.refs) })).filter((g) => g.text),
       trends: (A.trends || []).map((t) => ({ trend: t.trend, why: t.why || '', src: src(t.refs) })).filter((t) => t.trend),
       funds,

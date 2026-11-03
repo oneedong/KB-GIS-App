@@ -156,54 +156,86 @@ function attachment(M) {
 }
 
 // ── 메일 본문 HTML (table + 인라인) ─────────────────────────────
+// 좌우 여백 없이 메일 창 폭을 꽉 채운다(바깥 회색 여백·카드 테두리 중첩 없음). 구획은 테두리 상자 대신
+// 전폭 띠(헤더·자산군 머리)와 얇은 구분선으로 나눠, 휴대폰에서도 본문이 화면 폭을 그대로 쓴다.
 const F = "font-family:'Malgun Gothic',sans-serif;word-break:keep-all;overflow-wrap:anywhere;";
-const Y = '#FFBC00', YS = '#FFF6DB', GR = '#60584C', INK = '#2B2722', MUT = '#7A7268', LN = '#E7E2DA', BG = '#F5F3EF', CH = '#F0ECE5', BL = '#2F5597';
+const Y = '#FFBC00', YS = '#FFF6DB', GR = '#60584C', INK = '#2B2722', MUT = '#7A7268', LN = '#E7E2DA', CH = '#F4F1EC', BL = '#2F5597', UP = '#C0392B';
+const PAD = '14px';
 const TB = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"';
-const row = (inner, pad = '0 16px 10px') => `<tr><td style="padding:${pad};${F}">${inner}</td></tr>`;
-const sec = (t, sub) => row(`${TB}><tr><td width="6" bgcolor="${Y}" style="background:${Y};width:6px;font-size:0">&nbsp;</td><td style="padding:2px 0 2px 9px;${F}font-size:17px;font-weight:bold;color:${INK}">${E(t)}${sub ? ` <span style="font-size:12px;color:${MUT};font-weight:normal">${E(sub)}</span>` : ''}</td></tr></table>`, '22px 16px 10px');
-const sub = (t) => `<div style="font-size:12.5px;font-weight:bold;color:${GR};letter-spacing:.5px;margin:14px 0 6px">${E(t)}</div>`;
-const srcE = (s) => s.length ? `<div style="margin-top:4px;font-size:12px;color:${MUT}">${s.map((x) => `<a href="${E(x.u)}" style="color:${INK};font-weight:bold">${E(x.m)} ↗</a>`).join(' &nbsp;')}</div>` : '';
-const box = (inner, extra = '') => `${TB} style="border:1px solid ${LN};${extra}"><tr><td style="padding:12px 14px;${F}">${inner}</td></tr></table>`;
+const td = (inner, st = '') => `<td style="${F}${st}">${inner}</td>`;
+const tr = (inner, st = '', bg = '') => `<tr><td${bg ? ` bgcolor="${bg}"` : ''} style="${F}padding:0 ${PAD};${bg ? `background:${bg};` : ''}${st}">${inner}</td></tr>`;
+const gap = (h = 10, bg = '') => `<tr><td height="${h}"${bg ? ` bgcolor="${bg}"` : ''} style="height:${h}px;line-height:${h}px;font-size:0;${bg ? `background:${bg};` : ''}">&nbsp;</td></tr>`;
+const band = () => gap(8, CH);   // 자산군 사이 전폭 구분 띠
+const dChip = (cur, prev) => {
+  if (!prev) return '';
+  const p = Math.round(((cur - prev) / prev) * 100);
+  const c = p > 0 ? UP : p < 0 ? BL : MUT;
+  return `<span style="font-size:11.5px;font-weight:bold;color:${c};white-space:nowrap">${p > 0 ? '▲' : p < 0 ? '▼' : '–'}${Math.abs(p)}%</span>`;
+};
+const secT = (no, t, sub) => `${TB}><tr>${td(`<span style="display:inline-block;background:${INK};color:${Y};font-size:11px;font-weight:bold;padding:2px 6px;margin-right:7px;vertical-align:2px">${no}</span><span style="font-size:18px;font-weight:bold;color:${INK}">${E(t)}</span>${sub ? `<span style="font-size:12px;color:${MUT};margin-left:6px">${E(sub)}</span>` : ''}`, `padding:18px 0 8px;border-bottom:2px solid ${INK}`)}</tr></table>`;
+const lab = (t) => `<div style="font-size:12px;font-weight:bold;color:${GR};letter-spacing:.5px;margin:16px 0 6px;padding-left:7px;border-left:3px solid ${Y};line-height:1.2">${E(t)}</div>`;
+const P = (t, st = '') => `<div style="font-size:15px;color:${INK};line-height:1.75;${st}">${E(t)}</div>`;
+const links = (s) => s.length ? ` <span style="font-size:12px;white-space:normal">${s.map((x) => `<a href="${E(x.u)}" style="color:${BL};text-decoration:underline">${E(x.m)}</a>`).join(' · ')}</span>` : '';
 
 function emailBody(M, withPage) {
   const WEB = withPage ? M.page : APP;
-  const R = [];
-  R.push(`<div style="margin:0;padding:0;background:${BG}">${TB} bgcolor="${BG}" style="background:${BG}"><tr><td align="center" style="padding:12px 4px">`);
-  R.push('<!--[if mso]><table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->');
-  R.push(`${TB} style="max-width:680px;background:#FFFFFF;border:1px solid ${LN}">`);
-  R.push(`<tr><td height="5" bgcolor="${Y}" style="height:5px;line-height:5px;font-size:0;background:${Y}">&nbsp;</td></tr>`);
-  const BTN = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="right"><tr><td bgcolor="${Y}" style="background:${Y};border-radius:12px;mso-padding-alt:5px 11px"><a href="${WEB}" style="display:inline-block;padding:5px 11px;${F}font-size:12px;font-weight:bold;color:${INK};text-decoration:none;white-space:nowrap">${withPage ? '웹에서 보기' : '모바일로 조회'} &#8250;</a></td></tr></table>`;
-  R.push(row(`${TB}><tr><td style="${F}font-size:10.5px;color:${MUT};line-height:1.4">${withPage ? '휴대폰에서는 \'웹에서 보기\'가 화면에 맞춰 표시됩니다.' : `<a href="${APP}" style="color:${MUT}">KB GIS 앱</a>에서 기사 원문을 볼 수 있습니다.`}</td><td align="right" width="104" style="padding-left:6px">${BTN}</td></tr></table>`, '10px 16px 0'));
-  R.push(row(`<div style="font-size:12px;font-weight:bold;letter-spacing:1px;color:${GR}"><span style="color:${Y}">■</span> KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</div><div style="font-size:22px;font-weight:bold;color:${INK};line-height:1.3;margin:6px 0">${TITLE}</div><div style="font-size:12.5px;color:${MUT};line-height:1.6"><b style="color:${INK}">${E(dot(M.date))} (${dow(M.date)}) 기준</b> · 수집 ${E(md(M.from))} ~ ${E(md(M.to))}<br>분석 ${E(M.via)} · 자산군 ${M.assets.length}개</div>`, '10px 16px 6px'));
-  const st = (n, l, k) => `<td width="33%" style="padding:3px">${TB} style="border:1px solid ${LN};${k ? `border-bottom:3px solid ${Y};` : ''}"><tr><td style="padding:8px 9px;${F}"><div style="font-size:19px;font-weight:bold;color:${INK};line-height:1.2">${n}</div><div style="font-size:12px;color:${MUT}">${E(l)}</div></td></tr></table></td>`;
   const fin = M.assets.reduce((n, a) => n + a.stats.finals, 0);
-  R.push(row(`${TB}><tr>${st(num(M.totals.articles), `관련 보도 ${dshort(M.totals.articles, M.totals.prev)}`, 0)}${st(num(M.totals.deals), '딜·펀드 기록', 0)}${st(num(fin), '파이널 클로즈', 1)}</tr></table>`, '10px 13px 6px'));
-  if (M.headline) R.push(row(`${TB} bgcolor="${YS}" style="background:${YS};border-left:4px solid ${Y}"><tr><td style="padding:13px 16px;${F}"><div style="font-size:12px;font-weight:bold;letter-spacing:1px;color:${GR};margin-bottom:6px">이번 주 한 줄</div><div style="font-size:15.5px;font-weight:bold;color:${INK};line-height:1.6">${E(M.headline)}</div></td></tr></table>`, '6px 16px 4px'));
+  const R = [];
+  R.push(`<div style="margin:0;padding:0;background:#FFFFFF">${TB} bgcolor="#FFFFFF" style="background:#FFFFFF;${F}">`);
+  // 헤더 — 전폭 노란 띠
+  R.push(tr(`${TB}><tr>${td(`<div style="font-size:11.5px;font-weight:bold;letter-spacing:1px;color:${INK}">KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</div>`
+    + `<div style="font-size:23px;font-weight:bold;color:${INK};line-height:1.3;margin:6px 0 4px">${TITLE}</div>`
+    + `<div style="font-size:13px;color:${INK};line-height:1.6"><b>${E(dot(M.date))} (${dow(M.date)}) 기준</b> · 수집 ${E(md(M.from))} ~ ${E(md(M.to))} · 분석 ${E(M.via)}</div>`
+    + `<div style="margin-top:10px"><a href="${WEB}" style="display:inline-block;background:${INK};color:#FFFFFF;font-size:12.5px;font-weight:bold;text-decoration:none;padding:6px 12px;border-radius:3px">${withPage ? '웹에서 보기 (휴대폰 최적화)' : 'KB GIS 앱 열기'} &#8250;</a></div>`,
+    'padding:18px 0 16px')}</tr></table>`, '', Y));
+  // 핵심 수치 — 전폭 3칸
+  const kpi = (n, l, extra) => td(`<div style="font-size:24px;font-weight:bold;color:${INK};line-height:1.15">${n}</div><div style="font-size:12px;color:${MUT};margin-top:3px">${l}${extra ? ` ${extra}` : ''}</div>`, `width:33%;padding:12px 8px 12px 0;vertical-align:top`);
+  R.push(tr(`${TB}><tr>${kpi(num(M.totals.articles), '관련 보도', dChip(M.totals.articles, M.totals.prev))}${kpi(num(M.totals.deals), '딜·펀드 기록')}${kpi(num(fin), '파이널 클로즈')}</tr></table>`, `border-bottom:1px solid ${LN}`, CH));
+  // 이번 주 한 줄
+  if (M.headline) R.push(tr(`${TB}><tr>${td(`<div style="font-size:12px;font-weight:bold;color:${GR};letter-spacing:1px;margin-bottom:6px">이번 주 한 줄</div><div style="font-size:17px;font-weight:bold;color:${INK};line-height:1.6">${E(M.headline)}</div>`, `padding:16px 0 16px 12px;border-left:4px solid ${Y}`)}</tr></table>`, 'padding-top:14px'));
+  let no = 1;
+  const N = () => String(no++).padStart(2, '0');
+  // 한국 투자자 동향
   if (M.korea || M.krShare.length) {
-    R.push(sec('한국 투자자 동향'));
-    R.push(row(box(`${M.korea ? `<div style="font-size:14.5px;color:${INK};line-height:1.75">${E(M.korea)}</div>` : ''}${M.krShare.length ? `<div style="margin-top:8px;font-size:12px;color:${MUT};line-height:2">${M.krShare.map((x) => `<span style="display:inline-block;background:${Y};color:${INK};font-weight:bold;border-radius:10px;padding:0 8px;margin:0 4px 3px 0;white-space:nowrap">${E(x.label)} 기사 ${x.articles}${x.deals ? ` · 딜 ${x.deals}` : ''}</span>`).join('')}</div>` : ''}`)));
+    R.push(tr(secT(N(), '한국 투자자 동향')));
+    R.push(tr((M.korea ? P(M.korea, 'margin-top:10px') : '')
+      + (M.krShare.length ? `<div style="margin-top:10px;line-height:2.1">${M.krShare.map((x) => `<span style="display:inline-block;background:${YS};border:1px solid ${Y};color:${INK};font-size:12px;font-weight:bold;padding:0 8px;margin:0 4px 0 0;white-space:nowrap;line-height:22px">${E(x.label)} ${x.articles}건${x.deals ? ` · 딜 ${x.deals}` : ''}</span>`).join('')}</div>` : '')));
   }
-  R.push(sec('자산군별 한눈에'));
-  R.push(row(`${TB} style="border:1px solid ${LN}"><tr>${['자산군', '보도', '요약'].map((h) => `<td bgcolor="${CH}" style="background:${CH};padding:7px 10px;${F}font-size:12px;font-weight:bold;color:${GR}">${h}</td>`).join('')}</tr>`
-    + M.assets.map((a) => `<tr><td width="24%" style="padding:9px 8px 9px 10px;border-top:1px solid ${LN};${F}font-size:13px;font-weight:bold;color:${INK};vertical-align:top;line-height:1.4">${E(a.label)}</td><td width="16%" style="padding:9px 6px;border-top:1px solid ${LN};${F}font-size:13px;color:${INK};vertical-align:top">${num(a.stats.articles)}<div style="font-size:11px;color:${MUT};line-height:1.35">${E(dshort(a.stats.articles, a.stats.prev))}</div></td><td style="padding:9px 10px;border-top:1px solid ${LN};${F}font-size:13.5px;color:${INK};line-height:1.6;vertical-align:top">${E(a.summary || '—')}</td></tr>`).join('') + '</table>'));
+  // 자산군별 한눈에 — 전폭 표
+  R.push(tr(secT(N(), '자산군별 한눈에', '보도 건수 · 전주 대비')));
+  R.push(tr(`${TB} style="margin-top:4px">` + M.assets.map((a, i) => `<tr>`
+    + td(`<div style="font-size:14px;font-weight:bold;color:${INK};line-height:1.35">${E(a.label)}</div><div style="font-size:12.5px;color:${MUT};margin-top:2px;white-space:nowrap">${num(a.stats.articles)}건 ${dChip(a.stats.articles, a.stats.prev)}</div>`, `width:128px;padding:11px 10px 11px 0;vertical-align:top;${i ? `border-top:1px solid ${LN};` : ''}`)
+    + td(`<div style="font-size:14px;color:${INK};line-height:1.65">${E(a.summary || '—')}</div>`, `padding:11px 0;vertical-align:top;${i ? `border-top:1px solid ${LN};` : ''}`)
+    + `</tr>`).join('') + '</table>'));
+  R.push(gap(16));
+  // 자산군별 상세
   for (const a of M.assets) {
-    R.push(sec(a.label, `보도 ${num(a.stats.articles)} · 딜 ${num(a.stats.deals)} · 파이널 클로즈 ${a.stats.finals}`));
-    let inner = '';
-    if (a.status) inner += `${sub('시장 현황')}<div style="font-size:14.5px;color:${INK};line-height:1.75">${E(a.status)}</div>`;
-    if (a.korea || a.kr.length) inner += `${sub('한국 투자자')}${a.korea ? `<div style="font-size:14.5px;color:${INK};line-height:1.75">${E(a.korea)}</div>` : ''}`
-      + a.kr.map((d) => `<div style="font-size:13px;color:${INK};line-height:1.6;margin-top:4px">· <b>${E(d.inst)}</b> ${E(d.kind)}${d.amount ? ` · ${E(d.amount)}` : ''}${d.src.map((x) => ` <a href="${E(x.u)}" style="color:${INK};font-weight:bold">${E(x.m)} ↗</a>`).join('')}</div>`).join('');
-    if (a.gp.length) inner += sub('운용사별 이슈') + a.gp.map((g) => `<div style="padding:8px 0;border-top:1px dashed ${LN}"><div style="font-size:14px;color:${INK};line-height:1.65"><b style="color:${GR}">${E(g.gp)}</b> — ${E(g.text)}</div>${srcE(g.src)}</div>`).join('');
-    if (a.trends.length) inner += sub('트렌드와 그 이유') + a.trends.map((t) => `<div style="padding:8px 0;border-top:1px dashed ${LN}"><div style="font-size:14px;font-weight:bold;color:${INK};line-height:1.6">${E(t.trend)}</div>${t.why ? `<div style="font-size:13.5px;color:${INK};line-height:1.7;margin-top:2px">${E(t.why)}</div>` : ''}${srcE(t.src)}</div>`).join('');
-    // 펀드 표는 웹 페이지에만 두고, 메일에는 파이널 클로즈만 한 줄로(메일 크기를 줄여 클라이언트 잘림·전사 오류를 막는다)
+    R.push(band());
+    R.push(tr(`${TB}><tr>${td(`<span style="font-size:19px;font-weight:bold;color:${INK}">${E(a.label)}</span>`, 'padding:16px 0 4px')}</tr><tr>${td(`<span style="font-size:12.5px;color:${MUT}">보도 <b style="color:${INK}">${num(a.stats.articles)}</b>건 ${dChip(a.stats.articles, a.stats.prev)} &nbsp;·&nbsp; 딜 <b style="color:${INK}">${num(a.stats.deals)}</b> &nbsp;·&nbsp; 파이널 클로즈 <b style="color:${INK}">${a.stats.finals}</b></span>`, `padding:0 0 10px;border-bottom:2px solid ${Y}`)}</tr></table>`));
+    let c = '';
+    if (a.summary) c += P(a.summary, 'font-weight:bold;margin-top:12px');
+    if (a.status) c += lab('시장 현황') + P(a.status);
+    if (a.korea || a.kr.length) {
+      c += lab('한국 투자자') + (a.korea ? P(a.korea) : '')
+        + a.kr.map((d) => `<div style="font-size:14px;color:${INK};line-height:1.6;margin-top:5px">· <b>${E(d.inst)}</b> ${E(d.kind)}${d.amount ? ` <b>${E(d.amount)}</b>` : ''}${links(d.src)}</div>`).join('');
+    }
+    if (a.gp.length) {
+      c += lab('운용사별 이슈') + `${TB}>` + a.gp.map((g, i) => `<tr>${td(`<div style="font-size:14px;font-weight:bold;color:${INK};line-height:1.4">${E(g.gp)}</div><div style="font-size:14.5px;color:${INK};line-height:1.7;margin-top:2px">${E(g.text)}${links(g.src)}</div>`, `padding:9px 0;${i ? `border-top:1px dashed ${LN};` : ''}`)}</tr>`).join('') + '</table>';
+    }
+    if (a.trends.length) {
+      c += lab('트렌드와 그 이유') + a.trends.map((t, i) => `<div style="margin:${i ? 12 : 4}px 0 0"><div style="font-size:15px;font-weight:bold;color:${INK};line-height:1.55"><span style="color:${GR}">${'①②③④⑤⑥'[i] || '·'}</span> ${E(t.trend)}</div>${t.why ? `<div style="font-size:14.5px;color:${INK};line-height:1.7;margin-top:3px">${E(t.why)}${links(t.src)}</div>` : links(t.src)}</div>`).join('');
+    }
     const fins = a.funds.filter((f) => f.fin), rest = a.funds.length - fins.length;
-    if (fins.length || rest) inner += sub('펀드레이징') + `<div style="font-size:13.5px;color:${INK};line-height:1.7">`
-      + (fins.length ? `<b style="color:#9A6B00">파이널 클로즈</b> ${fins.map((f) => `${E(f.fund || f.gp)}${f.fund && !f.fund.includes(f.gp) ? ` (${E(f.gp)})` : ''} <b>${E(f.size)}</b>`).join(' · ')}` : '')
-      + (rest ? `<div style="font-size:12px;color:${MUT}">모집 개시·기타 클로즈 ${rest}건${withPage ? ' — 웹에서 보기에 표로 정리' : ''}</div>` : '') + '</div>';
-    if (!inner) inner = `<div style="font-size:13.5px;color:${MUT}">이번 주 정리할 이슈가 없습니다.</div>`;
-    R.push(row(box(inner)));
+    if (fins.length || rest) {
+      c += lab('펀드레이징') + (fins.length ? `${TB}>` + fins.map((f, i) => `<tr>${td(`<span style="font-size:11px;font-weight:bold;color:#9A6B00;background:${YS};padding:1px 5px;margin-right:6px;white-space:nowrap">파이널</span><span style="font-size:14px;color:${INK};line-height:1.6">${f.src[0] ? `<a href="${E(f.src[0].u)}" style="color:${INK};text-decoration:none">${E(f.fund || f.gp)}</a>` : E(f.fund || f.gp)}${f.fund && !f.fund.includes(f.gp) ? ` <span style="color:${MUT};font-size:12.5px">${E(f.gp)}</span>` : ''}</span>`, `padding:7px 8px 7px 0;${i ? `border-top:1px solid ${LN};` : ''}`)}${td(`<b style="font-size:14px;color:${INK};white-space:nowrap">${E(f.size)}</b>`, `padding:7px 0;text-align:right;vertical-align:top;${i ? `border-top:1px solid ${LN};` : ''}`)}</tr>`).join('') + '</table>' : '')
+        + (rest ? `<div style="font-size:12.5px;color:${MUT};margin-top:6px">모집 개시·기타 클로즈 ${rest}건${withPage ? ` — <a href="${E(M.page)}#a-${a.k}" style="color:${BL}">웹에서 표로 보기</a>` : ''}</div>` : '');
+    }
+    if (!c) c = `<div style="font-size:14px;color:${MUT};margin-top:12px">이번 주 정리할 이슈가 없습니다.</div>`;
+    R.push(tr(c, 'padding-bottom:18px'));
   }
-  R.push(row(`<div style="border-top:1px solid ${LN};padding-top:12px;font-size:11px;color:${MUT};line-height:1.6">${DISC}<br>문장 작성: ${E(M.via)} · 수치·펀드 표: 앱 수집 기록 집계${withPage ? ` · 웹에서 보기: <a href="${E(M.page)}" style="color:${MUT}">${E(M.page)}</a>` : ''}</div>`, '18px 16px 22px'));
-  R.push('</table><!--[if mso]></td></tr></table><![endif]--></td></tr></table></div>');
+  R.push(band());
+  R.push(tr(`<div style="font-size:11.5px;color:${MUT};line-height:1.65">${DISC}<br>문장 작성: ${E(M.via)} · 수치·펀드: 앱 수집 기록 집계${withPage ? ` · <a href="${E(M.page)}" style="color:${MUT}">웹에서 보기</a>` : ''} · <a href="${APP}" style="color:${MUT}">KB GIS 앱</a></div>`, 'padding-top:14px;padding-bottom:20px'));
+  R.push('</table></div>');
   return R.join('');
 }
 
@@ -267,7 +299,7 @@ async function main() {
   const meta = { subject: M.subject, subjectKey: SUBJECT_KEY, reportDate: M.date, from: M.from, to: M.to, via: M.via, page: withPage ? M.page : null };
   await writeFile(new URL('meta.json', out), JSON.stringify(meta, null, 1) + '\n');
   console.log(`OK ${M.subject}`);
-  console.log(`   email.html ${Buffer.byteLength(mail)}B · body.txt ${Buffer.byteLength(txt)}B · 자산군 ${M.assets.length} · 출처 링크 ${(mail.match(/↗/g) || []).length} · 웹에서 보기 ${withPage ? M.page : '없음'}`);
+  console.log(`   email.html ${Buffer.byteLength(mail)}B · body.txt ${Buffer.byteLength(txt)}B · 자산군 ${M.assets.length} · 링크 ${(mail.match(/<a href/g) || []).length} · 웹에서 보기 ${withPage ? M.page : '없음'}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main().catch((e) => { console.error(e); process.exit(1); });

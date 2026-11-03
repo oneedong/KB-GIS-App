@@ -53,7 +53,7 @@ async function main() {
   if (!claudeReady()) { console.log('ANTHROPIC_API_KEY 없음 — 건너뜀'); return; }
 
   const budget = await openBudget('brief');
-  const r = await ask(budget, { model: MODELS.brief, system: SYSTEM, prompt, maxTokens: 6000, effort: 'medium', schema: SCHEMA });
+  const r = await ask(budget, { model: MODELS.brief, system: SYSTEM, prompt, maxTokens: 4000, effort: 'medium', schema: SCHEMA });
   await budget.save();
   console.log(budget.summary());
   if (!r || !r.json) { console.log('브리핑을 만들지 못해 기존 브리핑을 둠'); return; }

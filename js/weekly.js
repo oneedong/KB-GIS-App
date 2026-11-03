@@ -4,7 +4,7 @@
  * KB GIS — 주간 시장현황 (Private Equity · Private Credit · Real Estate · Infrastructure · Aviation)
  *
  * weekly/index.json(보고서 목록) → weekly/YYYYMMDD.json(한 주 보고서)을 읽어 보여 준다.
- * 보고서는 매주 마지막 영업일에 scripts/weekly-market.mjs 가 만든다.
+ * 보고서는 매주 월요일 아침 scripts/weekly-market.mjs 가 지난주(월~일)분을 만든다.
  * 자산군마다: 요약 · 시장 현황(수치) · 한국 투자자 · 운용사별 이슈 · 트렌드와 이유 · 테마 보도 추이
  * profiles.tsx 다음, app.tsx 앞에 로드된다(전역 KB·F·Ico·Section 등 사용).
  */
@@ -241,7 +241,7 @@ function WeeklyScreen({ onOpen }) {
         scrollRef.current.scrollTop = 0; };
     const cur = (index || [])[pos];
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
-        React.createElement(TopBar, { big: true, title: "\uC2DC\uC7A5\uD604\uD669", sub: rep ? `${wkDate(rep.from)} ~ ${wkDate(rep.to)} · 매주 마지막 영업일 갱신 · ${viaLabel(rep.via)}` : '주간 자산군별 시장현황', border: false }),
+        React.createElement(TopBar, { big: true, title: "\uC2DC\uC7A5\uD604\uD669", sub: rep ? `${wkDate(rep.from)} ~ ${wkDate(rep.to)} · 매주 월요일 갱신(지난주 월~일) · ${viaLabel(rep.via)}` : '주간 자산군별 시장현황', border: false }),
         index && index.length > 0 && (React.createElement("div", { style: { flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px 10px', background: KB.bg } },
             React.createElement("span", { onClick: () => go(1), style: { cursor: pos < index.length - 1 ? 'pointer' : 'default', color: pos < index.length - 1 ? KB.sub : KB.faint, transform: 'scaleX(-1)', display: 'flex' } },
                 React.createElement(Ico, { n: "chevron", size: 20, sw: 2 })),
@@ -267,7 +267,7 @@ function WeeklyScreen({ onOpen }) {
                         q && React.createElement("span", { onClick: () => setQ(''), style: { color: KB.mute, cursor: 'pointer', display: 'flex' } },
                             React.createElement(Ico, { n: "close", size: 18 })))),
                 !index ? React.createElement(Empty, { title: "\uC2DC\uC7A5\uD604\uD669\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" })
-                    : !index.length ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBC1C\uD589\uB41C \uC2DC\uC7A5\uD604\uD669\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC8FC \uB9C8\uC9C0\uB9C9 \uC601\uC5C5\uC77C \uC624\uD6C4\uC5D0 \uD55C \uC8FC\uB97C \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." })
+                    : !index.length ? React.createElement(Empty, { title: "\uC544\uC9C1 \uBC1C\uD589\uB41C \uC2DC\uC7A5\uD604\uD669\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB9E4\uC8FC \uC6D4\uC694\uC77C \uC544\uCE68\uC5D0 \uC9C0\uB09C\uC8FC(\uC6D4~\uC77C)\uB97C \uC815\uB9AC\uD574 \uC62C\uB9BD\uB2C8\uB2E4." })
                         : !rep ? React.createElement(Empty, { title: "\uBCF4\uACE0\uC11C\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" })
                             : tab === 'all' ? React.createElement(WkOverview, { rep: rep, onAsset: openAsset, onOpen: onOpen, q: q })
                                 : React.createElement(WkAsset, { A: { label: (WK_ASSETS.find(([k]) => k === tab) || [])[1], ...((rep.assets || {})[tab] || {}) }, rep: rep, onOpen: onOpen, q: q }),

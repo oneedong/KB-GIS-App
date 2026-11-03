@@ -13,7 +13,7 @@
  *
  *   node scripts/weekly-email.mjs --page                    # 최신 보고서의 웹 페이지(weekly/<날짜>.html) 만들기 — 주간 워크플로가 실행
  *   node scripts/weekly-email.mjs --out DIR                 # 최신 보고서 메일
- *   node scripts/weekly-email.mjs --out DIR --fresh         # 최신 보고서가 6일보다 오래됐으면(이번 주 것이 아직 없으면) NOT_READY 출력 후 종료코드 3
+ *   node scripts/weekly-email.mjs --out DIR --fresh         # 최신 보고서(그 주 일요일)가 6일보다 오래됐으면(지난주분이 아직 없으면) NOT_READY 출력 후 종료코드 3
  *   node scripts/weekly-email.mjs --out DIR --date 2026-10-30
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -34,6 +34,7 @@ const E = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 const dot = (d) => String(d).replace(/-/g, '.');
 const md = (d) => { const m = String(d).match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}.${+m[2]}` : String(d); };
+const md2 = (d) => String(d).slice(5).replace('-', '.');   // 2026-11-08 → 11.08
 const dow = (d) => DOW[new Date(`${d}T00:00:00Z`).getUTCDay()];
 const srcShort = (s) => { const t = String(s || '').split(/,\s|\s[-|–]\s/)[0].trim(); return !t ? '기사' : t.length > 26 ? t.slice(0, 25) + '…' : t; };
 const dshort = (cur, prev) => { if (!prev) return ''; const p = Math.round(((cur - prev) / prev) * 100); return `전주 ${p > 0 ? '+' : ''}${p}%`; };
@@ -85,7 +86,9 @@ export function shape(rep) {
     totals: { articles: T.articles || 0, prev: T.prevArticles || 0, deals: T.deals || 0 },
     krShare: (rep.krShare || []).filter((x) => x.articles || x.deals),
     assets,
-    subject: `${SUBJECT_KEY} — ${dot(rep.date)} (${dow(rep.date)}) 기준`,
+    // 제목 = 보고 주간(월~일). 중복 발송 확인의 기준이므로 형식을 바꾸지 않는다. 예: '… — 2026.11.02~11.08'
+    subject: `${SUBJECT_KEY} — ${dot(rep.from)}~${md2(rep.to)}`,
+    period: `${dot(rep.from)} (${dow(rep.from)}) ~ ${md2(rep.to)} (${dow(rep.to)})`,
     key: String(rep.date).replace(/-/g, ''),
     page: `${APP}weekly/${String(rep.date).replace(/-/g, '')}.html`,
   };
@@ -125,7 +128,7 @@ function attachment(M) {
   const H = [];
   H.push(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>KB GIS 주간 시장현황 ${E(dot(M.date))}</title><style>${CSS}</style></head><body>`);
   H.push(`<div class="top"></div><div class="wrap"><div class="tb"><span class="inf"><a href="${APP}">${APP}</a> 에서 기사 원문과 상세 현황을 볼 수 있습니다.</span><a class="mb" href="${APP}">모바일로 조회 ›</a></div>`);
-  H.push(`<header><div class="br"><i></i>KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</div><h1>${TITLE}</h1><div class="mt"><b>${E(dot(M.date))} (${dow(M.date)}) 기준</b> · 수집 ${E(md(M.from))} ~ ${E(md(M.to))} · 분석 ${E(M.via)}</div></header>`);
+  H.push(`<header><div class="br"><i></i>KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</div><h1>${TITLE}</h1><div class="mt"><b>${E(M.period)}</b> 주간 · 분석 ${E(M.via)}</div></header>`);
   H.push(`<div class="sts"><div class="st"><b>${num(M.totals.articles)}</b><span>관련 보도 · ${E(delta(M.totals.articles, M.totals.prev) || '—')}</span></div><div class="st"><b>${num(M.totals.deals)}</b><span>딜·펀드 기록</span></div><div class="st k"><b>${num(M.assets.reduce((n, a) => n + a.stats.finals, 0))}</b><span>파이널 클로즈</span></div></div>`);
   if (M.headline) H.push(`<section class="hl"><h2>이번 주 한 줄</h2><p>${E(M.headline)}</p></section>`);
   if (M.korea || M.krShare.length) {
@@ -188,7 +191,7 @@ function emailBody(M, withPage) {
   // 헤더 — 전폭 노란 띠
   R.push(tr(`<div style="font-size:11.5px;font-weight:bold;letter-spacing:1px">KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</div>`
     + `<div style="font-size:23px;font-weight:bold;line-height:1.3;margin:6px 0 4px">${TITLE}</div>`
-    + `<div style="font-size:13px"><b>${E(dot(M.date))} (${dow(M.date)}) 기준</b> · 수집 ${E(md(M.from))} ~ ${E(md(M.to))} · 분석 ${E(M.via)}</div>`
+    + `<div style="font-size:13px"><b>${E(M.period)}</b> 주간 · 분석 ${E(M.via)}</div>`
     + `<div style="margin-top:10px"><a href="${WEB}" style="display:inline-block;background:${INK};color:#FFFFFF;font-size:12.5px;font-weight:bold;text-decoration:none;padding:6px 12px">${withPage ? '웹에서 보기 (휴대폰 최적화)' : 'KB GIS 앱 열기'} &#8250;</a></div>`,
     'padding-top:18px;padding-bottom:16px', Y));
   // 핵심 수치 — 전폭 3칸
@@ -240,7 +243,7 @@ function emailBody(M, withPage) {
 
 function plainText(M, withPage) {
   // HTML 을 못 보는 메일 프로그램용 요약본 — 짧게(상세·출처는 HTML 본문과 웹 페이지에)
-  const T = [`KB증권 GIS · ${TITLE}`, `${dot(M.date)} (${dow(M.date)}) 기준 · 수집 ${md(M.from)} ~ ${md(M.to)} · 분석 ${M.via}`, withPage ? `웹에서 보기: ${M.page}` : `KB GIS 앱: ${APP}`, '',
+  const T = [`KB증권 GIS · ${TITLE}`, `${M.period} 주간 · 분석 ${M.via}`, withPage ? `웹에서 보기: ${M.page}` : `KB GIS 앱: ${APP}`, '',
     `관련 보도 ${num(M.totals.articles)}건(${delta(M.totals.articles, M.totals.prev) || '—'}) · 딜·펀드 기록 ${num(M.totals.deals)}건`, ''];
   if (M.headline) T.push('[이번 주 한 줄]', M.headline, '');
   if (M.korea) T.push('[한국 투자자 동향]', M.korea, '');
@@ -270,8 +273,8 @@ async function main() {
   const want = arg('--date');
   const ent = want ? index.find((x) => x.date === want) : index.slice().sort((a, b) => (a.date < b.date ? 1 : -1))[0];
   if (!ent) { console.log(`NOT_FOUND ${want || ''}`); process.exit(4); }
-  // 금요일 저녁에 이번 주 보고서가 아직 없으면 최신은 지난주 금요일(7일 전) → 보내지 않는다.
-  // 월요일 따라잡기 발송이면 금요일 보고서(3일 전)가 대상이 된다. 이미 보냈는지는 발송 쪽이 보낸편지함 제목으로 확인.
+  // 월요일 아침에 지난주(일요일 보고일) 보고서가 아직 없으면 최신은 8일 전 일요일분 → 보내지 않는다.
+  // 화요일 따라잡기여도 어제 그제 일요일분(1~2일 전)이 대상. 이미 보냈는지는 발송 쪽이 보낸편지함 제목으로 확인.
   if (process.argv.includes('--fresh') && ent.date < kstDaysAgo(6)) {
     console.log(`NOT_READY 최신 보고서 ${ent.date} — 6일 안에 만든 보고서가 없음(이번 주 보고서 생성 전)`);
     process.exit(3);

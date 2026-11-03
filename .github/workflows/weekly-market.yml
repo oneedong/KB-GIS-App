@@ -2,20 +2,21 @@ name: Weekly market report
 
 on:
   schedule:
-    # GitHub 예약 실행은 몇 시간씩 늦게 깨어난다(2026-10 실측 약 6시간). 그래서 여러 번 깨우고, 만들지 말지는
-    # 스크립트가 시각으로 정한다: 이번 주 마지막 영업일(공휴일 제외) 16:00 KST 이후에만 만들고,
-    # 그 전에 만들어진 보고서는 다시 만든다. 금요일이 공휴일이면 목요일, 목·금이 모두 쉬면 수요일분이 된다.
-    - cron: '13 3 * * 5'     # 금 12:13 KST — 늦게 깨어나면 금요일 저녁
-    - cron: '40 8 * * 1-5'   # 평일 17:40 KST — 공휴일 주(목·수요일 마감) 대비
-    - cron: '23 1 * * 6,0'   # 토·일 10:23 KST — 따라잡기
+    # 매주 월요일 아침, 지난주 월~일분을 만든다. GitHub 예약 실행은 몇 시간씩 늦게 깨어나므로(2026-10 실측
+    # 약 6시간) 여러 번 깨우고, 만들지 말지는 스크립트가 시각으로 정한다(월 05:00 KST 이후, 이미 있으면 건너뜀).
+    # 월요일 메일 발송 예약 작업도 보고서가 없으면 이 워크플로를 직접 실행한다.
+    - cron: '23 20 * * 0'    # 월 05:23 KST
+    - cron: '43 23 * * 0'    # 월 08:43 KST — 따라잡기
+    - cron: '13 3 * * 1'     # 월 12:13 KST — 따라잡기
+    - cron: '13 22 * * 1'    # 화 07:13 KST — 따라잡기
   workflow_dispatch:
     inputs:
       date:
-        description: '보고일(YYYY-MM-DD). 비우면 오늘'
+        description: '보고일 = 그 주 일요일(YYYY-MM-DD). 비우면 가장 최근에 끝난 주'
         required: false
         default: ''
       force:
-        description: '마지막 영업일이 아니어도 생성'
+        description: '일요일이 아니거나 이미 있어도 생성'
         type: boolean
         required: false
         default: false

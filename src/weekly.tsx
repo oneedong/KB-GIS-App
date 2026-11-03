@@ -3,7 +3,7 @@
  * KB GIS — 주간 시장현황 (Private Equity · Private Credit · Real Estate · Infrastructure · Aviation)
  *
  * weekly/index.json(보고서 목록) → weekly/YYYYMMDD.json(한 주 보고서)을 읽어 보여 준다.
- * 보고서는 매주 마지막 영업일에 scripts/weekly-market.mjs 가 만든다.
+ * 보고서는 매주 월요일 아침 scripts/weekly-market.mjs 가 지난주(월~일)분을 만든다.
  * 자산군마다: 요약 · 시장 현황(수치) · 한국 투자자 · 운용사별 이슈 · 트렌드와 이유 · 테마 보도 추이
  * profiles.tsx 다음, app.tsx 앞에 로드된다(전역 KB·F·Ico·Section 등 사용).
  */
@@ -278,7 +278,7 @@ function WeeklyScreen({ onOpen }) {
   const cur = (index || [])[pos];
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg }}>
-      <TopBar big title="시장현황" sub={rep ? `${wkDate(rep.from)} ~ ${wkDate(rep.to)} · 매주 마지막 영업일 갱신 · ${viaLabel(rep.via)}` : '주간 자산군별 시장현황'} border={false} />
+      <TopBar big title="시장현황" sub={rep ? `${wkDate(rep.from)} ~ ${wkDate(rep.to)} · 매주 월요일 갱신(지난주 월~일) · ${viaLabel(rep.via)}` : '주간 자산군별 시장현황'} border={false} />
       {index && index.length > 0 && (
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px 10px', background: KB.bg }}>
           <span onClick={() => go(1)} style={{ cursor: pos < index.length - 1 ? 'pointer' : 'default', color: pos < index.length - 1 ? KB.sub : KB.faint, transform: 'scaleX(-1)', display: 'flex' }}><Ico n="chevron" size={20} sw={2} /></span>
@@ -304,7 +304,7 @@ function WeeklyScreen({ onOpen }) {
             </div>
           </div>
           {!index ? <Empty title="시장현황을 불러오는 중입니다" />
-            : !index.length ? <Empty title="아직 발행된 시장현황이 없습니다" desc="매주 마지막 영업일 오후에 한 주를 정리해 올립니다." />
+            : !index.length ? <Empty title="아직 발행된 시장현황이 없습니다" desc="매주 월요일 아침에 지난주(월~일)를 정리해 올립니다." />
             : !rep ? <Empty title="보고서를 불러오는 중입니다" />
             : tab === 'all' ? <WkOverview rep={rep} onAsset={openAsset} onOpen={onOpen} q={q} />
             : <WkAsset A={{ label: (WK_ASSETS.find(([k]) => k === tab) || [])[1], ...((rep.assets || {})[tab] || {}) }} rep={rep} onOpen={onOpen} q={q} />}

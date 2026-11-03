@@ -2,8 +2,9 @@
 /*
  * KB GIS — 주간 시장현황 (자산군별)
  *
- * 매주 마지막 영업일(한국 기준, 공휴일이면 그 전 영업일)에 한 번, 지난 보고일 다음날부터
- * 이번 보고일까지 수집된 기사·딜·펀드레이징 기록으로 다섯 자산군의 주간 현황을 정리한다.
+ * 매주 월요일 아침, 지난주 월요일~일요일(KST)에 수집된 기사·딜·펀드레이징 기록으로
+ * 다섯 자산군의 주간 현황을 정리한다. 보고일(파일 이름의 날짜)은 그 주 일요일이다.
+ * (2026-11 전까지는 매주 마지막 영업일에 '지난 보고일 다음날~보고일'로 만들었다 — 이전 보고서는 그대로 둔다)
  *   Private Equity · Private Credit · Real Estate · Infrastructure · Aviation
  * 자산군마다 반드시 들어가는 항목
  *   1) 운용사별 이슈      — 운용사 · 이번 주 이슈 · 근거 기사
@@ -15,7 +16,7 @@
  * 기사 제목만으로 만든 '자동 집계' 판을 낸다(추정·해석 문장 없음).
  *
  * 사용: node scripts/weekly-market.mjs [--date YYYY-MM-DD] [--force] [--dump ctx.json] [--answer ans.json]
- *   --date   보고일 지정(기본: 오늘, KST)   --force  마지막 영업일이 아니어도 생성
+ *   --date   보고일(그 주 일요일) 지정(기본: 가장 최근에 끝난 주)   --force  일요일이 아니어도 생성
  *   --dump   LLM 에 줄 자료를 파일로 저장   --answer 준비된 분석 JSON 을 LLM 응답 대신 사용
  * 결과: weekly/YYYYMMDD.json, weekly/index.json
  */
@@ -58,12 +59,10 @@ function lastBizOfWeek(s) {
   for (let i = 4; i >= 0; i--) { const d = addDays(mon, i); if (isBiz(d)) return d; }
   return '';
 }
-// 직전 보고일 — 앞선 주들 중 영업일이 있는 가장 가까운 주의 마지막 영업일
-function prevReportDay(s) {
-  let d = addDays(s, -((dateOf(s).getUTCDay() + 6) % 7) - 1);   // 지난주 일요일
-  for (let k = 0; k < 6; k++) { const r = lastBizOfWeek(d); if (r) return r; d = addDays(d, -7); }
-  return addDays(s, -7);
-}
+// 가장 최근에 끝난 주(월~일)의 일요일 — 오늘이 일요일이면 그 주는 아직 안 끝났으므로 지난주 일요일
+const lastSunday = (today) => { const w = dateOf(today).getUTCDay(); return addDays(today, w === 0 ? -7 : -w); };
+// 직전 보고일 — 한 주 전 일요일(보고 주간: 보고일-6 월요일 ~ 보고일 일요일)
+function prevReportDay(s) { return addDays(s, -7); }
 const kstMs = (s, end) => Date.parse(`${s}T${end ? '23:59:59' : '00:00:00'}+09:00`);
 
 // ── 자산군 판별 ────────────────────────────────────────────
@@ -396,18 +395,16 @@ function autoReport(ctx) {
   };
 }
 
-// 언제 만들지 — GitHub 예약 실행은 몇 시간씩 늦게(2026-10 실측 약 6시간) 깨어나, 목요일 회차가 금요일 00시 30분에
-// 돌면 '금요일 보고서'가 금요일 기사 없이 나갔다. 그래서 날짜만 보지 않고 시각으로 판단한다:
-//  · 이번 주 마지막 영업일 16:00 KST(국내 장 마감·주요 보도 이후)가 지나야 만든다.
+// 언제 만들지 — 지난주(월~일)분을 월요일 05:00 KST 이후에 만든다. 일요일 밤(미국 일요일 낮) 기사까지
+// 수집기가 한 번 더 돈 뒤다. GitHub 예약 실행은 몇 시간씩 늦게 깨어나므로 날짜가 아니라 시각으로 판단한다:
 //  · 이미 있는 보고서가 그 시각 이전에 만들어졌으면(조기 생성) 다시 만든다. 이후에 만들어졌으면 건너뛴다.
-//  · 주말에 깨어나도 지난 금요일분이 없거나 조기 생성분이면 만든다(따라잡기).
-export const CUTOFF_KST_H = 16;
+//  · 화요일 이후에 깨어나도 지난주분이 없으면 만든다(따라잡기).
+export const CUTOFF_KST_H = 5;
 export function buildDecision(nowMs, existingGeneratedAt) {
   const today = ymd(new Date(nowMs + 9 * 3600 * 1000));
-  const target = lastBizOfWeek(today);
-  if (!target) return { build: false, target: '', why: '이번 주 영업일 없음' };
-  const cutoff = Date.parse(`${target}T${String(CUTOFF_KST_H).padStart(2, '0')}:00:00+09:00`);
-  if (nowMs < cutoff) return { build: false, target, why: `${target} ${CUTOFF_KST_H}:00 KST 이후에 만듦` };
+  const target = lastSunday(today);
+  const cutoff = Date.parse(`${addDays(target, 1)}T${String(CUTOFF_KST_H).padStart(2, '0')}:00:00+09:00`);
+  if (nowMs < cutoff) return { build: false, target, why: `${addDays(target, 1)} ${CUTOFF_KST_H}:00 KST 이후에 만듦` };
   if (existingGeneratedAt && Date.parse(existingGeneratedAt) >= cutoff) return { build: false, target, why: '마감 후 생성된 보고서가 이미 있음' };
   return { build: true, target, why: existingGeneratedAt ? '마감 전에 만들어진 보고서를 다시 만듦' : '새로 만듦' };
 }
@@ -416,9 +413,9 @@ async function main() {
   let reportDay;
   if (arg('--date')) {
     reportDay = arg('--date');
-    if (!has('--force') && lastBizOfWeek(reportDay) !== reportDay) { console.log(`${reportDay}: 이번 주 마지막 영업일이 아니므로 건너뜀`); return; }
+    if (!has('--force') && dateOf(reportDay).getUTCDay() !== 0) { console.log(`${reportDay}: 일요일(주간 마지막 날)이 아니므로 건너뜀`); return; }
   } else {
-    const today = kstToday(), target = lastBizOfWeek(today);
+    const today = kstToday(), target = lastSunday(today);
     const existing = target ? await readJson(path.join(OUT_DIR, `${target.replace(/-/g, '')}.json`), null) : null;
     const d = buildDecision(Date.now(), existing && existing.generatedAt);
     console.log(`${today}: 대상 ${d.target || '-'} — ${d.why}`);
@@ -473,4 +470,4 @@ async function main() {
 if (process.argv[1] && process.argv[1].endsWith('weekly-market.mjs')) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }
-export { lastBizOfWeek, prevReportDay, isBiz, gather, validate, autoReport, tidy, buildPrompt, SYSTEM, numberBag, numbersOk, koMoney as _koMoney };
+export { lastBizOfWeek, lastSunday, prevReportDay, isBiz, gather, validate, autoReport, tidy, buildPrompt, SYSTEM, numberBag, numbersOk, koMoney as _koMoney };

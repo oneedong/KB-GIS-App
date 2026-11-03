@@ -1,0 +1,17 @@
+{
+ "day": "2026-11-03",
+ "job": "weekly",
+ "cost": 0.667152,
+ "calls": 1,
+ "skipped": 0,
+ "tokens": {
+  "in": 66788,
+  "out": 20000,
+  "cacheRead": 0,
+  "cacheWrite": 0
+ },
+ "byModel": {
+  "claude-opus-5-5": 0.667152
+ },
+ "updatedAt": "2026-11-03T01:48:17.614Z"
+}

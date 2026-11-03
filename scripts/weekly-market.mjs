@@ -261,12 +261,15 @@ function buildPrompt(ctx) {
   return `${lines.join('\n')}\n\n위 자료로 아래 형식의 JSON 을 작성하세요.\n${schema}`;
 }
 
-// Claude Opus 5.5 — 하루 예산 장부(작업 'weekly', 하루 $0.70)를 넘지 않을 때만. 거절 시 서버 폴백, 실패·초과 시 Gemini 로.
+// Claude Sonnet 5.5(사고 끔) — 하루 예산 장부(작업 'weekly', 하루 $0.70)를 넘지 않을 때만. 실패·잘림·초과 시 Gemini 로.
+// 2026-11-03 Opus 5.5(effort high)로 시험했더니 사고 토큰이 출력 한도 2만을 다 써 JSON 이 잘렸다($0.67).
+// 하루 $0.70 안에서는 출력 전부를 본문에 쓰는 Sonnet 5.5(사고 끔)가 안정적이다(예상 $0.25 안팎).
 async function callClaude(prompt) {
   const budget = await openBudget('weekly');
-  const r = await ask(budget, { model: MODELS.weekly, system: SYSTEM, prompt, maxTokens: 20000, effort: 'high', fallbacks: true, stream: true });
+  const r = await ask(budget, { model: MODELS.weekly, system: SYSTEM, prompt, maxTokens: 16000, thinking: { type: 'between_tools' }, stream: true });
   await budget.save();
   console.log(budget.summary());
+  if (r && r.stop === 'max_tokens') { console.warn('Claude 응답이 출력 한도에서 잘림 — Gemini 로 넘김'); return null; }
   return r ? { text: r.text, via: `claude:${r.model}` } : null;
 }
 async function callGemini(prompt) {
@@ -427,8 +430,12 @@ async function main() {
   if (arg('--dump')) { await writeFile(arg('--dump'), JSON.stringify({ system: SYSTEM, prompt, ids: Object.keys(ctx.refs) }, null, 1)); console.log('dumped', arg('--dump'), prompt.length, 'chars'); }
 
   let via = 'auto', body = null, dropped = [];
-  const ans = arg('--answer') ? { text: await readFile(arg('--answer'), 'utf8'), via: arg('--via') || 'claude' } : (await callClaude(prompt)) || (await callGemini(prompt));
-  const parsed = ans && parseObj(ans.text);
+  let ans = arg('--answer') ? { text: await readFile(arg('--answer'), 'utf8'), via: arg('--via') || 'claude' } : await callClaude(prompt);
+  let parsed = ans && parseObj(ans.text);
+  if (!(parsed && parsed.assets) && !arg('--answer')) {           // Claude 가 없거나 읽을 수 없으면 Gemini
+    if (ans) console.warn('Claude 응답을 읽지 못해 Gemini 로 넘김');
+    ans = await callGemini(prompt); parsed = ans && parseObj(ans.text);
+  }
   if (parsed && parsed.assets) {
     ({ out: body, dropped } = validate(parsed, ctx, prompt));
     via = ans.via;

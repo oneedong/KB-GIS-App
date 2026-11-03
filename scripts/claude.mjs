@@ -25,7 +25,7 @@ const HAIKU_LONG = { in: 0.50, out: 2.50, cr: 0.05, cw: 0.625 };  // Haiku 5.5 �
 export const JOB_CAP = { collect: 1.70, weekly: 0.70, gp: 0.35, brief: 0.12, lp: 0.04, test: 0.04 };
 export const DAILY_CAP = Math.min(2.7, Number(process.env.LLM_DAILY_CAP) || 2.7);
 // 작업별 모델 — 번역·기사 분석·펀드 정보 추출은 Sonnet 5.5, 주간 분석은 Opus 5.5, 대량·단순 판독은 Haiku 5.5
-export const MODELS = { tr: 'claude-sonnet-5-5', fund: 'claude-sonnet-5-5', analyze: 'claude-sonnet-5-5', weekly: 'claude-opus-5-5', brief: 'claude-sonnet-5-5', gp: 'claude-sonnet-5-5', lp: 'claude-haiku-5-5' };
+export const MODELS = { tr: 'claude-sonnet-5-5', fund: 'claude-sonnet-5-5', analyze: 'claude-sonnet-5-5', weekly: 'claude-sonnet-5-5', brief: 'claude-sonnet-5-5', gp: 'claude-sonnet-5-5', lp: 'claude-haiku-5-5' };
 
 const DIR = new URL('../usage/', import.meta.url);
 export const kstDay = (ms = Date.now()) => new Date(ms + 9 * 3600e3).toISOString().slice(0, 10);
@@ -37,7 +37,13 @@ export function costOf(model, u = {}, batch = false) {
   return batch ? c / 2 : c;
 }
 // 입력 토큰 보수적 추정(한글이 섞인 글은 글자 2~3개가 토큰 1개 안팎)
-export const estTokens = (s) => Math.ceil(String(s || '').length / 2.2);
+// 입력 토큰 어림 — 일부러 넉넉하게(실측: 주간 프롬프트 한글 2.0만·ASCII 9.1만자 = 6.68만 토큰 → 이 식으로 7.3만).
+// 한글은 글자당 약 1토큰, JSON·id·숫자가 많은 ASCII 는 1.8자당 1토큰으로 본다(영문 산문은 실제로 더 적게 든다).
+export const estTokens = (s) => {
+  const t = String(s || ''); let han = 0, asc = 0;
+  for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); if (c < 128) asc++; else if (c >= 0xac00 && c <= 0xd7a3) han++; }
+  return Math.ceil(han * 1.1 + (t.length - han - asc) + asc / 1.8);
+};
 export const maxCost = (model, text, maxTokens, batch = false) => costOf(model, { input_tokens: estTokens(text), output_tokens: maxTokens }, batch);
 
 // 예산 열기 — 작업 시작 때 한 번. runCap: 이번 회차 상한(하루에 여러 번 도는 수집용)

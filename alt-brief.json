@@ -1,54 +1,53 @@
 {
  "date": "2026-11-03",
- "generatedAt": "2026-11-03T01:34:48.655Z",
+ "generatedAt": "2026-11-03T04:41:54.883Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "글로벌 대체투자 자금, 인프라·AI·크레딧 세컨더리로 쏠리고 국내 기관 접점도 확대",
+ "headline": "글로벌 대형 운용사 대형 딜·펀드레이징 활발, 국내 기관 접점도 확대",
  "points": [
   {
-   "text": "Blackstone이 Mitsubishi의 LNG Canada 자회사 지분 49.9%를 약 2500억엔(31억 달러)에 인수하며, 캐나다 연기금 4곳이 컨소시엄에 참여함.",
+   "text": "Blackstone 주도 컨소시엄이 미쓰비시상사의 LNG Canada 자회사 지분 49.9%를 약 31억 달러(약 2500억엔)에 인수하기로 했으며, Canadian 연기금 4곳이 참여함.",
    "ids": [
-    "gww029v",
     "g1f92wz1",
-    "gt8p92j"
+    "gt8p92j",
+    "gww029v"
    ]
   },
   {
-   "text": "Blackstone이 Morgan Stanley, Citi, Bank of America와 함께 Anthropic용 Broadcom 네트워킹 장비·AI 프로세서 구매를 위한 630억 달러 금융을 지원함. Brookfield와 CPP Investment Board는 52억 달러 규모로 LXP Industrial Trust 인수를 완료함.",
-   "ids": [
-    "g153j3jk",
-    "g17b8i0u"
-   ]
-  },
-  {
-   "text": "TPG가 TPG Rise Climate II 최종 클로징으로 연계 차량 포함 104억달러를 모집함. 1호 기후펀드 73억달러 대비 약 44% 늘었고 전체 약정액의 30% 이상이 신규 기관투자자 자금임.",
+   "text": "TPG가 TPG Rise Climate II 최종 클로징으로 연계 차량 포함 총 104억 달러를 조달했으며, 1호 기후펀드 73억달러 대비 약 44% 증가했고 약정액의 30% 이상이 신규 기관투자자임.",
    "ids": [
     "g1r7dekv",
     "go7tb0t"
    ]
   },
   {
-   "text": "Igneo가 4번째 유럽 인프라 전략을 첫 클로징 6개월 만에 하드캡 60억 유로으로 마감함. Bain Capital은 3번째 아시아 스페셜 시추에이션 펀드로 18억 달러 이상을 모집함.",
+   "text": "Igneo Infrastructure Partners가 4번째 유럽 인프라 전략을 첫 클로징 6개월 만에 60억 유로 하드캡으로 마감함. Bain Capital은 세 번째 아시아 스페셜 시추에이션 펀드로 18억 달러 이상을 모금함.",
    "ids": [
     "g142b67r",
-    "gw7grwf"
+    "g1fhj0s7"
    ]
   },
   {
-   "text": "크레딧 세컨더리 펀드레이징이 활발함. CVC Secondaries Debt Fund I이 5억 유로를 넘겼고 Blue Owl은 첫 클로징을 앞뒀으며 Ares는 GP-led 중심 인프라 세컨더리 펀드를 추진함.",
+   "text": "크레딧 세컨더리 펀드 결성이 이어짐. CVC Secondaries Debt Fund I이 5억 유로를 넘겼고, Blue Owl Capital은 첫 클로징을 앞두고 있으며 Ares는 GP-led 대상 인프라 세컨더리 펀드를 추진함.",
    "ids": [
     "gpq0s4r",
     "gmua2rj",
     "g1ar37ax"
    ]
+  },
+  {
+   "text": "Blackstone이 Morgan Stanley, Citi, Bank of America 등과 Anthropic용 Broadcom 장비·AI 칩 구매를 위한 630억 달러 규모 금융을 지원함.",
+   "ids": [
+    "g153j3jk"
+   ]
   }
  ],
- "korea": "KB국민은행이 Brookfield의 국내 AI 컴퓨팅 인프라 대출 주선을 총괄하고 페블스톤 블라인드펀드가 국민연금 출자로 첫 투자를 집행하는 등 국내 기관 자금과 해외 운용사의 접점이 커지고 있음. 산은인프라자산운용의 전주사무소 개소 등 국민연금 대체투자 수요를 겨냥한 운용사 경쟁도 본격화되는 흐름임.",
+ "korea": "국민연금이 페블스톤 국내 밸류애드 펀드에 2500억원을 출자해 첫 투자가 집행됐고, 산은인프라자산운용 등 운용사의 전주 거점 확대가 이어져 국민연금 대상 대체투자 영업 경쟁이 심화되는 모습임. KB국민은행이 Brookfield의 한국 GPU 대출 주선을 맡은 점도 국내 AI 인프라 금융 기회로 참고할 만함.",
  "refs": {
-  "gww029v": {
-   "t": "미쓰비시상사, 캐나다 LNG 지분 2500억엔 매각…블랙스톤 손잡아",
-   "s": "글로벌이코노믹",
-   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/202611030144172879e7e8286d56_1",
+  "gpq0s4r": {
+   "t": "CVC의 데뷔 크레딧 세컨더리 펀드, 5억 달러 목표 넘어 5억 유로 돌파",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/cvcs-debut-credit-secondaries-fund-passed-e500-million-ahead-of-its-500-million-target.html",
    "d": "2026-11-02"
   },
   "g153j3jk": {
@@ -57,10 +56,22 @@
    "u": "https://businesschief.com/news/blackstone-and-wall-street-banks-back-us-63bn-ai-chip-deal",
    "d": "2026-11-02"
   },
+  "gww029v": {
+   "t": "미쓰비시상사, 캐나다 LNG 지분 2500억엔 매각…블랙스톤 손잡아",
+   "s": "글로벌이코노믹",
+   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/202611030144172879e7e8286d56_1",
+   "d": "2026-11-02"
+  },
   "g1f92wz1": {
    "t": "Blackstone, 미쓰비시의 LNG Canada 자회사 지분 인수를 위한 31억 달러 규모 딜 주도",
    "s": "Western Standard",
    "u": "https://www.westernstandard.news/news/blackstone-leads-us31-billion-deal-for-stake-in-mitsubishis-lng-canada-subsidiary/78387",
+   "d": "2026-11-02"
+  },
+  "g1fhj0s7": {
+   "t": "Bain Capital, 18억 달러를 상회하며 세 번째 아시아 스페셜 시추에이션 펀드레이징 마감",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/bain-capital-closes-third-asia-special-situations-fund-above-1-8b",
    "d": "2026-11-02"
   },
   "gmua2rj": {
@@ -73,18 +84,6 @@
    "t": "Ares, GP 주도 세컨더리 타깃 인프라 세컨더리 펀드 결성 추진",
    "s": "PEI Secondaries Investor",
    "u": "https://www.pei-secondariesinvestor.com/ares-to-launch-infra-secondaries-fund-focused-on-gp-leds/",
-   "d": "2026-11-02"
-  },
-  "gpq0s4r": {
-   "t": "CVC의 데뷔 크레딧 세컨더리 펀드, 5억 달러 목표 넘어 5억 유로 돌파",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/cvcs-debut-credit-secondaries-fund-passed-e500-million-ahead-of-its-500-million-target.html",
-   "d": "2026-11-02"
-  },
-  "gw7grwf": {
-   "t": "Bain Capital, 세 번째 아시아 스페셜 시추에이션 펀드로 18억 달러 이상 모금",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/bain-capital-asia-special-sits-fund-499815",
    "d": "2026-11-02"
   },
   "g1r7dekv": {
@@ -109,12 +108,6 @@
    "t": "Igneo, 6개월 만에 60억 유로 규모 유럽 인프라 펀드레이징 완료",
    "s": "Alternatives Watch",
    "u": "https://www.alternativeswatch.com/2026/11/02/igneo-european-diversified-infrastructure-strategy-fund-vi-6-billion/",
-   "d": "2026-11-02"
-  },
-  "g17b8i0u": {
-   "t": "Brookfield와 CPP, 52억 달러 규모 REIT 인수를 통해 미국 물류 자산 확보",
-   "s": "Bisnow",
-   "u": "https://www.bisnow.com/news/national/capital-markets/brookfield-cpp-complete-public-reit-buyout-pick-up-us-logistics-assets",
    "d": "2026-11-02"
   }
  },

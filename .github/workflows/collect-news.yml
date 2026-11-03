@@ -53,7 +53,7 @@ jobs:
         run: node scripts/collect-news.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
       - name: Rebuild LP roster
         if: steps.gate.outputs.run == 'true'
         run: node scripts/gen-institutions.mjs

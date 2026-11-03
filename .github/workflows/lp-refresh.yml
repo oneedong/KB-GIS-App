@@ -31,7 +31,7 @@ jobs:
       - name: Refresh allocations
         run: node scripts/lp-refresh.mjs ${{ github.event.inputs.dry == 'true' && '--dry' || '' }}
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
       - name: Rebuild LP profiles
         if: github.event.inputs.dry != 'true'
         run: node scripts/gen-lp-profiles.mjs

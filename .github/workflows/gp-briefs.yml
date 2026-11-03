@@ -25,7 +25,7 @@ jobs:
       - name: Build GP briefs
         run: node scripts/gp-briefs.mjs
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
       - name: Commit
         if: always()
         run: |

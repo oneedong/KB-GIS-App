@@ -36,7 +36,7 @@ jobs:
         continue-on-error: true
         run: node scripts/alt-brief.mjs
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
       - name: Commit brief
         run: |
           git config user.name  "kbgis-bot"

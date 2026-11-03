@@ -45,7 +45,7 @@ jobs:
           [ "${{ github.event.inputs.force }}" = "true" ] && ARGS="$ARGS --force"
           node scripts/weekly-market.mjs $ARGS
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           EXTRA_HOLIDAYS: ${{ vars.EXTRA_HOLIDAYS }}
       # 메일 '웹에서 보기'용 페이지(weekly/<날짜>.html) — 주간 메일 예약 작업이 이 주소를 링크한다

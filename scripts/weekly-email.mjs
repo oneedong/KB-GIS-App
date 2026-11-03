@@ -13,7 +13,7 @@
  *
  *   node scripts/weekly-email.mjs --page                    # 최신 보고서의 웹 페이지(weekly/<날짜>.html) 만들기 — 주간 워크플로가 실행
  *   node scripts/weekly-email.mjs --out DIR                 # 최신 보고서 메일
- *   node scripts/weekly-email.mjs --out DIR --this-week     # 이번 주(KST 월~일) 보고서가 없으면 NOT_READY 출력 후 종료코드 3
+ *   node scripts/weekly-email.mjs --out DIR --fresh         # 최신 보고서가 6일보다 오래됐으면(이번 주 것이 아직 없으면) NOT_READY 출력 후 종료코드 3
  *   node scripts/weekly-email.mjs --out DIR --date 2026-10-30
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -46,12 +46,8 @@ const delta = (cur, prev) => {
   const p = Math.round(((cur - prev) / prev) * 100);
   return p === 0 ? '전주 수준' : `전주 대비 ${p > 0 ? '+' : ''}${p}%`;
 };
-// KST 기준 이번 주 월요일(YYYY-MM-DD)
-export function kstMonday(nowMs = Date.now()) {
-  const k = new Date(nowMs + 9 * 3600e3);
-  const back = (k.getUTCDay() + 6) % 7;
-  return new Date(Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate() - back)).toISOString().slice(0, 10);
-}
+// KST 기준 n일 전 날짜(YYYY-MM-DD)
+export const kstDaysAgo = (n, nowMs = Date.now()) => new Date(nowMs + 9 * 3600e3 - n * 864e5).toISOString().slice(0, 10);
 
 // ── 보고서 → 메일용 정리 ────────────────────────────────────────
 export function shape(rep) {
@@ -236,8 +232,10 @@ async function main() {
   const want = arg('--date');
   const ent = want ? index.find((x) => x.date === want) : index.slice().sort((a, b) => (a.date < b.date ? 1 : -1))[0];
   if (!ent) { console.log(`NOT_FOUND ${want || ''}`); process.exit(4); }
-  if (process.argv.includes('--this-week') && ent.date < kstMonday()) {
-    console.log(`NOT_READY 최신 보고서 ${ent.date} — 이번 주(${kstMonday()}~) 보고서가 아직 없음`);
+  // 금요일 저녁에 이번 주 보고서가 아직 없으면 최신은 지난주 금요일(7일 전) → 보내지 않는다.
+  // 월요일 따라잡기 발송이면 금요일 보고서(3일 전)가 대상이 된다. 이미 보냈는지는 발송 쪽이 보낸편지함 제목으로 확인.
+  if (process.argv.includes('--fresh') && ent.date < kstDaysAgo(6)) {
+    console.log(`NOT_READY 최신 보고서 ${ent.date} — 6일 안에 만든 보고서가 없음(이번 주 보고서 생성 전)`);
     process.exit(3);
   }
   const rep = JSON.parse(await readFile(new URL(`weekly/${ent.key || ent.date.replace(/-/g, '')}.json`, ROOT), 'utf8'));

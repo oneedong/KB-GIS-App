@@ -18,6 +18,8 @@
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { fmtSize } from './money.mjs';
 
 const ROOT = new URL('../', import.meta.url);
@@ -252,7 +254,7 @@ async function main() {
   const withPage = existsSync(pageFile);
   const mail = emailBody(M, withPage), txt = plainText(M, withPage);
   check(mail, '본문');
-  const out = new URL(`file://${process.cwd()}/${(arg('--out') || 'mail-out').replace(/\/?$/, '/')}`);
+  const out = pathToFileURL(resolve(arg('--out') || 'mail-out') + '/');   // 상대·절대 경로 모두
   await mkdir(out, { recursive: true });
   await writeFile(new URL('email.html', out), mail);
   await writeFile(new URL('body.txt', out), txt);

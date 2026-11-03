@@ -91,7 +91,7 @@ function WkAsset({ A, rep, onOpen, q }) {
               <tbody>
                 {[...(A.finals || []).map((x) => ({ ...x, stage: '파이널 클로즈', fin: true })), ...(A.launches || []).map((x) => ({ ...x, stage: '모집 개시' })), ...(A.closes || [])].map((x, i) => (
                   <tr key={x.id + i} onClick={() => onOpen(x.id, rep.refs && rep.refs[x.id] ? { url: rep.refs[x.id].u } : null)} style={{ cursor: 'pointer', background: x.fin ? KB.yellowTint : undefined }}>
-                    <td style={{ ...GRID.tag, font: F(700, 12.5), color: x.fin ? KB.yellowText : KB.blue, background: x.fin ? '#FFF3CC' : KB.cell }}>{x.stage}</td>
+                    <td style={{ ...GRID.tag, font: F(700, 12.5), color: x.fin ? KB.yellowText : KB.blue, background: x.fin ? KB.yellowTint : KB.cell }}>{x.stage}</td>
                     <td style={{ ...GRID.td, font: F(700, 13.5), color: KB.ink }}>{x.gp}</td>
                     <td style={{ ...GRID.td, font: F(400, 13, 1.45) }}>{x.fund && x.fund !== x.gp ? x.fund : '–'}</td>
                     <td style={{ ...GRID.td, textAlign: 'center', font: F(700, 13), color: KB.ink, whiteSpace: 'nowrap' }}>{x.size || '미상'}</td>

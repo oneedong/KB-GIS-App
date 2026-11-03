@@ -341,7 +341,7 @@ function findTerms(text, limit = 8) {
 // ─── 개념 도식 (SVG, 모바일 폭 360 기준 좌표) ───────────────────
 // 글자 크기가 폰에서 그대로 읽히도록 좌표계를 휴대폰 폭에 맞췄다.
 const D = {
-  box: KB.cell, line: KB.rule, ink: KB.ink, sub: KB.sub, faint: '#9A9A9A', y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
+  box: KB.cell, line: KB.rule, ink: KB.ink, sub: KB.sub, faint: KB.silver, y: KB.yellow, yt: KB.yellowTint, g: KB.gray, card: KB.card,
 };
 function Arrow({ id }) {
   return (
@@ -395,14 +395,14 @@ const DIAGRAMS = {
     </g>;
     return (
       <svg viewBox="0 0 360 300" width="100%">
-        <rect x="16" y="10" width="11" height="11" rx="2" fill="#9FB0C2" />{T(32, 20, '캐피탈콜(납입)', { size: 10.5, a: 'start', c: D.sub })}
+        <rect x="16" y="10" width="11" height="11" rx="2" fill="#B5B7B9" />{T(32, 20, '캐피탈콜(납입)', { size: 10.5, a: 'start', c: D.sub })}
         <rect x="122" y="10" width="11" height="11" rx="2" fill={D.y} />{T(138, 20, '분배(회수)', { size: 10.5, a: 'start', c: D.sub })}
         <line x1="210" y1="15.5" x2="228" y2="15.5" stroke={D.ink} strokeWidth="2.4" />{T(233, 20, 'LP 누적 순현금흐름', { size: 10.5, a: 'start', c: D.sub })}
         {[50, -50].map(tick)}
         <line x1={(X(4) + X(5)) / 2} y1="36" x2={(X(4) + X(5)) / 2} y2="200" stroke={D.line} strokeWidth="1" />
         {T((X(0) + X(4)) / 2, 44, '투자기간 · 돈이 나감', { size: 10, c: D.faint })}
         {T((X(5) + X(9)) / 2, 44, '회수기간 · 돈이 돌아옴', { size: 10, c: D.faint })}
-        {calls.map((c, i) => c < 0 && <rect key={'c' + i} x={X(i) - 7} y={Z} width={14} height={-c * S} rx="1.5" fill="#9FB0C2" />)}
+        {calls.map((c, i) => c < 0 && <rect key={'c' + i} x={X(i) - 7} y={Z} width={14} height={-c * S} rx="1.5" fill="#B5B7B9" />)}
         {dists.map((d, i) => d > 0 && <rect key={'d' + i} x={X(i) - 7} y={Y(d)} width={14} height={d * S} rx="1.5" fill={D.y} />)}
         {tick(0)}
         <polyline points={pts} fill="none" stroke={D.ink} strokeWidth="2.4" strokeLinejoin="round" />
@@ -510,7 +510,7 @@ const DIAGRAMS = {
         return (
           <g key={i}>
             <rect x={x} y={176 - dpi * s} width={46} height={dpi * s} fill={D.y} />
-            <rect x={x} y={176 - (dpi + rvpi) * s} width={46} height={rvpi * s} fill="#D6C8B3" />
+            <rect x={x} y={176 - (dpi + rvpi) * s} width={46} height={rvpi * s} fill="#D3C6A6" />
             {T(x + 23, 170 - (dpi + rvpi) * s, `${(dpi + rvpi).toFixed(1)}x`, { w: 700, size: 12 })}
             {T(x + 23, 196, n, { size: 11.5, w: 600 })}
             {T(x + 23, 212, `DPI ${dpi}x`, { size: 10, c: D.g })}
@@ -518,7 +518,7 @@ const DIAGRAMS = {
         );
       })}
       <rect x="40" y="8" width="10" height="10" fill={D.y} />{T(56, 17, 'DPI 돌려받은 현금', { size: 10.5, a: 'start', c: D.sub })}
-      <rect x="186" y="8" width="10" height="10" fill="#D6C8B3" />{T(202, 17, 'RVPI 남은 평가가치', { size: 10.5, a: 'start', c: D.sub })}
+      <rect x="186" y="8" width="10" height="10" fill="#D3C6A6" />{T(202, 17, 'RVPI 남은 평가가치', { size: 10.5, a: 'start', c: D.sub })}
     </svg>) },
 
   // 8) ABS/ABF 구조

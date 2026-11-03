@@ -3,8 +3,8 @@
 /*
  * KB GIS — 디자인 시스템 (KB증권 글로벌상품영업부 문서 양식 = GP 미팅노트와 같은 디자인)
  *
- * 흰 지면 + 옅은 회색 바탕, 섹션 제목은 KB 노랑(#FFBC00) 막대와 웜그레이(#71685D) 밑줄,
- * 소제목·태그·강조 라벨은 블루(#2F5597), 표 머리·제목 띠는 회색(#E7E6E6), 강조 박스는 옅은 노랑(#FFF8E1).
+ * 흰 지면 + 옅은 회색 바탕, 섹션 제목은 KB Yellow(#FFBC00) 막대와 KB Gray(#60584C) 밑줄,
+ * 소제목·태그·강조 라벨은 KB Gray·KB Gold, 표 머리·제목 띠는 옅은 회색, 강조 박스는 옅은 노랑(#FFF4D1).
  * 글꼴은 맑은 고딕(없으면 Apple SD Gothic Neo·Noto Sans KR). 모서리는 각지게(문서 느낌).
  * 상승/하락은 국내 관행대로 빨강/파랑.
  * (예전 토큰 이름 yellow*·wood*·gray 는 호환을 위해 그대로 두고 값만 바꿨다.)
@@ -12,34 +12,40 @@
  * 이 파일은 app.tsx 보다 먼저 로드되는 일반 스크립트다(index.html 참고).
  * 최상위 const/function 은 전역으로 공유되므로 React 훅은 React.useState 처럼 쓴다.
  */
+// KB금융그룹 색 규정 — 주색: KB Yellow Positive #FFBC00(Pantone 130C) · KB Yellow Negative #FFCC00(1235C) · KB Gray #60584C(404C)
+// 보조색: KB Dark Gray #545045(411C) · KB Gold(872C, 화면 근사 #85714D) · KB Silver(877C, 화면 근사 #8A8D8F)
+// 강조·라벨·링크는 이 색만 쓰고(이전의 파랑은 쓰지 않음), 시세 상승·하락만 관례대로 빨강·파랑을 둔다.
 const KB = {
-    yellow: '#FFBC00', // KB 노랑 — 섹션 막대·선택 표시·막대그래프
-    yellowPress: '#C99400', // 노랑 버튼 테두리
+    yellow: '#FFBC00', // KB Yellow Positive — 섹션 막대·선택 표시·막대그래프
+    yellow2: '#FFCC00', // KB Yellow Negative — 어두운 바탕 위 노랑
+    yellowPress: '#E0A600', // 노랑 버튼 테두리(Positive 의 짙은 톤)
     wood: '#FFBC00',
-    woodDeep: '#2F5597', // 흰 글자를 올리는 바탕(번호 원·강조 막대) — 블루
-    yellowTint: '#FFF8E1', // 강조 박스 바탕(미팅노트 focusnote·keybox)
-    yellowLine: '#E8C25A', // 강조 박스 테두리
-    yellowText: '#9A7300', // 노란 박스 위 글자·번호
-    gray: '#2F5597', // 블루 — 기관명·강조 라벨(미팅노트 제목·태그 색)
-    blue: '#2F5597',
-    warm: '#71685D', // 웜그레이 — 섹션 밑줄(KB 로고 글자색)
-    ink: '#222222', // 제목·본문
-    ink2: '#333333',
-    sub: '#555555', // 보조 텍스트
-    mute: '#7F7F7F', // 캡션·메타
-    faint: '#BFBFBF',
-    line: '#D9D9D9', // 구분선
-    line2: '#E7E6E6',
-    rule: '#888888', // 표 테두리(미팅노트 표와 같은 선)
-    head: '#E7E6E6', // 표 머리·제목 띠
-    cell: '#F5F5F5', // 표 머리열(태그 칸) 바탕
-    band: '#F2F2F2', // 지면 바깥 바탕·섹션 사이 띠
+    woodDeep: '#545045', // KB Dark Gray — 흰 글자를 올리는 바탕(번호 원·강조 막대)
+    yellowTint: '#FFF4D1', // 강조 박스 바탕(Yellow 옅은 톤)
+    yellowLine: '#FFCC00', // 강조 박스 테두리(Yellow Negative)
+    yellowText: '#85714D', // KB Gold — 노란 박스 위 글자·번호
+    gray: '#60584C', // KB Gray — 기관명·강조 라벨
+    blue: '#85714D', // KB Gold — 링크·출처·단계 표시(이름은 호환을 위해 유지)
+    gold: '#85714D', // KB Gold
+    silver: '#8A8D8F', // KB Silver
+    warm: '#60584C', // KB Gray — 섹션 밑줄(KB 로고 글자색)
+    ink: '#2E2B26', // 제목·본문(KB Dark Gray 의 짙은 톤)
+    ink2: '#3F3B34',
+    sub: '#545045', // 보조 텍스트 — KB Dark Gray
+    mute: '#7A746B', // 캡션·메타(KB Gray 옅은 톤)
+    faint: '#C4C0B9',
+    line: '#DEDCD8', // 구분선(KB Gray 옅은 톤)
+    line2: '#E9E7E3',
+    rule: '#8A8D8F', // 표 테두리 — KB Silver
+    head: '#ECEAE6', // 표 머리·제목 띠
+    cell: '#F5F4F2', // 표 머리열(태그 칸) 바탕
+    band: '#F2F1EF', // 지면 바깥 바탕·섹션 사이 띠
     bg: '#FFFFFF', // 지면
     card: '#FFFFFF',
-    up: '#D2382F', // 상승
-    down: '#2A62C4', // 하락
+    up: '#D2382F', // 상승(시세 관례)
+    down: '#2A62C4', // 하락(시세 관례)
     pos: '#3F7A4E',
-    ko: '#2F5597', // 영문 기사 한글 번역(병기)
+    ko: '#60584C', // 영문 기사 한글 번역(병기) — KB Gray
 };
 // 폰트 단축: F(굵기, 크기, 행간) — 미팅노트와 같은 맑은 고딕
 const FONT_STACK = "'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans CJK KR', -apple-system, sans-serif";
@@ -152,7 +158,7 @@ function Chip({ active, onClick, children, count }) {
 function Tag({ children, tone = 'base', style }) {
     const T = {
         base: { background: KB.cell, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.line2}` },
-        yellow: { background: '#FFF3CC', color: '#7A5C00' }, // 미팅노트 강조 표의 태그 칸
+        yellow: { background: '#FFF4D1', color: '#85714D' }, // 미팅노트 강조 표의 태그 칸
         dark: { background: KB.blue, color: '#fff' },
         outline: { background: KB.card, color: KB.sub, boxShadow: `inset 0 0 0 1px ${KB.faint}` },
         up: { background: '#FDECEB', color: KB.up },

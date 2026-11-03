@@ -633,7 +633,7 @@ function FundLine({ f, onOpenStage, first }) {
             React.createElement(FundTimeline, { f: f, onOpenStage: onOpenStage }))));
 }
 // 펀드레이징 캘린더 — 펀드별 단계(모집 개시·1차·중간·파이널 클로즈)를 날짜에 찍는다
-const stageColor = (st) => (st === '파이널 클로즈' ? KB.ink : st === '모집 중' ? '#9FB0C2' : KB.yellow);
+const stageColor = (st) => (st === '파이널 클로즈' ? KB.ink : st === '모집 중' ? '#B5B7B9' : KB.yellow);
 function FrCalendar({ funds, onOpenStage, onGp }) {
     const desktop = useDesktop();
     const evs = [];

@@ -97,15 +97,15 @@ export function shape(rep) {
 const DISC = '본 메일은 KB증권 GIS를 위해 자동 생성된 주간 시장현황입니다. KB GIS 앱이 한 주간 수집한 공개 언론 보도를 집계·요약한 것으로 투자자문이 아니며, 원문 확인 후 활용하시기 바랍니다. 요약 문장 중 수집 자료에 없는 숫자가 들어간 문장은 자동으로 제외됩니다.';
 
 // ── 첨부 HTML (독립 문서) ────────────────────────────────────────
-const CSS = `:root{--y:#FFBC00;--ys:#FFF6DB;--g:#60584C;--ink:#2B2722;--mut:#7A7268;--ln:#E7E2DA;--bg:#F5F3EF;--cd:#fff;--ch:#F0ECE5;--bl:#2F5597}
-@media(prefers-color-scheme:dark){:root{--ys:#352C17;--g:#D9D2C7;--ink:#EEEAE3;--mut:#A69E92;--ln:#3A3530;--bg:#1A1815;--cd:#24211D;--ch:#302B25;--bl:#8FB0E8}}
+const CSS = `:root{--y:#FFBC00;--y2:#FFCC00;--ys:#FFF4D1;--g:#60584C;--ink:#545045;--mut:#60584C;--ln:#DEDCD8;--bg:#F2F1EF;--cd:#fff;--ch:#ECEAE6;--bl:#85714D;--sil:#8A8D8F}
+@media(prefers-color-scheme:dark){:root{--ys:#3A3220;--g:#D4CEC4;--ink:#F2F0EC;--mut:#B8B2A8;--ln:#4A463F;--bg:#2A2823;--cd:#35322C;--ch:#403C35;--bl:#C9B48A;--sil:#A6A9AB}}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%;word-break:keep-all}
 a{color:inherit;text-decoration:underline;text-decoration-color:var(--y);text-decoration-thickness:2px;text-underline-offset:3px}
 .top{height:5px;background:var(--y)}.wrap{max-width:780px;margin:0 auto;padding:22px 16px 64px}
-.tb{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:-8px 0 14px}.inf{font-size:11px;color:var(--mut)}.inf a{color:var(--mut);text-decoration-thickness:1px;word-break:break-all}.mb{flex:none;font-size:12px;font-weight:800;color:#2B2722;background:var(--y);padding:5px 11px;border-radius:99px;text-decoration:none}
+.tb{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:-8px 0 14px}.inf{font-size:11px;color:var(--mut)}.inf a{color:var(--mut);text-decoration-thickness:1px;word-break:break-all}.mb{flex:none;font-size:12px;font-weight:800;color:#545045;background:var(--y);padding:5px 11px;border-radius:99px;text-decoration:none}
 .br{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--g);display:flex;align-items:center;gap:7px}.br i{width:10px;height:10px;background:var(--y);display:inline-block;border-radius:2px}
 h1{font-size:23px;line-height:1.3;margin:8px 0;letter-spacing:-.02em}.mt{font-size:13px;color:var(--mut)}.mt b{color:var(--ink)}
-.tg{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--ch);color:var(--mut);white-space:nowrap;margin:0 4px 4px 0}.tg.k{background:var(--y);color:#2B2722}.tg.f{background:var(--g);color:var(--bg)}
+.tg{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--ch);color:var(--mut);white-space:nowrap;margin:0 4px 4px 0}.tg.k{background:var(--y);color:#545045}.tg.f{background:var(--g);color:var(--bg)}
 .sts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0 12px}.st{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:11px 13px}.st b{display:block;font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}.st span{font-size:12.5px;color:var(--mut)}.st.k{border-bottom:3px solid var(--y)}
 .hl{background:var(--ys);border-left:4px solid var(--y);border-radius:0 12px 12px 0;padding:14px 16px;margin:14px 0}.hl h2{font-size:13px;letter-spacing:.06em;color:var(--g);margin:0 0 6px}.hl p{margin:0;font-size:16px;font-weight:700;line-height:1.6}
 .box{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:14px 16px;margin:0 0 10px}.box p{margin:0;font-size:15px;line-height:1.75}
@@ -116,7 +116,7 @@ h1{font-size:23px;line-height:1.3;margin:8px 0;letter-spacing:-.02em}.mt{font-si
 table.ov,table.fd{width:100%;border-collapse:collapse;background:var(--cd);border:1px solid var(--ln);border-radius:12px;overflow:hidden;font-size:14px}
 .ov th,.fd th{background:var(--ch);color:var(--g);font-size:12px;font-weight:800;text-align:left;padding:8px 10px}.ov td,.fd td{border-top:1px solid var(--ln);padding:9px 10px;vertical-align:top;line-height:1.55}
 .ov td.n,.fd td.n{white-space:nowrap;font-variant-numeric:tabular-nums}.ov a{font-weight:800;text-decoration:none;color:var(--ink)}.ov small{display:block;color:var(--mut);font-size:12px}
-.fd tr.fin td{background:var(--ys)}.fd .stg{font-size:12px;font-weight:800;color:var(--bl);white-space:nowrap}.fd tr.fin .stg{color:#9A6B00}
+.fd tr.fin td{background:var(--ys)}.fd .stg{font-size:12px;font-weight:800;color:var(--bl);white-space:nowrap}.fd tr.fin .stg{color:var(--bl)}
 .it{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;margin:0 0 8px}.it b{color:var(--g)}.it .w{display:block;font-size:14.5px;line-height:1.7;margin-top:3px}
 .sr{margin-top:6px;font-size:12.5px;color:var(--mut)}.sr a{color:var(--ink);font-weight:700;margin-right:8px;white-space:nowrap}
 .ft{margin-top:32px;padding-top:14px;border-top:1px solid var(--ln);font-size:11.5px;color:var(--mut);line-height:1.6}
@@ -162,7 +162,11 @@ function attachment(M) {
 // 메일 프로그램(특히 Outlook)은 바깥 표의 글꼴·크기·줄간격을 안쪽 칸에 물려주지 않고, div 의 여백·테두리도
 // 무시한다. 그래서 글자가 들어가는 모든 칸(td)에 글꼴·크기·줄간격·색을 직접 넣고, 여백은 td padding 으로만 준다.
 // 구성은 훑어보기 좋게: 전폭 헤더 → 핵심 수치 → 이번 주 한 줄 → 자산군별 한 줄 → 자산군별 상세(진한 띠 + 글머리표).
-const Y = '#FFBC00', YS = '#FFF6DB', GR = '#60584C', INK = '#2B2722', MUT = '#7A7268', LN = '#E7E2DA', CH = '#F4F1EC', BL = '#2F5597', UP = '#C0392B';
+// KB금융그룹 색 규정 — 주색: KB Yellow Positive #FFBC00(Pantone 130C) · KB Yellow Negative #FFCC00(1235C) · KB Gray #60584C(404C)
+// 보조색: KB Dark Gray #545045(411C) · KB Gold(872C, 화면용 근사 #85714D) · KB Silver(877C, 근사 #8A8D8F).
+// 연한 바탕·구분선은 이 색들의 옅은 톤만 쓴다(파랑·빨강 등 규정 밖 색은 쓰지 않음).
+const Y = '#FFBC00', Y2 = '#FFCC00', GR = '#60584C', INK = '#545045', GOLD = '#85714D', SIL = '#8A8D8F';
+const YS = '#FFF4D1', CH = '#F2F1EF', LN = '#DEDCD8', MUT = GR, BL = GOLD, UP = GOLD, DOWN = SIL;
 const FT = "font-family:'Malgun Gothic','맑은 고딕',sans-serif;";
 const TB = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"';
 const X = (size, lh, color = INK) => `${FT}font-size:${size}px;line-height:${lh};color:${color};`;   // 글자 칸 공통
@@ -170,11 +174,11 @@ const ROW = (inner, st = '', bg = '') => `<tr><td${bg ? ` bgcolor="${bg}"` : ''}
 const dChip = (cur, prev) => {
   if (!prev) return '';
   const p = Math.round(((cur - prev) / prev) * 100);
-  return `<span style="color:${p > 0 ? UP : p < 0 ? BL : MUT};font-weight:bold">${p > 0 ? '▲' : p < 0 ? '▼' : '–'}${Math.abs(p)}%</span>`;
+  return `<span style="color:${p > 0 ? UP : p < 0 ? DOWN : MUT};font-weight:bold">${p > 0 ? '▲' : p < 0 ? '▼' : '–'}${Math.abs(p)}%</span>`;
 };
 const label = (t) => ROW(`<span style="color:${Y}">■</span> ${E(t)}`, `${X(13.5, 1.4, GR)}font-weight:bold;padding:16px 16px 6px`);
 const para = (t, st = '') => ROW(E(t), `${X(15, 1.7)}padding:0 16px 4px;${st}`);
-const src = (s) => s.length ? ` <a href="${E(s[0].u)}" style="color:${BL};font-size:12.5px">${E(s[0].m)}</a>` : '';
+const src = (s) => s.length ? ` <a href="${E(s[0].u)}" style="color:${GOLD};font-size:12.5px;text-decoration:underline">${E(s[0].m)}</a>` : '';
 // 글머리표 목록 — 표 한 개(Outlook 에서도 들여쓰기 유지)
 const bullets = (items) => !items.length ? '' : ROW(`${TB}>${items.map((h) => `<tr><td width="16" valign="top" style="${X(15, 1.7, Y)}font-weight:bold">•</td><td style="${X(15, 1.7)}padding-bottom:9px">${h}</td></tr>`).join('')}</table>`, 'padding:0 16px 2px');
 
@@ -205,7 +209,7 @@ function emailBody(M, withPage) {
   // 자산군별 상세 — 진한 띠로 구획
   for (const a of M.assets) {
     R.push(ROW('&nbsp;', 'font-size:8px;line-height:8px'));
-    R.push(ROW(`${E(a.label)}<br><span style="${X(13, 1.6, Y)}font-weight:normal">보도 ${num(a.stats.articles)}건 ${a.stats.prev ? `(전주 ${num(a.stats.prev)}) ` : ''}· 딜 ${num(a.stats.deals)} · 파이널 클로즈 ${a.stats.finals}</span>`, `${X(19, 1.4, '#FFFFFF')}font-weight:bold;padding:12px 16px`, INK));
+    R.push(ROW(`${E(a.label)}<br><span style="${X(13, 1.6, Y2)}font-weight:normal">보도 ${num(a.stats.articles)}건 ${a.stats.prev ? `(전주 ${num(a.stats.prev)}) ` : ''}· 딜 ${num(a.stats.deals)} · 파이널 클로즈 ${a.stats.finals}</span>`, `${X(19, 1.4, '#FFFFFF')}font-weight:bold;padding:12px 16px`, INK));
     if (a.status) { R.push(label('시장 현황')); R.push(para(a.status)); }
     if (a.gp.length) {
       R.push(label('운용사별 이슈'));

@@ -11,6 +11,7 @@
 import { readFile, writeFile, mkdir, readdir, unlink } from 'fs/promises';
 import { createRequire } from 'module';
 import { fmtSize } from './money.mjs';
+import { openBudget, ask, claudeReady, MODELS } from './claude.mjs';
 const require = createRequire(import.meta.url);
 // 본문 정제 규칙은 앱과 같은 파일을 쓴다(article-clean.js) — 기준이 어긋나지 않게.
 const AC = require('../article-clean.js');
@@ -234,39 +235,29 @@ let WORKING_MODEL = '';
 const TR_DAYS = 5;   // 번역은 최근 5일 기사만(이미 번역된 기사는 다시 하지 않음)
 const TITLE_BATCH = 30, TITLE_CALLS = 8, BODY_CALLS = 20, LLM_GAP_MS = 6500;
 let LLM_BLOCKED = false;
-const claudeOn = () => !!ANTHROPIC_API_KEY && !CLAUDE_BLOCKED;
+const claudeOn = () => claudeReady() && !!BUDGET && BUDGET.remaining() > 0.02;   // 키가 있고 오늘 예산이 남아 있을 때
 const llmDone = () => !claudeOn() && (LLM_BLOCKED || !GEMINI_API_KEY);                         // 429(한도 초과)를 받으면 이번 회차는 번역 중단
 
-// ── Claude(Anthropic API) — 저장소 Secrets 에 ANTHROPIC_API_KEY 가 있으면 번역·펀드명 추출에 먼저 쓴다 ──
-// 모델은 저장소 변수 ANTHROPIC_MODEL 로 바꿀 수 있다(기본 claude-opus-5). 실패·한도 초과 시 Gemini 로 넘어간다.
+// ── Claude(Anthropic API) — 저장소 Secrets 에 ANTHROPIC_API_KEY 가 있으면 번역·펀드 정보 추출·기사 분석에 먼저 쓴다 ──
+// 모델·하루 예산은 scripts/claude.mjs(작업 'collect' 하루 $1.70, 회차당 $0.60). 한도를 넘거나 실패하면 Gemini → 구글 번역으로 넘어간다.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5';
-let claudeClient = null, CLAUDE_BLOCKED = false;
-async function claudeRaw(prompt, maxTok) {
-  if (!ANTHROPIC_API_KEY || CLAUDE_BLOCKED) return null;
-  try {
-    if (!claudeClient) { const { default: Anthropic } = await import('@anthropic-ai/sdk'); claudeClient = new Anthropic({ apiKey: ANTHROPIC_API_KEY }); claudeRaw.A = Anthropic; }
-    const res = await claudeClient.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: Math.max(maxTok, 2048) * 2,
-      output_config: { effort: 'low' },                 // 번역·추출은 깊은 추론이 필요 없는 작업
-      messages: [{ role: 'user', content: prompt }],
-    });
-    if (res.stop_reason === 'refusal') return null;
-    const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-    return text || null;
-  } catch (e) {
-    const A = claudeRaw.A;
-    if (A && (e instanceof A.RateLimitError || e instanceof A.AuthenticationError || e instanceof A.PermissionDeniedError)) {
-      console.warn(`claude ${CLAUDE_MODEL}: ${e.status} — 이번 회차는 Gemini 로`); CLAUDE_BLOCKED = true;
-    } else console.warn(`claude ${CLAUDE_MODEL} error: ${e.status || ''} ${String(e.message || e).slice(0, 120)}`);
-    return null;
-  }
+let BUDGET = null;
+const ARR_SCHEMA = { type: 'object', properties: { items: { type: 'array', items: { type: 'string' } } }, required: ['items'], additionalProperties: false };
+const FUND_SCHEMA = { type: 'object', additionalProperties: false, required: ['fund', 'manager', 'stage', 'amount', 'target', 'hardcap', 'date', 'strategy'], properties: {
+  fund: { type: 'string' }, manager: { type: 'string' }, amount: { type: 'string' }, target: { type: 'string' }, hardcap: { type: 'string' }, date: { type: 'string' },
+  stage: { type: 'string', enum: ['launch', 'first_close', 'interim_close', 'final_close', 'close', 'none'] },
+  strategy: { type: 'string', enum: ['Private Equity', 'Infrastructure', 'Real Estate', 'Private Credit', 'Secondaries', 'Venture Capital', 'Aviation', 'Other'] },
+} };
+const SCHEMAS = { tr: ARR_SCHEMA, fund: FUND_SCHEMA };
+// task: tr(번역) | fund(펀드 정보). 번역·추출은 추론이 필요 없어 thinking 을 끈다(Sonnet 5.5: between_tools)
+async function claudeRaw(prompt, maxTok, task = 'tr') {
+  const r = await ask(BUDGET, { model: MODELS[task], prompt, maxTokens: maxTok, thinking: { type: 'between_tools' }, schema: SCHEMAS[task] });
+  return r ? r.text : null;
 }
 
 // LLM 호출 → 응답 텍스트. Claude(키가 있으면) → Gemini(모델 폴백) 순. 실패 시 null.
-async function llmRaw(prompt, maxTok) {
-  const viaClaude = await claudeRaw(prompt, maxTok);
+async function llmRaw(prompt, maxTok, task) {
+  const viaClaude = await claudeRaw(prompt, maxTok, task);
   if (viaClaude) return viaClaude;
   return geminiRaw(prompt, maxTok);
 }
@@ -371,13 +362,15 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 // 영문 제목 여러 개 → 한국어 제목 배열(같은 순서)
 async function translateTitles(titles) {
   const prompt = `${TR_RULES}\n다음 영문 뉴스 제목들을 한국어 기사 제목으로 번역하라. 입력과 같은 순서·같은 개수의 JSON 문자열 배열만 출력하라(설명·마크다운 금지).\n${JSON.stringify(titles)}`;
-  const out = parseJsonArr(await llmRaw(prompt, 4096));
+  const out = parseJsonArr(await llmRaw(prompt, 4096, 'tr'));
   return out && out.length === titles.length ? out.map((x) => String(x || '').trim()) : null;
 }
 // 영문 본문 문단 배열 → 한국어 문단 배열(문단 수 동일 — 앱에서 한 문단씩 짝지어 보여 준다)
 async function translateParas(title, paras) {
   const prompt = `${TR_RULES}\n다음은 기사 "${title}"의 본문 문단 배열이다. 각 문단을 한국어로 번역해 입력과 같은 순서·같은 개수의 JSON 문자열 배열만 출력하라(문단을 합치거나 나누지 말 것, 설명·마크다운 금지).\n${JSON.stringify(paras)}`;
-  const out = parseJsonArr(await llmRaw(prompt, 8192));
+  // 출력 상한은 원문 길이에 맞춘다(한국어 번역은 영어 원문 토큰의 1.3~1.6배) — 예산 사전 점검이 과하게 잡히지 않게
+  const chars = paras.join(' ').length;
+  const out = parseJsonArr(await llmRaw(prompt, Math.min(8192, Math.ceil((chars / 4) * 1.8) + 400), 'tr'));
   if (!out || out.length !== paras.length) return null;
   const res = out.map((x) => String(x || '').trim());
   // 번역되지 않고 영문 그대로 돌아온 문단이 절반을 넘으면 실패로 본다(다음 회차에 다시)
@@ -406,7 +399,7 @@ async function extractFundLLM(a) {
 Article date: ${a.ts ? a.ts.slice(0, 10) : ''}
 TITLE: ${a.ko}
 TEXT: ${body}`;
-  const text = await llmRaw(prompt, 600);
+  const text = await llmRaw(prompt, 700, 'fund');
   if (!text) return null;
   const m = text.match(/\{[\s\S]*\}/);
   try {
@@ -430,6 +423,77 @@ async function fundPass(list) {
     await pause(claudeOn() ? 300 : LLM_GAP_MS);
   }
   return list.filter((a) => a.frx).length;
+}
+
+// ── 기사 분석(Claude) — 관련성(주가 해설·동명 회사·리테일 상품·가상자산·연금 제도·무관 기사) 판별 + 핵심 금액 ──
+// 정규식 잡음 규칙이 놓치는 경우(예: 미국 가스회사 EQT Corp 를 사모 EQT 로 오인)를 문맥으로 가른다.
+// 애매하면 남기도록 지시하고, '무관'으로 판정된 기사만 아카이브에서 빼고 ai-rejected.json 에 30일 기억해 다시 받지 않는다.
+const AX_V = 1, AX_DAYS = 3, AX_BATCH = 10, AX_MAX = 120;
+const AX_NOISE = ['stock', 'same_name', 'retail', 'crypto', 'pension_policy', 'unrelated'];
+const AX_SCHEMA = { type: 'object', additionalProperties: false, required: ['items'], properties: { items: { type: 'array', items: {
+  type: 'object', additionalProperties: false, required: ['id', 'relevant', 'noise', 'amount'],
+  properties: { id: { type: 'string' }, relevant: { type: 'boolean' }, noise: { type: 'string', enum: ['', ...AX_NOISE] }, amount: { type: 'string' } },
+} } } };
+const AX_SYSTEM = `너는 KB증권 글로벌상품영업부(해외 대체투자 펀드를 국내 기관투자자에게 소개하는 부서)의 뉴스 선별 담당이다.
+입력은 기사 목록(JSON 배열: id, title, source, lead)이다. 각 기사가 이 부서 업무와 관련 있는지 판단한다.
+
+관련 있음(relevant=true):
+- 해외 대체투자 운용사(PE·사모대출·인프라·부동산·항공기금융·세컨더리)의 펀드레이징, 딜(인수·매각·투자·대출), 인사, 전략, 운용자산, 사모시장 사업 실적
+- 사모시장 전반의 동향·수익률·규제·LP 동향
+- 국내 기관투자자(연기금·공제회·보험·증권·은행·자산운용사)의 대체투자·해외투자·출자·위탁운용사 선정·운용조직·CIO 인사·지방이전
+- 상장 운용사(Blackstone·KKR·Apollo·Ares·TPG 등) 실적 기사라도 펀드레이징·운용자산·딜이 중심이면 관련
+
+관련 없음(relevant=false)과 noise:
+- stock: 주가 등락·목표주가·투자의견·밸류에이션 등 주식 투자자 대상 해설
+- same_name: 이름이 같은 다른 회사·기관(예: 미국 가스회사 EQT Corporation, 인도 중앙감찰위원 CVC, 호주 통신사 TPG Telecom)
+- retail: 공모펀드·ETF·예금·카드·연금저축 등 개인 대상 금융상품, 증권사 이벤트
+- crypto: 비트코인·가상자산 상품
+- pension_policy: 연금 제도·보험료·수급자·연금개혁(기금 운용 내용이 없을 때)
+- unrelated: 그 밖에 대체투자와 무관한 일반 경제·정치·사회 기사
+
+판단이 애매하면 relevant=true, noise="" 로 둔다(관련 기사를 잘못 버리는 것이 잡음을 남기는 것보다 나쁘다).
+amount: 기사의 핵심 거래·펀드 금액을 원문 표기 그대로(예: "$1.6bn", "2,000억원"). 없으면 "".
+입력의 모든 id 에 대해 같은 순서로 하나씩 items 를 낸다.`;
+const lead = (a) => String(a.body || a.desc || '').replace(/\s+/g, ' ').slice(0, 700);
+export async function analyzePass(list, budget = null) {
+  const B = budget || BUDGET;
+  const on = () => claudeReady() && !!B && B.remaining() > 0.02;
+  if (!on()) return 0;
+  const cut = new Date(Date.now() - AX_DAYS * 86400000).toISOString();
+  const cand = list.filter((a) => (a.ts || '') >= cut && !(a.ax && a.ax.v === AX_V) && !a.pinned).slice(0, AX_MAX);
+  let done = 0;
+  for (let i = 0; i < cand.length && on(); i += AX_BATCH) {
+    const chunk = cand.slice(i, i + AX_BATCH);
+    const r = await ask(B, {
+      model: MODELS.analyze, system: AX_SYSTEM, maxTokens: 120 * chunk.length + 300, thinking: { type: 'between_tools' }, schema: AX_SCHEMA,
+      prompt: JSON.stringify(chunk.map((a) => ({ id: a.id, title: a.ko, source: a.source || '', lead: lead(a) }))),
+    });
+    if (!r || !r.json || !Array.isArray(r.json.items)) continue;
+    for (const o of r.json.items) {
+      const a = chunk.find((x) => x.id === o.id);
+      if (!a) continue;
+      const rel = o.relevant !== false || !AX_NOISE.includes(o.noise);   // 무관 판정은 분류값까지 있어야 인정
+      a.ax = { v: AX_V, rel, nt: rel ? '' : o.noise, amt: String(o.amount || '').slice(0, 40) };
+      done++;
+    }
+  }
+  return done;
+}
+// 분석에서 '무관'으로 판정된 기사 기억(30일) — 다음 회차에 같은 기사를 다시 받아 다시 분석하지 않게
+const REJECT_FILE = new URL('../ai-rejected.json', import.meta.url);
+async function loadRejected() { try { return JSON.parse(await readFile(REJECT_FILE, 'utf8')); } catch { return {}; } }
+async function saveRejected(map) {
+  const cut = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const kept = Object.fromEntries(Object.entries(map).filter(([, v]) => (v.d || '') >= cut));
+  await writeFile(REJECT_FILE, JSON.stringify(kept, null, 0));
+}
+// 분석이 뽑은 금액은 기사 제목·본문에 그대로 적혀 있을 때만 쓴다(지어낸 숫자 방지)
+export function axAmount(a) {
+  const amt = a && a.ax && a.ax.amt;
+  if (!amt) return '';
+  const norm = (x) => String(x || '').toLowerCase().replace(/[\s,]/g, '');
+  const num = (amt.match(/\d[\d,.]*/) || [''])[0].replace(/,/g, '');
+  return num && norm(`${a.ko} ${a.tko || ''} ${a.body || ''}`).includes(norm(num)) ? amt : '';
 }
 
 // 영문 기사 번역 패스 — 제목(묶음) → 본문(최신 기사부터). 결과: a.tko(한글 제목), a.bodyKo = { h, p: [...] }
@@ -1232,7 +1296,7 @@ export function extractDeals(a) {
   // 리드의 아무 숫자나 가져오면 운용자산·과거 거래 금액이 섞인다.
   const lps = lpsIn(title).slice(0, 3);
   const gps = gpsIn(title);
-  const amount = dealAmount(title) || bodyDealAmount(a.body, title, kindHit[1], [...lps, ...gps].map((x) => x.inst)) || '';
+  const amount = dealAmount(title) || bodyDealAmount(a.body, title, kindHit[1], [...lps, ...gps].map((x) => x.inst)) || axAmount(a) || '';
   const gpsLead = gps.length ? gps : gpsIn(lead);
   const base = {
     kind, status, amount,
@@ -2395,6 +2459,9 @@ async function main() {
     } catch (e) { console.warn('skip:', q, '-', e.message); }
   }
   all = dedupe(all);
+  BUDGET = await openBudget('collect', { runCap: 0.6 });
+  const rejected = await loadRejected();
+  { const n = all.length; all = all.filter((a) => !rejected[a.id]); if (n !== all.length) console.log(`ai-rejected: ${n - all.length} fresh articles skipped`); }
 
   let prev = [];
   try { prev = JSON.parse(await readFile(new URL('../news.json', import.meta.url), 'utf8')); } catch {}
@@ -2638,7 +2705,20 @@ async function main() {
   const tr = await translatePass(merged);
   const frxN = await fundPass(merged);
   console.log(`fund details (본문 추출): ${frxN} articles`);
-  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${ANTHROPIC_API_KEY ? 'Claude ' + CLAUDE_MODEL : 'Gemini'}${tr.gtTitles || tr.gtBodies ? ` + 무료 번역 ${tr.gtTitles || 0}/${tr.gtBodies || 0}` : ''})${llmDone() ? ' — LLM 한도·과부하로 중단' : ''}${GTX_BLOCKED ? ' — 구글 번역 제한' : ''}`);
+  const axN = await analyzePass(merged);
+  { const out = merged.filter((a) => a.ax && a.ax.rel === false);
+    if (out.length) {
+      for (const a of out) rejected[a.id] = { t: String(a.ko || '').slice(0, 120), nt: a.ax.nt, d: String(a.ts || '').slice(0, 10) };
+      const ids = new Set(out.map((a) => a.id));
+      const keep = merged.filter((a) => !ids.has(a.id)); merged.length = 0; merged.push(...keep);
+    }
+    await saveRejected(rejected);
+    const by = out.reduce((m, a) => ((m[a.ax.nt] = (m[a.ax.nt] || 0) + 1), m), {});
+    console.log(`analysis(Claude): ${axN} articles checked, ${out.length} removed ${JSON.stringify(by)}`);
+    for (const a of out.slice(0, 12)) console.log(`   - [${a.ax.nt}] ${String(a.ko || '').slice(0, 90)}`); }
+  await BUDGET.save();
+  console.log(BUDGET.summary());
+  console.log(`translation: ${tr.titles} titles, ${tr.bodies} bodies (${BUDGET.spentRun() > 0 ? 'Claude Sonnet 5.5' : 'Gemini'}${tr.gtTitles || tr.gtBodies ? ` + 무료 번역 ${tr.gtTitles || 0}/${tr.gtBodies || 0}` : ''})${llmDone() ? ' — LLM 한도·과부하로 중단' : ''}${GTX_BLOCKED ? ' — 구글 번역 제한' : ''}`);
   const listing = await splitBodies(merged);
   await writeFile(new URL('../news.json', import.meta.url), JSON.stringify(listing, null, 0));
   console.log(`collected ${all.length} relevant (dead links dropped: ${deadCount}), archive now ${merged.length} articles`);
@@ -2894,7 +2974,7 @@ function selftest() {
 // ── 앱용 경량 피드(feed/*.json) ─────────────────────────────
 // news/fundraising/investments.json 은 수집기의 상태 저장소(재시도 횟수·구글 뉴스 링크 등)를 겸해 크다.
 // 앱은 그중 일부만 쓰므로, 수집기 전용 필드와 이미 원문 주소로 풀린 구글 뉴스 링크(gurl)를 뺀 사본을 따로 낸다.
-const COLLECTOR_ONLY = new Set(['metric', 'fetched', 'fetchTries', 'pubChecked', 'linkOk', 'tv', 'bl', 'frx', 'upgradeTries', 'tsrc', 'bodyMismatch', 'sizeLlm', 'resolveTries', 'stale', 'linkDead', 'pinned']);
+const COLLECTOR_ONLY = new Set(['metric', 'fetched', 'fetchTries', 'pubChecked', 'linkOk', 'tv', 'bl', 'frx', 'ax', 'upgradeTries', 'tsrc', 'bodyMismatch', 'sizeLlm', 'resolveTries', 'stale', 'linkDead', 'pinned']);
 const SIZE_KEYS = new Set(['size', 'target', 'hardcap', 'finalSize', 'amount']);   // 금액 표기 통일("$8 Billion" → "$8bn")
 export function slimForApp(x) {
   if (Array.isArray(x)) return x.map(slimForApp);

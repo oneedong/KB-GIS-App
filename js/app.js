@@ -98,6 +98,8 @@ function App() {
     const [alloc, setAlloc] = useState(null);
     const [insights, setInsights] = useState(null);
     const [market, setMarket] = useState(null);
+    const [altBrief, setAltBrief] = useState(null);
+    const [gpBriefs, setGpBriefs] = useState(null);
     const [briefIndex, setBriefIndex] = useState(null);
     const [briefSel, setBriefSel] = useState(null);
     const [briefCache, setBriefCache] = useState({});
@@ -173,6 +175,10 @@ function App() {
             setInsights(d); });
         getJson(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global)))
             setMarket(d); });
+        getJson(API.altBrief).then((d) => { if (d && Array.isArray(d.points))
+            setAltBrief(d); });
+        getJson(API.gpBriefs).then((d) => { if (d && d.gps)
+            setGpBriefs(d); });
         getJson(API.briefIndex).then((d) => { if (Array.isArray(d))
             setBriefIndex(d); });
         getJson(API.roster).then((d) => { if (d && Array.isArray(d.institutions))
@@ -430,6 +436,7 @@ function App() {
                 React.createElement("span", { onClick: () => setFilter('전체'), style: { marginLeft: 'auto', font: F(600, 13), color: KB.gray, cursor: 'pointer' } }, "\uD544\uD130 \uD574\uC81C"))),
             filter === '전체' && !homeQuery.trim() && (React.createElement("div", { style: { paddingBottom: 6 } },
                 React.createElement(BriefDigest, { market: market, onOpen: () => setScreen('brief') }),
+                React.createElement(AltDigest, { alt: altBrief, onOpenArticle: (id, fb) => openArticle(id, fb) }),
                 React.createElement("div", { style: { height: 14 } }))),
             newCount > 0 && filter === '전체' && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', padding: '12px 20px', borderTop: `1px solid ${KB.line}` } },
                 React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow, marginRight: 8 } }),
@@ -509,7 +516,7 @@ function App() {
         if (gpSel) {
             const ins = insights || {};
             const lpLinks = invItems.filter((e) => (e.role === 'LP' && e.counterpart === gpSel) || (e.role === 'GP' && e.inst === gpSel && e.counterpart));
-            return (React.createElement(GpProfile, { name: gpSel, profile: gpProfiles && gpProfiles[gpSel], articles: artsByInst[gpSel] || [], deals: dealsByInst[gpSel] || [], lpLinks: lpLinks, frEvents: ((fundraising && fundraising.items) || []).filter((f) => f.gp === gpSel), aumNews: (ins.aums || []).find((x) => x.inst === gpSel), invUpdatedAt: investments && investments.updatedAt, onBack: () => setGpSel(null), onOpenArticle: openArticle, onOpenDeal: openDeal, onOpenInst: openInst }));
+            return (React.createElement(GpProfile, { name: gpSel, profile: gpProfiles && gpProfiles[gpSel], articles: artsByInst[gpSel] || [], deals: dealsByInst[gpSel] || [], lpLinks: lpLinks, frEvents: ((fundraising && fundraising.items) || []).filter((f) => f.gp === gpSel), aumNews: (ins.aums || []).find((x) => x.inst === gpSel), invUpdatedAt: investments && investments.updatedAt, brief: gpBriefs && gpBriefs.gps && gpBriefs.gps[gpSel], briefRefs: gpBriefs && gpBriefs.refs, onBack: () => setGpSel(null), onOpenArticle: openArticle, onOpenDeal: openDeal, onOpenInst: openInst }));
         }
         const ql = gpQuery.trim().toLowerCase();
         const rows = gpRows.filter((r) => !ql || r.name.toLowerCase().includes(ql));

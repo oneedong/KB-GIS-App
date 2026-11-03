@@ -11,7 +11,11 @@
 const WK_ASSETS = [['PE', 'Private Equity'], ['PC', 'Private Credit'], ['RE', 'Real Estate'], ['IN', 'Infrastructure'], ['AV', 'Aviation']];
 const wkDate = (s) => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[1]}.${m[2]}.${m[3]}` : String(s || ''); };
 const wkShort = (s) => { const m = String(s || '').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}/${+m[2]}` : String(s || ''); };
-const viaLabel = (v) => (/^claude/.test(v || '') ? '분석 Claude' : /^gemini/.test(v || '') ? '분석 Gemini' : '자동 집계(요약 모델 미사용)');
+const viaLabel = (v) => {
+  const m = String(v || '').match(/claude-(opus|sonnet|haiku|fable)-(\d+)-?(\d+)?/);
+  if (m) return `분석 Claude ${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}`;
+  return /^claude/.test(v || '') ? '분석 Claude' : /^gemini/.test(v || '') ? '분석 Gemini' : '자동 집계(요약 모델 미사용)';
+};
 
 // 전주 대비 증감 표시
 function WkDelta({ cur, prev }) {

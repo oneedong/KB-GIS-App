@@ -15,6 +15,7 @@
  *   node scripts/lp-refresh.mjs --selftest # 문장 추출 규칙 점검(네트워크 없음)
  */
 import { readFile, writeFile } from 'node:fs/promises';
+import { openBudget, ask, claudeReady, MODELS } from './claude.mjs';
 
 export const TARGETS = [
   ['한국교직원공제회', ['교직원공제회']], ['군인공제회', ['군인공제회']], ['대한지방행정공제회', ['행정공제회']],
@@ -178,6 +179,28 @@ async function search(q) {
   return parseFeed(await res.text());
 }
 
+let LP_BUDGET = null;
+const HAIKU_SCHEMA = { type: 'object', additionalProperties: false, required: ['found', 'index', 'altPct', 'asOf'], properties: {
+  found: { type: 'boolean' }, index: { type: 'integer' }, altPct: { type: 'number' }, asOf: { type: 'string' } } };
+async function haikuPct(name, aliases, near) {
+  if (!claudeReady()) return null;
+  if (!LP_BUDGET) LP_BUDGET = await openBudget('lp');
+  const prompt = `기관: ${name} (별칭: ${aliases.join(', ')})
+아래는 이 기관을 다룬 기사에서 '대체'와 '%'가 함께 나온 문장들이다(번호. [기사일] 문장).
+${near.map((x, i) => `${i}. [${x.pub}] ${x.s}`).join('\n')}
+
+이 기관의 현재(또는 가장 최근 시점) 대체투자 비중이 사실로 적힌 문장이 있으면 found=true, 그 번호(index), 비중 숫자(altPct), 기준 시점(asOf, 예: "2025년 말", 문장에 없으면 "")을 답하라.
+계획·목표·전망·가정("~했다면")·다른 기관의 수치·수익률·증감폭은 제외한다. 해당 문장이 없으면 found=false, index=-1, altPct=0, asOf="".`;
+  const r = await ask(LP_BUDGET, { model: MODELS.lp, prompt, maxTokens: 200, thinking: { type: 'disabled' }, schema: HAIKU_SCHEMA });
+  const o = r && r.json;
+  if (!o || !o.found || !(o.index >= 0 && o.index < near.length)) return null;
+  const x = near[o.index], v = Number(o.altPct);
+  // 문장에 그 숫자가 그대로 있어야 하고(지어낸 값 방지), 계획·가정 문장이 아니어야 한다
+  if (!(v >= 3 && v <= 95) || !new RegExp(`(^|[^\\d.])${String(v).replace('.', '\\.')}(\\.0)?\\s*%`).test(x.s) || /겠다|계획|목표|전망|예정|추산|라면|다면/.test(x.s)) return null;
+  const asOf = /20\d{2}년/.test(o.asOf || '') ? o.asOf : asOfOf(x.s, x.pubYear);
+  return { altPct: v, asOf, sentence: x.s, source: x.source, sourceUrl: x.sourceUrl, pub: x.pub, via: 'haiku' };
+}
+
 async function main() {
   if (process.argv.includes('--selftest')) return selftest();
   const dry = process.argv.includes('--dry');
@@ -205,7 +228,7 @@ async function main() {
       let body = '';
       if (!/news\.google\.com/.test(url)) { try { body = (await fetchArticleText(url, it.title)).text || ''; } catch {} }
       if (body.length > 200) opened++;
-      if (dry) for (const x of `${it.title}. ${body}`.split(/(?<=다\.)\s+|\n+/)) if (/대체/.test(x) && /\d\s*%|\d\s*조/.test(x) && near.length < 6) near.push(x.trim().slice(0, 200));
+      for (const x of `${it.title}. ${body}`.split(/(?<=다\.)\s+|\n+/)) if (/대체/.test(x) && /\d\s*%/.test(x) && near.length < 10) near.push({ s: x.trim().slice(0, 220), pubYear, source: it.source || '', sourceUrl: url, pub: pubMs ? new Date(pubMs).toISOString().slice(0, 10) : '' });
       for (const f of figuresFromArticle(it.title, body || it.desc || '', aliases, pubYear)) {
         const rec = { ...f, source: it.source || '', sourceUrl: url, pub: pubMs ? new Date(pubMs).toISOString().slice(0, 10) : '' };
         if (f.altPct != null && (!bestPct || rec.pub > bestPct.pub)) bestPct = rec;
@@ -216,7 +239,12 @@ async function main() {
     console.log(`   (후보 기사 ${cands.length}건 · 본문 확보 ${opened}건)`);
     if (bestPct) console.log(`   └ 비중: "${bestPct.sentence}"`);
     if (bestAum) console.log(`   └ 운용자산: "${bestAum.sentence}"`);
-    if (dry && !bestPct) for (const x of near) console.log(`   · 미추출 후보: ${x}`);
+    // 규칙으로 못 뽑았으면 대체·%가 함께 나온 문장을 Claude Haiku 5.5 가 판독(문장 속 숫자와 일치할 때만 채택)
+    if (!bestPct && near.length) {
+      bestPct = await haikuPct(name, aliases, near);
+      if (bestPct) console.log(`   └ 비중(Haiku 판독): ${bestPct.altPct}% "${bestPct.sentence}"`);
+    }
+    if (dry && !bestPct) for (const x of near) console.log(`   · 미추출 후보: ${x.s}`);
     if (dry || !bestPct) continue;
     let inst = data.institutions.find((x) => x.name === name);
     if (inst && inst.verified) continue;                       // 공시 확정 수치는 기사로 덮지 않는다
@@ -245,6 +273,7 @@ async function main() {
   data.institutions.sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0) || b.altPct - a.altPct);
   await writeFile(path, JSON.stringify(data, null, 2) + '\n');
   console.log(`allocations.json: ${changed}개 기관 갱신`);
+  if (LP_BUDGET) { await LP_BUDGET.save(); console.log(LP_BUDGET.summary()); }
 }
 
 if (process.argv[1] && process.argv[1].endsWith('lp-refresh.mjs')) main().catch((e) => { console.error(e); process.exit(1); });

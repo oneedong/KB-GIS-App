@@ -111,6 +111,8 @@ function App() {
   const [alloc, setAlloc] = useState(null);
   const [insights, setInsights] = useState(null);
   const [market, setMarket] = useState(null);
+  const [altBrief, setAltBrief] = useState(null);
+  const [gpBriefs, setGpBriefs] = useState(null);
   const [briefIndex, setBriefIndex] = useState(null);
   const [briefSel, setBriefSel] = useState(null);
   const [briefCache, setBriefCache] = useState({});
@@ -178,6 +180,8 @@ function App() {
     getJson(API.alloc).then((d) => { if (d && Array.isArray(d.institutions)) { d.institutions = d.institutions.slice().sort((a, b) => b.altPct - a.altPct); setAlloc(d); } });
     getJson(API.insights).then((d) => { if (d && (d.cios || d.aums)) setInsights(d); });
     getJson(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global))) setMarket(d); });
+    getJson(API.altBrief).then((d) => { if (d && Array.isArray(d.points)) setAltBrief(d); });
+    getJson(API.gpBriefs).then((d) => { if (d && d.gps) setGpBriefs(d); });
     getJson(API.briefIndex).then((d) => { if (Array.isArray(d)) setBriefIndex(d); });
     getJson(API.roster).then((d) => { if (d && Array.isArray(d.institutions)) setRoster(d.institutions); });
     getJson(API.lpProfiles).then((d) => { if (d && d.profiles) { setProfiles(d.profiles); setProfilesAt(d.updatedAt || ''); } });
@@ -383,6 +387,7 @@ function App() {
         {filter === '전체' && !homeQuery.trim() && (
           <div style={{ paddingBottom: 6 }}>
             <BriefDigest market={market} onOpen={() => setScreen('brief')} />
+            <AltDigest alt={altBrief} onOpenArticle={(id, fb) => openArticle(id, fb)} />
             <div style={{ height: 14 }}></div>
           </div>
         )}
@@ -503,6 +508,7 @@ function App() {
         <GpProfile name={gpSel} profile={gpProfiles && gpProfiles[gpSel]} articles={artsByInst[gpSel] || []} deals={dealsByInst[gpSel] || []}
           lpLinks={lpLinks} frEvents={((fundraising && fundraising.items) || []).filter((f) => f.gp === gpSel)}
           aumNews={(ins.aums || []).find((x) => x.inst === gpSel)} invUpdatedAt={investments && investments.updatedAt}
+          brief={gpBriefs && gpBriefs.gps && gpBriefs.gps[gpSel]} briefRefs={gpBriefs && gpBriefs.refs}
           onBack={() => setGpSel(null)} onOpenArticle={openArticle} onOpenDeal={openDeal} onOpenInst={openInst} />
       );
     }

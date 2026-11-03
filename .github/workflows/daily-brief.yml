@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [ main ]
-    paths: [ 'scripts/daily-brief.mjs', '.github/workflows/daily-brief.yml' ]
+    paths: [ 'scripts/daily-brief.mjs', 'scripts/alt-brief.mjs', '.github/workflows/daily-brief.yml' ]
 
 permissions:
   contents: write
@@ -30,11 +30,18 @@ jobs:
         run: node scripts/daily-brief.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - run: npm ci --omit=dev --no-audit --no-fund
+      # 오늘의 해외대체(Claude Sonnet 5.5) — 실패해도 시황 커밋은 진행
+      - name: Build alt-investment brief
+        continue-on-error: true
+        run: node scripts/alt-brief.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Commit brief
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A market.json history.json briefs
+          git add -A market.json history.json briefs alt-brief.json usage
           if ! git diff --cached --quiet; then
             git commit -m "chore: 데일리 시황 갱신 [skip ci]"
             # 뉴스 수집 워크플로와 겹치면 리베이스 후 재시도 (푸시 경합 방지)

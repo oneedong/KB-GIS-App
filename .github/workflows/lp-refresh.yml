@@ -30,6 +30,8 @@ jobs:
       - run: npm ci --omit=dev --no-audit --no-fund
       - name: Refresh allocations
         run: node scripts/lp-refresh.mjs ${{ github.event.inputs.dry == 'true' && '--dry' || '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Rebuild LP profiles
         if: github.event.inputs.dry != 'true'
         run: node scripts/gen-lp-profiles.mjs
@@ -38,7 +40,7 @@ jobs:
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A allocations.json lp-profiles.json
+          git add -A allocations.json lp-profiles.json usage
           if ! git diff --cached --quiet; then
             git commit -m "chore: 국내 LP 배분·운용자산 최신화 [skip ci]"
             for i in 1 2 3; do

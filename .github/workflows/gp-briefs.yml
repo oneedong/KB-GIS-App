@@ -1,0 +1,44 @@
+name: GP briefs (주요 해외 GP 최근 2주 동향 — Claude 일괄처리)
+
+on:
+  schedule:
+    - cron: '43 21 * * 0'   # 매주 월요일 06:43 KST
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gp-briefs
+  cancel-in-progress: false
+
+jobs:
+  briefs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # 일괄처리(Batch) 대기 최대 45분
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: npm ci --omit=dev --no-audit --no-fund
+      - name: Build GP briefs
+        run: node scripts/gp-briefs.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name  "kbgis-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A gp-briefs.json usage
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: 해외 GP 최근 동향 요약 갱신 [skip ci]"
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase -X theirs origin main || { git rebase --abort; exit 1; }
+              [ "$i" = "3" ] && exit 1
+            done
+          else
+            echo "No changes."
+          fi

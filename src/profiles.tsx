@@ -478,7 +478,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
 }
 
 // ─── 해외 GP 프로필 ──────────────────────────────────────────
-function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews, invUpdatedAt, onBack, onOpenArticle, onOpenDeal, onOpenInst }) {
+function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews, invUpdatedAt, brief, briefRefs, onBack, onOpenArticle, onOpenDeal, onOpenInst }) {
   const desktop = useDesktop();
   const p = profile || {};
   const latest = articles[0];
@@ -498,6 +498,19 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
         <div style={{ background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 2 : 0 }}>
           <div style={{ font: F(400, 14.5, 1.75), color: KB.ink2 }}>{p.summary}</div>
         </div>
+      )}
+
+      {brief && (brief.summary || (brief.points || []).length > 0) && (
+        <Section title="최근 2주 동향" sub={`Claude 요약 · ${brief.asOf || ''} · 기사 ${brief.n || 0}건 기준`}>
+          {brief.summary && <FocusNote style={{ font: F(500, 14.5, 1.7) }}>{nm(brief.summary)}</FocusNote>}
+          <Bullets style={{ marginTop: 8 }} items={(brief.points || []).map((pt, i) => (
+            <span key={i} style={{ wordBreak: 'keep-all' }}>{nm(pt.text)}
+              {(pt.ids || []).filter((id) => briefRefs && briefRefs[id]).map((id) => (
+                <span key={id} onClick={() => onOpenArticle(id, { url: briefRefs[id].u })} style={{ font: F(500, 12), color: KB.blue, cursor: 'pointer', marginLeft: 6, textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' }}>{srcShort(briefRefs[id].s)}</span>
+              ))}
+            </span>
+          ))} />
+        </Section>
       )}
 
       <Section title="핵심 지표">

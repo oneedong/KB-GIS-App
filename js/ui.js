@@ -99,6 +99,8 @@ const GRID = {
     tag: { border: `1px solid ${KB.rule}`, background: KB.cell, font: F(700, 13), color: KB.blue, textAlign: 'center', padding: '7px 6px', verticalAlign: 'middle' },
 };
 // 개조식 불릿 — 1단 ○, 2단 -
+// 출처 이름 줄이기 — "THE ELEC, Korea Electronics Industry Media" → "THE ELEC" (좁은 화면에서 넘치지 않게)
+const srcShort = (s) => { const t = String(s || '').split(/,\s|\s[-|–]\s/)[0].trim(); return !t ? '기사' : t.length > 22 ? t.slice(0, 21) + '…' : t; };
 function Bullets({ items, sub, style }) {
     const list = (items || []).filter(Boolean);
     if (!list.length)

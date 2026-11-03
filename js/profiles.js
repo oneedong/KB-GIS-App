@@ -373,7 +373,7 @@ function LpProfile({ name, group, profile, alloc, cio, execs, aumNews, move, ret
                 "\uD22C\uC790\uB0B4\uC5ED\u00B7\uC778\uC0AC\u00B7AUM\u00B7\uAD00\uB828 \uAE30\uC0AC\uB294 3\uC2DC\uAC04\uB9C8\uB2E4 \uAE30\uC0AC\uC5D0\uC11C \uC790\uB3D9 \uAC31\uC2E0\uB418\uBA70, \uAC01 \uD56D\uBAA9\uC740 \uADFC\uAC70 \uAE30\uC0AC\uB85C \uC5F0\uACB0\uB429\uB2C8\uB2E4."))));
 }
 // ─── 해외 GP 프로필 ──────────────────────────────────────────
-function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews, invUpdatedAt, onBack, onOpenArticle, onOpenDeal, onOpenInst }) {
+function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews, invUpdatedAt, brief, briefRefs, onBack, onOpenArticle, onOpenDeal, onOpenInst }) {
     const desktop = useDesktop();
     const p = profile || {};
     const latest = articles[0];
@@ -384,6 +384,11 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
         desktop ? React.createElement("div", { style: { background: KB.bg, border: `1px solid ${KB.line}`, borderRadius: 2, overflow: 'hidden' } }, head) : head,
         p.summary && (React.createElement("div", { style: { background: KB.bg, padding: desktop ? '16px 20px' : '0 20px 18px', marginTop: desktop ? 16 : 0, border: desktop ? `1px solid ${KB.line}` : 'none', borderRadius: desktop ? 2 : 0 } },
             React.createElement("div", { style: { font: F(400, 14.5, 1.75), color: KB.ink2 } }, p.summary))),
+        brief && (brief.summary || (brief.points || []).length > 0) && (React.createElement(Section, { title: "\uCD5C\uADFC 2\uC8FC \uB3D9\uD5A5", sub: `Claude 요약 · ${brief.asOf || ''} · 기사 ${brief.n || 0}건 기준` },
+            brief.summary && React.createElement(FocusNote, { style: { font: F(500, 14.5, 1.7) } }, nm(brief.summary)),
+            React.createElement(Bullets, { style: { marginTop: 8 }, items: (brief.points || []).map((pt, i) => (React.createElement("span", { key: i, style: { wordBreak: 'keep-all' } },
+                    nm(pt.text),
+                    (pt.ids || []).filter((id) => briefRefs && briefRefs[id]).map((id) => (React.createElement("span", { key: id, onClick: () => onOpenArticle(id, { url: briefRefs[id].u }), style: { font: F(500, 12), color: KB.blue, cursor: 'pointer', marginLeft: 6, textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' } }, srcShort(briefRefs[id].s))))))) }))),
         React.createElement(Section, { title: "\uD575\uC2EC \uC9C0\uD45C" },
             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: desktop ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 8 } },
                 React.createElement(Metric, { label: "\uC6B4\uC6A9\uC790\uC0B0(AUM)", value: p.aum || '–', note: p.aumAsOf || '' }),

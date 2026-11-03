@@ -469,6 +469,29 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
 // '20260927' → '9월 27일'
 const briefDay = (k) => { const m = String(k || '').match(/^(\d{4})(\d{2})(\d{2})$/); return m ? `${+m[2]}월 ${+m[3]}일` : String(k || ''); };
 // 홈 상단 요약 카드 — 오늘의 시황 한눈에
+// 홈 '오늘의 해외대체' — 매일 아침 Claude 가 최근 기사로 쓴 핵심 3~5줄(alt-brief.json). 출처를 누르면 근거 기사로 연다.
+function AltDigest({ alt, onOpenArticle }) {
+  if (!alt || !Array.isArray(alt.points) || !alt.points.length) return null;
+  if (Date.now() - Date.parse(alt.generatedAt || 0) > 3 * 864e5) return null;   // 사흘 넘은 브리핑은 숨김
+  const refs = alt.refs || {};
+  const src = (ids) => ids.filter((id) => refs[id]).map((id, k) => (
+    <span key={id} onClick={(e) => { e.stopPropagation(); onOpenArticle(id, { url: refs[id].u }); }}
+      style={{ font: F(500, 12), color: KB.blue, cursor: 'pointer', marginLeft: k ? 6 : 6, textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' }}>{srcShort(refs[id].s)}</span>
+  ));
+  return (
+    <div style={{ margin: '10px 16px 4px', padding: '14px 16px', border: `1px solid ${KB.line}`, background: KB.bg }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, paddingBottom: 7, borderBottom: `1.5px solid ${KB.warm}` }}>
+        <span style={{ width: 4, height: 15, background: KB.yellow, flexShrink: 0 }}></span>
+        <span style={{ font: F(700, 14.5), color: KB.ink }}>오늘의 해외대체</span>
+        <span style={{ font: F(500, 12), color: KB.mute }}>{briefDay(String(alt.date || '').replace(/-/g, ''))} · Claude 요약</span>
+      </div>
+      {alt.headline && <div style={{ font: F(700, 14.5, 1.55), color: KB.ink, marginTop: 9, wordBreak: 'keep-all' }}>{nm(alt.headline)}</div>}
+      <Bullets style={{ marginTop: 4 }} items={alt.points.map((p, i) => <span key={i} style={{ wordBreak: 'keep-all' }}>{nm(p.text)}{src(p.ids || [])}</span>)} />
+      {alt.korea && <FocusNote style={{ marginTop: 8, font: F(500, 13.5, 1.6) }}><span style={{ font: F(700, 13.5), color: KB.yellowText, marginRight: 6 }}>국내 기관 관점</span>{nm(alt.korea)}</FocusNote>}
+    </div>
+  );
+}
+
 function BriefDigest({ market, onOpen }) {
   if (!market || !Array.isArray(market.kr)) return null;
   const pickRow = (list, name) => (list || []).find((x) => x.name === name);

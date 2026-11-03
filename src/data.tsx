@@ -9,7 +9,9 @@ const API = {
   news: './feed/news.json',            // 기사 목록(리드) — 수집기가 갱신하는 앱용 경량본(feed/)
   alloc: './allocations.json',         // 기관별 대체투자 배분(공시)
   insights: './insights.json',         // CIO·실무 인사·AUM·지방이전·수익률(기사 자동 추출)
-  market: './market.json',             // 데일리 시황(매일 08:00)
+  market: './market.json',             // 데일리 시황(매일 아침)
+  altBrief: './alt-brief.json',        // 오늘의 해외대체(매일 아침 Claude 요약)
+  gpBriefs: './gp-briefs.json',        // 주요 GP 최근 2주 동향(매주 Claude 요약)
   briefIndex: './briefs/index.json',
   brief: (k) => `./briefs/${k}.json`,
   history: './history.json',           // 5년 추이

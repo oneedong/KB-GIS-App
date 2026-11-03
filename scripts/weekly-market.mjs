@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fmtSize } from './money.mjs';
+import { openBudget, ask, MODELS } from './claude.mjs';
 const AC = createRequire(import.meta.url)('../article-clean.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -260,30 +261,13 @@ function buildPrompt(ctx) {
   return `${lines.join('\n')}\n\n위 자료로 아래 형식의 JSON 을 작성하세요.\n${schema}`;
 }
 
+// Claude Opus 5.5 — 하루 예산 장부(작업 'weekly', 하루 $0.70)를 넘지 않을 때만. 거절 시 서버 폴백, 실패·초과 시 Gemini 로.
 async function callClaude(prompt) {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic();
-  const model = process.env.ANTHROPIC_MODEL || 'claude-opus-5-5';
-  const req = {
-    model, max_tokens: 32000, system: SYSTEM, output_config: { effort: 'high' },
-    messages: [{ role: 'user', content: prompt }],
-  };
-  try {
-    // 안전 분류기가 거절하면 서버가 다른 모델로 이어서 답하게 한다
-    let msg;
-    try {
-      msg = await client.beta.messages.stream({ ...req, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }).finalMessage();
-    } catch (e) {
-      if (e instanceof Anthropic.BadRequestError) msg = await client.messages.stream(req).finalMessage();
-      else throw e;
-    }
-    if (msg.stop_reason === 'refusal') return null;
-    return { text: msg.content.filter((b) => b.type === 'text').map((b) => b.text).join(''), via: `claude:${msg.model || model}` };
-  } catch (e) {
-    console.warn(`claude error: ${e.status || ''} ${String(e.message || e).slice(0, 160)}`);
-    return null;
-  }
+  const budget = await openBudget('weekly');
+  const r = await ask(budget, { model: MODELS.weekly, system: SYSTEM, prompt, maxTokens: 20000, effort: 'high', fallbacks: true, stream: true });
+  await budget.save();
+  console.log(budget.summary());
+  return r ? { text: r.text, via: `claude:${r.model}` } : null;
 }
 async function callGemini(prompt) {
   const key = process.env.GEMINI_API_KEY;
@@ -356,7 +340,7 @@ export function koMoney(s) {
       return `${txt} ${cur}${plus ? ' 이상' : ''}`;
     })
     // 받침 없는 '달러·유로·파운드' 뒤 조사 맞춤("4.75억 달러을" → "달러를")
-    .replace(/(달러|유로|파운드)(을|은|과)(?=[\s.,)]|$)/g, (m, w, j) => w + ({ 을: '를', 은: '는', 과: '와' })[j]);
+    .replace(/(달러|유로|파운드)(으로|을|은|과)(?=[\s.,)]|$)/g, (m, w, j) => w + ({ 으로: '로', 을: '를', 은: '는', 과: '와' })[j]);
 }
 const splitSent = (s) => String(s || '').split(/(?<=[.!?。]|[다음함임됨])\s+/).filter(Boolean);
 function cleanText(s, bag, dropped) {
@@ -482,4 +466,4 @@ async function main() {
 if (process.argv[1] && process.argv[1].endsWith('weekly-market.mjs')) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }
-export { lastBizOfWeek, prevReportDay, isBiz, gather, validate, autoReport, tidy, koMoney as _koMoney };
+export { lastBizOfWeek, prevReportDay, isBiz, gather, validate, autoReport, tidy, buildPrompt, SYSTEM, numberBag, numbersOk, koMoney as _koMoney };

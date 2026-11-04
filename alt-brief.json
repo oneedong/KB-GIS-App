@@ -1,114 +1,114 @@
 {
- "date": "2026-11-03",
- "generatedAt": "2026-11-03T04:41:54.883Z",
+ "date": "2026-11-04",
+ "generatedAt": "2026-11-04T01:30:29.410Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "글로벌 대형 운용사 대형 딜·펀드레이징 활발, 국내 기관 접점도 확대",
+ "headline": "Blackstone의 LNG Canada 지분 투자와 인프라·크레딧 펀드 클로징 잇따름, 국민연금은 부동산실장 해임",
  "points": [
   {
-   "text": "Blackstone 주도 컨소시엄이 미쓰비시상사의 LNG Canada 자회사 지분 49.9%를 약 31억 달러(약 2500억엔)에 인수하기로 했으며, Canadian 연기금 4곳이 참여함.",
+   "text": "Blackstone 주도 컨소시엄이 Mitsubishi Corp. 자회사가 보유한 LNG Canada 15% 지분에 31억 달러를 투자하기로 약정했으며, 캐나다 연기금 4곳이 참여해 캐나다 기금으로서는 첫 사례로 보도됨.",
    "ids": [
-    "g1f92wz1",
-    "gt8p92j",
-    "gww029v"
+    "g164w8o3",
+    "g1e03at8"
    ]
   },
   {
-   "text": "TPG가 TPG Rise Climate II 최종 클로징으로 연계 차량 포함 총 104억 달러를 조달했으며, 1호 기후펀드 73억달러 대비 약 44% 증가했고 약정액의 30% 이상이 신규 기관투자자임.",
+   "text": "I Squared Capital이 ISQ Global Infrastructure Credit Fund II를 24억 달러 이상으로 클로징했고, 공동투자 약정 등을 합쳐 30억 달러 규모이며 직전 펀드의 4배 이상임.",
    "ids": [
-    "g1r7dekv",
-    "go7tb0t"
+    "ga1b2ck",
+    "g17dlkos",
+    "g1oxkpqe"
    ]
   },
   {
-   "text": "Igneo Infrastructure Partners가 4번째 유럽 인프라 전략을 첫 클로징 6개월 만에 60억 유로 하드캡으로 마감함. Bain Capital은 세 번째 아시아 스페셜 시추에이션 펀드로 18억 달러 이상을 모금함.",
+   "text": "Igneo Infrastructure Partners가 European Diversified Infrastructure Fund IV를 목표 40억 유로를 넘겨 60억 유로 하드캡으로 클로징했으며, 90개 이상 기관투자자가 참여함. AllianzGI도 인프라 부채 펀드를 목표 10억 유로 대비 15억 유로로 마감함.",
    "ids": [
-    "g142b67r",
-    "g1fhj0s7"
+    "gfh5qyp",
+    "g57fnwl"
    ]
   },
   {
-   "text": "크레딧 세컨더리 펀드 결성이 이어짐. CVC Secondaries Debt Fund I이 5억 유로를 넘겼고, Blue Owl Capital은 첫 클로징을 앞두고 있으며 Ares는 GP-led 대상 인프라 세컨더리 펀드를 추진함.",
+   "text": "Cinven이 여성 건강 제약사 Theramex를 26억 유로에 인수하는 것으로 보도됐고, 인수금융으로 약 15억 유로 부채 조달을 추진 중임.",
    "ids": [
-    "gpq0s4r",
+    "gbqjuvg",
+    "g1z0myms"
+   ]
+  },
+  {
+   "text": "Blue Owl Capital은 크레딧 세컨더리 펀드의 첫 클로징을 앞두고 있고, CVC Secondaries Debt Fund I은 5억 유로 이상을 모집해 5억 달러 목표를 넘어섬.",
+   "ids": [
     "gmua2rj",
-    "g1ar37ax"
-   ]
-  },
-  {
-   "text": "Blackstone이 Morgan Stanley, Citi, Bank of America 등과 Anthropic용 Broadcom 장비·AI 칩 구매를 위한 630억 달러 규모 금융을 지원함.",
-   "ids": [
-    "g153j3jk"
+    "gpq0s4r"
    ]
   }
  ],
- "korea": "국민연금이 페블스톤 국내 밸류애드 펀드에 2500억원을 출자해 첫 투자가 집행됐고, 산은인프라자산운용 등 운용사의 전주 거점 확대가 이어져 국민연금 대상 대체투자 영업 경쟁이 심화되는 모습임. KB국민은행이 Brookfield의 한국 GPU 대출 주선을 맡은 점도 국내 AI 인프라 금융 기회로 참고할 만함.",
+ "korea": "국민연금이 부동산투자실장을 해임해 대체투자 위탁운용 거버넌스와 내부통제가 다시 도마에 오를 전망이며, 해외 대체투자 펀드 제안 시 의사결정 절차와 이해상충 관리 체계를 점검할 필요가 있음. 인프라 크레딧·부채 펀드 모집이 목표를 웃돌고 있어 해당 전략 소개 시 참고할 만함.",
  "refs": {
+  "ga1b2ck": {
+   "t": "I Squared Capital, 30억 달러 규모 인프라 크레딧 전략 클로징... 펀드레이징 목표액의 2배",
+   "s": "citybiz",
+   "u": "https://www.citybiz.co/article/929015/i-squared-capital-closes-3-billion-infrastructure-credit-strategy-doubling-fundraising-target/",
+   "d": "2026-11-03"
+  },
+  "g17dlkos": {
+   "t": "Latham이 이끈 I Squared, 24억 달러 규모 인프라 크레딧 펀드 마무리",
+   "s": "Law360",
+   "u": "https://www.law360.com/real-estate-authority/commercial/articles/2545781/latham-led-i-squared-wraps-2-4b-infrastructure-credit-fund",
+   "d": "2026-11-03"
+  },
+  "gmua2rj": {
+   "t": "Blue Owl Capital, 크레딧 세컨더리 펀드 첫 번째 클로징 임박",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/blue-owl-capital-nearing-first-close-of-credit-secondaries-fund/",
+   "d": "2026-11-03"
+  },
+  "g1oxkpqe": {
+   "t": "I Squared Capital, 두 번째 인프라 크레딧 전략으로 30억 달러 모집…직전 펀드의 4배",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/i-squared-capital-raises-3bn-for-second-infrastructure-credit-strategy-quadrupling-predecessor.html",
+   "d": "2026-11-03"
+  },
+  "g1z0myms": {
+   "t": "Cinven, Theramex 인수 위해 15억 유로 규모 부채 조달 추진",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-03/cinven-set-to-back-theramex-acquisition-with-1-5-billion-debt",
+   "d": "2026-11-03"
+  },
+  "g1e03at8": {
+   "t": "Blackstone 주도 컨소시엄, Mitsubishi의 LNG Canada 지분에 31억 달러 투자",
+   "s": "Private Equity Wire",
+   "u": "https://www.privateequitywire.co.uk/blackstone-led-consortium-invests-3-1bn-in-mitsubishis-lng-canada-interest/",
+   "d": "2026-11-03"
+  },
+  "gbqjuvg": {
+   "t": "Cinven, 여성 헬스케어 업체 Theramex 26억 유로에 인수",
+   "s": "Financial Times",
+   "u": "https://www.ft.com/content/79867d48-6d4a-4e5e-ba62-105f7181f6b1?syn-25a6b1a6=1",
+   "d": "2026-11-03"
+  },
+  "g164w8o3": {
+   "t": "Blackstone·캐나다 연기금, Mitsubishi의 LNG Canada 지분 매입에 31억 달러 투입 약정…Shell은 매각 보류설",
+   "s": "The Hub | More Signal. Less Noise.",
+   "u": "https://thehub.ca/2026/11/03/blackstone-canadian-pension-funds-commit-us3-1-billion-to-mitsubishis-lng-canada-unit-as-shell-reportedly-shelves-sale/",
+   "d": "2026-11-03"
+  },
   "gpq0s4r": {
    "t": "CVC의 데뷔 크레딧 세컨더리 펀드, 5억 달러 목표 넘어 5억 유로 돌파",
    "s": "HedgeCo.Net",
    "u": "https://hedgeco.net/news/11/2026/cvcs-debut-credit-secondaries-fund-passed-e500-million-ahead-of-its-500-million-target.html",
    "d": "2026-11-02"
   },
-  "g153j3jk": {
-   "t": "Blackstone과 월스트리트 은행들, 630억 달러 규모 미국 AI 칩 딜 지원",
-   "s": "Business Chief",
-   "u": "https://businesschief.com/news/blackstone-and-wall-street-banks-back-us-63bn-ai-chip-deal",
-   "d": "2026-11-02"
+  "gfh5qyp": {
+   "t": "Igneo Infrastructure, 네 번째 유럽 펀드 60억 유로 하드캡으로 클로징",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/igneo-infrastructure-closes-fourth-european-fund-at-6bn-hard-cap/10139206.article",
+   "d": "2026-11-03"
   },
-  "gww029v": {
-   "t": "미쓰비시상사, 캐나다 LNG 지분 2500억엔 매각…블랙스톤 손잡아",
-   "s": "글로벌이코노믹",
-   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/202611030144172879e7e8286d56_1",
-   "d": "2026-11-02"
-  },
-  "g1f92wz1": {
-   "t": "Blackstone, 미쓰비시의 LNG Canada 자회사 지분 인수를 위한 31억 달러 규모 딜 주도",
-   "s": "Western Standard",
-   "u": "https://www.westernstandard.news/news/blackstone-leads-us31-billion-deal-for-stake-in-mitsubishis-lng-canada-subsidiary/78387",
-   "d": "2026-11-02"
-  },
-  "g1fhj0s7": {
-   "t": "Bain Capital, 18억 달러를 상회하며 세 번째 아시아 스페셜 시추에이션 펀드레이징 마감",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/bain-capital-closes-third-asia-special-situations-fund-above-1-8b",
-   "d": "2026-11-02"
-  },
-  "gmua2rj": {
-   "t": "Blue Owl Capital, 크레딧 세컨더리 펀드 첫 번째 클로징 임박",
-   "s": "PEI Secondaries Investor",
-   "u": "https://www.pei-secondariesinvestor.com/blue-owl-capital-nearing-first-close-of-credit-secondaries-fund/",
-   "d": "2026-11-02"
-  },
-  "g1ar37ax": {
-   "t": "Ares, GP 주도 세컨더리 타깃 인프라 세컨더리 펀드 결성 추진",
-   "s": "PEI Secondaries Investor",
-   "u": "https://www.pei-secondariesinvestor.com/ares-to-launch-infra-secondaries-fund-focused-on-gp-leds/",
-   "d": "2026-11-02"
-  },
-  "g1r7dekv": {
-   "t": "AI 전력수요 급증에 기후펀드 15조원 몰렸다…TPG, 역대 최대 모집",
-   "s": "임팩트온",
-   "u": "https://www.impacton.net/news/articleView.html?idxno=30494",
-   "d": "2026-11-02"
-  },
-  "gt8p92j": {
-   "t": "Blackstone, 31억 달러 규모의 LNG Canada 지분 인수 딜 주도",
-   "s": "The Edge Malaysia",
-   "u": "http://www.theedgemarkets.com/node/824172",
-   "d": "2026-11-02"
-  },
-  "go7tb0t": {
-   "t": "TPG, Rise Climate II 및 글로벌 사우스 이니셔티브 등 연계 차량 통해 104억 달러 조달",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/tpg-raises-10-4-billion-across-rise-climate-ii-global-south-initiative-and-affiliated-vehicles/",
-   "d": "2026-11-02"
-  },
-  "g142b67r": {
-   "t": "Igneo, 6개월 만에 60억 유로 규모 유럽 인프라 펀드레이징 완료",
-   "s": "Alternatives Watch",
-   "u": "https://www.alternativeswatch.com/2026/11/02/igneo-european-diversified-infrastructure-strategy-fund-vi-6-billion/",
-   "d": "2026-11-02"
+  "g57fnwl": {
+   "t": "AllianzGI, 인프라 부채 펀드를 15억 유로로 클로징…당초 목표 상회",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/allianzgi-closes-infrastructure-debt-fund-at-15bn/10139197.article",
+   "d": "2026-11-03"
   }
  },
  "droppedSentences": 0

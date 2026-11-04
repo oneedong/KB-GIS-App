@@ -1,113 +1,106 @@
 {
- "date": "2026-11-04",
- "generatedAt": "2026-11-04T01:30:29.410Z",
+ "date": "2026-11-05",
+ "generatedAt": "2026-11-04T23:43:36.618Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "Blackstone의 LNG Canada 지분 투자와 인프라·크레딧 펀드 클로징 잇따름, 국민연금은 부동산실장 해임",
+ "headline": "인프라 크레딧·유럽 직접대출 대형 펀드 클로징 잇따르며 대형 운용사 쏠림 심화",
  "points": [
   {
-   "text": "Blackstone 주도 컨소시엄이 Mitsubishi Corp. 자회사가 보유한 LNG Canada 15% 지분에 31억 달러를 투자하기로 약정했으며, 캐나다 연기금 4곳이 참여해 캐나다 기금으로서는 첫 사례로 보도됨.",
+   "text": "I Squared Capital이 ISQ Global Infrastructure Credit Fund II를 출자 약정 24억 달러 이상으로 최종 클로징했으며, 공동투자 약정을 포함하면 30억 달러 규모로 이전 펀드의 4배 이상임.",
    "ids": [
-    "g164w8o3",
-    "g1e03at8"
+    "g1c2g309",
+    "gpk800u",
+    "ga1b2ck"
    ]
   },
   {
-   "text": "I Squared Capital이 ISQ Global Infrastructure Credit Fund II를 24억 달러 이상으로 클로징했고, 공동투자 약정 등을 합쳐 30억 달러 규모이며 직전 펀드의 4배 이상임.",
+   "text": "Blackstone이 Blackstone European Senior Direct Lending Fund IV(BXDE IV)를 최종 클로징하며 유럽 직접대출 전략 관련 약 130억 유로의 투자 가능 자본을 확보함.",
    "ids": [
-    "ga1b2ck",
-    "g17dlkos",
-    "g1oxkpqe"
+    "g19vomry",
+    "g1onteyf",
+    "giakz8i"
    ]
   },
   {
-   "text": "Igneo Infrastructure Partners가 European Diversified Infrastructure Fund IV를 목표 40억 유로를 넘겨 60억 유로 하드캡으로 클로징했으며, 90개 이상 기관투자자가 참여함. AllianzGI도 인프라 부채 펀드를 목표 10억 유로 대비 15억 유로로 마감함.",
+   "text": "Allianz Global Investors가 Allianz Infrastructure Credit Opportunities Fund II를 목표 10억 유로를 넘어선 15억 유로로 클로징하는 등 인프라 부채 전략으로 기관 자금이 유입됨.",
    "ids": [
-    "gfh5qyp",
-    "g57fnwl"
+    "g1ydeusi"
    ]
   },
   {
-   "text": "Cinven이 여성 건강 제약사 Theramex를 26억 유로에 인수하는 것으로 보도됐고, 인수금융으로 약 15억 유로 부채 조달을 추진 중임.",
+   "text": "TPG가 104억 달러 규모 기후 펀드를 조성했으며, 대형 기관 LP들이 신뢰하는 소수 운용사에 더 큰 금액을 배정하는 흐름이 뚜렷함.",
    "ids": [
-    "gbqjuvg",
-    "g1z0myms"
+    "g1q9mk9m"
    ]
   },
   {
-   "text": "Blue Owl Capital은 크레딧 세컨더리 펀드의 첫 클로징을 앞두고 있고, CVC Secondaries Debt Fund I은 5억 유로 이상을 모집해 5억 달러 목표를 넘어섬.",
+   "text": "Brookfield가 CPP Investments와 함께 약 52억 달러 규모 LXP Industrial Trust 인수를 완료했고, Drax·Radiant와 200억 파운드 이상 규모의 영국 데이터센터 개발을 추진함.",
    "ids": [
-    "gmua2rj",
-    "gpq0s4r"
+    "g151zqtf",
+    "g1hljnvs"
    ]
   }
  ],
- "korea": "국민연금이 부동산투자실장을 해임해 대체투자 위탁운용 거버넌스와 내부통제가 다시 도마에 오를 전망이며, 해외 대체투자 펀드 제안 시 의사결정 절차와 이해상충 관리 체계를 점검할 필요가 있음. 인프라 크레딧·부채 펀드 모집이 목표를 웃돌고 있어 해당 전략 소개 시 참고할 만함.",
+ "korea": "국민연금 부동산투자실장 해임으로 신규 투자 차질 우려가 커졌고 기존 블라인드펀드 미집행 자금 위주의 보수적 행보가 예상돼, 해외 부동산 펀드 영업 시 의사결정 지연 가능성을 감안할 필요가 있음. 또한 수책활동 이행점검 평가가 도입돼 위탁운용사 선정 기준이 달라질 수 있음.",
  "refs": {
+  "g1c2g309": {
+   "t": "I Squared Capital, 두 번째 인프라 크레딧 전략으로 30억 달러 조성…당초 목표 100% 초과",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/i-squared-capital-raises-3-billion-for-second-infrastructure-credit-strategy-exceeding-original-target-by-100/",
+   "d": "2026-11-04"
+  },
+  "g19vomry": {
+   "t": "Blackstone, 유럽 직접대출 펀드로 130억 유로 모집",
+   "s": "Alternative Credit Investor",
+   "u": "https://alternativecreditinvestor.com/2026/11/04/blackstone-lands-e13bn-for-european-direct-lending/",
+   "d": "2026-11-04"
+  },
+  "gpk800u": {
+   "t": "I Squared Capital, 목표치 초과 달성하며 30억 달러 규모 인프라 크레딧 펀드 클로징",
+   "s": "Private Equity Wire",
+   "u": "https://www.privateequitywire.co.uk/i-squared-capital-closes-3bn-infrastructure-credit-fund-above-target/",
+   "d": "2026-11-04"
+  },
+  "g1onteyf": {
+   "t": "Blackstone, 유럽 직접대출 비히클 위해 130억 유로 확보",
+   "s": "Securities.io",
+   "u": "https://www.securities.io/blackstone-secures-13-billion-for-european-direct-lending-vehicles/",
+   "d": "2026-11-04"
+  },
+  "giakz8i": {
+   "t": "Blackstone : 130억 유로 규모 가투자 자산 확보하며 제4호 기관용 유럽 직접대출 펀드 클로징",
+   "s": "www.marketscreener.com",
+   "u": "https://www.marketscreener.com/news/blackstone-closes-fourth-institutional-european-direct-lending-fund-with-a-13-billion-in-investab-ce785fdfd98bf722",
+   "d": "2026-11-04"
+  },
+  "g1q9mk9m": {
+   "t": "TPG, 기관 LP들이 대형 운용사로 쏠리는 가운데 104억 달러 규모 기후 펀드 조성",
+   "s": "ImpactAlpha",
+   "u": "https://impactalpha.com/tpg-raises-a-10-4-billion-climate-fund-as-institutional-lps-gravitate-to-bigger-managers/",
+   "d": "2026-11-04"
+  },
   "ga1b2ck": {
    "t": "I Squared Capital, 30억 달러 규모 인프라 크레딧 전략 클로징... 펀드레이징 목표액의 2배",
    "s": "citybiz",
    "u": "https://www.citybiz.co/article/929015/i-squared-capital-closes-3-billion-infrastructure-credit-strategy-doubling-fundraising-target/",
    "d": "2026-11-03"
   },
-  "g17dlkos": {
-   "t": "Latham이 이끈 I Squared, 24억 달러 규모 인프라 크레딧 펀드 마무리",
-   "s": "Law360",
-   "u": "https://www.law360.com/real-estate-authority/commercial/articles/2545781/latham-led-i-squared-wraps-2-4b-infrastructure-credit-fund",
-   "d": "2026-11-03"
+  "g1ydeusi": {
+   "t": "Allianz Infrastructure Credit Opportunities Fund II, 15억 유로 규모로 클로징",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/allianz-infrastructure-credit-opportunities-fund-ii-closes-at-e1-5b/",
+   "d": "2026-11-04"
   },
-  "gmua2rj": {
-   "t": "Blue Owl Capital, 크레딧 세컨더리 펀드 첫 번째 클로징 임박",
-   "s": "PEI Secondaries Investor",
-   "u": "https://www.pei-secondariesinvestor.com/blue-owl-capital-nearing-first-close-of-credit-secondaries-fund/",
-   "d": "2026-11-03"
+  "g1hljnvs": {
+   "t": "Drax Group과 Brookfield, 노스요크셔에 200억 파운드 규모 데이터 센터 개발 추진",
+   "s": "W.Media",
+   "u": "https://w.media/drax-group-and-brookfield-plan-20-billion-data-center-development-in-north-yorkshire/",
+   "d": "2026-11-04"
   },
-  "g1oxkpqe": {
-   "t": "I Squared Capital, 두 번째 인프라 크레딧 전략으로 30억 달러 모집…직전 펀드의 4배",
-   "s": "AltAssets Private Equity News",
-   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/i-squared-capital-raises-3bn-for-second-infrastructure-credit-strategy-quadrupling-predecessor.html",
-   "d": "2026-11-03"
-  },
-  "g1z0myms": {
-   "t": "Cinven, Theramex 인수 위해 15억 유로 규모 부채 조달 추진",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-03/cinven-set-to-back-theramex-acquisition-with-1-5-billion-debt",
-   "d": "2026-11-03"
-  },
-  "g1e03at8": {
-   "t": "Blackstone 주도 컨소시엄, Mitsubishi의 LNG Canada 지분에 31억 달러 투자",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/blackstone-led-consortium-invests-3-1bn-in-mitsubishis-lng-canada-interest/",
-   "d": "2026-11-03"
-  },
-  "gbqjuvg": {
-   "t": "Cinven, 여성 헬스케어 업체 Theramex 26억 유로에 인수",
-   "s": "Financial Times",
-   "u": "https://www.ft.com/content/79867d48-6d4a-4e5e-ba62-105f7181f6b1?syn-25a6b1a6=1",
-   "d": "2026-11-03"
-  },
-  "g164w8o3": {
-   "t": "Blackstone·캐나다 연기금, Mitsubishi의 LNG Canada 지분 매입에 31억 달러 투입 약정…Shell은 매각 보류설",
-   "s": "The Hub | More Signal. Less Noise.",
-   "u": "https://thehub.ca/2026/11/03/blackstone-canadian-pension-funds-commit-us3-1-billion-to-mitsubishis-lng-canada-unit-as-shell-reportedly-shelves-sale/",
-   "d": "2026-11-03"
-  },
-  "gpq0s4r": {
-   "t": "CVC의 데뷔 크레딧 세컨더리 펀드, 5억 달러 목표 넘어 5억 유로 돌파",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/cvcs-debut-credit-secondaries-fund-passed-e500-million-ahead-of-its-500-million-target.html",
-   "d": "2026-11-02"
-  },
-  "gfh5qyp": {
-   "t": "Igneo Infrastructure, 네 번째 유럽 펀드 60억 유로 하드캡으로 클로징",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/igneo-infrastructure-closes-fourth-european-fund-at-6bn-hard-cap/10139206.article",
-   "d": "2026-11-03"
-  },
-  "g57fnwl": {
-   "t": "AllianzGI, 인프라 부채 펀드를 15억 유로로 클로징…당초 목표 상회",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/allianzgi-closes-infrastructure-debt-fund-at-15bn/10139197.article",
+  "g151zqtf": {
+   "t": "Brookfield와 CPP Investments, 52억 달러 규모 LXP Industrial Trust 인수 완료",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/brookfield-and-cpp-investments-complete-5-2-billion-acquisition-of-lxp-industrial-trust/",
    "d": "2026-11-03"
   }
  },

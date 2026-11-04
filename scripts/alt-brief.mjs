@@ -32,6 +32,9 @@ const SCHEMA = { type: 'object', additionalProperties: false, required: ['headli
 
 async function main() {
   const dry = process.argv.includes('--dry');
+  // 데일리 시황 워크플로가 아침에 여러 번 돌아도 브리핑은 하루 한 번만(오늘 것이 있으면 건너뜀, --force 예외)
+  const prevBrief = await readJson('alt-brief.json', null);
+  if (!dry && !process.argv.includes('--force') && prevBrief && prevBrief.date === kstDay()) { console.log(`alt-brief: 오늘(${kstDay()}) 브리핑이 이미 있어 건너뜀`); return; }
   const news = await readJson('news.json', []);
   const inv = ((await readJson('investments.json', {})).items || []);
   const fr = ((await readJson('fundraising.json', {})).items || []);

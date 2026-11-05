@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 웹앱(흰 화면)과 같은 색 · 아이콘 바탕은 KB 노랑 -->
+    <color name="bar">#FFFFFF</color>
+    <color name="bg">#FFFFFF</color>
+    <color name="ic_launcher_background">#FFBC00</color>
+</resources>

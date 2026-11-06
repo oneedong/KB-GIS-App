@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # 아래 '데일리 시황 깨우기'에서 daily-brief 워크플로를 실행하기 위해
 
 concurrency:
   group: collect-news
@@ -98,3 +99,15 @@ jobs:
             git push && exit 0
           done
           exit 1
+      # GitHub 예약 실행은 몇 시간씩 밀리거나 빠진다(2026-11 실측: 데일리 시황 06:23 예약이 10:30 에 한 번만 돔).
+      # 수집이 깨어날 때마다(건너뛰는 회차 포함) 오늘(KST 06시 이후) 시황이 아직 없으면 데일리 시황을 바로 실행시킨다.
+      - name: Kick daily brief if stale
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          today=$(TZ=Asia/Seoul date +%Y%m%d); h=$(TZ=Asia/Seoul date +%H)
+          key=$(git fetch -q origin main 2>/dev/null; git show FETCH_HEAD:market.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('dateKey',''))" 2>/dev/null || true)
+          echo "market.json dateKey=${key:-없음} · 오늘 ${today} ${h}시(KST)"
+          if [ "$key" != "$today" ] && [ "$h" -ge 6 ]; then gh workflow run daily-brief.yml --ref main && echo "데일리 시황 실행 요청"; fi
+

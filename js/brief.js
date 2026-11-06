@@ -3,38 +3,46 @@
 /*
  * KB GIS — 데일리 시황 화면
  * market.json / briefs/YYYYMMDD.json(일자별) / history.json(5년 추이)을 그린다.
- * 실시간: 지수·환율·원자재는 공개 프록시 경유 Yahoo, 크립토는 거래소 API 직접.
+ * 실시간: 지수·환율·금리·원자재·크립토는 CNBC 시세 서비스 직접 조회(크립토는 거래소 API 우선), 실패 시 market.json 값.
  */
 // ─── 실시간 시세 ─────────────────────────────────────────────
-const LIVE_YAHOO = ['^KS11', '^KQ11', '^GSPC', '^IXIC', '^DJI', '^N225', 'KRW=X', 'GC=F', 'CL=F'];
-async function proxyJson(url) {
-    for (const p of CORS_PROXIES) {
-        if (p.kind !== 'html')
-            continue; // 리더 프록시는 JSON 을 망가뜨린다
-        try {
-            const r = await fetch(p.mk(url), { cache: 'no-store' });
-            if (!r.ok)
-                continue;
-            const j = JSON.parse(await r.text());
-            if (j)
-                return j;
-        }
-        catch { /* 다음 프록시 */ }
+// CNBC 시세 서비스는 브라우저 직접 조회를 허용(CORS *)해 중계 서버 없이 한 번에 받는다(2026-11 확인).
+// 비공식 공개 서비스라 막히면 market.json(매일 아침 집계) 값을 그대로 보여준다.
+// Yahoo 기호(앱 데이터) → [CNBC 기호, 배수]
+const CNBC_SYM = {
+    '^KS11': ['.KS11'], '^KQ11': ['.KQ11'], '^GSPC': ['.SPX'], '^IXIC': ['.IXIC'], '^DJI': ['.DJI'], '^STOXX50E': ['.STOXX50E'], '^N225': ['.N225'],
+    'KRW=X': ['KRW='], 'EURKRW=X': ['EURKRW='], 'EURUSD=X': ['EUR='], 'USDJPY=X': ['JPY='], 'JPYKRW=X': ['JPYKRW=', 100], 'DX-Y.NYB': ['.DXY'],
+    '^TNX': ['US10Y'], 'GC=F': ['@GC.1'], 'SI=F': ['@SI.1'], 'CL=F': ['@CL.1'], 'BZ=F': ['@LCO.1'], 'BTC-USD': ['BTC.CM='], 'ETH-USD': ['ETH.CM='],
+};
+const cnum = (s) => { const t = String(s == null ? '' : s).replace(/[,%+\s]/g, ''); if (!t)
+    return null; if (/^UNCH$/i.test(t))
+    return 0; const v = parseFloat(t); return isFinite(v) ? v : null; };
+async function liveCnbc() {
+    const syms = Object.values(CNBC_SYM).map((x) => x[0]).join('|');
+    const url = `https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=${encodeURIComponent(syms)}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1`;
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok)
+        return {};
+    const list = ((((await r.json()) || {}).FormattedQuoteResult) || {}).FormattedQuote || [];
+    const by = {};
+    for (const q of list)
+        by[q.symbol] = q;
+    const out = {};
+    for (const [ys, [cs, k = 1]] of Object.entries(CNBC_SYM)) {
+        const q = by[cs];
+        if (!q || String(q.code) !== '0')
+            continue;
+        if (/UNCH/i.test(String(q.change)))
+            continue; // 장 종료 후 리셋된 'UNCH' 는 정보가 없어 저장값(전일 대비)을 그대로 둔다
+        const last = cnum(q.last);
+        if (last == null)
+            continue;
+        const chg = cnum(q.change), pct = cnum(q.change_pct);
+        out[ys] = { last: last * k, chg: chg == null ? null : chg * k, chgPct: pct, at: Date.parse(q.last_time) || null, src: 'CNBC' };
     }
-    return null;
+    return out;
 }
-async function liveYahoo(symbol) {
-    const j = await proxyJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`);
-    const m = ((((j || {}).chart || {}).result || [{}])[0] || {}).meta || {};
-    const last = typeof m.regularMarketPrice === 'number' ? m.regularMarketPrice : null;
-    // 선물 연속물(=F)은 월물 교체일에 chartPreviousClose 가 이전 월물 종가라 같은 월물의 직전 정산가를 쓴다
-    const fut = /=F$/.test(symbol) && typeof m.previousClose === 'number';
-    const prev = fut ? m.previousClose : typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : (typeof m.previousClose === 'number' ? m.previousClose : null);
-    if (last == null || !prev)
-        return null;
-    const k = /JPYKRW/.test(symbol) ? 100 : 1;
-    return { last: last * k, chg: (last - prev) * k, chgPct: (last - prev) / prev * 100 };
-}
+const LIVE_YAHOO = Object.keys(CNBC_SYM);
 async function liveCrypto() {
     try {
         const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%5D', { cache: 'no-store' });
@@ -158,7 +166,7 @@ function MarketTable({ rows, live, onPick, digits }) {
             React.createElement("col", { style: { width: '34%' } }),
             React.createElement("col", { style: { width: 92 } })),
         React.createElement("thead", null,
-            React.createElement("tr", null, ['지표', '종가', '등락'].map((h) => React.createElement("th", { key: h, style: GRID.th }, h)))),
+            React.createElement("tr", null, ['지표', live && list.some((r) => live[r.symbol]) ? '현재가' : '종가', '등락'].map((h) => React.createElement("th", { key: h, style: GRID.th }, h)))),
         React.createElement("tbody", null, list.map((x0, i) => {
             const lv = live && live[x0.symbol];
             const x = lv ? { ...x0, ...lv } : x0;
@@ -320,6 +328,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
     const heads = marketHeadlines(b && b.issues);
     const top = heads[0], points = heads.slice(1, 5), rest = heads.slice(5);
     const lv = isLatest ? live : null;
+    const U = b && b.ust && b.ust[0] ? (lv && lv['^TNX'] ? { ...b.ust[0], ...lv['^TNX'] } : b.ust[0]) : null; // 미 국채 10년(실시간 덮어쓰기)
     const grid = desktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px', alignItems: 'start' } : {};
     const col = (children) => React.createElement("div", { style: { minWidth: 0 } }, children);
     // 시황 안 검색: 뉴스 제목·출처, 지표 이름, 금리 테너
@@ -333,7 +342,7 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
     const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
     const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
-        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? `${b.asOf} 기준 · 매일 아침 갱신` : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
+        React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? (lv && liveAt ? `시세 실시간 ${liveAt}(CNBC) · 뉴스·요약 ${b.asOf}` : `${b.asOf} 기준 · 매일 아침 갱신`) : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
                 liveAt && React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.pos } }),
                 liveBusy ? '조회 중…' : liveAt ? `실시간 ${liveAt}` : '실시간 조회')) }),
         briefIndex && briefIndex.length > 0 && (React.createElement("div", { style: { flexShrink: 0, background: KB.bg, borderBottom: `1px solid ${KB.line}` } },
@@ -398,8 +407,8 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                             React.createElement(Section, { no: 7, title: "\uAE30\uC900\uAE08\uB9AC" },
                                 React.createElement(RateLine, { first: true, label: "\uD55C\uAD6D (\uD55C\uAD6D\uC740\uD589)", value: b.rates && b.rates.kr && b.rates.kr.rate != null ? `${b.rates.kr.rate.toFixed(2)}%` : '', sub: b.rates && b.rates.kr ? `${b.rates.kr.asOf || ''} · ${b.rates.kr.src || '한국은행'}` : '이번 회차 수집 실패', href: b.rates && b.rates.kr && b.rates.kr.url }),
                                 React.createElement(RateLine, { label: "\uBBF8\uAD6D (FOMC \uBAA9\uD45C\uBC94\uC704)", value: b.rates && b.rates.us ? (b.rates.us.target || `${(b.rates.us.effr || 0).toFixed(2)}%`) : '', sub: b.rates && b.rates.us ? `EFFR ${b.rates.us.effr != null ? b.rates.us.effr.toFixed(2) + '%' : '–'} · ${b.rates.us.asOf || ''} · New York Fed` : '이번 회차 수집 실패' }),
-                                b.ust && b.ust[0] && b.ust[0].last != null && (React.createElement("div", { onClick: () => onPick(b.ust[0]), style: { cursor: 'pointer' } },
-                                    React.createElement(RateLine, { label: b.ust[0].name, value: `${b.ust[0].last.toFixed(2)}%`, sub: `전일 대비 ${b.ust[0].chg >= 0 ? '+' : '−'}${Math.abs(b.ust[0].chg * 100).toFixed(0)}bp · 누르면 5년 추이` })))),
+                                U && U.last != null && (React.createElement("div", { onClick: () => onPick(b.ust[0]), style: { cursor: 'pointer' } },
+                                    React.createElement(RateLine, { label: U.name, value: `${U.last.toFixed(2)}%`, sub: `전일 대비 ${U.chg >= 0 ? '+' : '−'}${Math.abs(U.chg * 100).toFixed(0)}bp · 누르면 5년 추이` })))),
                             React.createElement(Section, { no: 8, title: "SOFR \u00B7 SONIA \u00B7 EURIBOR \u00B7 TONA", sub: "\uC2E4\uBB34 \uC8FC\uC694 \uD14C\uB108" }, rateGroups.length ? rateGroups.map(([g, rows], gi) => (React.createElement("div", { key: g, style: { marginTop: gi ? 14 : 0 } },
                                 React.createElement("div", { style: { display: 'flex', alignItems: 'baseline', font: F(700, 14), color: KB.blue, paddingBottom: 6, borderBottom: `1px solid ${KB.line}` } },
                                     React.createElement("span", null, g),
@@ -448,15 +457,19 @@ function AltDigest({ alt, onOpenArticle }) {
             React.createElement("span", { style: { font: F(700, 13.5), color: KB.yellowText, marginRight: 6 } }, "\uAD6D\uB0B4 \uAE30\uAD00 \uAD00\uC810"),
             nm(alt.korea))));
 }
-function BriefDigest({ market, onOpen }) {
+function BriefDigest({ market, onOpen, live, liveAt }) {
     if (!market || !Array.isArray(market.kr))
         return null;
-    const pickRow = (list, name) => (list || []).find((x) => x.name === name);
+    const pickRow = (list, name) => { const r = (list || []).find((x) => x.name === name); return r && live && live[r.symbol] ? { ...r, ...live[r.symbol], live: true } : r; };
     const rows = [pickRow(market.kr, '코스피'), pickRow(market.global, 'S&P 500'), pickRow(market.global, '나스닥'), pickRow(market.fx, '달러/원')].filter(Boolean);
     return (React.createElement("div", { onClick: onOpen, style: { margin: '14px 16px 4px', padding: '14px 16px', borderRadius: 2, border: `1px solid ${KB.line}`, background: KB.bg, cursor: 'pointer' } },
         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
             React.createElement("span", { style: { font: F(700, 14.5), color: KB.ink } }, "\uC624\uB298\uC758 \uC2DC\uD669"),
             React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, briefDay(market.dateKey)),
+            liveAt && rows.some((r) => r.live) && React.createElement("span", { style: { font: F(600, 11.5), color: KB.gold, display: 'inline-flex', alignItems: 'center', gap: 4 } },
+                React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.yellow } }),
+                "\uC2DC\uC138 \uC2E4\uC2DC\uAC04 ",
+                liveAt),
             React.createElement("span", { style: { marginLeft: 'auto', color: KB.faint } },
                 React.createElement(Ico, { n: "chevron", size: 17, sw: 2 }))),
         React.createElement("div", { style: { font: F(600, 14.5, 1.5), color: KB.ink, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, nm(stripMedia((marketHeadlines(market.issues)[0] || {}).title, (marketHeadlines(market.issues)[0] || {}).source)) || market.summary),

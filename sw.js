@@ -68,6 +68,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 실시간 시세 API 는 캐시하지 않는다(브라우저가 바로 네트워크로) — 캐시하면 첫 응답이 계속 재사용된다
+  if (/(^|\.)(quote\.cnbc\.com|api\.binance\.com|api\.coinbase\.com)$/.test(new URL(req.url).hostname)) return;
+
   // Cross-origin: cache-first.
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {

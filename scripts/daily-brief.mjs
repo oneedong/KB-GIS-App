@@ -10,7 +10,7 @@
  * 원칙: 수치는 전부 실제 소스에서 받아온 값만 쓴다. 실패한 항목은 값을 만들지
  * 않고 '–' 로 비우고 errors 에 남긴다(추정치·기억에 의존한 수치 금지).
  */
-import { writeFile, readFile, mkdir } from 'fs/promises';
+import { writeFile, readFile, mkdir, readdir, unlink } from 'fs/promises';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const errors = [];
@@ -768,8 +768,16 @@ async function main() {
   index = index.filter((x) => x && x.dateKey !== data.dateKey);
   index.unshift({ dateKey: data.dateKey, date: data.updatedAt, title: `${data.dateKey} 시황`, summary: data.summary, ts: data.ts });
   index.sort((a, b) => (a.dateKey < b.dateKey ? 1 : -1));
-  index = index.slice(0, 120);
+  // 최근 7일치만 보관(오늘 포함) — 그 이전 일자 파일과 목록 항목은 지운다
+  const k = data.dateKey;
+  const keepFrom = new Date(Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)) - 6 * 864e5).toISOString().slice(0, 10).replace(/-/g, '');
+  index = index.filter((x) => x.dateKey >= keepFrom);
+  let removed = 0;
+  for (const f of await readdir(new URL('../briefs/', import.meta.url))) {
+    if (/^\d{8}\.json$/.test(f) && f.slice(0, 8) < keepFrom) { await unlink(new URL(`../briefs/${f}`, import.meta.url)); removed++; }
+  }
   await writeFile(new URL('../briefs/index.json', import.meta.url), JSON.stringify(index, null, 0));
+  console.log(`briefs: ${keepFrom} 이후 ${index.length}일치 보관${removed ? ` · 오래된 ${removed}개 삭제` : ''}`);
 
   console.log(`market.json 갱신: 국내 ${kr.length} · 해외 ${global.length} · 환율 ${fx.length} · 원자재 ${commodity.length} · 크립토 ${crypto.length} · 금리 ${tenorRates.length} · 헤지 ${hedge.legs.length} · 이슈 ${iss.length} · 실패 ${errors.length}`);
   if (errors.length) console.warn('수집 실패 항목:', errors.join(' | '));

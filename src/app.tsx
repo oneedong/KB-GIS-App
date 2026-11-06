@@ -195,17 +195,15 @@ function App() {
     getJson(API.brief(briefSel)).then((d) => { if (d && d.dateKey) setBriefCache((c) => ({ ...c, [briefSel]: d })); });
   }, [briefSel, market]);
 
-  // 실시간 시세 — 시황 화면에 있는 동안 60초마다
+  // 실시간 시세(CNBC 직접 조회)
   const refreshLive = React.useCallback(async () => {
     setLiveBusy(true);
     try {
       const out = {};
-      const [ys, cs] = await Promise.all([
-        Promise.allSettled(LIVE_YAHOO.map((sym) => liveYahoo(sym).then((v) => [sym, v]))),
-        liveCrypto(),
-      ]);
-      for (const r of ys) if (r.status === 'fulfilled' && r.value && r.value[1]) out[r.value[0]] = r.value[1];
-      Object.assign(out, cs || {});
+      // 지수·환율·금리·원자재는 CNBC 한 번에, 크립토는 거래소 API(24시간 실시간)가 되면 그것으로 덮는다
+      const [qs, cs] = await Promise.all([liveCnbc().catch(() => ({})), liveCrypto().catch(() => ({}))]);
+      Object.assign(out, qs || {});
+      for (const [k, v] of Object.entries(cs || {})) if (v && v.chgPct != null) out[k] = v;
       if (Object.keys(out).length) {
         setLiveQuotes(out);
         const n = new Date();
@@ -213,11 +211,14 @@ function App() {
       }
     } finally { setLiveBusy(false); }
   }, []);
+  // 홈(오늘의 시황 카드)·시황 화면에 있는 동안 60초마다, 앱이 가려져 있으면 쉬고 다시 보이면 바로 갱신
   useEffect(() => {
-    if (screen !== 'brief') return undefined;
-    refreshLive();
-    const t = setInterval(refreshLive, 60000);
-    return () => clearInterval(t);
+    if (screen !== 'brief' && screen !== 'home') return undefined;
+    const tick = () => { if (!document.hidden) refreshLive(); };
+    tick();
+    const t = setInterval(tick, 60000);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', tick); };
   }, [screen, refreshLive]);
   const openTrend = (row) => {
     if (!row || !row.symbol) return;
@@ -386,7 +387,7 @@ function App() {
         )}
         {filter === '전체' && !homeQuery.trim() && (
           <div style={{ paddingBottom: 6 }}>
-            <BriefDigest market={market} onOpen={() => setScreen('brief')} />
+            <BriefDigest market={market} live={liveQuotes} liveAt={liveAt} onOpen={() => setScreen('brief')} />
             <AltDigest alt={altBrief} onOpenArticle={(id, fb) => openArticle(id, fb)} />
             <div style={{ height: 14 }}></div>
           </div>

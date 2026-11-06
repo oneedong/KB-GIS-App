@@ -200,10 +200,8 @@ function App() {
     setLiveBusy(true);
     try {
       const out = {};
-      // 지수·환율·금리·원자재는 CNBC 한 번에, 크립토는 거래소 API(24시간 실시간)가 되면 그것으로 덮는다
-      const [qs, cs] = await Promise.all([liveCnbc().catch(() => ({})), liveCrypto().catch(() => ({}))]);
-      Object.assign(out, qs || {});
-      for (const [k, v] of Object.entries(cs || {})) if (v && v.chgPct != null) out[k] = v;
+      // 지수·환율·금리·원자재·크립토를 CNBC 에서 한 번에(거래소 API 는 지역에 따라 CORS 로 막혀 쓰지 않음)
+      Object.assign(out, (await liveCnbc().catch(() => ({}))) || {});
       if (Object.keys(out).length) {
         setLiveQuotes(out);
         const n = new Date();

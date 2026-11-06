@@ -1,0 +1,31 @@
+name: CORS probe (브라우저 직접 시세 조회 가능 여부 점검)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe quote endpoints
+        run: |
+          for u in \
+            "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d" \
+            "https://query2.finance.yahoo.com/v7/finance/spark?symbols=%5EGSPC,%5EIXIC&range=1d&interval=1d" \
+            "https://stooq.com/q/l/?s=%5Espx&f=sd2t2ohlcp&h&e=json" \
+            "https://polling.finance.naver.com/api/realtime/worldstock/index/.INX" \
+            "https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_USDKRW" \
+            "https://api.stock.naver.com/index/.INX/basic" \
+            "https://api.nasdaq.com/api/quote/SPX/info?assetclass=index" \
+            "https://www.cnbc.com/quote/.SPX" \
+            "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=.SPX%7C.IXIC&requestMethod=itv&noform=1&output=json" \
+            "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd" ; do
+            echo "=== $u"
+            curl -s -m 15 -D /tmp/h -o /tmp/b -H "Origin: https://oneedong.github.io" -A "Mozilla/5.0" "$u"
+            grep -iE "^HTTP/|^access-control-allow-origin" /tmp/h
+            head -c 220 /tmp/b; echo
+          done

@@ -11,21 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Probe quote endpoints
+      - name: CNBC symbols
         run: |
-          for u in \
-            "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d" \
-            "https://query2.finance.yahoo.com/v7/finance/spark?symbols=%5EGSPC,%5EIXIC&range=1d&interval=1d" \
-            "https://stooq.com/q/l/?s=%5Espx&f=sd2t2ohlcp&h&e=json" \
-            "https://polling.finance.naver.com/api/realtime/worldstock/index/.INX" \
-            "https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_USDKRW" \
-            "https://api.stock.naver.com/index/.INX/basic" \
-            "https://api.nasdaq.com/api/quote/SPX/info?assetclass=index" \
-            "https://www.cnbc.com/quote/.SPX" \
-            "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=.SPX%7C.IXIC&requestMethod=itv&noform=1&output=json" \
-            "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd" ; do
-            echo "=== $u"
-            curl -s -m 15 -D /tmp/h -o /tmp/b -H "Origin: https://oneedong.github.io" -A "Mozilla/5.0" "$u"
-            grep -iE "^HTTP/|^access-control-allow-origin" /tmp/h
-            head -c 220 /tmp/b; echo
-          done
+          S='.KS11|.KQ11|.SPX|.IXIC|.DJI|.STOXX50E|.STOXX50|.N225|KRW=|EURKRW=|EUR=|JPY=|JPYKRW=|.DXY|US10Y|@GC.1|@SI.1|@CL.1|@LCO.1|BTC.CM=|ETH.CM='
+          E=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$S")
+          curl -s -m 20 -H "Origin: https://oneedong.github.io" -A "Mozilla/5.0" "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=$E&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1" -o /tmp/q.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/q.json'))
+          for q in d['FormattedQuoteResult']['FormattedQuote']:
+              print(q.get('symbol'), '|', q.get('code'), '|', q.get('shortName') or q.get('name'), '|', q.get('last'), '|', q.get('change'), '|', q.get('change_pct'), '|', q.get('last_time'), '|', q.get('previous_day_closing'), '|', q.get('curmktstatus'))
+          PY

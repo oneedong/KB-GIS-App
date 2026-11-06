@@ -1,121 +1,121 @@
 {
- "date": "2026-11-06",
- "generatedAt": "2026-11-06T00:25:15.287Z",
+ "date": "2026-11-07",
+ "generatedAt": "2026-11-06T22:31:47.944Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "국민연금 ESG·Blackstone 대담, 글로벌 GP 대형 펀드 클로징 이어짐",
+ "headline": "Brookfield 3분기 250억 달러 조달, 대체투자 자금이 AI 인프라로 집중",
  "points": [
   {
-   "text": "국민연금이 내년부터 ESG 투자 원칙을 사모투자·부동산·인프라 등 대체자산에도 적용함. 출자 사업을 따내려는 GP도 ESG 역량을 입증해야 하는 상황임.",
+   "text": "Brookfield Asset Management는 3분기 250억 달러를 조달했고 연간 누적은 123억 달러가 아닌 1,230억 달러로 집계됨. 인프라와 크레디트가 주도했으며 크레디트 부문에서만 120억 달러를 모집함.",
    "ids": [
-    "g1rz6g21"
+    "g18da2m1",
+    "gtdc1ec",
+    "g19pop7m"
    ]
   },
   {
-   "text": "국민연금공단이 5일 전북 기금운용본부에서 Blackstone과 '글로벌 투자 인사이트 대담회'를 개최함. 이규홍 CIO와 존 그레이 Blackstone COO가 일대일로 거시경제, 자산군별 기회와 위험, 장기투자 전략을 논의함.",
+   "text": "Brookfield Infrastructure Fund VI는 260억 달러 모금 후 2027년 초 최종 클로징을 목표로 함. 카타르 QIA와 Drax 발전소 부지의 1GW 규모 영국 데이터센터를 지원하는 등 AI 인프라 투자를 확대함.",
    "ids": [
-    "g17l1esv",
-    "g1ttca0f",
-    "g19ioeam"
+    "ge8u4o",
+    "g1w6mpyk"
    ]
   },
   {
-   "text": "Blackstone이 네 번째 유럽 직접대출 전용 펀드를 클로징해 유럽 직접대출 투자 여력 130억 유로를 확보함. I Squared Capital은 ISQ Global Infrastructure Credit Fund II를 24억 달러 이상으로 최종 클로징했고 공동투자 포함 30억 달러임. TPG는 기회추구형 부동산 펀드 1차 클로징으로 50억 달러를 모음.",
+   "text": "Blackstone European Senior Direct Lending Fund IV(BXDE IV)가 최종 클로징했으며 유럽 직접대출 전체 투자 가능 자금은 레버리지 포함 약 130억 유로임. Blackstone Real Estate Debt Strategies는 미국 상업용 부동산 대출 7억 6천만 달러를 Prime Finance에 매각함.",
    "ids": [
-    "gb7llju",
-    "g1qfkn7z",
-    "g1qp8b4i"
+    "gdcfhp3",
+    "g17kv71n"
    ]
   },
   {
-   "text": "Carlyle의 3분기 Global Private Equity 회수금은 57억 달러이며 Rigaku 지분 매각(7억 2000만 달러)이 포함됨. 분배가능이익은 17% 늘어 주당 $1.12를 기록해 예상치를 웃돌았고, 수수료 관련 이익은 6% 감소함.",
+   "text": "Silver Lake와 사우디 PIF가 EA 550억 달러 인수에 이어 약 250억 달러 규모로 Unity 인수를 타진한 것으로 보도됨.",
    "ids": [
-    "g1xjkxeu",
-    "g1xnnefb"
+    "g1vk0z6p",
+    "g3prntt"
    ]
   },
   {
-   "text": "국내에서는 8개 공제회(총자산 179조4487억원)와 KIC 노조가 서울시 정무부시장을 면담해 지방 이전 시 글로벌 투자기관 접점 축소와 자산운용 차질 우려를 전달함. IBK기업은행·산업은행·수출입은행은 글로벌 스케일업 협력펀드 위탁운용사를 선정함(대형 3000억원 1곳, 중형 각 2000억원 2곳).",
+   "text": "StepStone의 운용자산은 2,610억 달러로 전년 대비 25% 증가했고, 최근 12개월 펀드레이징은 430억 달러로 사상 최고를 기록함. Goldman Sachs·Apollo는 SpaceX 대상 약 400억 달러 AI 칩 금융 딜 투자자를 모집 중임.",
    "ids": [
-    "g19urmd3",
-    "g1gesqm1",
-    "gvkbavo"
+    "g234xjx",
+    "gschpe0",
+    "gu4tq7u"
    ]
   }
  ],
- "korea": "국민연금이 내년부터 대체자산 출자에도 ESG 원칙을 적용하므로 해외 GP를 소개할 때 ESG 역량 입증 자료가 필요함. 국민연금이 Blackstone과 대담회를 연 점과, 8개 공제회와 KIC의 지방 이전 논란이 글로벌 운용사 네트워크에 미칠 영향도 지켜볼 사안임.",
+ "korea": "국민연금이 Blackstone 존 그레이 사장과 전주에서 글로벌 투자 대담회를 열었고, 신한자산운용은 Starwood SOF 12호에 약 3000억원을 출자함. 우리은행과 KB·우리은행이 TPG의 롯데렌탈 공개매수 인수금융에 참여하는 등 국내 인수금융·해외 대체투자 접점이 넓어지고 있음.",
  "refs": {
-  "g1rz6g21": {
-   "t": "\"ESG가 출자 좌우\"…국민연금 공략하는 GP의 고민",
-   "s": "MTN 머니투데이방송",
-   "u": "https://news.mtn.co.kr/video/2026110515505125368",
-   "d": "2026-11-05"
+  "ge8u4o": {
+   "t": "Brookfield, Fund VI 260억 달러 모금 후 '2027년 초' 최종 클로징 목표",
+   "s": "Infrastructure Investor",
+   "u": "https://www.infrastructureinvestor.com/brookfield-eyes-early-2027-final-close-after-raising-26bn-for-fund-vi/",
+   "d": "2026-11-06"
   },
-  "gvkbavo": {
-   "t": "기업은행, 정책금융기관 글로벌 스케일업 협력펀드 위탁운용사 선정",
-   "s": "중소기업신문",
-   "u": "https://www.smedaily.co.kr/news/articleView.html?idxno=365762",
-   "d": "2026-11-05"
+  "gu4tq7u": {
+   "t": "Goldman Sachs·Apollo, 400억 달러 규모 SpaceX AI 칩 금융 딜 투자자 모집",
+   "s": "Tekedia",
+   "u": "https://www.tekedia.com/goldman-sachs-apollo-seek-investors-for-40-billion-spacex-ai-chip-financing-deal/",
+   "d": "2026-11-06"
   },
-  "g1xjkxeu": {
-   "t": "Carlyle, 3분기 사모펀드 회수금 57억 달러…Rigaku 등 주요 엑시트 영향",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/carlyles-q3-pe-proceeds-500310",
-   "d": "2026-11-05"
-  },
-  "g1qp8b4i": {
-   "t": "TPG, 최신 기회추구형 부동산 펀드 50억 달러 규모 1차 클로징",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/tpg-reaches-5bn-first-close-on-latest-opportunistic-real-estate-fund/10139238.article",
-   "d": "2026-11-05"
-  },
-  "g1xnnefb": {
-   "t": "Carlyle(CG), 펀드 엑시트 덕에 3분기 이익 예상치 상회",
-   "s": "Value The Markets",
-   "u": "https://www.valuethemarkets.com/news/carlyle-nasdaq-cg-beats-profit-estimates-on-deal-exits",
-   "d": "2026-11-05"
-  },
-  "gb7llju": {
-   "t": "Blackstone, 유럽 직접대출 펀드 130억 유로로 클로징",
-   "s": "privatedebtinvestor.com",
-   "u": "https://www.privatedebtinvestor.com/blackstone-closes-european-direct-lending-fund-with-e13bn/",
-   "d": "2026-11-05"
-  },
-  "g1qfkn7z": {
-   "t": "I Squared Capital, 두 번째 인프라 크레딧 펀드 24억 달러 이상으로 클로징…공동투자 포함 30억 달러",
+  "gdcfhp3": {
+   "t": "Blackstone, 네 번째 기관투자자 대상 유럽 직접대출 펀드 투자 가능 자금 약 130억 유로로 마감",
    "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/i-squared-capital-closed-its-second-infrastructure-credit-fund-above-2-4-billion-with-3-billion-including-co-investment.html",
-   "d": "2026-11-04"
+   "u": "https://hedgeco.net/news/11/2026/blackstone-closed-its-fourth-institutional-european-direct-lending-fund-with-about-e13-billion-of-investable-capital.html",
+   "d": "2026-11-06"
   },
-  "g17l1esv": {
-   "t": "국민연금·블랙스톤, 장기투자 전략 공유",
-   "s": "파이낸셜뉴스",
-   "u": "https://www.fnnews.com/news/202611051822321982",
-   "d": "2026-11-05"
+  "g17kv71n": {
+   "t": "Blackstone, 7억 6천만 달러 규모 미국 상업용 부동산 대출 포트폴리오를 Prime Finance에 매각",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/blackstone-sells-760m-commercial-us-real-estate-loan-portfolio-to-prime-finance/10139243.article",
+   "d": "2026-11-06"
   },
-  "g19ioeam": {
-   "t": "국민연금공단, 블랙스톤과 글로벌 투자전략 논의…전주서 대담회 개최",
-   "s": "더팩트",
-   "u": "https://news.tf.co.kr/read/national/2385481.htm",
-   "d": "2026-11-05"
+  "g18da2m1": {
+   "t": "Brookfield Asset Management, 인프라 투자 힘입어 250억 달러 조달",
+   "s": "Commercial Observer",
+   "u": "https://commercialobserver.com/2026/11/brookfield-asset-management-q3-2026/",
+   "d": "2026-11-06"
   },
-  "g1ttca0f": {
-   "t": "국민연금, 1800조 굴리는 블랙스톤과 전주서 투자 대담",
-   "s": "중앙이코노미뉴스",
-   "u": "https://www.joongangenews.com/news/articleView.html?idxno=561579",
-   "d": "2026-11-05"
+  "gschpe0": {
+   "t": "StepStone, 최근 12개월 펀드레이징 430억 달러로 사상 최고 기록",
+   "s": "Alternatives Watch",
+   "u": "https://www.alternativeswatch.com/2026/11/06/stepstone-record-fundraising-43bn-fiscal-q2-2027/",
+   "d": "2026-11-06"
   },
-  "g19urmd3": {
-   "t": "'자산 512조' 8대 공제회·KIC \"지방 이전시 서울 경쟁력 약화\"",
-   "s": "아시아경제",
-   "u": "https://www.asiae.co.kr/article/2026110508475350399",
-   "d": "2026-11-04"
+  "g234xjx": {
+   "t": "StepStone 운용자산(AUM) 2,610억 달러로 증가",
+   "s": "Alternative Credit Investor",
+   "u": "https://alternativecreditinvestor.com/2026/11/06/stepstone-aum-grows-to-261bn/",
+   "d": "2026-11-06"
   },
-  "g1gesqm1": {
-   "t": "지방 이전에 흔들리는 '512兆 투자 네트워크'…공제회·KIC 반발 [fn마켓워치]",
-   "s": "파이낸셜뉴스",
-   "u": "https://www.fnnews.com/news/202611050821542897",
-   "d": "2026-11-04"
+  "g1w6mpyk": {
+   "t": "카타르 국부펀드와 Brookfield, 영국 초대형 데이터센터 지원",
+   "s": "Semafor",
+   "u": "https://www.semafor.com/article/11/06/2026/qai-and-brookfield-back-supersized-uk-data-center",
+   "d": "2026-11-06"
+  },
+  "gtdc1ec": {
+   "t": "Brookfield, AI 투자 확대 속 250억 달러 조달…이익도 증가",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-06/brookfield-raises-123-billion-amid-ai-build-out-as-profits-rise",
+   "d": "2026-11-06"
+  },
+  "g19pop7m": {
+   "t": "Brookfield, 3분기 신용 부문에서 120억 달러 조달",
+   "s": "Alternative Credit Investor",
+   "u": "https://alternativecreditinvestor.com/2026/11/06/brookfield-raises-12bn-for-credit-in-q3/",
+   "d": "2026-11-06"
+  },
+  "g1vk0z6p": {
+   "t": "PIF·Silver Lake, 250억 달러 규모 Unity 인수 검토",
+   "s": "finway.com.ua",
+   "u": "https://finway.com.ua/en/saudi-arabias-pif-and-silver/",
+   "d": "2026-11-06"
+  },
+  "g3prntt": {
+   "t": "사우디 국부펀드 PIF와 Silver Lake, Unity를 250억 달러에 인수 위해 협상 중이라고 보도",
+   "s": "Tech4Gamers",
+   "u": "https://tech4gamers.com/pif-silver-lake-discussions-acquire-unity/",
+   "d": "2026-11-06"
   }
  },
  "droppedSentences": 0

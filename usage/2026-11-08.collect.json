@@ -1,0 +1,17 @@
+{
+ "day": "2026-11-08",
+ "job": "collect",
+ "cost": 0.583124,
+ "calls": 29,
+ "skipped": 0,
+ "tokens": {
+  "in": 75217,
+  "out": 43269,
+  "cacheRead": 0,
+  "cacheWrite": 0
+ },
+ "byModel": {
+  "claude-sonnet-5-5": 0.583124
+ },
+ "updatedAt": "2026-11-07T16:02:07.960Z"
+}

@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # ubuntu-latest(26.04)은 Playwright 1.56 이 지원하지 않음
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5

@@ -1,60 +1,44 @@
 {
- "date": "2026-11-07",
- "generatedAt": "2026-11-06T22:31:47.944Z",
+ "date": "2026-11-08",
+ "generatedAt": "2026-11-08T00:04:43.448Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "Brookfield 3분기 250억 달러 조달, 대체투자 자금이 AI 인프라로 집중",
+ "headline": "Brookfield·Blackstone 등 대형 운용사 대형 펀드 모집 마감 잇따르며 인프라·AI 자금 쏠림",
  "points": [
   {
-   "text": "Brookfield Asset Management는 3분기 250억 달러를 조달했고 연간 누적은 123억 달러가 아닌 1,230억 달러로 집계됨. 인프라와 크레디트가 주도했으며 크레디트 부문에서만 120억 달러를 모집함.",
-   "ids": [
-    "g18da2m1",
-    "gtdc1ec",
-    "g19pop7m"
-   ]
-  },
-  {
-   "text": "Brookfield Infrastructure Fund VI는 260억 달러 모금 후 2027년 초 최종 클로징을 목표로 함. 카타르 QIA와 Drax 발전소 부지의 1GW 규모 영국 데이터센터를 지원하는 등 AI 인프라 투자를 확대함.",
+   "text": "Brookfield는 Fund VI로 260억 달러를 모금했으며 2027년 초 최종 클로징을 목표로 함. 카타르 QIA 산하 Qai와의 200억 달러 AI 인프라 벤처의 첫 투자처로 Drax 데이터센터 캠퍼스가 거론됨.",
    "ids": [
     "ge8u4o",
-    "g1w6mpyk"
+    "g1v8p938"
    ]
   },
   {
-   "text": "Blackstone European Senior Direct Lending Fund IV(BXDE IV)가 최종 클로징했으며 유럽 직접대출 전체 투자 가능 자금은 레버리지 포함 약 130억 유로임. Blackstone Real Estate Debt Strategies는 미국 상업용 부동산 대출 7억 6천만 달러를 Prime Finance에 매각함.",
+   "text": "Blackstone은 에너지 전환 펀드 V를 87억달러(약 11조6000억원)로 마감했으며 직전 펀드보다 50% 이상 큰 규모임. 유럽 직접대출 BXDE IV 최종 클로징으로 유럽 직접대출 전략 전체에서 레버리지 포함 약 130억 유로의 투자 가능 자금을 확보함.",
    "ids": [
-    "gdcfhp3",
-    "g17kv71n"
+    "g17tyauz",
+    "gdcfhp3"
    ]
   },
   {
-   "text": "Silver Lake와 사우디 PIF가 EA 550억 달러 인수에 이어 약 250억 달러 규모로 Unity 인수를 타진한 것으로 보도됨.",
+   "text": "StepStone은 최근 12개월 펀드레이징이 430억 달러로 사상 최고를 기록함. Sagard Private Equity는 세 번째 신진 운용사 펀드를 5억 2000만 유로로 마감해 목표 4억 유로를 상회함.",
    "ids": [
-    "g1vk0z6p",
-    "g3prntt"
-   ]
-  },
-  {
-   "text": "StepStone의 운용자산은 2,610억 달러로 전년 대비 25% 증가했고, 최근 12개월 펀드레이징은 430억 달러로 사상 최고를 기록함. Goldman Sachs·Apollo는 SpaceX 대상 약 400억 달러 AI 칩 금융 딜 투자자를 모집 중임.",
-   "ids": [
-    "g234xjx",
     "gschpe0",
-    "gu4tq7u"
+    "g1t4ndmc"
+   ]
+  },
+  {
+   "text": "미국에서 데이터센터 건설에 대한 주민 반발이 확산되는 가운데 Brookfield는 지역사회 동의를 확보한 곳에만 AI 데이터센터 자본을 집중하겠다는 입장을 밝힘. 버지니아 대형 사업 철회와 뉴멕시코 전력 확보 차질 등 인프라 투자 위험이 부각됨.",
+   "ids": [
+    "g1a510ao"
    ]
   }
  ],
- "korea": "국민연금이 Blackstone 존 그레이 사장과 전주에서 글로벌 투자 대담회를 열었고, 신한자산운용은 Starwood SOF 12호에 약 3000억원을 출자함. 우리은행과 KB·우리은행이 TPG의 롯데렌탈 공개매수 인수금융에 참여하는 등 국내 인수금융·해외 대체투자 접점이 넓어지고 있음.",
+ "korea": "국민연금 김성주 이사장이 Blackstone 존 그레이 사장과 전주에서 세 번째로 만나 글로벌 투자 협력을 이어간 점은 대형 운용사와의 접점 확대 신호임. 국민연금은 반도체 편중 국내주식 부진 우려가 커지는 만큼 대체투자 비중 관리 논의가 이어질 수 있음.",
  "refs": {
-  "ge8u4o": {
-   "t": "Brookfield, Fund VI 260억 달러 모금 후 '2027년 초' 최종 클로징 목표",
-   "s": "Infrastructure Investor",
-   "u": "https://www.infrastructureinvestor.com/brookfield-eyes-early-2027-final-close-after-raising-26bn-for-fund-vi/",
-   "d": "2026-11-06"
-  },
-  "gu4tq7u": {
-   "t": "Goldman Sachs·Apollo, 400억 달러 규모 SpaceX AI 칩 금융 딜 투자자 모집",
-   "s": "Tekedia",
-   "u": "https://www.tekedia.com/goldman-sachs-apollo-seek-investors-for-40-billion-spacex-ai-chip-financing-deal/",
+  "g17tyauz": {
+   "t": "블랙스톤, 87억달러 에너지 전환 펀드 모집 마감",
+   "s": "토큰포스트",
+   "u": "https://www.tokenpost.kr/news/economy/434317",
    "d": "2026-11-06"
   },
   "gdcfhp3": {
@@ -63,60 +47,36 @@
    "u": "https://hedgeco.net/news/11/2026/blackstone-closed-its-fourth-institutional-european-direct-lending-fund-with-about-e13-billion-of-investable-capital.html",
    "d": "2026-11-06"
   },
-  "g17kv71n": {
-   "t": "Blackstone, 7억 6천만 달러 규모 미국 상업용 부동산 대출 포트폴리오를 Prime Finance에 매각",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/blackstone-sells-760m-commercial-us-real-estate-loan-portfolio-to-prime-finance/10139243.article",
+  "ge8u4o": {
+   "t": "Brookfield, Fund VI 260억 달러 모금 후 '2027년 초' 최종 클로징 목표",
+   "s": "Infrastructure Investor",
+   "u": "https://www.infrastructureinvestor.com/brookfield-eyes-early-2027-final-close-after-raising-26bn-for-fund-vi/",
    "d": "2026-11-06"
   },
-  "g18da2m1": {
-   "t": "Brookfield Asset Management, 인프라 투자 힘입어 250억 달러 조달",
-   "s": "Commercial Observer",
-   "u": "https://commercialobserver.com/2026/11/brookfield-asset-management-q3-2026/",
+  "g1t4ndmc": {
+   "t": "Sagard Private Equity, 세 번째 신진 운용사 펀드 5억2,000만 유로로 마감…목표액 4억 유로 상회",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/sagard-private-equity-closed-its-third-emerging-manager-fund-at-e520-million-exceeding-its-e400-million-target.html",
    "d": "2026-11-06"
+  },
+  "g1a510ao": {
+   "t": "브룩필드 \"주민 동의 없는 AI 데이터센터 투자 안 한다\"",
+   "s": "글로벌이코노믹",
+   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/2026110722060064209a1f309431_1",
+   "d": "2026-11-07"
+  },
+  "g1v8p938": {
+   "t": "Drax 데이터센터 캠퍼스, Brookfield와 카타르 200억 달러 규모 AI 벤처의 첫 투자",
+   "s": "MLQ.ai",
+   "u": "https://mlq.ai/news/drax-data-center-campus-is-first-deal-for-brookfield-and-qatars-20-billion-ai-venture/",
+   "d": "2026-11-07"
   },
   "gschpe0": {
    "t": "StepStone, 최근 12개월 펀드레이징 430억 달러로 사상 최고 기록",
    "s": "Alternatives Watch",
    "u": "https://www.alternativeswatch.com/2026/11/06/stepstone-record-fundraising-43bn-fiscal-q2-2027/",
    "d": "2026-11-06"
-  },
-  "g234xjx": {
-   "t": "StepStone 운용자산(AUM) 2,610억 달러로 증가",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/06/stepstone-aum-grows-to-261bn/",
-   "d": "2026-11-06"
-  },
-  "g1w6mpyk": {
-   "t": "카타르 국부펀드와 Brookfield, 영국 초대형 데이터센터 지원",
-   "s": "Semafor",
-   "u": "https://www.semafor.com/article/11/06/2026/qai-and-brookfield-back-supersized-uk-data-center",
-   "d": "2026-11-06"
-  },
-  "gtdc1ec": {
-   "t": "Brookfield, AI 투자 확대 속 250억 달러 조달…이익도 증가",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-06/brookfield-raises-123-billion-amid-ai-build-out-as-profits-rise",
-   "d": "2026-11-06"
-  },
-  "g19pop7m": {
-   "t": "Brookfield, 3분기 신용 부문에서 120억 달러 조달",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/06/brookfield-raises-12bn-for-credit-in-q3/",
-   "d": "2026-11-06"
-  },
-  "g1vk0z6p": {
-   "t": "PIF·Silver Lake, 250억 달러 규모 Unity 인수 검토",
-   "s": "finway.com.ua",
-   "u": "https://finway.com.ua/en/saudi-arabias-pif-and-silver/",
-   "d": "2026-11-06"
-  },
-  "g3prntt": {
-   "t": "사우디 국부펀드 PIF와 Silver Lake, Unity를 250억 달러에 인수 위해 협상 중이라고 보도",
-   "s": "Tech4Gamers",
-   "u": "https://tech4gamers.com/pif-silver-lake-discussions-acquire-unity/",
-   "d": "2026-11-06"
   }
  },
- "droppedSentences": 0
+ "droppedSentences": 1
 }

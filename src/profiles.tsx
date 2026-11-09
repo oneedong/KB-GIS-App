@@ -506,7 +506,7 @@ function GpProfile({ name, profile, articles, deals, lpLinks, frEvents, aumNews,
           <Bullets style={{ marginTop: 8 }} items={(brief.points || []).map((pt, i) => (
             <span key={i} style={{ wordBreak: 'keep-all' }}>{nm(pt.text)}
               {(pt.ids || []).filter((id) => briefRefs && briefRefs[id]).map((id) => (
-                <span key={id} onClick={() => onOpenArticle(id, { url: briefRefs[id].u })} style={{ font: F(500, 12), color: KB.blue, cursor: 'pointer', marginLeft: 6, textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' }}>{srcShort(briefRefs[id].s)}</span>
+                <SrcLink key={id} name={briefRefs[id].s} onClick={() => onOpenArticle(id, { url: briefRefs[id].u })} />
               ))}
             </span>
           ))} />

@@ -481,9 +481,8 @@ function AltDigest({ alt, onOpenArticle }) {
   if (!alt || !Array.isArray(alt.points) || !alt.points.length) return null;
   if (Date.now() - Date.parse(alt.generatedAt || 0) > 3 * 864e5) return null;   // 사흘 넘은 브리핑은 숨김
   const refs = alt.refs || {};
-  const src = (ids) => ids.filter((id) => refs[id]).map((id, k) => (
-    <span key={id} onClick={(e) => { e.stopPropagation(); onOpenArticle(id, { url: refs[id].u }); }}
-      style={{ font: F(500, 12), color: KB.blue, cursor: 'pointer', marginLeft: k ? 6 : 6, textDecoration: 'underline', textUnderlineOffset: 2, whiteSpace: 'nowrap' }}>{srcShort(refs[id].s)}</span>
+  const src = (ids) => ids.filter((id) => refs[id]).map((id) => (
+    <SrcLink key={id} name={refs[id].s} onClick={(e) => { e.stopPropagation(); onOpenArticle(id, { url: refs[id].u }); }} />
   ));
   return (
     <div style={{ margin: '10px 16px 4px', padding: '14px 16px', border: `1px solid ${KB.line}`, background: KB.bg }}>

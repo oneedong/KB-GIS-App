@@ -368,7 +368,7 @@ function App() {
             <IconBtn n="refresh" label="새로고침" onClick={() => refreshNews(true)} />
           </div>
         </div>
-        <Tabs scroll pad={20} items={HOME_TABS.map(([k, l]) => [k, l])} value={isHomeTab ? filter : ''} onChange={(k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current) homeScroll.current.scrollTop = 0; }} />
+        <Tabs grid={5} pad={20} items={HOME_TABS.map(([k, l]) => [k, l])} value={isHomeTab ? filter : ''} onChange={(k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current) homeScroll.current.scrollTop = 0; }} />
       </div>
       <div ref={homeScroll} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ padding: '12px 20px 4px' }}>

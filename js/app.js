@@ -416,7 +416,7 @@ function App() {
                 React.createElement("div", { style: { marginLeft: 'auto', display: 'flex' } },
                     !isDesktop && React.createElement(IconBtn, { n: "search", label: "\uAC80\uC0C9", onClick: () => setScreen('search') }),
                     React.createElement(IconBtn, { n: "refresh", label: "\uC0C8\uB85C\uACE0\uCE68", onClick: () => refreshNews(true) }))),
-            React.createElement(Tabs, { scroll: true, pad: 20, items: HOME_TABS.map(([k, l]) => [k, l]), value: isHomeTab ? filter : '', onChange: (k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current)
+            React.createElement(Tabs, { grid: 5, pad: 20, items: HOME_TABS.map(([k, l]) => [k, l]), value: isHomeTab ? filter : '', onChange: (k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current)
                     homeScroll.current.scrollTop = 0; } })),
         React.createElement("div", { ref: homeScroll, style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { padding: '12px 20px 4px' } },

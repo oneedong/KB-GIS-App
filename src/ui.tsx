@@ -117,6 +117,13 @@ const GRID = {
 // 개조식 불릿 — 1단 ○, 2단 -
 // 출처 이름 줄이기 — "THE ELEC, Korea Electronics Industry Media" → "THE ELEC" (좁은 화면에서 넘치지 않게)
 const srcShort = (s) => { const t = String(s || '').split(/,\s|\s[-|–]\s/)[0].trim(); return !t ? '기사' : t.length > 22 ? t.slice(0, 21) + '…' : t; };
+// 문장 끝 출처 링크 — 앞에 공백을 둬 줄바꿈 자리를 만들고, 한 링크가 줄보다 길면 말줄임으로 잘라 상자 밖으로 나가지 않게 한다.
+function SrcLink({ name, onClick }) {
+  return (
+    <>{' '}<span onClick={onClick} title={name}
+      style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom', marginLeft: 2, font: F(500, 12, 1.9), color: KB.blue, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}>{srcShort(name)}</span></>
+  );
+}
 
 function Bullets({ items, sub, style }) {
   const list = (items || []).filter(Boolean);
@@ -170,7 +177,25 @@ function IconBtn({ n, onClick, label, active, size = 22 }) {
 }
 
 // 탭(밑줄형) — 선택 탭에 KB 노랑 막대
-function Tabs({ items, value, onChange, scroll, pad = 20 }) {
+// grid: 열 수. 가로 스크롤 대신 여러 줄로 모두 보여 준다(양끝이 화면 여백에 맞고 글자가 잘리지 않음).
+function Tabs({ items, value, onChange, scroll, pad = 20, grid }) {
+  if (grid) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${grid}, auto)`, justifyContent: 'space-between', columnGap: 6, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, background: KB.bg, flexShrink: 0 }}>
+        {items.map(([k, label]) => {
+          const on = value === k;
+          return (
+            <div key={k} onClick={() => onChange(k)} style={{ display: 'grid', justifyItems: 'center', padding: '9px 1px 8px', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap', color: on ? KB.ink : KB.mute }}>
+              {/* 굵은 글씨 폭을 미리 잡아 선택이 바뀌어도 줄이 흔들리지 않게 */}
+              <span aria-hidden="true" style={{ gridArea: '1/1', font: F(700, 14.5, 1.4), visibility: 'hidden' }}>{label}</span>
+              <span style={{ gridArea: '1/1', font: on ? F(700, 14.5, 1.4) : F(500, 14.5, 1.4) }}>{label}</span>
+              {on && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 2, height: 3, background: KB.yellow }}></div>}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', gap: scroll ? 20 : 0, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, overflowX: scroll ? 'auto' : 'visible', whiteSpace: 'nowrap', background: KB.bg, flexShrink: 0 }}>
       {items.map(([k, label, count]) => {

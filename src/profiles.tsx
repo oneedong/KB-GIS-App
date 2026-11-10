@@ -138,6 +138,58 @@ const ymLabel = (ms) => { const { y, m } = kstYMD(ms); return `${y}년 ${pad2(m)
 // 미팅노트 표 양식: 회색 머리(가운데·굵게) + 모든 칸 테두리
 const TH = { ...GRID.th, font: F(700, 12.5), padding: '6px 6px' };
 const TD = { ...GRID.td, font: F(500, 13, 1.45), padding: '7px 7px', verticalAlign: 'top' };
+// 요약 표의 숫자 하나를 이루는 거래 목록 — 연도별로 묶고(최신 연도부터), 각 거래는 시기·금액·내용·출처를 보여 준다.
+// type 이 '합계'면 거래 유형 태그를, '기타'면 기사에서 뽑은 원래 행위를 함께 적는다. 거래를 누르면 근거 기사를 연다.
+const BREAKDOWN_PAGE = 12;
+function DealBreakdown({ name, type, rows, onOpen, onJump, onClose }) {
+  const [all, setAll] = React.useState(false);
+  const sorted = rows.slice().sort((a, b) => b.ms - a.ms);
+  const shown = all ? sorted : sorted.slice(0, BREAKDOWN_PAGE);
+  const years = [];
+  shown.forEach((c) => { const y = kstYMD(c.ms).y; let g = years.find((x) => x.y === y); if (!g) years.push(g = { y, list: [] }); g.list.push(c); });
+  const yearTotal = (y) => sorted.filter((c) => kstYMD(c.ms).y === y).length;
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: `1.5px solid ${KB.warm}` }}>
+        <span style={{ width: 4, height: 14, background: KB.yellow, flexShrink: 0 }}></span>
+        <span style={{ font: F(700, 14), color: KB.ink, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        <span style={{ font: F(600, 13), color: KB.sub, whiteSpace: 'nowrap' }}>{type} {rows.length}건 구성</span>
+        <span role="button" aria-label="닫기" onClick={onClose} style={{ marginLeft: 'auto', display: 'flex', padding: 4, cursor: 'pointer', color: KB.mute }}><Ico n="close" size={16} sw={2} /></span>
+      </div>
+      {years.map((g) => (
+        <div key={g.y}>
+          <div style={{ font: F(700, 12.5), color: KB.gray, padding: '10px 0 2px' }}>{g.y}년 · {yearTotal(g.y)}건</div>
+          {g.list.map((c, i) => {
+            const e = c.lead;
+            const t = dealType(e.kind);
+            const tag = type === '합계' ? t : type === '기타' ? e.kind : (e.kind !== t ? e.kind : '');
+            const meta = [
+              e.status && e.status !== '확정' ? e.status : '',
+              e.counterpart ? (e.role === 'LP' ? `운용사 ${e.counterpart}` : `LP ${e.counterpart}`) : '',
+              c.overseas ? '해외' : '',
+              e.source + (c.items.length > 1 ? ` 외 ${c.items.length - 1}건 보도` : ''),
+            ].filter(Boolean).join(' · ');
+            return (
+              <div key={c.key + i} role="button" onClick={() => onOpen && onOpen(e)} style={{ padding: '9px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ font: F(600, 12), color: KB.sub, whiteSpace: 'nowrap' }}>{pad2(kstYMD(c.ms).m)}.{pad2(kstYMD(c.ms).d)}</span>
+                  {tag && <Tag tone={/출자|결성|선정|출자사업/.test(tag) ? 'yellow' : 'base'}>{tag}</Tag>}
+                  <span style={{ marginLeft: 'auto', font: F(700, 13), color: e.amount ? KB.gray : KB.faint, whiteSpace: 'nowrap' }}>{e.amount || '금액 미공개'}</span>
+                </div>
+                <div style={{ font: F(500, 13.5, 1.5), color: KB.ink, marginTop: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'keep-all' }}>{nm(e.title)}</div>
+                <div style={{ font: F(500, 11.5, 1.5), color: KB.mute, marginTop: 2 }}>{meta}</div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 8, borderTop: `1px solid ${KB.line2}`, font: F(600, 12.5), color: KB.sub }}>
+        {!all && sorted.length > BREAKDOWN_PAGE && <span role="button" onClick={() => setAll(true)} style={{ cursor: 'pointer' }}>{sorted.length - BREAKDOWN_PAGE}건 더 보기</span>}
+        <span role="button" onClick={onJump} style={{ marginLeft: 'auto', cursor: 'pointer' }}>{name} 상세 표로 이동 ›</span>
+      </div>
+    </div>
+  );
+}
 function DealTable({ clusters, onOpen, onInst }) {
   const desktop = useDesktop();
   const by = {};
@@ -146,11 +198,26 @@ function DealTable({ clusters, onOpen, onInst }) {
   const typesUsed = DEAL_TYPES.map(([t]) => t).concat('기타').filter((t) => clusters.some((c) => dealType(c.lead.kind) === t));
   const anchor = (name) => 'dt-' + name.replace(/[^0-9A-Za-z가-힣]/g, '');
   const jump = (name) => { const el = document.getElementById(anchor(name)); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  // 숫자를 누르면 그 행 바로 아래에 구성 거래를 펼친다(같은 숫자를 다시 누르면 닫힘).
+  // 표는 옆으로 넘겨 보는 넓은 표라, 펼친 내용은 보이는 폭(panelW)에 맞춰 왼쪽에 고정한다.
+  const [open, setOpen] = React.useState(null);
+  const wrapRef = React.useRef(null);
+  const [panelW, setPanelW] = React.useState(0);
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const fit = () => { if (wrapRef.current) setPanelW(wrapRef.current.clientWidth); };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [open]);
+  const toggle = (name, type) => setOpen((o) => (o && o.name === name && o.type === type ? null : { name, type }));
+  const isOpen = (name, type) => !!open && open.name === name && open.type === type;
+  const cellOn = { background: KB.yellowTint, boxShadow: `inset 0 0 0 2px ${KB.yellow}` };
   return (
     <div>
       {/* 요약: 기관 × 거래 유형 건수 */}
-      <div style={{ font: F(700, 14.5), color: KB.blue, margin: '4px 0 8px' }}>기관별 거래 유형 요약 <span style={{ font: F(500, 12), color: KB.mute }}>이름을 누르면 해당 표로 이동</span></div>
-      <div style={{ overflowX: 'auto', background: KB.card }}>
+      <div style={{ font: F(700, 14.5), color: KB.blue, margin: '4px 0 8px' }}>기관별 거래 유형 요약 <span style={{ font: F(500, 12), color: KB.mute }}>숫자를 누르면 구성 거래 · 이름을 누르면 상세 표</span></div>
+      <div ref={wrapRef} style={{ overflowX: 'auto', background: KB.card }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 120 + typesUsed.length * 62 }}>
           <thead><tr>
             <th style={{ ...TH, position: 'sticky', left: 0, zIndex: 1 }}>기관</th>
@@ -158,13 +225,35 @@ function DealTable({ clusters, onOpen, onInst }) {
             <th style={{ ...TH, textAlign: 'center' }}>합계</th>
           </tr></thead>
           <tbody>
-            {insts.map((name) => (
-              <tr key={name} onClick={() => jump(name)} style={{ cursor: 'pointer' }}>
-                <td style={{ ...TD, font: F(600, 13), color: KB.ink, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: KB.card }}>{name}</td>
-                {typesUsed.map((t) => { const n = by[name].filter((c) => dealType(c.lead.kind) === t).length; return <td key={t} style={{ ...TD, textAlign: 'center', color: n ? KB.ink : KB.faint, font: n ? F(700, 13) : F(400, 13) }}>{n || '·'}</td>; })}
-                <td style={{ ...TD, textAlign: 'center', font: F(700, 13), color: KB.gray }}>{by[name].length}</td>
-              </tr>
-            ))}
+            {insts.map((name) => {
+              const rowOpen = !!open && open.name === name;
+              const pick = open && open.name === name ? (open.type === '합계' ? by[name] : by[name].filter((c) => dealType(c.lead.kind) === open.type)) : [];
+              return (
+                <React.Fragment key={name}>
+                  <tr>
+                    <td onClick={() => jump(name)} style={{ ...TD, font: F(600, 13), color: KB.ink, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: rowOpen ? KB.yellowTint : KB.card, cursor: 'pointer' }}>{name}</td>
+                    {typesUsed.map((t) => {
+                      const n = by[name].filter((c) => dealType(c.lead.kind) === t).length;
+                      return (
+                        <td key={t} role={n ? 'button' : undefined} aria-label={n ? `${name} ${t} ${n}건 구성 보기` : undefined} onClick={n ? () => toggle(name, t) : undefined}
+                          style={{ ...TD, textAlign: 'center', color: n ? KB.ink : KB.faint, font: n ? F(700, 13) : F(400, 13), cursor: n ? 'pointer' : 'default', ...(isOpen(name, t) ? cellOn : {}) }}>{n || '·'}</td>
+                      );
+                    })}
+                    <td role="button" aria-label={`${name} 합계 ${by[name].length}건 구성 보기`} onClick={() => toggle(name, '합계')}
+                      style={{ ...TD, textAlign: 'center', font: F(700, 13), color: KB.gray, cursor: 'pointer', ...(isOpen(name, '합계') ? cellOn : {}) }}>{by[name].length}</td>
+                  </tr>
+                  {rowOpen && pick.length > 0 && (
+                    <tr>
+                      <td colSpan={typesUsed.length + 2} style={{ ...TD, padding: 0, background: KB.bg }}>
+                        <div style={{ position: 'sticky', left: 0, width: panelW || '100%', boxSizing: 'border-box', padding: '10px 12px 10px' }}>
+                          <DealBreakdown key={open.name + open.type} name={name} type={open.type} rows={pick} onOpen={onOpen} onJump={() => jump(name)} onClose={() => setOpen(null)} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

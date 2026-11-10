@@ -132,6 +132,63 @@ const ymLabel = (ms) => { const { y, m } = kstYMD(ms); return `${y}년 ${pad2(m)
 // 미팅노트 표 양식: 회색 머리(가운데·굵게) + 모든 칸 테두리
 const TH = { ...GRID.th, font: F(700, 12.5), padding: '6px 6px' };
 const TD = { ...GRID.td, font: F(500, 13, 1.45), padding: '7px 7px', verticalAlign: 'top' };
+// 요약 표의 숫자 하나를 이루는 거래 목록 — 연도별로 묶고(최신 연도부터), 각 거래는 시기·금액·내용·출처를 보여 준다.
+// type 이 '합계'면 거래 유형 태그를, '기타'면 기사에서 뽑은 원래 행위를 함께 적는다. 거래를 누르면 근거 기사를 연다.
+const BREAKDOWN_PAGE = 12;
+function DealBreakdown({ name, type, rows, onOpen, onJump, onClose }) {
+    const [all, setAll] = React.useState(false);
+    const sorted = rows.slice().sort((a, b) => b.ms - a.ms);
+    const shown = all ? sorted : sorted.slice(0, BREAKDOWN_PAGE);
+    const years = [];
+    shown.forEach((c) => { const y = kstYMD(c.ms).y; let g = years.find((x) => x.y === y); if (!g)
+        years.push(g = { y, list: [] }); g.list.push(c); });
+    const yearTotal = (y) => sorted.filter((c) => kstYMD(c.ms).y === y).length;
+    return (React.createElement("div", null,
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: `1.5px solid ${KB.warm}` } },
+            React.createElement("span", { style: { width: 4, height: 14, background: KB.yellow, flexShrink: 0 } }),
+            React.createElement("span", { style: { font: F(700, 14), color: KB.ink, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
+            React.createElement("span", { style: { font: F(600, 13), color: KB.sub, whiteSpace: 'nowrap' } },
+                type,
+                " ",
+                rows.length,
+                "\uAC74 \uAD6C\uC131"),
+            React.createElement("span", { role: "button", "aria-label": "\uB2EB\uAE30", onClick: onClose, style: { marginLeft: 'auto', display: 'flex', padding: 4, cursor: 'pointer', color: KB.mute } },
+                React.createElement(Ico, { n: "close", size: 16, sw: 2 }))),
+        years.map((g) => (React.createElement("div", { key: g.y },
+            React.createElement("div", { style: { font: F(700, 12.5), color: KB.gray, padding: '10px 0 2px' } },
+                g.y,
+                "\uB144 \u00B7 ",
+                yearTotal(g.y),
+                "\uAC74"),
+            g.list.map((c, i) => {
+                const e = c.lead;
+                const t = dealType(e.kind);
+                const tag = type === '합계' ? t : type === '기타' ? e.kind : (e.kind !== t ? e.kind : '');
+                const meta = [
+                    e.status && e.status !== '확정' ? e.status : '',
+                    e.counterpart ? (e.role === 'LP' ? `운용사 ${e.counterpart}` : `LP ${e.counterpart}`) : '',
+                    c.overseas ? '해외' : '',
+                    e.source + (c.items.length > 1 ? ` 외 ${c.items.length - 1}건 보도` : ''),
+                ].filter(Boolean).join(' · ');
+                return (React.createElement("div", { key: c.key + i, role: "button", onClick: () => onOpen && onOpen(e), style: { padding: '9px 0', borderTop: i ? `1px solid ${KB.line2}` : 'none', cursor: 'pointer' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
+                        React.createElement("span", { style: { font: F(600, 12), color: KB.sub, whiteSpace: 'nowrap' } },
+                            pad2(kstYMD(c.ms).m),
+                            ".",
+                            pad2(kstYMD(c.ms).d)),
+                        tag && React.createElement(Tag, { tone: /출자|결성|선정|출자사업/.test(tag) ? 'yellow' : 'base' }, tag),
+                        React.createElement("span", { style: { marginLeft: 'auto', font: F(700, 13), color: e.amount ? KB.gray : KB.faint, whiteSpace: 'nowrap' } }, e.amount || '금액 미공개')),
+                    React.createElement("div", { style: { font: F(500, 13.5, 1.5), color: KB.ink, marginTop: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'keep-all' } }, nm(e.title)),
+                    React.createElement("div", { style: { font: F(500, 11.5, 1.5), color: KB.mute, marginTop: 2 } }, meta)));
+            })))),
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 14, paddingTop: 8, borderTop: `1px solid ${KB.line2}`, font: F(600, 12.5), color: KB.sub } },
+            !all && sorted.length > BREAKDOWN_PAGE && React.createElement("span", { role: "button", onClick: () => setAll(true), style: { cursor: 'pointer' } },
+                sorted.length - BREAKDOWN_PAGE,
+                "\uAC74 \uB354 \uBCF4\uAE30"),
+            React.createElement("span", { role: "button", onClick: onJump, style: { marginLeft: 'auto', cursor: 'pointer' } },
+                name,
+                " \uC0C1\uC138 \uD45C\uB85C \uC774\uB3D9 \u203A"))));
+}
 function DealTable({ clusters, onOpen, onInst }) {
     const desktop = useDesktop();
     const by = {};
@@ -141,21 +198,50 @@ function DealTable({ clusters, onOpen, onInst }) {
     const anchor = (name) => 'dt-' + name.replace(/[^0-9A-Za-z가-힣]/g, '');
     const jump = (name) => { const el = document.getElementById(anchor(name)); if (el)
         el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    // 숫자를 누르면 그 행 바로 아래에 구성 거래를 펼친다(같은 숫자를 다시 누르면 닫힘).
+    // 표는 옆으로 넘겨 보는 넓은 표라, 펼친 내용은 보이는 폭(panelW)에 맞춰 왼쪽에 고정한다.
+    const [open, setOpen] = React.useState(null);
+    const wrapRef = React.useRef(null);
+    const [panelW, setPanelW] = React.useState(0);
+    React.useEffect(() => {
+        if (!open)
+            return undefined;
+        const fit = () => { if (wrapRef.current)
+            setPanelW(wrapRef.current.clientWidth); };
+        fit();
+        window.addEventListener('resize', fit);
+        return () => window.removeEventListener('resize', fit);
+    }, [open]);
+    const toggle = (name, type) => setOpen((o) => (o && o.name === name && o.type === type ? null : { name, type }));
+    const isOpen = (name, type) => !!open && open.name === name && open.type === type;
+    const cellOn = { background: KB.yellowTint, boxShadow: `inset 0 0 0 2px ${KB.yellow}` };
     return (React.createElement("div", null,
         React.createElement("div", { style: { font: F(700, 14.5), color: KB.blue, margin: '4px 0 8px' } },
             "\uAE30\uAD00\uBCC4 \uAC70\uB798 \uC720\uD615 \uC694\uC57D ",
-            React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, "\uC774\uB984\uC744 \uB204\uB974\uBA74 \uD574\uB2F9 \uD45C\uB85C \uC774\uB3D9")),
-        React.createElement("div", { style: { overflowX: 'auto', background: KB.card } },
+            React.createElement("span", { style: { font: F(500, 12), color: KB.mute } }, "\uC22B\uC790\uB97C \uB204\uB974\uBA74 \uAD6C\uC131 \uAC70\uB798 \u00B7 \uC774\uB984\uC744 \uB204\uB974\uBA74 \uC0C1\uC138 \uD45C")),
+        React.createElement("div", { ref: wrapRef, style: { overflowX: 'auto', background: KB.card } },
             React.createElement("table", { style: { borderCollapse: 'collapse', width: '100%', minWidth: 120 + typesUsed.length * 62 } },
                 React.createElement("thead", null,
                     React.createElement("tr", null,
                         React.createElement("th", { style: { ...TH, position: 'sticky', left: 0, zIndex: 1 } }, "\uAE30\uAD00"),
                         typesUsed.map((t) => React.createElement("th", { key: t, style: { ...TH, textAlign: 'center' } }, t)),
                         React.createElement("th", { style: { ...TH, textAlign: 'center' } }, "\uD569\uACC4"))),
-                React.createElement("tbody", null, insts.map((name) => (React.createElement("tr", { key: name, onClick: () => jump(name), style: { cursor: 'pointer' } },
-                    React.createElement("td", { style: { ...TD, font: F(600, 13), color: KB.ink, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: KB.card } }, name),
-                    typesUsed.map((t) => { const n = by[name].filter((c) => dealType(c.lead.kind) === t).length; return React.createElement("td", { key: t, style: { ...TD, textAlign: 'center', color: n ? KB.ink : KB.faint, font: n ? F(700, 13) : F(400, 13) } }, n || '·'); }),
-                    React.createElement("td", { style: { ...TD, textAlign: 'center', font: F(700, 13), color: KB.gray } }, by[name].length))))))),
+                React.createElement("tbody", null, insts.map((name) => {
+                    const rowOpen = !!open && open.name === name;
+                    const pick = open && open.name === name ? (open.type === '합계' ? by[name] : by[name].filter((c) => dealType(c.lead.kind) === open.type)) : [];
+                    return (React.createElement(React.Fragment, { key: name },
+                        React.createElement("tr", null,
+                            React.createElement("td", { onClick: () => jump(name), style: { ...TD, font: F(600, 13), color: KB.ink, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: rowOpen ? KB.yellowTint : KB.card, cursor: 'pointer' } }, name),
+                            typesUsed.map((t) => {
+                                const n = by[name].filter((c) => dealType(c.lead.kind) === t).length;
+                                return (React.createElement("td", { key: t, role: n ? 'button' : undefined, "aria-label": n ? `${name} ${t} ${n}건 구성 보기` : undefined, onClick: n ? () => toggle(name, t) : undefined, style: { ...TD, textAlign: 'center', color: n ? KB.ink : KB.faint, font: n ? F(700, 13) : F(400, 13), cursor: n ? 'pointer' : 'default', ...(isOpen(name, t) ? cellOn : {}) } }, n || '·'));
+                            }),
+                            React.createElement("td", { role: "button", "aria-label": `${name} 합계 ${by[name].length}건 구성 보기`, onClick: () => toggle(name, '합계'), style: { ...TD, textAlign: 'center', font: F(700, 13), color: KB.gray, cursor: 'pointer', ...(isOpen(name, '합계') ? cellOn : {}) } }, by[name].length)),
+                        rowOpen && pick.length > 0 && (React.createElement("tr", null,
+                            React.createElement("td", { colSpan: typesUsed.length + 2, style: { ...TD, padding: 0, background: KB.bg } },
+                                React.createElement("div", { style: { position: 'sticky', left: 0, width: panelW || '100%', boxSizing: 'border-box', padding: '10px 12px 10px' } },
+                                    React.createElement(DealBreakdown, { key: open.name + open.type, name: name, type: open.type, rows: pick, onOpen: onOpen, onJump: () => jump(name), onClose: () => setOpen(null) })))))));
+                })))),
         insts.map((name) => {
             const rows = by[name].slice().sort((a, b) => {
                 const ta = DEAL_TYPES.findIndex(([t]) => t === dealType(a.lead.kind)), tb = DEAL_TYPES.findIndex(([t]) => t === dealType(b.lead.kind));

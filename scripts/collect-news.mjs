@@ -1784,6 +1784,9 @@ export function buildFundraising(articles, prevItems = []) {
   // 보도 목록도 최종 펀드의 운용사·펀드명으로 맞추고, 운용사를 못 정한 보도는 뺀다
   const resolve = (k) => { let n = 0; while (alias[k] && n++ < 20) k = alias[k]; return k; };
   const outItems = items.map((e) => { const f = funds.get(resolve(e.fundKey)); return f ? { ...e, fundKey: f.fundKey, gp: f.gp, fund: f.fund || e.fund } : e; }).filter((e) => e.gp);
+  // 예전에 저장된 이름·제목에 남은 깨진 줄표(' ? ')도 여기서 정리한다
+  for (const e of outItems) { if (e.fund) e.fund = fixDash(e.fund); if (e.title) e.title = fixDash(e.title); }
+  for (const f of fundList) if (f.fund) f.fund = fixDash(f.fund);
   const { date } = kstParts();
   return { updatedAt: date, count: outItems.length, fundCount: fundList.length, namedCount: fundList.filter((f) => f.fund).length, items: outItems, funds: fundList };
 }

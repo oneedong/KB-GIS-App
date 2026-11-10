@@ -141,8 +141,11 @@ function App() {
     useEffect(() => { store.set('articles', articles.slice(0, 600)); prefetchBodies(articles); }, [articles]);
     useEffect(() => { if (seen)
         store.set('seen', seen); }, [seen]);
+    // 첫 실행: 서버에서 받은 목록 전체를 '본 것'으로 시작한다. 저장해 둔 일부(600건)만으로 시작하면
+    // 곧이어 받은 나머지가 전부 '새 기사'로 세어진다(첫 실행에 '새 기사 99+'가 뜨던 원인).
+    const newsLoaded = useRef(false);
     useEffect(() => {
-        if (seen === null && articles.length) {
+        if (seen === null && articles.length && newsLoaded.current) {
             const m = {};
             articles.forEach((a) => { m[a.id] = true; });
             setSeen(m);
@@ -155,44 +158,67 @@ function App() {
         toastTimer.current = setTimeout(() => setToast(null), 2200);
     };
     // 기사 목록은 수집기 결과(news.json)를 그대로 따른다 — 수집기에서 빠진 기사는 화면에서도 사라진다.
+    // 받아 온 파일이 지난번과 같으면(undefined) 화면을 다시 그리지 않는다.
     const refreshNews = (showToast) => {
-        getJson(API.news).then((incoming) => {
-            if (Array.isArray(incoming) && incoming.length)
+        getJsonIfChanged(API.news).then((incoming) => {
+            if (Array.isArray(incoming) && incoming.length) {
+                newsLoaded.current = true;
                 setArticles(sortArticles(incoming.filter(isRealArticle).filter((a) => !deadIds()[a.id])));
+            }
             if (showToast)
-                flash(Array.isArray(incoming) ? '최신 기사를 불러왔습니다' : '새로고침하지 못했습니다');
+                flash(Array.isArray(incoming) ? '최신 기사를 불러왔습니다' : incoming === undefined ? '이미 최신입니다' : '새로고침하지 못했습니다');
         });
-        getJson(API.investments).then((d) => { if (d && Array.isArray(d.items))
+        getJsonIfChanged(API.investments).then((d) => { if (d && Array.isArray(d.items))
             setInvestments(d); });
     };
-    useEffect(() => {
-        refreshNews(false);
-        getJson(API.alloc).then((d) => { if (d && Array.isArray(d.institutions)) {
+    const refreshData = () => {
+        getJsonIfChanged(API.alloc).then((d) => { if (d && Array.isArray(d.institutions)) {
             d.institutions = d.institutions.slice().sort((a, b) => b.altPct - a.altPct);
             setAlloc(d);
         } });
-        getJson(API.insights).then((d) => { if (d && (d.cios || d.aums))
+        getJsonIfChanged(API.insights).then((d) => { if (d && (d.cios || d.aums))
             setInsights(d); });
-        getJson(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global)))
+        getJsonIfChanged(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global)))
             setMarket(d); });
-        getJson(API.altBrief).then((d) => { if (d && Array.isArray(d.points))
+        getJsonIfChanged(API.altBrief).then((d) => { if (d && Array.isArray(d.points))
             setAltBrief(d); });
-        getJson(API.gpBriefs).then((d) => { if (d && d.gps)
+        getJsonIfChanged(API.gpBriefs).then((d) => { if (d && d.gps)
             setGpBriefs(d); });
-        getJson(API.briefIndex).then((d) => { if (Array.isArray(d))
+        getJsonIfChanged(API.briefIndex).then((d) => { if (Array.isArray(d))
             setBriefIndex(d); });
-        getJson(API.roster).then((d) => { if (d && Array.isArray(d.institutions))
+        getJsonIfChanged(API.roster).then((d) => { if (d && Array.isArray(d.institutions))
             setRoster(d.institutions); });
-        getJson(API.lpProfiles).then((d) => { if (d && d.profiles) {
+        getJsonIfChanged(API.lpProfiles).then((d) => { if (d && d.profiles) {
             setProfiles(d.profiles);
             setProfilesAt(d.updatedAt || '');
         } });
-        getJson(API.gpProfiles).then((d) => { if (d && d.profiles) {
+        getJsonIfChanged(API.gpProfiles).then((d) => { if (d && d.profiles) {
             setGpProfiles(d.profiles);
             setGpProfilesAt(d.updatedAt || '');
         } });
-        getJson(API.fundraising).then((d) => { if (d && Array.isArray(d.items))
+        getJsonIfChanged(API.fundraising).then((d) => { if (d && Array.isArray(d.items))
             setFundraising(d); });
+    };
+    // 전체 다시 확인. 앱을 켜 둔 채(또는 홈 화면 앱을 다시 열어) 오래 지나도 어제 내용에 머물지 않게,
+    // 화면으로 돌아올 때와 10분마다 서버에 바뀐 것이 있는지 묻는다(안 바뀐 파일은 다시 내려받지 않는다).
+    const lastSync = useRef(0);
+    const syncAll = (showToast) => {
+        lastSync.current = Date.now();
+        refreshNews(showToast);
+        refreshData();
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistration)
+            navigator.serviceWorker.getRegistration().then((reg) => { if (reg)
+                reg.update(); }).catch(() => { }); // 새 버전 배포 확인
+    };
+    useEffect(() => {
+        syncAll(false);
+        const maybe = () => { if (!document.hidden && Date.now() - lastSync.current > 5 * 60 * 1000)
+            syncAll(false); };
+        const t = setInterval(maybe, 10 * 60 * 1000);
+        document.addEventListener('visibilitychange', maybe);
+        window.addEventListener('focus', maybe);
+        window.addEventListener('online', maybe);
+        return () => { clearInterval(t); document.removeEventListener('visibilitychange', maybe); window.removeEventListener('focus', maybe); window.removeEventListener('online', maybe); };
     }, []);
     // 과거 일자 시황은 고를 때 받는다
     useEffect(() => {
@@ -412,10 +438,10 @@ function App() {
                 isDesktop
                     ? React.createElement("div", null,
                         React.createElement("div", { style: { font: F(700, 20), color: KB.ink, letterSpacing: '-.02em' } }, "\uCD5C\uC2E0 \uAE30\uC0AC"))
-                    : React.createElement(Logo, { size: 18, onClick: () => refreshNews(true) }),
+                    : React.createElement(Logo, { size: 18, onClick: () => syncAll(true) }),
                 React.createElement("div", { style: { marginLeft: 'auto', display: 'flex' } },
                     !isDesktop && React.createElement(IconBtn, { n: "search", label: "\uAC80\uC0C9", onClick: () => setScreen('search') }),
-                    React.createElement(IconBtn, { n: "refresh", label: "\uC0C8\uB85C\uACE0\uCE68", onClick: () => refreshNews(true) }))),
+                    React.createElement(IconBtn, { n: "refresh", label: "\uC0C8\uB85C\uACE0\uCE68", onClick: () => syncAll(true) }))),
             React.createElement(Tabs, { grid: 5, pad: 20, items: HOME_TABS.map(([k, l]) => [k, l]), value: isHomeTab ? filter : '', onChange: (k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current)
                     homeScroll.current.scrollTop = 0; } })),
         React.createElement("div", { ref: homeScroll, style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
@@ -477,7 +503,7 @@ function App() {
                 React.createElement("div", { style: { maxWidth: isDesktop ? 880 : 'none', margin: '0 auto', padding: isDesktop && lpTab === 'alloc' ? '20px 24px 40px' : 0 } },
                     lpTab === 'inst' && (React.createElement("div", { style: { padding: '16px 20px 30px' } },
                         React.createElement(SearchField, { value: lpQuery, onChange: setLpQuery, onClear: () => setLpQuery(''), placeholder: "\uAE30\uAD00\uBA85 \uAC80\uC0C9" }),
-                        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', margin: '14px 0 4px' } }, ['전체', ...GROUPS].map((g) => React.createElement(Chip, { key: g, active: lpGroup === g, onClick: () => setLpGroup(g), count: g === '전체' ? lpRows.length : lpRows.filter((r) => r.group === g).length }, g))),
+                        React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', margin: '14px 0 4px' } }, ['전체', ...GROUPS].map((g) => React.createElement(Chip, { key: g, active: lpGroup === g, onClick: () => setLpGroup(g), count: g === '전체' ? lpRows.length : lpRows.filter((r) => r.group === g).length }, g))),
                         !roster ? React.createElement(Empty, { compact: true, title: "\uAE30\uAD00 \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4" }) : rows.length === 0 ? React.createElement(Empty, { compact: true, title: "\uCC3E\uB294 \uAE30\uAD00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" }) : rows.map((r, i) => (React.createElement(ListRow, { key: r.name, first: i === 0, chevron: true, onClick: () => setLpSel(r.name) },
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
                                 React.createElement("span", { style: { font: F(600, 15.5), color: KB.ink } }, r.name),
@@ -664,7 +690,7 @@ function App() {
     const master = isDesktop && LIST_SCREENS.includes(screen);
     return (React.createElement(UICtx.Provider, { value: { desktop: isDesktop } },
         React.createElement("div", { className: "app-frame", style: { color: KB.ink, background: KB.bg, ...(isDesktop ? { flexDirection: 'row' } : {}) } },
-            isDesktop && React.createElement(Sidebar, { active: sideActive, onGo: go, badge: newCount, onRefresh: () => refreshNews(true), updated: latestAt }),
+            isDesktop && React.createElement(Sidebar, { active: sideActive, onGo: go, badge: newCount, onRefresh: () => syncAll(true), updated: latestAt }),
             React.createElement("div", { style: { flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: isDesktop ? 'row' : 'column' } },
                 screen === 'detail'
                     ? detail(true)

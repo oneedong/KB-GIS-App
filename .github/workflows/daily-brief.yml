@@ -2,10 +2,15 @@ name: Daily market brief
 
 on:
   schedule:
-    # 전일 시장 마감 기준 브리핑. 정각 예약은 2026-10 실측 약 3시간 늦게(11시 전후) 돌아,
-    # 미국 장 마감(06:00 KST) 직후인 06:23 KST 로 앞당겨 아침 출근 시간대에 맞춘다.
-    # 2026-11 실측: 06:23 예약이 4시간 늦게(10:29) 돌아 미국장 마감이 오전 내내 반영되지 않았다.
-    # 세 번 깨워 가장 먼저 도는 회차가 갱신하고, 뒤 회차는 최신 시세로 다시 덮는다(Claude 브리핑은 하루 한 번만).
+    # 전일 시장 마감 기준 브리핑 — 미국 장 마감(06:00 KST, 서머타임 05:00) 직후에 나와야 한다.
+    # GitHub 예약은 이 저장소에서 늘 3~4시간 늦게 온다(2026-11 실측: 06:23 예약이 10:00 전후에 실행).
+    # 그래서 새벽 2~4시대(KST)에도 깨우는 줄을 두고, 아래 'gate' 단계가 06시 이전 회차는 건너뛴다.
+    # 늦게 오면 06~08시에 실행되고, 제때 오면 건너뛴 뒤 06시 이후 줄이 처리한다.
+    # 오전 중에는 90분 넘게 지난 뒤 깨어난 회차가 최신 시세로 다시 덮는다(Claude 브리핑은 하루 한 번만).
+    - cron: '33 17 * * *'    # 02:33 KST (늦게 오면 06시 전후)
+    - cron: '3 18 * * *'     # 03:03 KST
+    - cron: '33 18 * * *'    # 03:33 KST
+    - cron: '3 19 * * *'     # 04:03 KST
     - cron: '23 21 * * *'    # 06:23 KST
     - cron: '13 22 * * *'    # 07:13 KST
     - cron: '3 23 * * *'     # 08:03 KST
@@ -27,21 +32,61 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main          # 예약이 늦게 와도 최신 main 기준으로 판단·갱신
+      # 예약 회차만 거른다(직접 실행·수집기의 '깨우기'·코드 변경은 항상 실행).
+      #  - 06시(KST) 이전: 미국 장이 아직 안 끝났으므로 건너뜀
+      #  - 오늘 시황이 이미 있고 만든 지 90분이 안 됐거나 정오가 지났으면 건너뜀
+      - name: Gate (06시 이후 · 오늘 것이 없거나 오전 재갱신일 때만)
+        id: gate
+        run: |
+          run=true
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            run=$(python3 - <<'PY'
+          import json, datetime
+          now = datetime.datetime.now(datetime.timezone.utc)
+          kst = now + datetime.timedelta(hours=9)
+          try:
+              d = json.load(open('market.json'))
+          except Exception:
+              d = {}
+          today = kst.strftime('%Y%m%d')
+          age = 1e9
+          try:
+              age = (now - datetime.datetime.fromisoformat(str(d.get('ts', '')).replace('Z', '+00:00'))).total_seconds() / 60
+          except Exception:
+              pass
+          if kst.hour < 6:
+              print('false')
+          elif d.get('dateKey') != today:
+              print('true')
+          else:
+              print('true' if (kst.hour < 12 and age >= 90) else 'false')
+          PY
+          )
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "$(TZ=Asia/Seoul date '+%m-%d %H:%M KST') · 실행=$run"
       - uses: actions/setup-node@v5
+        if: steps.gate.outputs.run == 'true'
         with:
           node-version: '22'
       - name: Build market brief
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/daily-brief.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       - run: npm ci --omit=dev --no-audit --no-fund
+        if: steps.gate.outputs.run == 'true'
       # 오늘의 해외대체(Claude Sonnet 5.5) — 실패해도 시황 커밋은 진행
       - name: Build alt-investment brief
+        if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         run: node scripts/alt-brief.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
       - name: Commit brief
+        if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"

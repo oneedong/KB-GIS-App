@@ -8,7 +8,7 @@
  *   node scripts/collect-news.mjs            # 수집 후 news.json 갱신
  *   node scripts/collect-news.mjs --selftest # 네트워크 없이 파서/분류 테스트
  */
-import { readFile, writeFile, mkdir, readdir, unlink } from 'fs/promises';
+import { readFile, writeFile, mkdir, readdir, unlink, appendFile } from 'fs/promises';
 import { createRequire } from 'module';
 import { fmtSize } from './money.mjs';
 import { openBudget, ask, claudeReady, MODELS } from './claude.mjs';
@@ -1607,6 +1607,7 @@ export function buildFundraising(articles, prevItems = []) {
     const exact = (n) => (n && !/호 펀드$/.test(n) ? n : '');
     let fund = (x && x.fund && fundInText(a, x.fund, gp) ? x.fund : '') || exact(tName) || exact(bName) || tName || bName;
     if (fund && !fundNearGp(a, fund, gp)) fund = '';                          // 다른 회사 펀드명을 붙이지 않는다
+    if (fund) fund = fixDash(fund);
     if (fund && /^(?:Fund|Partners|Strategic\s+Fund)\b/i.test(fund.trim())) fund = `${(x && x.manager && !/[가-힣]/.test(x.manager) ? x.manager : gp)} ${fund.trim()}`;   // "Fund XI" → "Bain Capital Ventures Fund XI"
     if (fund && (/^series\s+\w+$/i.test(fund.trim()) || fundCore(fund, gp).length < 1)) fund = '';   // "Series 12"(트랜치)·운용사명뿐인 이름
     if (fund) {
@@ -2158,7 +2159,10 @@ function extractiveSummary(text) {
 
 // ── RSS 파싱 + 기사 객체화 ───────────────────────────────
 // 매체 이름을 떼고 남는 제목 꼬리 — "… |"(구분자만 남음), "… > 뉴스"(사이트 경로)
-export const cleanTitle = (t) => String(t || '').replace(/\s*[|｜]\s*$/, '').replace(/\s+>\s*(?:뉴스|기사|News|경제|사회|정치|국제|산업|금융|증권|IT)\s*$/i, '').trim();
+// 원문의 줄표(–)가 깨져 ' ? '로 들어온 제목·펀드명("BXPM ? Blackstone Private Markets Fund")을 줄표로 되돌린다.
+// 물음표는 앞 단어에 붙여 쓰므로, 영문 단어 사이에 띄어 쓴 ' ? '는 깨진 줄표로 본다.
+export const fixDash = (t) => String(t || '').replace(/([A-Za-z0-9)]) \? (?=[A-Z])/g, '$1 – ');
+export const cleanTitle = (t) => fixDash(t).replace(/\s*[|｜]\s*$/, '').replace(/\s+>\s*(?:뉴스|기사|News|경제|사회|정치|국제|산업|금융|증권|IT)\s*$/i, '').trim();
 export function parseFeed(xml) {
   const items = [];
   const blocks = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
@@ -2426,39 +2430,65 @@ function dedupe(list) {
 // 검색하면 글로벌 매체(Bloomberg·Reuters·PEI·PE Hub 등) 기사가 거의 나오지 않는다.
 // 영문은 결과가 많아 최신순 상위 N건만 쓰고, 503/429 는 물러났다가 재시도한다.
 const EN_PER_QUERY = 30;
-async function fetchQuery(q) {
+// quick: 직전 검색어가 차단(503/429)·시간 초과였을 때는 한 번만 짧게 시도한다(차단된 서버에서 검색어마다 40초씩 쓰지 않게).
+async function fetchQuery(q, { quick = false } = {}) {
   const en = !/[가-힣]/.test(q);
   const loc = en ? 'hl=en-US&gl=US&ceid=US:en' : 'hl=ko&gl=KR&ceid=KR:ko';
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&${loc}`;
   let lastErr;
-  for (let i = 0; i < 3; i++) {
+  const tries = quick ? 1 : 3;
+  for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 KBGIS-collector' }, signal: AbortSignal.timeout(20000) });
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 KBGIS-collector' }, signal: AbortSignal.timeout(quick ? 10000 : 20000) });
       if (res.ok) {
         const items = parseFeed(await res.text());
         if (!en) return items;
         return items.sort((a, b) => (Date.parse(b.pub) || 0) - (Date.parse(a.pub) || 0)).slice(0, EN_PER_QUERY);
       }
       lastErr = new Error(`HTTP ${res.status}`);
-      if (![429, 500, 502, 503].includes(res.status)) break;
-    } catch (e) { lastErr = e; }
-    await new Promise((r) => setTimeout(r, 2500 * (i + 1)));
+      lastErr.blocked = [429, 500, 502, 503].includes(res.status);
+      if (!lastErr.blocked) break;
+    } catch (e) { lastErr = e; lastErr.blocked = true; }                    // 시간 초과·연결 실패도 '응답 없음'으로 센다
+    if (i < tries - 1) await new Promise((r) => setTimeout(r, 2500 * (i + 1)));
   }
   throw lastErr || new Error('fetch failed');
+}
+
+// 구글 뉴스가 이 실행 서버를 막으면(2026-11-08 실측: 모든 검색어 HTTP 503) 검색어 80여 개를 하나씩 재시도하다
+// 50분 제한에 걸려 회차 전체가 결과 없이 끝났다. 연속으로 막히면 남은 검색어는 건너뛰고,
+// 받은 양이 너무 적으면 저장하지 않고 끝내 다음 회차(다른 서버)가 바로 다시 시도하게 한다.
+const BLOCK_STREAK_LIMIT = 6;      // 연속 응답 없음 허용 횟수
+const MIN_OK_RATIO = 0.25;         // 검색어의 이 비율도 못 받았으면 이번 회차는 저장하지 않는다
+async function fetchAllQueries(queries, fetchOne = fetchQuery) {
+  let all = [], ok = 0, streak = 0, skipped = 0;
+  for (let i = 0; i < queries.length; i++) {
+    const q = queries[i];
+    if (streak >= BLOCK_STREAK_LIMIT) { skipped = queries.length - i; break; }
+    try {
+      const items = await fetchOne(q, { quick: streak > 0 });
+      all = all.concat(items); ok++; streak = 0;
+    } catch (e) {
+      console.warn('skip:', q, '-', e.message);
+      if (e && e.blocked) streak++; else streak = 0;
+    }
+  }
+  if (skipped) console.warn(`구글 뉴스가 연속 ${BLOCK_STREAK_LIMIT}회 응답하지 않아 남은 검색어 ${skipped}개를 건너뜀`);
+  const blocked = ok < Math.ceil(queries.length * MIN_OK_RATIO);
+  return { all, ok, skipped, blocked };
 }
 
 async function main() {
   if (process.argv.includes('--selftest')) return selftest();
   if (process.argv.includes('--feeds')) return writeFeeds();      // 수집 없이 앱용 피드만 다시 만들기
 
-  let all = [];
-  for (const q of QUERIES) {
-    try {
-      const items = (await fetchQuery(q)).filter(isRelevant).map(enrich);
-      all = all.concat(items);
-    } catch (e) { console.warn('skip:', q, '-', e.message); }
+  const got = await fetchAllQueries(QUERIES);
+  if (got.blocked) {
+    // 저장하지 않고 끝낸다 — 커밋이 없으므로 다음 깨우기 때 '마지막 수집 후 경과 시간' 조건을 그대로 통과해 다시 수집한다.
+    console.warn(`검색어 ${QUERIES.length}개 중 ${got.ok}개만 응답 — 이번 회차는 저장하지 않고 종료(다음 회차에 재시도)`);
+    if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, 'blocked=true\n');
+    return;
   }
-  all = dedupe(all);
+  let all = dedupe(got.all.filter(isRelevant).map(enrich));
   BUDGET = await openBudget('collect', { runCap: 0.6 });
   const rejected = await loadRejected();
   { const n = all.length; all = all.filter((a) => !rejected[a.id]); if (n !== all.length) console.log(`ai-rejected: ${n - all.length} fresh articles skipped`); }
@@ -2468,6 +2498,7 @@ async function main() {
   // news.json 에는 리드만 두고 전문은 bodies/<id>.json 에 따로 둔다(목록 로딩을 가볍게).
   // 수집기 안에서는 예전처럼 전문을 들고 다니도록 파일에서 복원한다.
   await restoreBodies(prev);
+  for (const p of prev) { if (p.en) p.en = fixDash(p.en); if (p.lang !== 'ko' && p.ko) p.ko = fixDash(p.ko); }
   for (const p of prev) if (p.lang === 'ko' && p.ko) p.ko = cleanTitle(p.ko);   // 예전에 저장된 제목 꼬리('… |', '> 뉴스')도 정리
   // 보관된 과거 기사도 강화된 관련성 기준으로 다시 거릅니다(상장주식·국내 잡음 제거).
   // 단, (1) 수동 고정(pinned) 기사와 (2) 추적 대상 기관의 조직/인사 변경 뉴스는
@@ -2799,7 +2830,7 @@ async function main() {
   await writeFeeds();
 }
 
-function selftest() {
+async function selftest() {
   const sample = `<rss><channel>
     <item><title>국민연금, 미국 멀티패밀리 메자닌 대출에 5억 달러($500M) 추가 배정 - 한국경제</title>
       <link>https://example.com/a1</link><pubDate>Fri, 26 Jun 2026 08:12:00 GMT</pubDate>
@@ -2966,8 +2997,24 @@ function selftest() {
   const ok10 = noiseFails.length === 0;
   console.log(`noise: ${NOISE_YES.length + NOISE_NO.length - noiseFails.length}/${NOISE_YES.length + NOISE_NO.length} ok`);
 
-  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10;
-  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7} ok8=${ok8} ok9=${ok9} ok10=${ok10})`);
+  // 구글 뉴스 차단 대응: 연속으로 막히면 빨리 포기하고, 받은 양이 적으면 '저장 안 함'으로 판정하는지
+  const qs = Array.from({ length: 100 }, (_, i) => 'q' + i);
+  const blockErr = () => Object.assign(new Error('HTTP 503'), { blocked: true });
+  const warn = console.warn; console.warn = () => {};
+  let calls = 0;
+  const allBlocked = await fetchAllQueries(qs, async () => { calls++; throw blockErr(); });
+  const okA = allBlocked.blocked && calls === BLOCK_STREAK_LIMIT && allBlocked.skipped === 100 - BLOCK_STREAK_LIMIT;
+  const quickSeen = [];
+  const partial = await fetchAllQueries(qs, async (q, o) => { const i = +q.slice(1); quickSeen.push(o.quick); if (i >= 40) throw blockErr(); return [{ id: q }]; });
+  const okB = !partial.blocked && partial.ok === 40 && partial.all.length === 40 && partial.skipped === 60 - BLOCK_STREAK_LIMIT && quickSeen[40] === false && quickSeen[41] === true;
+  const flaky = await fetchAllQueries(qs, async (q) => { const i = +q.slice(1); if (i % 3 === 0) throw blockErr(); if (i % 7 === 0) throw new Error('parse'); return [{ id: q }]; });
+  const okC = !flaky.blocked && flaky.skipped === 0 && flaky.ok > 50;
+  console.warn = warn;
+  const ok11 = okA && okB && okC;
+  console.log(`fetch guard: ${ok11 ? 'ok' : `FAIL (all-blocked=${okA} partial=${okB} flaky=${okC})`}`);
+
+  const all7 = ok && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11;
+  console.log(all7 ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (ok=${ok} ok2=${ok2} ok3=${ok3} ok4=${ok4} ok5=${ok5} ok6=${ok6} ok7=${ok7} ok8=${ok8} ok9=${ok9} ok10=${ok10} ok11=${ok11})`);
   if (!all7) process.exit(1);
 }
 

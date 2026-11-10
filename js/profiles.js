@@ -106,7 +106,7 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
         body = shown.map((c, i) => React.createElement(DealRow, { key: c.key + i, c: c, first: i === 0, onOpen: onOpen, onInst: onInst, showInst: showInst }));
     }
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 } },
+        React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 12 } },
             React.createElement(Chip, { active: ov, onClick: () => setOv((v) => !v), count: ovCount }, "\uD574\uC678\uB9CC"),
             React.createElement("span", { style: { width: 1, background: KB.line, margin: '6px 2px', flexShrink: 0 } }),
             DEAL_FILTERS.map(([k, label], i) => (counts[i][1] > 0 || k === 'all') && React.createElement(Chip, { key: k, active: fk === k, onClick: () => setFk(k), count: counts[i][1] }, label))),
@@ -745,13 +745,13 @@ function FundraisingView({ data, onOpen, onGp }) {
             React.createElement(Ico, { n: "close", size: 18 }))));
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg } },
         React.createElement(TopBar, { big: true, title: "\uD380\uB4DC\uB808\uC774\uC9D5", sub: `운용사 ${gps.length}곳 · 펀드 ${funds.length}개(펀드명 확인 ${funds.filter((f) => f.fund).length}) · 보도 ${items.length}건${data && data.updatedAt ? ` · ${data.updatedAt} 갱신` : ''}`, border: false }),
-        React.createElement(Tabs, { items: [['gp', '운용사별', gps.length], ['funds', '펀드별', funds.filter(byQ).length], ['final', 'Final Closed', finals.length], ['feed', '최신 보도', feed.length], ['cal', '캘린더']], value: tab, onChange: setTab, scroll: true, pad: 20 }),
+        React.createElement(Tabs, { items: [['gp', '운용사별', gps.length], ['funds', '펀드별', funds.filter(byQ).length], ['final', 'Final Closed', finals.length], ['feed', '최신 보도', feed.length], ['cal', '캘린더']], value: tab, onChange: setTab, scroll: desktop, grid: desktop ? 0 : 3, pad: 20 }),
         React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { maxWidth: desktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' } },
                 search,
                 tab === 'cal' && React.createElement(FrCalendar, { funds: funds.filter(byQ), onOpenStage: openStage, onGp: onGp }),
                 tab === 'funds' && (React.createElement(React.Fragment, null,
-                    React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6 } }, [['all', '전체'], ['모집 중', '모집 중'], ['클로즈', '클로즈 전체'], ['1차 클로즈', '1차'], ['중간 클로즈', '중간'], ['파이널 클로즈', '파이널']].map(([k, l]) => React.createElement(Chip, { key: k, active: st === k, onClick: () => setSt(k), count: cnt(k) }, l))),
+                    React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 } }, [['all', '전체'], ['모집 중', '모집 중'], ['클로즈', '클로즈 전체'], ['1차 클로즈', '1차'], ['중간 클로즈', '중간'], ['파이널 클로즈', '파이널']].map(([k, l]) => React.createElement(Chip, { key: k, active: st === k, onClick: () => setSt(k), count: cnt(k) }, l))),
                     list.length ? list.map((f, i) => React.createElement(FundCard, { key: f.fundKey, f: f, first: i === 0, onOpenStage: openStage, onGp: onGp }))
                         : React.createElement(Empty, { compact: true, icon: "layers", title: "\uD574\uB2F9\uD558\uB294 \uD380\uB4DC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4" }))),
                 tab === 'final' && (finals.length ? (React.createElement("div", null,

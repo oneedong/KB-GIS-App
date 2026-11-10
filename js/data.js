@@ -24,6 +24,18 @@ const API = {
 // 매번 새 주소(?t=…)로 받으면 바뀌지 않은 파일도 통째로 다시 내려받고 서비스워커 캐시에 사본이 쌓인다.
 // 'no-cache' 는 서버에 바뀌었는지만 물어(ETag) 그대로면 304 로 캐시본을 쓰고, 바뀌었으면 새로 받는다.
 const getJson = (url) => fetch(url, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+// 주기적 재확인용 — 지난번에 받은 것과 같은 파일(ETag·Last-Modified 동일)이면 undefined 를 돌려줘
+// 화면을 다시 그리지 않게 한다. 실패는 null, 새 내용은 데이터.
+const _jsonVer = {};
+const getJsonIfChanged = (url) => fetch(url, { cache: 'no-cache' }).then((r) => {
+    if (!r.ok)
+        return null;
+    const v = r.headers.get('etag') || r.headers.get('last-modified') || '';
+    if (v && _jsonVer[url] === v)
+        return undefined;
+    return r.json().then((d) => { if (v)
+        _jsonVer[url] = v; return d; });
+}).catch(() => null);
 // ─── 분류 ────────────────────────────────────────────────────
 // 자산군 표기는 업계 용어 그대로(영문)
 const ASSET = {

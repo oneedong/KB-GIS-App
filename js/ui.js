@@ -148,11 +148,12 @@ function IconBtn({ n, onClick, label, active, size = 22 }) {
 // grid: 열 수. 가로 스크롤 대신 여러 줄로 모두 보여 준다(양끝이 화면 여백에 맞고 글자가 잘리지 않음).
 function Tabs({ items, value, onChange, scroll, pad = 20, grid }) {
     if (grid) {
-        return (React.createElement("div", { style: { display: 'grid', gridTemplateColumns: `repeat(${grid}, auto)`, justifyContent: 'space-between', columnGap: 6, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, background: KB.bg, flexShrink: 0 } }, items.map(([k, label]) => {
+        return (React.createElement("div", { style: { display: 'grid', gridTemplateColumns: `repeat(${grid}, auto)`, justifyContent: 'space-between', columnGap: 6, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, background: KB.bg, flexShrink: 0 } }, items.map(([k, label, count]) => {
             const on = value === k;
-            return (React.createElement("div", { key: k, onClick: () => onChange(k), style: { display: 'grid', justifyItems: 'center', padding: '9px 1px 8px', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap', color: on ? KB.ink : KB.mute } },
-                React.createElement("span", { "aria-hidden": "true", style: { gridArea: '1/1', font: F(700, 14.5, 1.4), visibility: 'hidden' } }, label),
-                React.createElement("span", { style: { gridArea: '1/1', font: on ? F(700, 14.5, 1.4) : F(500, 14.5, 1.4) } }, label),
+            const cnt = count != null && React.createElement("span", { style: { font: F(600, 12), color: on ? KB.gray : KB.faint, marginLeft: 4 } }, count);
+            return (React.createElement("div", { key: k, onClick: () => onChange(k), style: { textAlign: 'center', padding: '9px 1px 8px', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap', color: on ? KB.ink : KB.mute } },
+                React.createElement("span", { className: "kb-tabw", "data-b": label, style: { display: 'inline-block', font: on ? F(700, 14.5, 1.4) : F(500, 14.5, 1.4) } }, label),
+                cnt,
                 on && React.createElement("div", { style: { position: 'absolute', left: 0, right: 0, bottom: 2, height: 3, background: KB.yellow } })));
         })));
     }

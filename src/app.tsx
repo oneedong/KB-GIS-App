@@ -156,8 +156,11 @@ function App() {
   useEffect(() => { store.set('read', read); }, [read]);
   useEffect(() => { store.set('articles', articles.slice(0, 600)); prefetchBodies(articles); }, [articles]);
   useEffect(() => { if (seen) store.set('seen', seen); }, [seen]);
+  // 첫 실행: 서버에서 받은 목록 전체를 '본 것'으로 시작한다. 저장해 둔 일부(600건)만으로 시작하면
+  // 곧이어 받은 나머지가 전부 '새 기사'로 세어진다(첫 실행에 '새 기사 99+'가 뜨던 원인).
+  const newsLoaded = useRef(false);
   useEffect(() => {
-    if (seen === null && articles.length) { const m = {}; articles.forEach((a) => { m[a.id] = true; }); setSeen(m); }
+    if (seen === null && articles.length && newsLoaded.current) { const m = {}; articles.forEach((a) => { m[a.id] = true; }); setSeen(m); }
   }, [articles, seen]);
   const markSeen = (ids) => setSeen((s) => { const n = { ...(s || {}) }; ids.forEach((id) => { n[id] = true; }); return n; });
 
@@ -168,25 +171,43 @@ function App() {
   };
 
   // 기사 목록은 수집기 결과(news.json)를 그대로 따른다 — 수집기에서 빠진 기사는 화면에서도 사라진다.
+  // 받아 온 파일이 지난번과 같으면(undefined) 화면을 다시 그리지 않는다.
   const refreshNews = (showToast) => {
-    getJson(API.news).then((incoming) => {
-      if (Array.isArray(incoming) && incoming.length) setArticles(sortArticles(incoming.filter(isRealArticle).filter((a) => !deadIds()[a.id])));
-      if (showToast) flash(Array.isArray(incoming) ? '최신 기사를 불러왔습니다' : '새로고침하지 못했습니다');
+    getJsonIfChanged(API.news).then((incoming) => {
+      if (Array.isArray(incoming) && incoming.length) { newsLoaded.current = true; setArticles(sortArticles(incoming.filter(isRealArticle).filter((a) => !deadIds()[a.id]))); }
+      if (showToast) flash(Array.isArray(incoming) ? '최신 기사를 불러왔습니다' : incoming === undefined ? '이미 최신입니다' : '새로고침하지 못했습니다');
     });
-    getJson(API.investments).then((d) => { if (d && Array.isArray(d.items)) setInvestments(d); });
+    getJsonIfChanged(API.investments).then((d) => { if (d && Array.isArray(d.items)) setInvestments(d); });
+  };
+  const refreshData = () => {
+    getJsonIfChanged(API.alloc).then((d) => { if (d && Array.isArray(d.institutions)) { d.institutions = d.institutions.slice().sort((a, b) => b.altPct - a.altPct); setAlloc(d); } });
+    getJsonIfChanged(API.insights).then((d) => { if (d && (d.cios || d.aums)) setInsights(d); });
+    getJsonIfChanged(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global))) setMarket(d); });
+    getJsonIfChanged(API.altBrief).then((d) => { if (d && Array.isArray(d.points)) setAltBrief(d); });
+    getJsonIfChanged(API.gpBriefs).then((d) => { if (d && d.gps) setGpBriefs(d); });
+    getJsonIfChanged(API.briefIndex).then((d) => { if (Array.isArray(d)) setBriefIndex(d); });
+    getJsonIfChanged(API.roster).then((d) => { if (d && Array.isArray(d.institutions)) setRoster(d.institutions); });
+    getJsonIfChanged(API.lpProfiles).then((d) => { if (d && d.profiles) { setProfiles(d.profiles); setProfilesAt(d.updatedAt || ''); } });
+    getJsonIfChanged(API.gpProfiles).then((d) => { if (d && d.profiles) { setGpProfiles(d.profiles); setGpProfilesAt(d.updatedAt || ''); } });
+    getJsonIfChanged(API.fundraising).then((d) => { if (d && Array.isArray(d.items)) setFundraising(d); });
+  };
+  // 전체 다시 확인. 앱을 켜 둔 채(또는 홈 화면 앱을 다시 열어) 오래 지나도 어제 내용에 머물지 않게,
+  // 화면으로 돌아올 때와 10분마다 서버에 바뀐 것이 있는지 묻는다(안 바뀐 파일은 다시 내려받지 않는다).
+  const lastSync = useRef(0);
+  const syncAll = (showToast) => {
+    lastSync.current = Date.now();
+    refreshNews(showToast);
+    refreshData();
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then((reg) => { if (reg) reg.update(); }).catch(() => {});   // 새 버전 배포 확인
   };
   useEffect(() => {
-    refreshNews(false);
-    getJson(API.alloc).then((d) => { if (d && Array.isArray(d.institutions)) { d.institutions = d.institutions.slice().sort((a, b) => b.altPct - a.altPct); setAlloc(d); } });
-    getJson(API.insights).then((d) => { if (d && (d.cios || d.aums)) setInsights(d); });
-    getJson(API.market).then((d) => { if (d && (Array.isArray(d.kr) || Array.isArray(d.global))) setMarket(d); });
-    getJson(API.altBrief).then((d) => { if (d && Array.isArray(d.points)) setAltBrief(d); });
-    getJson(API.gpBriefs).then((d) => { if (d && d.gps) setGpBriefs(d); });
-    getJson(API.briefIndex).then((d) => { if (Array.isArray(d)) setBriefIndex(d); });
-    getJson(API.roster).then((d) => { if (d && Array.isArray(d.institutions)) setRoster(d.institutions); });
-    getJson(API.lpProfiles).then((d) => { if (d && d.profiles) { setProfiles(d.profiles); setProfilesAt(d.updatedAt || ''); } });
-    getJson(API.gpProfiles).then((d) => { if (d && d.profiles) { setGpProfiles(d.profiles); setGpProfilesAt(d.updatedAt || ''); } });
-    getJson(API.fundraising).then((d) => { if (d && Array.isArray(d.items)) setFundraising(d); });
+    syncAll(false);
+    const maybe = () => { if (!document.hidden && Date.now() - lastSync.current > 5 * 60 * 1000) syncAll(false); };
+    const t = setInterval(maybe, 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', maybe);
+    window.addEventListener('focus', maybe);
+    window.addEventListener('online', maybe);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', maybe); window.removeEventListener('focus', maybe); window.removeEventListener('online', maybe); };
   }, []);
 
   // 과거 일자 시황은 고를 때 받는다
@@ -362,10 +383,10 @@ function App() {
         <div style={{ height: 58, display: 'flex', alignItems: 'center', padding: '0 8px 0 20px' }}>
           {isDesktop
             ? <div><div style={{ font: F(700, 20), color: KB.ink, letterSpacing: '-.02em' }}>최신 기사</div></div>
-            : <Logo size={18} onClick={() => refreshNews(true)} />}
+            : <Logo size={18} onClick={() => syncAll(true)} />}
           <div style={{ marginLeft: 'auto', display: 'flex' }}>
             {!isDesktop && <IconBtn n="search" label="검색" onClick={() => setScreen('search')} />}
-            <IconBtn n="refresh" label="새로고침" onClick={() => refreshNews(true)} />
+            <IconBtn n="refresh" label="새로고침" onClick={() => syncAll(true)} />
           </div>
         </div>
         <Tabs grid={5} pad={20} items={HOME_TABS.map(([k, l]) => [k, l])} value={isHomeTab ? filter : ''} onChange={(k) => { setFilter(k); setLimit(PAGE); if (homeScroll.current) homeScroll.current.scrollTop = 0; }} />
@@ -448,7 +469,7 @@ function App() {
             {lpTab === 'inst' && (
               <div style={{ padding: '16px 20px 30px' }}>
                 <SearchField value={lpQuery} onChange={setLpQuery} onClear={() => setLpQuery('')} placeholder="기관명 검색" />
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '14px 0 4px' }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '14px 0 4px' }}>
                   {['전체', ...GROUPS].map((g) => <Chip key={g} active={lpGroup === g} onClick={() => setLpGroup(g)} count={g === '전체' ? lpRows.length : lpRows.filter((r) => r.group === g).length}>{g}</Chip>)}
                 </div>
                 {!roster ? <Empty compact title="기관 목록을 불러오는 중입니다" /> : rows.length === 0 ? <Empty compact title="찾는 기관이 없습니다" /> : rows.map((r, i) => (
@@ -748,7 +769,7 @@ function App() {
   return (
     <UICtx.Provider value={{ desktop: isDesktop }}>
       <div className="app-frame" style={{ color: KB.ink, background: KB.bg, ...(isDesktop ? { flexDirection: 'row' } : {}) }}>
-        {isDesktop && <Sidebar active={sideActive} onGo={go} badge={newCount} onRefresh={() => refreshNews(true)} updated={latestAt} />}
+        {isDesktop && <Sidebar active={sideActive} onGo={go} badge={newCount} onRefresh={() => syncAll(true)} updated={latestAt} />}
         <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: isDesktop ? 'row' : 'column' }}>
           {screen === 'detail'
             ? detail(true)

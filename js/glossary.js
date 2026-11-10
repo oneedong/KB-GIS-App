@@ -1037,7 +1037,7 @@ function LearnScreen({ focus, onFocusDone }) {
                     React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 } }, LEARN_PATH.map((id, i) => GLOSSARY_BY_ID[id] && (React.createElement("span", { key: id, onClick: () => jump(id), style: { display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 6px', borderRadius: 2, background: KB.card, border: `1px solid ${KB.yellowLine}`, cursor: 'pointer', font: F(600, 13), color: KB.ink2 } },
                         React.createElement("span", { style: { width: 20, height: 20, borderRadius: 10, background: KB.woodDeep, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: F(700, 11) } }, i + 1),
                         GLOSSARY_BY_ID[id].term.split(' (')[0])))))),
-                React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', margin: '18px 0 6px', paddingBottom: 2 } },
+                React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', margin: '18px 0 6px', paddingBottom: 2 } },
                     React.createElement(Chip, { active: cat === 'all', onClick: () => setCat('all'), count: GLOSSARY.length }, "\uC804\uCCB4"),
                     GLOSSARY_CATS.map(([k, label]) => React.createElement(Chip, { key: k, active: cat === k, onClick: () => setCat(k), count: count(k) }, label))),
                 list.length === 0 && React.createElement(Empty, { compact: true, title: "\uCC3E\uB294 \uC6A9\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4", desc: "\uB2E4\uB978 \uD45C\uD604\uC73C\uB85C \uAC80\uC0C9\uD574 \uBCF4\uC138\uC694." }),

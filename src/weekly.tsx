@@ -291,7 +291,7 @@ function WeeklyScreen({ onOpen }) {
         </div>
       )}
       <div style={{ flexShrink: 0, background: KB.bg }}>
-        <Tabs scroll pad={20} items={[['all', '종합'], ...WK_ASSETS]} value={tab} onChange={openAsset} />
+        <Tabs scroll={desktop} grid={desktop ? 0 : 3} pad={20} items={[['all', '종합'], ...WK_ASSETS]} value={tab} onChange={openAsset} />
       </div>
       <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 960 : 'none', margin: '0 auto', padding: desktop ? '18px 24px 40px' : '0 0 30px' }}>

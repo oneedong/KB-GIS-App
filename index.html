@@ -34,6 +34,8 @@
   input::placeholder { color: #9A9A9A; }
   a { -webkit-tap-highlight-color: transparent; }
   ::selection { background: rgba(255, 188, 0, .35); }
+  /* 탭 글자: 선택되면 굵어지며 폭이 달라지므로, 굵은 글씨 폭을 보이지 않게 미리 잡아 둔다 */
+  .kb-tabw::before { content: attr(data-b); display: block; height: 0; overflow: hidden; visibility: hidden; font-weight: 700; }
 
   /* #root centers the phone frame and fills the viewport */
   #root {
@@ -124,7 +126,10 @@
   // 페이지가 한 번 자동 새로고침되어 최신 화면으로 갱신됩니다.
   if ('serviceWorker' in navigator) {
     var refreshing = false;
+    // 처음 설치할 때는 지금 화면이 이미 최신이다 — 새로고침하면 방금 받은 파일을 전부 한 번 더 받게 된다.
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController) { hadController = true; return; }
       if (refreshing) return;            // 새 SW가 제어권을 잡으면 한 번만 새로고침
       refreshing = true;
       window.location.reload();

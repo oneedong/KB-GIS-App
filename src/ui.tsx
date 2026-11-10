@@ -182,13 +182,13 @@ function Tabs({ items, value, onChange, scroll, pad = 20, grid }) {
   if (grid) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${grid}, auto)`, justifyContent: 'space-between', columnGap: 6, padding: `0 ${pad}px`, borderBottom: `1px solid ${KB.line}`, background: KB.bg, flexShrink: 0 }}>
-        {items.map(([k, label]) => {
+        {items.map(([k, label, count]) => {
           const on = value === k;
+          const cnt = count != null && <span style={{ font: F(600, 12), color: on ? KB.gray : KB.faint, marginLeft: 4 }}>{count}</span>;
           return (
-            <div key={k} onClick={() => onChange(k)} style={{ display: 'grid', justifyItems: 'center', padding: '9px 1px 8px', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap', color: on ? KB.ink : KB.mute }}>
-              {/* 굵은 글씨 폭을 미리 잡아 선택이 바뀌어도 줄이 흔들리지 않게 */}
-              <span aria-hidden="true" style={{ gridArea: '1/1', font: F(700, 14.5, 1.4), visibility: 'hidden' }}>{label}</span>
-              <span style={{ gridArea: '1/1', font: on ? F(700, 14.5, 1.4) : F(500, 14.5, 1.4) }}>{label}</span>
+            <div key={k} onClick={() => onChange(k)} style={{ textAlign: 'center', padding: '9px 1px 8px', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap', color: on ? KB.ink : KB.mute }}>
+              {/* kb-tabw(index.html): 굵은 글씨 폭을 미리 잡아 선택이 바뀌어도 줄이 흔들리지 않게 */}
+              <span className="kb-tabw" data-b={label} style={{ display: 'inline-block', font: on ? F(700, 14.5, 1.4) : F(500, 14.5, 1.4) }}>{label}</span>{cnt}
               {on && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 2, height: 3, background: KB.yellow }}></div>}
             </div>
           );

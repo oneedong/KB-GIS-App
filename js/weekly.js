@@ -257,7 +257,7 @@ function WeeklyScreen({ onOpen }) {
                 React.createElement(Ico, { n: "chevron", size: 20, sw: 2 })),
             cur && pos === 0 && React.createElement(Tag, { tone: "yellow" }, "\uCD5C\uC2E0"))),
         React.createElement("div", { style: { flexShrink: 0, background: KB.bg } },
-            React.createElement(Tabs, { scroll: true, pad: 20, items: [['all', '종합'], ...WK_ASSETS], value: tab, onChange: openAsset })),
+            React.createElement(Tabs, { scroll: desktop, grid: desktop ? 0 : 3, pad: 20, items: [['all', '종합'], ...WK_ASSETS], value: tab, onChange: openAsset })),
         React.createElement("div", { ref: scrollRef, style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { maxWidth: desktop ? 960 : 'none', margin: '0 auto', padding: desktop ? '18px 24px 40px' : '0 0 30px' } },
                 React.createElement("div", { style: { padding: desktop ? '0 0 14px' : '12px 20px 4px' } },

@@ -106,7 +106,7 @@ function DealList({ events, onOpen, onInst, showInst, limit, emptyTitle, emptyDe
   }
   return (
     <div>
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 12 }}>
         <Chip active={ov} onClick={() => setOv((v) => !v)} count={ovCount}>해외만</Chip>
         <span style={{ width: 1, background: KB.line, margin: '6px 2px', flexShrink: 0 }}></span>
         {DEAL_FILTERS.map(([k, label], i) => (counts[i][1] > 0 || k === 'all') && <Chip key={k} active={fk === k} onClick={() => setFk(k)} count={counts[i][1]}>{label}</Chip>)}
@@ -958,14 +958,14 @@ function FundraisingView({ data, onOpen, onGp }) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: KB.bg }}>
       <TopBar big title="펀드레이징" sub={`운용사 ${gps.length}곳 · 펀드 ${funds.length}개(펀드명 확인 ${funds.filter((f) => f.fund).length}) · 보도 ${items.length}건${data && data.updatedAt ? ` · ${data.updatedAt} 갱신` : ''}`} border={false} />
-      <Tabs items={[['gp', '운용사별', gps.length], ['funds', '펀드별', funds.filter(byQ).length], ['final', 'Final Closed', finals.length], ['feed', '최신 보도', feed.length], ['cal', '캘린더']]} value={tab} onChange={setTab} scroll pad={20} />
+      <Tabs items={[['gp', '운용사별', gps.length], ['funds', '펀드별', funds.filter(byQ).length], ['final', 'Final Closed', finals.length], ['feed', '최신 보도', feed.length], ['cal', '캘린더']]} value={tab} onChange={setTab} scroll={desktop} grid={desktop ? 0 : 3} pad={20} />
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ maxWidth: desktop ? 880 : 'none', margin: '0 auto', padding: '16px 20px 30px' }}>
           {search}
           {tab === 'cal' && <FrCalendar funds={funds.filter(byQ)} onOpenStage={openStage} onGp={onGp} />}
           {tab === 'funds' && (
             <>
-              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                 {[['all', '전체'], ['모집 중', '모집 중'], ['클로즈', '클로즈 전체'], ['1차 클로즈', '1차'], ['중간 클로즈', '중간'], ['파이널 클로즈', '파이널']].map(([k, l]) => <Chip key={k} active={st === k} onClick={() => setSt(k)} count={cnt(k)}>{l}</Chip>)}
               </div>
               {list.length ? list.map((f, i) => <FundCard key={f.fundKey} f={f} first={i === 0} onOpenStage={openStage} onGp={onGp} />)

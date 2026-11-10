@@ -2,12 +2,41 @@ name: Collect news
 
 on:
   schedule:
-    # GitHub 예약 실행은 자주 늦거나 빠진다(2026-10 실측: 매시간 예약에도 실제로는 4~7시간 간격).
-    # 30분마다 깨우고(:07·:37), 아래 'gate' 단계가 마지막 수집 후 2시간 40분이 지났을 때만 수집한다.
-    # 몇 번 빠져도 다음 기회에 따라잡도록 깨우는 횟수를 늘린 것(건너뛰는 회차는 10초 안에 끝난다).
+    # GitHub 예약 실행은 이 저장소에서 늘 3~4시간 늦게 오고, 같은 예약 식의 밀린 회차는 하나로 합쳐진다
+    # (2026-11 실측: '30분마다' 한 줄은 하루 4~5번만 깨어났고, 하루 한 번짜리 줄은 늦더라도 한 번씩은 왔다).
+    # 그래서 시간마다 따로 줄을 둔다 — 줄마다 하루 한 번씩 오면 대략 한 시간에 한 번 깨어난다.
+    # 깨어나면 아래 'gate' 단계가 마지막 수집 후 2시간 40분이 지났을 때만 수집한다(건너뛰는 회차는 10초 안에 끝난다).
     # 정확한 3시간 간격이 필요하면 DEPLOY.md '외부 예약으로 정시 실행' 참고.
-    - cron: '7,37 * * * *'
-  workflow_dispatch: {}
+    - cron: '7 0 * * *'
+    - cron: '37 1 * * *'
+    - cron: '7 2 * * *'
+    - cron: '37 3 * * *'
+    - cron: '7 4 * * *'
+    - cron: '37 5 * * *'
+    - cron: '7 6 * * *'
+    - cron: '37 7 * * *'
+    - cron: '7 8 * * *'
+    - cron: '37 9 * * *'
+    - cron: '7 10 * * *'
+    - cron: '37 11 * * *'
+    - cron: '7 12 * * *'
+    - cron: '37 13 * * *'
+    - cron: '7 14 * * *'
+    - cron: '37 15 * * *'
+    - cron: '7 16 * * *'
+    - cron: '37 17 * * *'
+    - cron: '7 18 * * *'
+    - cron: '37 19 * * *'
+    - cron: '7 20 * * *'
+    - cron: '37 21 * * *'
+    - cron: '7 22 * * *'
+    - cron: '37 23 * * *'
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: '차단 재시도 회차(자동 재실행이 넘겨 주는 값 — 직접 실행할 때는 비워 둠)'
+        required: false
+        default: '0'
   push:
     branches: [ main ]
     paths: [ 'scripts/collect-news.mjs', 'article-clean.js', 'package.json', '.github/workflows/collect-news.yml' ]
@@ -50,16 +79,27 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: npm ci --omit=dev --no-audit --no-fund
       - name: Collect
+        id: collect
         if: steps.gate.outputs.run == 'true'
         run: node scripts/collect-news.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_API_KEY }}
+      # 구글 뉴스가 이 실행 서버를 막아 수집기가 저장 없이 끝난 회차(blocked)는 커밋하지 않고,
+      # 다른 서버에서 곧바로 다시 돌린다(최대 2번 — 그래도 막히면 다음 예약 회차가 이어받는다).
+      - name: Retry on another runner if blocked
+        if: steps.collect.outputs.blocked == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETRY: ${{ github.event.inputs.retry || '0' }}
+        run: |
+          n=$((RETRY + 1))
+          if [ "$n" -le 2 ]; then gh workflow run collect-news.yml --ref main -f retry="$n" && echo "차단 — 다른 서버에서 재실행 요청(${n}/2)"; else echo "차단 — 재시도 2회 소진, 다음 예약 회차에 맡김"; fi
       - name: Rebuild LP roster
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.collect.outputs.blocked != 'true'
         run: node scripts/gen-institutions.mjs
       - name: Commit updated feed
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.collect.outputs.blocked != 'true'
         run: |
           git config user.name  "kbgis-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -82,9 +122,10 @@ jobs:
           else
             echo "No changes."
           fi
-      # 수집이 실패·시간 초과로 끊겨도 Claude 사용액 장부(usage/)는 남겨 다음 회차가 하루 한도를 정확히 계산하게 한다
+      # 수집이 실패·시간 초과로 끊겨도 Claude 사용액 장부(usage/)는 남겨 다음 회차가 하루 한도를 정확히 계산하게 한다.
+      # 시간 초과는 '실패'가 아니라 '취소'로 끝나므로 cancelled() 도 함께 본다(2026-11-08: 50분 초과 회차에서 이 단계가 건너뛰어졌다).
       - name: Record Claude usage on failure
-        if: failure() && steps.gate.outputs.run == 'true'
+        if: (failure() || cancelled()) && steps.gate.outputs.run == 'true'
         run: |
           [ -d usage ] || exit 0
           rm -rf /tmp/usage-keep && cp -r usage /tmp/usage-keep

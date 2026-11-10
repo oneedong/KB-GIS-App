@@ -1089,7 +1089,7 @@ function LearnScreen({ focus, onFocusDone }) {
                   </div>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '18px 0 6px', paddingBottom: 2 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '18px 0 6px', paddingBottom: 2 }}>
                 <Chip active={cat === 'all'} onClick={() => setCat('all')} count={GLOSSARY.length}>전체</Chip>
                 {GLOSSARY_CATS.map(([k, label]) => <Chip key={k} active={cat === k} onClick={() => setCat(k)} count={count(k)}>{label}</Chip>)}
               </div>

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'bodies | translate | gemini | all'
+        description: 'bodies | translate | gemini | quotes | all'
         required: false
         default: 'all'
 

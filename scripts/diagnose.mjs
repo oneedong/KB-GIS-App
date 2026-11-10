@@ -98,6 +98,26 @@ async function peek() {
     } catch (e) { console.log('### ' + host(a.url) + ' ERR ' + e.message); }
   }
 }
+// 시세 원자료 확인: 야후 일봉(1mo/1d)과 당일 분봉(1d/5m)의 메타·마지막 봉을 그대로 찍는다.
+// (일봉에 빈 날이 끼거나 장중 값이 종가처럼 쓰이는지 확인용)
+async function quotes() {
+  const day = (t, tz) => new Date((t + (tz || 0)) * 1000).toISOString().slice(0, 16).replace('T', ' ');
+  for (const sym of ['^KS11', '^KQ11', '^GSPC', '^N225', '^STOXX50E', 'KRW=X', '^TNX', 'GC=F']) {
+    for (const q of ['range=1mo&interval=1d', 'range=1d&interval=5m']) {
+      try {
+        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?${q}`, { headers: { 'User-Agent': UA } });
+        const j = await res.json();
+        const r = j.chart.result[0], m = r.meta, tz = m.gmtoffset || 0;
+        const ts = r.timestamp || [], cl = (((r.indicators || {}).quote || [])[0] || {}).close || [];
+        const tail = ts.slice(-4).map((t, i) => `${day(t, tz)}=${cl[ts.length - Math.min(4, ts.length) + i]}`);
+        const tp = (m.currentTradingPeriod || {}).regular || {};
+        console.log(`${sym} [${q}] status=${res.status} price=${m.regularMarketPrice} time=${m.regularMarketTime ? day(m.regularMarketTime, tz) : '-'} previousClose=${m.previousClose} chartPreviousClose=${m.chartPreviousClose} ` +
+          `regular=${tp.start ? day(tp.start, tz) : '-'}~${tp.end ? day(tp.end, tz) : '-'} now=${day(Math.floor(Date.now() / 1000), tz)} bars=${ts.length} nulls=${cl.filter((c) => c == null).length} tail: ${tail.join(' | ')}`);
+      } catch (e) { console.log(`${sym} [${q}] ERR ${e.message}`); }
+    }
+  }
+}
+if (mode === 'quotes') await quotes();
 if (mode === 'peek') await peek();
 if (mode === 'bodies' || mode === 'all') await bodies();
 if (mode === 'translate' || mode === 'all') await translate();

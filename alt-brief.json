@@ -1,121 +1,142 @@
 {
- "date": "2026-11-09",
- "generatedAt": "2026-11-08T23:16:39.145Z",
+ "date": "2026-11-10",
+ "generatedAt": "2026-11-10T01:23:56.001Z",
  "via": "claude:claude-sonnet-5-5",
- "hours": 72,
- "headline": "Brookfield 3분기 250억 달러 조달 등 대형 운용사 펀드레이징과 AI 인프라 투자 확산",
+ "hours": 30,
+ "headline": "KKR 사상 최대 실적과 삼성화재 Canopius 인수 등 대형 딜·펀딩 동반 확대",
  "points": [
   {
-   "text": "Brookfield Asset Management가 3분기 250억 달러, 연초 이후 누적 1,230억 달러를 조달했으며 신용 부문이 120억 달러를 차지함. Distributable earnings는 15% 증가한 7억 6,300만 달러를 기록함.",
+   "text": "삼성화재가 KKR·한국투자공사(KIC)와 손잡고 영국 Canopius를 약 3조 원(약 22억 달러)에 인수 추진함. 성사 시 DB손해보험의 Fortegra 인수(약 16억 5000만 달러)를 넘는 국내 금융권 최대 해외 M&A가 됨.",
    "ids": [
-    "g1h91542",
-    "g1npitga",
-    "g19pop7m"
+    "g7bqj95",
+    "g1wrnm5r",
+    "g1m2v8cz"
    ]
   },
   {
-   "text": "Brookfield는 Fund VI로 260억 달러를 모금했으며 2027년 초 최종 클로징을 목표로 함. 카타르 Qai와의 200억 달러 AI 인프라 벤처의 첫 투자로 영국 Drax 데이터센터 캠퍼스를 추진함.",
+   "text": "KKR은 3분기 조정 순이익이 전년 대비 29% 증가한 16억 5천만 달러(주당 1.78달러)로 사상 최대를 기록했으며, 주당 이익은 애널리스트 예상치 1.59달러를 상회함. 자산 매각 확대와 수수료 수익 증가가 배경이며 2026년 투자자에게 400억 달러 이상 반환 계획을 밝힘.",
    "ids": [
-    "ge8u4o",
-    "g1v8p938"
+    "gdfwbri",
+    "ggzgpv7",
+    "gpsvkrw"
    ]
   },
   {
-   "text": "TPG가 TPG Rise Climate II로 100억 달러, Blackstone이 에너지 전환 파트너스 V로 87억 달러(약 11조 6000억원)를 모집 마감함. Blackstone 펀드는 직전 펀드보다 50% 이상 큼.",
+   "text": "Ardian이 첫 반도체 펀드 Ardian Semiconductor로 10억 유로를 조성함. 펀드 약정액은 약 7억 유로이며 나머지는 공동투자로 구성되고, 중동 투자자들의 관심이 컸음.",
    "ids": [
-    "gor22nf",
-    "g17tyauz"
+    "gz04a9a",
+    "g1vebl76",
+    "gfu3k3c"
    ]
   },
   {
-   "text": "Blackstone이 유럽 직접대출 펀드 BXDE IV를 마감해 관련 전략 전체로 약 130억 유로의 투자 가능 자금을 확보함. StepStone은 최근 12개월 펀드레이징 430억 달러로 사상 최고를 기록했고 AUM은 2,610억 달러로 늘어남.",
+   "text": "인프라·크레딧 부문 자금 모집이 활발함. Cube Infrastructure Fund IV가 퍼스트 클로징으로 5억 8,700만 유로를 모았고, I Squared는 24억 달러 규모 크레딧 펀드를 최종 클로징함. Brookfield는 3분기에 250억 달러를 모집함.",
    "ids": [
-    "gdcfhp3",
-    "gschpe0",
-    "g234xjx"
+    "g4wma32",
+    "g1x4ly8h",
+    "g212no5"
    ]
   },
   {
-   "text": "Silver Lake와 사우디 PIF가 약 250억 달러 규모 Unity 인수를 타진 중인 것으로 보도됨. Goldman Sachs와 Apollo는 약 400억 달러 규모 SpaceX AI 칩 리스 금융 지분 매각을 위해 투자자와 협의 중임.",
+   "text": "Blackstone 부동산 부문은 최고위 임원 거의 3분의 1이 이탈하고 Meghji 퇴임 후 새 리더십 체제로 전환함. 신임 경영진은 불안한 투자자들에게 우려를 이해한다는 입장을 밝힘.",
    "ids": [
-    "gmb06o3",
-    "gu4tq7u"
+    "ggpla7n",
+    "g1k7o7cz",
+    "g15e6aom"
    ]
   }
  ],
- "korea": "국민연금이 Blackstone 사장과 대담회를 갖고 해외·대체투자 배분 재조정을 앞둔 가운데, 신규 부동산 위탁운용사 선정 지연과 국내주식 비중 확대 부담은 해외 대체투자 펀드 출자 일정에 변수로 작용할 수 있음. 신한자산운용이 Starwood SOF 12호에 약 3000억원을 출자한 사례는 국내 기관의 글로벌 블라인드펀드 수요를 보여줌.",
+ "korea": "삼성화재가 KKR·한국투자공사(KIC)와 약 3조 원 규모로 Canopius를 인수해 국내 금융권 역대 최대 해외 M&A가 될 전망이며, 국내 기관의 글로벌 PEF 공동투자 협력 사례로 주목됨. 한편 산업은행 부산 이전을 둘러싼 여야 공방이 이어지고 있어 향후 정책 방향 확인이 필요함.",
  "refs": {
-  "gor22nf": {
-   "t": "TPG, 두 번째 기후 펀드를 위해 100억 달러 확보",
-   "s": "scanx.trade",
-   "u": "https://scanx.trade/stock-market-news/startups/tpg-secures-10-billion-second-climate-fund/52428630",
-   "d": "2026-11-07"
+  "g1m2v8cz": {
+   "t": "삼성화재, KKR·한국투자공사와 손잡고 22억 달러에 영국 Canopius 인수",
+   "s": "KED Global",
+   "u": "https://www.kedglobal.com/mergers-acquisitions/newsView/ked202611090009",
+   "d": "2026-11-09"
   },
-  "g17tyauz": {
-   "t": "블랙스톤, 87억달러 에너지 전환 펀드 모집 마감",
-   "s": "토큰포스트",
-   "u": "https://www.tokenpost.kr/news/economy/434317",
-   "d": "2026-11-06"
-  },
-  "gdcfhp3": {
-   "t": "Blackstone, 네 번째 기관투자자 대상 유럽 직접대출 펀드 투자 가능 자금 약 130억 유로로 마감",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/blackstone-closed-its-fourth-institutional-european-direct-lending-fund-with-about-e13-billion-of-investable-capital.html",
-   "d": "2026-11-06"
-  },
-  "ge8u4o": {
-   "t": "Brookfield, Fund VI 260억 달러 모금 후 '2027년 초' 최종 클로징 목표",
-   "s": "Infrastructure Investor",
-   "u": "https://www.infrastructureinvestor.com/brookfield-eyes-early-2027-final-close-after-raising-26bn-for-fund-vi/",
-   "d": "2026-11-06"
-  },
-  "g1h91542": {
-   "t": "Brookfield, AI 인프라 구축 지원하며 3분기 250억 달러 조달",
+  "gz04a9a": {
+   "t": "Ardian, 10억 유로 규모 반도체 펀드 조성",
    "s": "Briefs Finance",
-   "u": "https://www.briefs.co/news/brookfield-raises-25-billion-in-q3-as-it-backs-ai-infrastruc/",
-   "d": "2026-11-06"
+   "u": "https://www.briefs.co/news/ardian-lines-up-1-billion-for-first-chip-focused-fund-as-ai/",
+   "d": "2026-11-09"
   },
-  "gu4tq7u": {
-   "t": "Goldman Sachs·Apollo, 400억 달러 규모 SpaceX AI 칩 금융 딜 투자자 모집",
-   "s": "Tekedia",
-   "u": "https://www.tekedia.com/goldman-sachs-apollo-seek-investors-for-40-billion-spacex-ai-chip-financing-deal/",
-   "d": "2026-11-06"
+  "g7bqj95": {
+   "t": "삼성화재, KKR·KIC와 英 캐노피우스 3조에 인수",
+   "s": "서울경제",
+   "u": "https://www.sedaily.com/article/20112182",
+   "d": "2026-11-09"
   },
-  "g1npitga": {
-   "t": "Brookfield Asset Management, 3분기 호실적과 펀드레이징 증가 발표",
-   "s": "The Globe and Mail",
-   "u": "https://www.theglobeandmail.com/investing/markets/stocks/BAM/pressreleases/8716275/brookfield-asset-management-reports-strong-third-quarter-earnings-and-fundraising-growth/",
-   "d": "2026-11-07"
+  "gfu3k3c": {
+   "t": "Ardian, 반도체 플랫폼용 10억 유로 조성…칩 기업 성장 지원",
+   "s": "Unite.AI",
+   "u": "https://www.unite.ai/ardian-raises-1b-for-semiconductor-platform-to-scale-chip-companies/",
+   "d": "2026-11-09"
   },
-  "g1v8p938": {
-   "t": "Drax 데이터센터 캠퍼스, Brookfield와 카타르 200억 달러 규모 AI 벤처의 첫 투자",
+  "g1vebl76": {
+   "t": "Ardian, 중동 자금 끌어와 10억 유로 반도체 펀드 조성",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-09/ardian-raises-1-billion-europe-semiconductor-fund-with-middle-east-backing",
+   "d": "2026-11-09"
+  },
+  "g4wma32": {
+   "t": "Cube Infrastructure Fund IV, 퍼스트 클로징으로 5억 8,700만 유로 모집",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/cube-infrastructure-fund-iv-raises-e587m-in-first-close/",
+   "d": "2026-11-09"
+  },
+  "g15e6aom": {
+   "t": "Blackstone 부동산 신임 경영진, 불안한 투자자들에게 \"우려를 이해한다\"",
+   "s": "The Real Deal",
+   "u": "https://therealdeal.com/national/2026/11/09/blackstones-giovanni-cutaia-and-david-levine-take-over-real-estate/",
+   "d": "2026-11-09"
+  },
+  "g212no5": {
+   "t": "Brookfield, 인프라 수요 급증에 3분기 250억 달러 모집",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/real-estate/articles/brookfield-raises-25b-q3-infrastructure-173545093.html",
+   "d": "2026-11-09"
+  },
+  "ggpla7n": {
+   "t": "Blackstone 부동산 부문, 최고위 임원 거의 3분의 1 이탈",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/real-estate/articles/blackstone-real-estate-loses-nearly-173437967.html",
+   "d": "2026-11-09"
+  },
+  "g1k7o7cz": {
+   "t": "Meghji 퇴임 이후 Blackstone 부동산 부문, 새 리더십 체제로",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/real-estate/articles/blackstone-real-estate-turns-leaders-172946975.html",
+   "d": "2026-11-09"
+  },
+  "gpsvkrw": {
+   "t": "KKR, '미니 버크셔' 이익 3배로 늘려 애널리스트 추정치 상회",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-09/kkr-triples-mini-berkshire-profit-to-top-wall-street-estimates",
+   "d": "2026-11-09"
+  },
+  "gdfwbri": {
+   "t": "KKR, 수수료 수익 27% 증가·인프라 부문 배당 견인에 조정 주당순이익 사상 최대 1.78달러 기록",
    "s": "MLQ.ai",
-   "u": "https://mlq.ai/news/drax-data-center-campus-is-first-deal-for-brookfield-and-qatars-20-billion-ai-venture/",
-   "d": "2026-11-07"
+   "u": "https://mlq.ai/news/kkr-posts-record-178-adjusted-earnings-per-share-as-fee-earnings-rise-27-and-infrastructure-drives-payouts/",
+   "d": "2026-11-09"
   },
-  "gschpe0": {
-   "t": "StepStone, 최근 12개월 펀드레이징 430억 달러로 사상 최고 기록",
-   "s": "Alternatives Watch",
-   "u": "https://www.alternativeswatch.com/2026/11/06/stepstone-record-fundraising-43bn-fiscal-q2-2027/",
-   "d": "2026-11-06"
+  "g1wrnm5r": {
+   "t": "삼성화재, KKR과 한국투자공사 끌어들여 Canopius 완전 내재화 추진",
+   "s": "Insurance Business",
+   "u": "https://www.insurancebusinessmag.com/uk/news/breaking-news/samsung-fire-brings-in-kkr-and-koreas-wealth-fund-to-take-canopius-fully-inhouse-596660.aspx",
+   "d": "2026-11-09"
   },
-  "g234xjx": {
-   "t": "StepStone 운용자산(AUM) 2,610억 달러로 증가",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/06/stepstone-aum-grows-to-261bn/",
-   "d": "2026-11-06"
+  "ggzgpv7": {
+   "t": "KKR, 분기 이익 사상 최대…2026년 투자자에게 400억 달러 이상 반환 계획",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/earnings/article-93CH-2165914",
+   "d": "2026-11-09"
   },
-  "gmb06o3": {
-   "t": "보도: Silver Lake와 PIF, 250억 달러 규모 Unity 인수 타진",
-   "s": "PocketGamer.biz",
-   "u": "https://www.pocketgamer.biz/silver-lake-and-pif-explore-25bn-deal-to-acquire-unity/",
-   "d": "2026-11-06"
-  },
-  "g19pop7m": {
-   "t": "Brookfield, 3분기 신용 부문에서 120억 달러 조달",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/06/brookfield-raises-12bn-for-credit-in-q3/",
-   "d": "2026-11-06"
+  "g1x4ly8h": {
+   "t": "The Pipeline: I Squared 24억 달러 사모대출 펀드 클로징, LP들 '관광객' 자본에 의문 제기, Partners Group 3명 영입",
+   "s": "Infrastructure Investor",
+   "u": "https://www.infrastructureinvestor.com/the-pipeline-i-squareds-2-4bn-credit-close-lp-questions-tourist-capital-partners-groups-trio-of-hires/",
+   "d": "2026-11-09"
   }
  },
  "droppedSentences": 0

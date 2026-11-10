@@ -782,6 +782,7 @@ async function main() {
     updatedAt: now.ymd,
     dateKey: now.ymd.replace(/\./g, ''),
     ts: now.iso,
+    basis: 'prev-close',     // 지수 = 직전에 끝난 거래일 종가 기준(이 표시가 없는 예전 자료는 작성 시각의 값)
     kr, global, fx, ust, commodity, crypto,
     tenorRates,
     hedge,

@@ -341,6 +341,11 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
         .map(([t, rows]) => [t, (rows || []).filter((r) => hit(`${r.name} ${r.sym || ''} ${t}`))]).filter(([, r]) => r.length) : [];
     const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
     const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
+    // 2026-11-10 이전 방식으로 만든 자료(basis 없음)는 지수를 작성 시각의 값으로 적었다.
+    // 국내 장중(평일 09:00~15:30)에 만들어졌으면 국내 지수가 종가가 아니라 그 시각 장중 값이므로 알린다.
+    const madeAt = b && !b.basis && b.ts ? new Date(Date.parse(b.ts) + 9 * 3600 * 1000) : null;
+    const madeMin = madeAt ? madeAt.getUTCHours() * 60 + madeAt.getUTCMinutes() : -1;
+    const oldIntraday = !!madeAt && madeAt.getUTCDay() >= 1 && madeAt.getUTCDay() <= 5 && madeMin >= 540 && madeMin < 930;
     return (React.createElement("div", { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg } },
         React.createElement(TopBar, { big: true, title: b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황', sub: b ? (lv && liveAt ? `시세 실시간 ${liveAt}(CNBC) · 뉴스·요약 ${b.asOf}` : `${b.asOf} 기준 · 매일 아침 갱신`) : '브리핑을 불러오는 중입니다', right: isLatest && (React.createElement("div", { onClick: onRefreshLive, style: { display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 11px', borderRadius: 2, border: `1px solid ${KB.line}`, cursor: 'pointer', font: F(600, 12.5), color: liveAt ? KB.pos : KB.sub } },
                 liveAt && React.createElement("span", { style: { width: 6, height: 6, borderRadius: 3, background: KB.pos } }),
@@ -358,6 +363,12 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
                         React.createElement(Ico, { n: "down", size: 16, sw: 2 })))),
             cal && (React.createElement("div", { style: { maxWidth: 420, margin: '0 auto', padding: '0 16px 12px' } },
                 React.createElement(BriefCalendar, { keys: briefIndex.map((x) => x.dateKey), value: b && b.dateKey, onPick: (k) => { onSelectDate(k); setCal(false); } }))))),
+        oldIntraday && (React.createElement("div", { style: { flexShrink: 0, padding: '8px 20px', background: KB.yellowTint, borderBottom: `1px solid ${KB.yellowLine}`, font: F(500, 12.5, 1.55), color: KB.ink2, wordBreak: 'keep-all' } },
+            "\uC774 \uB0A0\uC9DC\uC758 \uAD6D\uB0B4 \uC9C0\uC218\uB294 \uC885\uAC00\uAC00 \uC544\uB2C8\uB77C \uC791\uC131 \uC2DC\uAC01(",
+            pad2(madeAt.getUTCHours()),
+            ":",
+            pad2(madeAt.getUTCMinutes()),
+            ") \uC7A5\uC911 \uAC12\uC785\uB2C8\uB2E4. \uC2E4\uC81C \uC885\uAC00\uC640 \uB2E4\uB97C \uC218 \uC788\uC2B5\uB2C8\uB2E4.")),
         React.createElement("div", { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
             React.createElement("div", { style: { maxWidth: desktop ? 1120 : 'none', margin: '0 auto', padding: desktop ? '20px 24px 40px' : 0 } },
                 b && (React.createElement("div", { style: { padding: desktop ? '0 0 14px' : '12px 20px 0' } },

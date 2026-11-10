@@ -331,6 +331,11 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
     .map(([t, rows]) => [t, (rows || []).filter((r) => hit(`${r.name} ${r.sym || ''} ${t}`))]).filter(([, r]) => r.length) : [];
   const qRates = qa && b ? (b.tenorRates || []).filter((r) => hit(`${r.group} ${r.tenor} ${r.src || ''}`)) : [];
   const rateGroups = Object.entries(((b && b.tenorRates) || []).reduce((m, r) => { (m[r.group] = m[r.group] || []).push(r); return m; }, {}));
+  // 2026-11-10 이전 방식으로 만든 자료(basis 없음)는 지수를 작성 시각의 값으로 적었다.
+  // 국내 장중(평일 09:00~15:30)에 만들어졌으면 국내 지수가 종가가 아니라 그 시각 장중 값이므로 알린다.
+  const madeAt = b && !b.basis && b.ts ? new Date(Date.parse(b.ts) + 9 * 3600 * 1000) : null;
+  const madeMin = madeAt ? madeAt.getUTCHours() * 60 + madeAt.getUTCMinutes() : -1;
+  const oldIntraday = !!madeAt && madeAt.getUTCDay() >= 1 && madeAt.getUTCDay() <= 5 && madeMin >= 540 && madeMin < 930;
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: desktop ? KB.band : KB.bg }}>
       <TopBar big title={b && b.dateKey ? `${briefDay(b.dateKey)} 시황` : '데일리 시황'} sub={b ? (lv && liveAt ? `시세 실시간 ${liveAt}(CNBC) · 뉴스·요약 ${b.asOf}` : `${b.asOf} 기준 · 매일 아침 갱신`) : '브리핑을 불러오는 중입니다'}
@@ -353,6 +358,11 @@ function BriefScreen({ b, market, briefIndex, onSelectDate, live, liveAt, liveBu
               <BriefCalendar keys={briefIndex.map((x) => x.dateKey)} value={b && b.dateKey} onPick={(k) => { onSelectDate(k); setCal(false); }} />
             </div>
           )}
+        </div>
+      )}
+      {oldIntraday && (
+        <div style={{ flexShrink: 0, padding: '8px 20px', background: KB.yellowTint, borderBottom: `1px solid ${KB.yellowLine}`, font: F(500, 12.5, 1.55), color: KB.ink2, wordBreak: 'keep-all' }}>
+          이 날짜의 국내 지수는 종가가 아니라 작성 시각({pad2(madeAt.getUTCHours())}:{pad2(madeAt.getUTCMinutes())}) 장중 값입니다. 실제 종가와 다를 수 있습니다.
         </div>
       )}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>

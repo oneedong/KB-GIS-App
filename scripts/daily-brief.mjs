@@ -114,6 +114,37 @@ export function parseYahooChart(j, futures = false) {
   if (last == null || prev == null || prev === 0) return null;
   return { last, prev, chg: last - prev, chgPct: (last - prev) / prev * 100, src: 'Yahoo Finance' };
 }
+// 야후 '당일 분봉'(range=1d&interval=5m) 메타에는 현재가(regularMarketPrice)와 직전 거래일 종가(previousClose)가 있다.
+// 일봉 계열(위 parseYahooChart)은 직전 거래일 봉이 null 로 비는 일이 잦아(2026-11-10 실측: 코스피·코스닥·닛케이·
+// 유로스톡스·금) null 을 건너뛰면 이틀치 등락이 하루 등락으로 둔갑하고, 장중에 받으면 진행 중인 값이 '종가'처럼 쓰인다.
+// 그래서 등락은 분봉 메타의 (현재가, 직전 종가)로 계산한다.
+//  - sessionBased(주가지수·국채금리): 정규장이 열려 있는 동안에는 '전일 마감 기준' 브리핑에 맞게, 진행 중인 오늘 값이 아니라
+//    직전에 끝난 거래일(= previousClose)과 그 전 거래일 종가(일봉에서 찾음)를 쓴다.
+//  - 그 외(환율·원자재·크립토처럼 계속 거래되는 것): 현재가와 직전 종가.
+export function parseYahooSession(intra, daily, { sessionBased = false, nowSec = Date.now() / 1000 } = {}) {
+  const r = ((intra || {}).chart || {}).result;
+  if (!Array.isArray(r) || !r[0]) return null;
+  const m = r[0].meta || {};
+  const price = num(m.regularMarketPrice);
+  const pc = num(m.previousClose) != null ? num(m.previousClose) : num(m.chartPreviousClose);
+  if (price == null || !pc) return null;
+  const mk = (last, prev, extra) => ({ last, prev, chg: last - prev, chgPct: (last - prev) / prev * 100, src: 'Yahoo Finance', ...(extra || {}) });
+  const tp = (m.currentTradingPeriod || {}).regular || {};
+  const open = sessionBased && num(tp.start) != null && num(tp.end) != null && nowSec >= tp.start && nowSec < tp.end
+    && num(m.regularMarketTime) != null && m.regularMarketTime >= tp.start;
+  if (!open) return mk(price, pc);
+  const dr = (((daily || {}).chart || {}).result || [])[0];
+  if (!dr) return null;
+  const ts = dr.timestamp || [], cl = (((dr.indicators || {}).quote || [])[0] || {}).close || [];
+  const bars = [];
+  for (let i = 0; i < ts.length; i++) if (num(cl[i]) != null && ts[i] < tp.start) bars.push(cl[i]);   // 오늘(진행 중) 봉 제외
+  if (!bars.length) return null;
+  const lb = bars[bars.length - 1];
+  // 일봉의 마지막 값이 직전 종가와 같으면 그 앞 봉이 '그 전 거래일', 다르면(직전 거래일 봉이 비어 있음) 마지막 값이 '그 전 거래일'
+  const pp = Math.abs(lb - pc) / pc < 5e-4 ? (bars.length >= 2 ? bars[bars.length - 2] : null) : lb;
+  if (pp == null) return null;
+  return mk(pc, pp, { sessionOpen: true });
+}
 export function parseStooqCsv(csv) {
   const lines = String(csv).trim().split(/\r?\n/);
   if (lines.length < 2) return null;
@@ -124,12 +155,15 @@ export function parseStooqCsv(csv) {
   if (!isFinite(close) || !isFinite(open)) return null;
   return { last: close, prev: open, chg: close - open, chgPct: (close - open) / open * 100, src: 'Stooq(당일 시가 대비)' };
 }
-async function quote(symbol, stooqSym) {
+async function quote(symbol, stooqSym, sessionBased = false) {
   try {
-    const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1d`);
-    const q = parseYahooChart(j, /=F$/.test(symbol));
+    const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
+    let intra = null, daily = null, err = null;
+    try { intra = await getJson(`${base}?range=1d&interval=5m`); } catch (e) { err = e; }
+    try { daily = await getJson(`${base}?range=1mo&interval=1d`); } catch (e) { err = err || e; }
+    const q = parseYahooSession(intra, daily, { sessionBased }) || parseYahooChart(daily, /=F$/.test(symbol));
     if (q) return q;
-    throw new Error('빈 응답');
+    throw err || new Error('빈 응답');
   } catch (e1) {
     if (!stooqSym) { errors.push(`${symbol}: ${e1.message}`); return null; }
     try {
@@ -137,10 +171,10 @@ async function quote(symbol, stooqSym) {
     } catch (e2) { errors.push(`${symbol}: ${e1.message} / stooq ${e2.message}`); return null; }
   }
 }
-async function quoteList(defs) {
+async function quoteList(defs, sessionBased = false) {
   const out = [];
   for (const [sym, name, fallback, unit] of defs) {
-    const q = await quote(sym, fallback);
+    const q = await quote(sym, fallback, sessionBased);
     // 엔/원은 시장 관행대로 100엔 기준으로 환산해 표기한다.
     const k = /JPYKRW/.test(sym) ? 100 : 1;
     out.push({
@@ -612,10 +646,32 @@ export function indexClause(rows, limit = 2) {
   if (!list.length) return '';
   return list.map((r) => `${r.name}${josa(r.name, '은', '는')} ${fmtSigned(r.chgPct, 2, '%')}`).join(', ');
 }
+// 헤드라인이 말하는 방향(상승·하락)이 실제 등락과 반대면 다른 날 장을 다룬 기사다(예: 장중에 만든 브리핑의 '오늘 급등' 기사 vs 전일 종가 하락).
+// 그런 헤드라인은 등락의 '이유'로 쓰지 않는다. 방향 표현이 없거나 둘 다 있으면(혼조·'약세에도 상승') 그대로 둔다.
+const UP_RE = /상승|반등|급등|강세|오름세|올라|올랐|뛰었|랠리|최고치|신고가|회복/, DOWN_RE = /하락|급락|약세|내림세|내려|내렸|떨어|밀려|밀렸|폭락|후퇴|조정/;
+export function dirOk(title, pct) {
+  if (pct == null) return true;
+  const up = UP_RE.test(title), dn = DOWN_RE.test(title);
+  if (up === dn) return true;
+  return pct >= 0 ? up : dn;
+}
+const KR_HEAD = /코스피|코스닥|국내\s?증시|서울\s?증시/, GL_HEAD = /뉴욕|나스닥|다우|S&P|미국\s?증시|美\s?증시|기술주|유럽\s?증시/;
+const leadPct = (rows) => { const r = (rows || []).find((x) => x.chgPct != null); return r ? r.chgPct : null; };
+// 등락과 방향이 어긋나는 헤드라인을 뺀 목록(요약 근거용)
+export function consistentIssues(issues, kr, global) {
+  const kp = leadPct(kr), gp = leadPct(global);
+  return (issues || []).filter((i) => !(KR_HEAD.test(i.title) && !dirOk(i.title, kp)) && !(GL_HEAD.test(i.title) && !KR_HEAD.test(i.title) && !dirOk(i.title, gp)));
+}
+// 모델이 쓴 2문장 요약의 방향 확인: 등락률 앞까지의 설명에 반대 방향 표현만 있으면 false
+export function summaryDirOk(text, kr, global) {
+  const sents = String(text || '').split(/(?<=[음임])\.\s*/).filter(Boolean);
+  const chk = (sent, pct) => !sent || dirOk(sent.replace(/[+\-−]?\d+(?:\.\d+)?%/g, ''), pct);
+  return chk(sents[0], leadPct(kr)) && chk(sents[1], leadPct(global));
+}
 // 결정적 폴백 — 국내·해외 두 문장. 출처·환율은 넣지 않는다.
 export function headlineSummary(issues, kr, global) {
-  const list = issues || [];
-  const KR = /코스피|코스닥|국내\s?증시|서울\s?증시/, GL = /뉴욕|나스닥|다우|S&P|미국\s?증시|美\s?증시|기술주|유럽\s?증시/;
+  const list = consistentIssues(issues, kr, global);
+  const KR = KR_HEAD, GL = GL_HEAD;
   const bestCause = (re) => {
     const cands = list.filter((i) => re.test(i.title) && !/선물|프리뷰|전망|예상|분수령|달렸다|관건/.test(i.title));
     for (const c of cands) { const x = causeFromHeadline(c.title); if (x) return x; }
@@ -673,10 +729,10 @@ async function main() {
   if (process.argv.includes('--selftest')) return selftest();
   const now = kst();
   const [kr, global, fx, ust, commodity, crypto, sofr, sofrAvg, effr, so, boeBank, estr, eurib, jpTona, bok, iss] = [
-    await quoteList(KR_INDEX),
-    await quoteList(GL_INDEX),
+    await quoteList(KR_INDEX, true),
+    await quoteList(GL_INDEX, true),
     await quoteList(FX),
-    await quoteList(UST),
+    await quoteList(UST, true),
     await quoteList(COMMODITY),
     await quoteList(CRYPTO),
     await nyFed('secured/sofr', 'SOFR'),
@@ -746,10 +802,13 @@ async function main() {
   };
   data.watch = buildWatch(data);
   // 한줄 요약 — 수치 나열 대신 시황 뉴스에 근거해 쓴다.
-  const headlines = (iss || []).slice(0, 8).map((i) => `- ${i.title}`).join('\n');
+  // 근거 헤드라인은 실제 등락과 방향이 맞는 것만 준다. 그래도 모델이 반대 방향으로 쓰면(1문장=국내, 2문장=해외) 버리고 결정적 문장을 쓴다.
+  const headlines = consistentIssues(iss, kr, global).slice(0, 8).map((i) => `- ${i.title}`).join('\n');
   const krNumbers = indexClause(kr, 3) || '수치 없음';
   const glNumbers = indexClause(global, 4) || '수치 없음';
-  data.summary = (await llmSummary({ krNumbers, glNumbers, headlines })) || headlineSummary(iss, kr, global);
+  let llm = await llmSummary({ krNumbers, glNumbers, headlines });
+  if (llm && !summaryDirOk(llm, kr, global)) { errors.push('요약: 모델 문장의 방향이 등락과 달라 결정적 문장으로 대체'); llm = null; }
+  data.summary = llm || headlineSummary(iss, kr, global);
 
   await writeFile(new URL('../market.json', import.meta.url), JSON.stringify(data, null, 0));
 
@@ -790,6 +849,31 @@ function selftest() {
   const chart = { chart: { result: [{ meta: { regularMarketPrice: 3214.55, chartPreviousClose: 2900.0, previousClose: 3188.42 }, indicators: { quote: [{ close: [3100.0, 3188.42, 3214.55] }] } }] } };
   const q = parseYahooChart(chart);
   const ok1 = q && q.last === 3214.55 && q.prev === 3188.42 && Math.abs(q.chgPct - 0.8195) < 0.01;
+
+  // 세션 기준 계산(2026-11-10 10:25 KST 실측 응답을 본뜸)
+  const T = (iso) => Date.parse(iso) / 1000;
+  const mkIntra = (price, time, pc, start, end) => ({ chart: { result: [{ meta: { regularMarketPrice: price, regularMarketTime: time, previousClose: pc, chartPreviousClose: pc, currentTradingPeriod: { regular: { start, end } } } }] } });
+  const mkDaily = (pairs) => ({ chart: { result: [{ meta: {}, timestamp: pairs.map((x) => x[0]), indicators: { quote: [{ close: pairs.map((x) => x[1]) }] } }] } });
+  const near = (a, b) => Math.abs(a - b) < 0.005;
+  // 코스피: 장중(10:25), 일봉의 11/9 봉이 null → 11/9 종가 5018.85 를 11/6 종가 5059.69 와 비교(−0.81%)해야 한다
+  const ksNow = T('2026-11-10T01:25:00Z'), ksOpen = T('2026-11-10T00:00:00Z'), ksEnd = T('2026-11-10T06:00:00Z');
+  const ksDaily = mkDaily([[T('2026-11-05T00:00:00Z'), 5383.8], [T('2026-11-06T00:00:00Z'), 5059.69], [T('2026-11-09T00:00:00Z'), null], [ksOpen, 5230]]);
+  const ks = parseYahooSession(mkIntra(5230, T('2026-11-10T01:05:00Z'), 5018.85, ksOpen, ksEnd), ksDaily, { sessionBased: true, nowSec: ksNow });
+  const okS1 = ks && ks.last === 5018.85 && ks.prev === 5059.69 && near(ks.chgPct, -0.807) && ks.sessionOpen === true;
+  // 같은 장중인데 일봉에 11/9 봉이 제대로 있는 경우 → 그 앞 봉(11/6)이 '그 전 거래일'
+  const ksDaily2 = mkDaily([[T('2026-11-06T00:00:00Z'), 5059.69], [T('2026-11-09T00:00:00Z'), 5018.850097], [ksOpen, 5230]]);
+  const ks2 = parseYahooSession(mkIntra(5230, T('2026-11-10T01:05:00Z'), 5018.85, ksOpen, ksEnd), ksDaily2, { sessionBased: true, nowSec: ksNow });
+  const okS2 = ks2 && ks2.last === 5018.85 && ks2.prev === 5059.69;
+  // 유로스톡스: 장 마감 뒤, 일봉의 최근 봉(11/9)이 null → 분봉 메타(6290.45 vs 6170.49 = +1.94%)를 쓴다(예전 방식은 11/6 등락 −0.98% 를 냈다)
+  const sx = parseYahooSession(mkIntra(6290.45, T('2026-11-09T17:00:00Z'), 6170.49, T('2026-11-10T08:00:00Z'), T('2026-11-10T16:30:00Z')), null, { sessionBased: true, nowSec: ksNow });
+  const okS3 = sx && sx.last === 6290.45 && sx.prev === 6170.49 && near(sx.chgPct, 1.944) && !sx.sessionOpen;
+  // 달러/원: 계속 거래 → 현재가와 직전 종가
+  const fxq = parseYahooSession(mkIntra(1343.91, ksNow, 1340.28, T('2026-11-10T00:00:00Z'), T('2026-11-10T23:59:00Z')), null, { sessionBased: false, nowSec: ksNow });
+  const okS4 = fxq && fxq.last === 1343.91 && fxq.prev === 1340.28 && near(fxq.chg, 3.63);
+  // 메타가 비면 null(일봉 방식으로 넘어감)
+  const okS5 = parseYahooSession({ chart: { result: [{ meta: {} }] } }, null) === null && parseYahooSession(null, null) === null;
+  const okSession = okS1 && okS2 && okS3 && okS4 && okS5;
+  if (!okSession) console.log(`session quote FAIL (${okS1} ${okS2} ${okS3} ${okS4} ${okS5})`);
 
   const csv = 'Symbol,Date,Time,Open,High,Low,Close,Volume\n^SPX,2026-08-21,22:00:00,6100.00,6180,6090,6150.00,0';
   const st = parseStooqCsv(csv);
@@ -891,8 +975,20 @@ function selftest() {
   console.log('요약(폴백):', hs);
   console.log('요약(원인없음):', hs3);
 
-  const all = ok16 && ok17 && ok18 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
-  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16, ok17, ok18].join(',')})`);
+  // 방향이 어긋나는 헤드라인은 원인으로 쓰지 않는다(전일 종가 −0.81% 인데 '오늘 급등' 기사)
+  const KRDN = [{ name: '코스피', chgPct: -0.81 }, { name: '코스닥', chgPct: -0.82 }], GLUP = [{ name: 'S&P 500', chgPct: 2.35 }, { name: '나스닥', chgPct: 2.74 }];
+  const hsDir = headlineSummary([
+    { title: '반도체 저가 매수에 코스피 급등…5200선 회복', source: 'x' },
+    { title: '국제유가 급락에 뉴욕증시 상승 마감', source: 'y' },
+  ], KRDN, GLUP);
+  const okDir1 = hsDir === '코스피는 −0.81%, 코스닥은 −0.82%로 마감했음. 국제유가 급락에 S&P 500은 +2.35%, 나스닥은 +2.74%로 마감했음';
+  const okDir2 = dirOk('삼성 약세에도 코스피 상승', -1) && dirOk('코스피 혼조 마감', 2) && !dirOk('코스피 급락', 1.2) && dirOk('코스피 급락', -1.2);
+  const okDir3 = !summaryDirOk('반도체 매수세에 코스피는 급등해 −0.81%로 마감했음. 유가 급락에 S&P 500은 +2.35%로 상승했음.', KRDN, GLUP)
+    && summaryDirOk('외국인 매도에 코스피는 −0.81%로 하락 마감했음. 유가 급락에 S&P 500은 +2.35%로 상승했음.', KRDN, GLUP);
+  const okDir = okDir1 && okDir2 && okDir3;
+  if (!okDir) console.log(`direction FAIL (${okDir1} ${okDir2} ${okDir3}) → ${hsDir}`);
+  const all = okDir && okSession && ok16 && ok17 && ok18 && ok1 && ok2 && ok3 && ok4 && ok5 && ok6 && ok7 && ok8 && ok9 && ok10 && ok11 && ok12 && ok13 && ok14 && ok15;
+  console.log(all ? '\nSELFTEST PASS' : `\nSELFTEST FAIL (session=${okSession} ${[ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8, ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16, ok17, ok18].join(',')})`);
   if (!all) process.exit(1);
 }
 

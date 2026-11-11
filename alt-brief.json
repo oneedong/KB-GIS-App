@@ -1,81 +1,84 @@
 {
- "date": "2026-11-11",
- "generatedAt": "2026-11-10T21:25:17.496Z",
+ "date": "2026-11-12",
+ "generatedAt": "2026-11-11T21:19:02.748Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "KIC·KKR, 삼성화재 캐노피우스 인수 참여…대체운용사는 개인·보험 채널과 신규 펀드로 확장",
+ "headline": "국민연금·JP모간 전 자산군 협약, 글로벌 운용사는 개인·사모대출·인프라로 자금 확대",
  "points": [
   {
-   "text": "KIC가 삼성화재 주도의 캐노피우스(Canopius) 지분 전량 인수에 공동투자자로 참여해 약 3억달러를 투입하며, 거래 종결 후 지분 약 7%를 확보할 예정임. 삼성화재가 거래 종결 3주년 무렵부터 KIC 지분을 재매입할 수 있는 권리도 확보함.",
+   "text": "국민연금공단이 10일(현지시간) 뉴욕 JP모간체이스 본사에서 JP모간자산운용과 MOU를 체결해 기존 위탁운용 관계를 주식·채권·멀티에셋·대체투자 등 전 자산군으로 확대함. JP모간자산운용은 2015년부터 국민연금 자산을 위탁 운용해 왔으며 내년 전북 전주에 사무소를 개설할 예정임.",
    "ids": [
-    "g11swh98",
-    "gv8j38p",
-    "g1j26e4d"
+    "g1s5glyx",
+    "gdwqc3u",
+    "g1nbuatg"
    ]
   },
   {
-   "text": "KKR은 같은 거래에 5억달러를 투자해 약 12% 지분을 확보할 예정이며, 삼성화재는 캐노피우스 지분율을 80.6%로 높여 경영권을 확보함. 삼성화재의 추가 취득 금액은 2조2,646억8,600만원임.",
+   "text": "교직원공제회가 Brookfield의 APAC 부동산 펀드에 1억 달러를 투자하며, 이 펀드는 인도 비중이 25%임. 교직원공제회는 아시아 투자 전담팀을 별도로 구축해 글로벌 운용사의 APAC 부동산 펀드에 투자할 수 있는 몇 안 되는 국내 기관임.",
    "ids": [
-    "gv8j38p",
-    "g1c6wkrh",
-    "g1eo5syh"
+    "g1htuhfj"
    ]
   },
   {
-   "text": "Carlyle는 SEI와 폐쇄형 인터벌 펀드 SEI Carlyle Private Markets Fund(PRVTX)를 출시해 사모주식·세컨더리·사모대출·부동산 등을 자산가에 제공하고, Clearlake도 Clearlake Private Wealth 플랫폼을 출범함. 대형 운용사의 리테일·웰스 채널 확대가 이어지고 있음.",
+   "text": "Blackstone이 부동산 투자 비히클 지분을 매입하는 세컨더리 펀드로 30억 달러 모금을 추진 중이며, 유럽 직접대출 펀드 4호를 최종 클로징해 해당 전략 운용 규모가 약 130억 유로에 이름. ICG도 대표 펀드 Europe IX를 120억 유로로 마감함.",
    "ids": [
-    "g164xi96",
-    "g122oiee",
+    "g140upsn",
+    "g1smu6u5",
+    "g1waeufd"
+   ]
+  },
+  {
+   "text": "Carlyle가 SEI와 함께 사모주식·세컨더리·사모대출·부동산에 투자하는 인터벌 펀드 SEI Carlyle Private Markets Fund(PRVTX)를 출시함. Clearlake도 Clearlake Private Wealth를 출범하는 등 사모시장 운용사의 자산가 대상 유통 확대가 이어짐.",
+   "ids": [
+    "g1ii67ey",
+    "grxgosz",
     "g59fw3o"
    ]
   },
   {
-   "text": "Blackstone이 유럽 직접대출 4호 펀드를 최종 클로징해 해당 전략 누적 운용 규모가 약 130억 유로에 이르렀고, I Squared는 2호 인프라 크레딧 펀드를 24억 달러 이상으로 클로징해 전작의 4배 이상으로 키움. Ardian은 반도체 밸류체인 PE 플랫폼으로 10억 유로를 조성함.",
+   "text": "I Squared가 두 번째 인프라 크레딧 펀드를 24억 달러 이상으로 클로징해 전작 대비 4배 넘게 키움. Ardian은 반도체 밸류체인 전용 사모펀드로 10억 유로를 모금함.",
    "ids": [
-    "g1smu6u5",
     "g1v8jar4",
-    "gyfyaof"
-   ]
-  },
-  {
-   "text": "Blackstone이 인도 비은행 금융사 IIFL Finance 지분 약 16%를 인수하며 총 6,414억 루피 규모 증자를 주도함. KKR은 2027년 첫 GP 주도 세컨더리 전략 출시를 목표로 하고, Goldman Sachs는 자산담보금융을 사모대출의 차세대 기회로 지목함.",
-   "ids": [
-    "g16tp01c",
-    "g1dwi14j",
-    "g18t2mul"
+    "glste89"
    ]
   }
  ],
- "korea": "KIC가 삼성화재의 캐노피우스 인수에 약 3억달러를 투자하고 3년 뒤 삼성화재의 지분 재매입 옵션을 확보한 점은 국내 기관의 해외 공동투자 및 회수 구조 설계에 참고할 만함. 한편 5대 공제회와 KIC의 지방이전 논란으로 8조6000억원 손실 우려가 제기되어 운용 환경 관련 변수로 주시할 필요가 있음.",
+ "korea": "국민연금이 JP모간자산운용과 협력을 전 자산군으로 넓히고 교직원공제회가 Brookfield APAC 부동산 펀드에 1억 달러를 투자하는 등 국내 LP의 해외 대체투자 접점이 확대되는 흐름임. 군인공제회 CIO 후임 인선과 국민연금 신임 CIO 선임 등 기관 인사 변수도 영업 접점 점검 시 참고할 필요가 있음.",
  "refs": {
-  "g11swh98": {
-   "t": "한국투자공사, 삼성화재 英 보험사 인수에 3억달러 투자…'3년 뒤 지분 재매입' 옵션도",
-   "s": "https://www.ppss.kr/",
-   "u": "https://www.ppss.kr/news/articleView.html?idxno=320104",
+  "g1htuhfj": {
+   "t": "교직원공제회, 브룩필드의 APAC 부동산 펀드에 1억 달러 투자 .. 인도 비중 25% - SPI",
+   "s": "SPI - 상업용 부동산 콘텐츠 & 데이터 애널리틱스",
+   "u": "https://seoulpi.io/article/00617123008851750912",
    "d": "2026-11-10"
   },
-  "gv8j38p": {
-   "t": "한국투자공사, 英 보험사 캐노피우스에 3억 달러 투자[시그널]",
-   "s": "서울경제",
-   "u": "https://m.sedaily.com/amparticle/20112263",
-   "d": "2026-11-10"
+  "g1waeufd": {
+   "t": "ICG, 대표 펀드 역대 최대 120억 유로로 마감…76억 달러 아닌 76억 달러 유치",
+   "s": "Alternative Credit Investor",
+   "u": "https://alternativecreditinvestor.com/2026/11/11/icg-pulls-in-7-6bn-as-flagship-fund-closes-at-record-e12bn/",
+   "d": "2026-11-11"
   },
-  "g1j26e4d": {
-   "t": "국부펀드 KIC 힘 보탰다…삼성화재와 손잡고 英 보험사 지분 전량 인수",
-   "s": "이데일리",
-   "u": "https://www.edaily.co.kr/News/Read?newsId=03516166645644408&mediaCodeNo=257",
-   "d": "2026-11-10"
+  "glste89": {
+   "t": "Ardian, 반도체 사모펀드로 10억 유로 모금",
+   "s": "Asset Publishing and Research",
+   "u": "https://www.theasset.com/article/57523/ardian-raises-1-billion-for-semiconductor-private-equity-fund",
+   "d": "2026-11-11"
+  },
+  "g1ii67ey": {
+   "t": "Carlyle과 SEI, 미국 자산 투자자를 대상으로 하는 다중 전략 사모시장 펀드 출시",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/carlyle-sei-launch-multi-strategy-private-markets-fund-targeting-us-wealth-investors.html",
+   "d": "2026-11-11"
+  },
+  "grxgosz": {
+   "t": "Carlyle, SEI와 함께 사모시장 펀드 출시",
+   "s": "DealStreetAsia",
+   "u": "https://www.dealstreetasia.com/stories/carlyle-sei-500717",
+   "d": "2026-11-11"
   },
   "g59fw3o": {
    "t": "Clearlake, 프라이빗 웰스 플랫폼 출범…인터벌 펀드 설정 계획",
    "s": "https://www.connectmoney.com/",
    "u": "https://www.connectmoney.com/stories/clearlake-launches-private-wealth-platform-plans-interval-fund/",
-   "d": "2026-11-10"
-  },
-  "g164xi96": {
-   "t": "SEI와 Carlyle, SEI Carlyle Private Markets Fund 출시로 전략적 관계 강화",
-   "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/sei-and-carlyle-advance-strategic-relationship-with-launch-of-sei-carlyle-private-markets-fund/",
    "d": "2026-11-10"
   },
   "g1smu6u5": {
@@ -84,53 +87,35 @@
    "u": "https://www.connectmoney.com/stories/blackstone-closes-european-lending-fund-as-strategy-reaches-e13b/",
    "d": "2026-11-10"
   },
-  "g122oiee": {
-   "t": "Carlyle·SEI, 자산가 고객 대상 사모시장 펀드 공동 출시",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/10/carlyle-and-sei-team-up-on-private-markets-fund-for-wealth-clients/",
-   "d": "2026-11-10"
-  },
   "g1v8jar4": {
    "t": "I Squared, 24억 달러 규모 인프라 크레딧 펀드 클로징",
    "s": "https://www.connectmoney.com/",
    "u": "https://www.connectmoney.com/stories/i-squared-closes-2-4b-infrastructure-credit-fund/",
    "d": "2026-11-10"
   },
-  "g16tp01c": {
-   "t": "글로벌 투자자가 주도하는 6,414억 루피 자본 조달 발표에 따라 Blackstone, IIFL Finance 지분 16% 인수 예정",
-   "s": "The Economic Times",
-   "u": "https://m.economictimes.com/industry/banking/finance/blackstone-to-acquire-16-stake-in-iifl-finance-as-nbfc-announces-rs-6414-crore-capital-raise-led-by-global-investor/articleshow/135709294.cms",
-   "d": "2026-11-10"
+  "g1nbuatg": {
+   "t": "국민연금-JP모간자산운용, 전 자산군 포괄 전략적 MOU 체결",
+   "s": "헤럴드경제",
+   "u": "https://biz.heraldcorp.com/article/10933978",
+   "d": "2026-11-11"
   },
-  "gyfyaof": {
-   "t": "Ardian, 반도체 프라이빗에쿼티 전략으로 11억 달러 조성",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/ardian-semiconductor-private-equity-500580",
-   "d": "2026-11-10"
+  "g1s5glyx": {
+   "t": "국민연금·JP모간자산운용, 위탁운용 협력 전 자산군으로 확대",
+   "s": "뉴스1",
+   "u": "https://www.news1.kr/finance/general-stock/6350235",
+   "d": "2026-11-11"
   },
-  "g1eo5syh": {
-   "t": "삼성화재, KKR·KIC와 英 캐노피우스 인수…글로벌 사업 판 키운다",
-   "s": "데일리스포츠한국",
-   "u": "https://www.dailysportshankook.co.kr/news/articleView.html?idxno=435360",
-   "d": "2026-11-10"
+  "gdwqc3u": {
+   "t": "국민연금, JP모건자산운용과 맞손…내년 전주에 사무소",
+   "s": "SBS Biz",
+   "u": "https://biz.sbs.co.kr/article/20000345630",
+   "d": "2026-11-11"
   },
-  "g1c6wkrh": {
-   "t": "삼성화재, KKR·한국투자공사와 함께 Canopius 지분 80.6% 인수",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/samsung-fire-marine-canopius-kkr-kic-500564",
-   "d": "2026-11-10"
-  },
-  "g1dwi14j": {
-   "t": "KKR, 2027년 첫 GP 주도 세컨더리 전략 출시 목표",
-   "s": "SecondaryLink",
-   "u": "https://secondarylink.com/news/6af2129f09e823aac82e9d6d/kkr-targets-2027-launch-for-inaugural-gp-led-secondaries-strategy",
-   "d": "2026-11-09"
-  },
-  "g18t2mul": {
-   "t": "직접대출은 잊어라? Goldman Sachs \"자산담보금융이 사모대출의 차세대 대형 기회\"",
-   "s": "Benzinga",
-   "u": "https://www.benzinga.com/markets/private-markets/26/11/63115232/forget-direct-lending-goldman-sachs-says-asset-backed-finance-is-the-next-big-private-credit-opportunity",
-   "d": "2026-11-10"
+  "g140upsn": {
+   "t": "Blackstone, 부동산 세컨더리 펀드 30억 달러 모집 추진",
+   "s": "Bisnow",
+   "u": "https://www.bisnow.com/news/national/capital-markets/blackstone-targets-3b-fund-raise-for-real-estate-secondaries",
+   "d": "2026-11-11"
   }
  },
  "droppedSentences": 0

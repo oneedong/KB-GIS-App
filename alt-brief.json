@@ -1,121 +1,100 @@
 {
- "date": "2026-11-12",
- "generatedAt": "2026-11-11T21:19:02.748Z",
+ "date": "2026-11-13",
+ "generatedAt": "2026-11-12T21:11:12.337Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "국민연금·JP모간 전 자산군 협약, 글로벌 운용사는 개인·사모대출·인프라로 자금 확대",
+ "headline": "세컨더리 자금 모집 대형화, 국민연금·삼성생명은 글로벌 대체투자 확대",
  "points": [
   {
-   "text": "국민연금공단이 10일(현지시간) 뉴욕 JP모간체이스 본사에서 JP모간자산운용과 MOU를 체결해 기존 위탁운용 관계를 주식·채권·멀티에셋·대체투자 등 전 자산군으로 확대함. JP모간자산운용은 2015년부터 국민연금 자산을 위탁 운용해 왔으며 내년 전북 전주에 사무소를 개설할 예정임.",
+   "text": "Pantheon이 Pantheon Global Secondaries Fund VIII 최종 클로징으로 총 60억 달러를 확보했으며, 자사 최대 규모의 private 펀드임.",
    "ids": [
-    "g1s5glyx",
-    "gdwqc3u",
-    "g1nbuatg"
+    "g1b3yrdp"
    ]
   },
   {
-   "text": "교직원공제회가 Brookfield의 APAC 부동산 펀드에 1억 달러를 투자하며, 이 펀드는 인도 비중이 25%임. 교직원공제회는 아시아 투자 전담팀을 별도로 구축해 글로벌 운용사의 APAC 부동산 펀드에 투자할 수 있는 몇 안 되는 국내 기관임.",
+   "text": "Ares Management가 신규 크레딧 세컨더리 펀드로 33억 유로(36억 달러)를 모집했으며, 이 시장 최대 거래 중 하나로 보도됨. Coller EQT가 주도했음.",
    "ids": [
-    "g1htuhfj"
+    "g1pyksqu",
+    "g16zbwyc"
    ]
   },
   {
-   "text": "Blackstone이 부동산 투자 비히클 지분을 매입하는 세컨더리 펀드로 30억 달러 모금을 추진 중이며, 유럽 직접대출 펀드 4호를 최종 클로징해 해당 전략 운용 규모가 약 130억 유로에 이름. ICG도 대표 펀드 Europe IX를 120억 유로로 마감함.",
+   "text": "Blackstone의 Strategic Partners가 부동산 세컨더리 펀드를 최소 30억 달러 목표로 마케팅 중이며, 2023년 직전 펀드 26억 달러보다 커짐. 코어 부동산 펀드 지분을 NAV 대비 할인된 가격에 매입할 계획임.",
    "ids": [
-    "g140upsn",
-    "g1smu6u5",
-    "g1waeufd"
+    "gku9z5f",
+    "gajwawv"
    ]
   },
   {
-   "text": "Carlyle가 SEI와 함께 사모주식·세컨더리·사모대출·부동산에 투자하는 인터벌 펀드 SEI Carlyle Private Markets Fund(PRVTX)를 출시함. Clearlake도 Clearlake Private Wealth를 출범하는 등 사모시장 운용사의 자산가 대상 유통 확대가 이어짐.",
+   "text": "Warburg Pincus가 두 번째 Capital Solutions 펀드에 50억 달러를 목표로 설정함. ICG는 Europe IX 펀드를 120억 유로로 최종 클로징했으며, 수수료 수취 AUM은 900억 달러로 9% 증가함.",
    "ids": [
-    "g1ii67ey",
-    "grxgosz",
-    "g59fw3o"
+    "g1aefy9w",
+    "g22rec9"
    ]
   },
   {
-   "text": "I Squared가 두 번째 인프라 크레딧 펀드를 24억 달러 이상으로 클로징해 전작 대비 4배 넘게 키움. Ardian은 반도체 밸류체인 전용 사모펀드로 10억 유로를 모금함.",
+   "text": "인프라·부동산 대출 펀드 조달이 이어짐. Infranity가 4호 유럽 인프라 대출 펀드를 목표액 15억 유로로 마감했고, HUK-Coburg는 Aukera 부동산 대출 펀드 출자액을 1억 유로로 두 배 늘림.",
    "ids": [
-    "g1v8jar4",
-    "glste89"
+    "g1ogyj1t",
+    "gz7bsvp"
    ]
   }
  ],
- "korea": "국민연금이 JP모간자산운용과 협력을 전 자산군으로 넓히고 교직원공제회가 Brookfield APAC 부동산 펀드에 1억 달러를 투자하는 등 국내 LP의 해외 대체투자 접점이 확대되는 흐름임. 군인공제회 CIO 후임 인선과 국민연금 신임 CIO 선임 등 기관 인사 변수도 영업 접점 점검 시 참고할 필요가 있음.",
+ "korea": "국민연금이 JP모간자산운용과 전 자산군 대상 전략적 MOU를 체결했으나 PEF 출자 사업은 이르면 내년 초에야 재개될 전망임. 삼성생명이 미국 등 대체자산 운용사 지분 추가 인수를 검토 중이어서 해외 운용사와의 협력 접점이 넓어지고 있음.",
  "refs": {
-  "g1htuhfj": {
-   "t": "교직원공제회, 브룩필드의 APAC 부동산 펀드에 1억 달러 투자 .. 인도 비중 25% - SPI",
-   "s": "SPI - 상업용 부동산 콘텐츠 & 데이터 애널리틱스",
-   "u": "https://seoulpi.io/article/00617123008851750912",
-   "d": "2026-11-10"
+  "gajwawv": {
+   "t": "Blackstone, 부동산 세컨더리 펀드로 30억 달러 모집 추진",
+   "s": "The Real Deal",
+   "u": "https://therealdeal.com/national/2026/11/12/blackstone-seeks-3b-for-real-estate-secondaries-fund/",
+   "d": "2026-11-12"
   },
-  "g1waeufd": {
-   "t": "ICG, 대표 펀드 역대 최대 120억 유로로 마감…76억 달러 아닌 76억 달러 유치",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/11/icg-pulls-in-7-6bn-as-flagship-fund-closes-at-record-e12bn/",
+  "g1b3yrdp": {
+   "t": "Morgan Lewis, Pantheon의 60억 달러 규모 글로벌 PE 세컨더리 펀드 Fund VIII 최종 클로징 자문",
+   "s": "Morgan Lewis",
+   "u": "https://www.morganlewis.com/news/2026/11/morgan-lewis-advises-pantheon-on-6-billion-final-close-of-global-pe-secondaries-fund-viii",
+   "d": "2026-11-12"
+  },
+  "gku9z5f": {
+   "t": "Blackstone, 부동산 펀드 지분 매입용 30억 달러 펀드 조성 추진",
+   "s": "CRE Daily",
+   "u": "https://www.credaily.com/briefs/blackstone-targets-3b-fund-to-buy-real-estate-fund-stakes/",
+   "d": "2026-11-12"
+  },
+  "g1pyksqu": {
+   "t": "Ares Management, 크레딧 세컨더리 펀드로 36억 달러 모금 - 보도 (ARES:NYSE)",
+   "s": "Seeking Alpha",
+   "u": "https://seekingalpha.com/news/4671622-ares-management-raises-3_6b-for-credit-secondaries-fund-report",
+   "d": "2026-11-12"
+  },
+  "g16zbwyc": {
+   "t": "Ares, 사상 최대 규모 크레딧 컨티뉴에이션 펀드로 36억 달러 모금 - Bloomberg News",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46T1J0:0-ares-raises-3-6-billion-in-its-biggest-credit-continuation-fund-bloomberg-news/",
+   "d": "2026-11-12"
+  },
+  "g22rec9": {
+   "t": "ICG, 120억 유로 규모 Europe IX 펀드 클로징으로 수수료 수취 AUM 900억 달러·수수료 관련 이익 18% 증가",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/icg-lifted-fee-earning-aum-to-90-billion-and-fee-related-earnings-18-as-the-e12-billion-europe-ix-fund-closed.html",
+   "d": "2026-11-12"
+  },
+  "g1aefy9w": {
+   "t": "Warburg Pincus, 두 번째 Capital Solutions 펀드에 50억 달러 목표 - Bloomberg",
+   "s": "Investing.com",
+   "u": "https://www.investing.com/news/stock-market-news/warburg-pincus-targets-5-billion-for-second-capital-solutions-fund--bloomberg-93CH-5019900",
    "d": "2026-11-11"
   },
-  "glste89": {
-   "t": "Ardian, 반도체 사모펀드로 10억 유로 모금",
-   "s": "Asset Publishing and Research",
-   "u": "https://www.theasset.com/article/57523/ardian-raises-1-billion-for-semiconductor-private-equity-fund",
-   "d": "2026-11-11"
+  "g1ogyj1t": {
+   "t": "Infranity, 4호 유럽 인프라 대출 전략 펀드에 15억 유로 조달",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/infranity-raises-15bn-for-fourth-european-infrastructure-debt-strategy/10139349.article",
+   "d": "2026-11-12"
   },
-  "g1ii67ey": {
-   "t": "Carlyle과 SEI, 미국 자산 투자자를 대상으로 하는 다중 전략 사모시장 펀드 출시",
-   "s": "AltAssets Private Equity News",
-   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/carlyle-sei-launch-multi-strategy-private-markets-fund-targeting-us-wealth-investors.html",
-   "d": "2026-11-11"
-  },
-  "grxgosz": {
-   "t": "Carlyle, SEI와 함께 사모시장 펀드 출시",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/carlyle-sei-500717",
-   "d": "2026-11-11"
-  },
-  "g59fw3o": {
-   "t": "Clearlake, 프라이빗 웰스 플랫폼 출범…인터벌 펀드 설정 계획",
-   "s": "https://www.connectmoney.com/",
-   "u": "https://www.connectmoney.com/stories/clearlake-launches-private-wealth-platform-plans-interval-fund/",
-   "d": "2026-11-10"
-  },
-  "g1smu6u5": {
-   "t": "Blackstone, 유럽 대출 펀드 클로징… 해당 전략 운용 규모 130억 유로 도달",
-   "s": "https://www.connectmoney.com/",
-   "u": "https://www.connectmoney.com/stories/blackstone-closes-european-lending-fund-as-strategy-reaches-e13b/",
-   "d": "2026-11-10"
-  },
-  "g1v8jar4": {
-   "t": "I Squared, 24억 달러 규모 인프라 크레딧 펀드 클로징",
-   "s": "https://www.connectmoney.com/",
-   "u": "https://www.connectmoney.com/stories/i-squared-closes-2-4b-infrastructure-credit-fund/",
-   "d": "2026-11-10"
-  },
-  "g1nbuatg": {
-   "t": "국민연금-JP모간자산운용, 전 자산군 포괄 전략적 MOU 체결",
-   "s": "헤럴드경제",
-   "u": "https://biz.heraldcorp.com/article/10933978",
-   "d": "2026-11-11"
-  },
-  "g1s5glyx": {
-   "t": "국민연금·JP모간자산운용, 위탁운용 협력 전 자산군으로 확대",
-   "s": "뉴스1",
-   "u": "https://www.news1.kr/finance/general-stock/6350235",
-   "d": "2026-11-11"
-  },
-  "gdwqc3u": {
-   "t": "국민연금, JP모건자산운용과 맞손…내년 전주에 사무소",
-   "s": "SBS Biz",
-   "u": "https://biz.sbs.co.kr/article/20000345630",
-   "d": "2026-11-11"
-  },
-  "g140upsn": {
-   "t": "Blackstone, 부동산 세컨더리 펀드 30억 달러 모집 추진",
-   "s": "Bisnow",
-   "u": "https://www.bisnow.com/news/national/capital-markets/blackstone-targets-3b-fund-raise-for-real-estate-secondaries",
-   "d": "2026-11-11"
+  "gz7bsvp": {
+   "t": "HUK-Coburg, Aukera 부동산 대출 펀드 출자액 두 배 증액",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/huk-coburg-doubles-commitment-to-aukera-real-estate-debt-fund/10139351.article",
+   "d": "2026-11-12"
   }
  },
  "droppedSentences": 0

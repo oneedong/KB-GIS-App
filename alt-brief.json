@@ -1,51 +1,65 @@
 {
- "date": "2026-11-13",
- "generatedAt": "2026-11-12T21:11:12.337Z",
+ "date": "2026-11-14",
+ "generatedAt": "2026-11-13T21:42:48.846Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "세컨더리 자금 모집 대형화, 국민연금·삼성생명은 글로벌 대체투자 확대",
+ "headline": "대형 운용사 대체투자 펀드레이징 지속, 세컨더리·인프라 강세 속 Blackstone 부동산은 부진",
  "points": [
   {
-   "text": "Pantheon이 Pantheon Global Secondaries Fund VIII 최종 클로징으로 총 60억 달러를 확보했으며, 자사 최대 규모의 private 펀드임.",
-   "ids": [
-    "g1b3yrdp"
-   ]
-  },
-  {
-   "text": "Ares Management가 신규 크레딧 세컨더리 펀드로 33억 유로(36억 달러)를 모집했으며, 이 시장 최대 거래 중 하나로 보도됨. Coller EQT가 주도했음.",
+   "text": "Ares Management가 사상 최대 규모 크레딧 세컨더리(컨티뉴에이션) 펀드로 33억 유로(36억 달러)를 모집했으며, Coller EQT가 주도했다고 보도됨.",
    "ids": [
     "g1pyksqu",
-    "g16zbwyc"
+    "g16zbwyc",
+    "g1vvesdo"
    ]
   },
   {
-   "text": "Blackstone의 Strategic Partners가 부동산 세컨더리 펀드를 최소 30억 달러 목표로 마케팅 중이며, 2023년 직전 펀드 26억 달러보다 커짐. 코어 부동산 펀드 지분을 NAV 대비 할인된 가격에 매입할 계획임.",
+   "text": "Pantheon이 Pantheon Global Secondaries Fund VIII 등을 합쳐 총 60억 달러 약정으로 최종 클로징했으며, 회사 역대 최대 규모임. Blackstone Strategic Partners는 직전 26억 달러를 넘어 최소 30억 달러 목표로 부동산 세컨더리 펀드를 마케팅 중임.",
    "ids": [
-    "gku9z5f",
-    "gajwawv"
+    "g1b3yrdp",
+    "gku9z5f"
    ]
   },
   {
-   "text": "Warburg Pincus가 두 번째 Capital Solutions 펀드에 50억 달러를 목표로 설정함. ICG는 Europe IX 펀드를 120억 유로로 최종 클로징했으며, 수수료 수취 AUM은 900억 달러로 9% 증가함.",
+   "text": "Brookfield Asset Management는 Brookfield Infrastructure Fund VI에 260억 달러 약정을 확보해 수주 내 첫 클로징을 앞두고 있음. 또 첫 아시아·태평양 부동산 사이드카 펀드로 목표 10억 달러를 넘는 18억 달러를 모집함.",
    "ids": [
-    "g1aefy9w",
+    "g1m4h2tv",
+    "gbwaiil"
+   ]
+  },
+  {
+   "text": "TPG는 TPG Essential Housing Fund IV 1차 클로징으로 20억 달러를 모집했고, ICG는 Europe IX 펀드를 120억 유로로 최종 클로징함.",
+   "ids": [
+    "gzo2yw8",
     "g22rec9"
    ]
   },
   {
-   "text": "인프라·부동산 대출 펀드 조달이 이어짐. Infranity가 4호 유럽 인프라 대출 펀드를 목표액 15억 유로로 마감했고, HUK-Coburg는 Aukera 부동산 대출 펀드 출자액을 1억 유로로 두 배 늘림.",
+   "text": "Blackstone 부동산 부문은 이익 감소와 투자수익 약화, 임원 이탈 속에 경영진 교체를 진행 중이라고 Bloomberg가 보도함. 한편 Blackstone Life Sciences는 Pfizer의 berobenatide 개발비를 2028년까지 최대 15억 달러 규모로 지원하기로 함.",
    "ids": [
-    "g1ogyj1t",
-    "gz7bsvp"
+    "g17i8mqu",
+    "gx1py0r"
    ]
   }
  ],
- "korea": "국민연금이 JP모간자산운용과 전 자산군 대상 전략적 MOU를 체결했으나 PEF 출자 사업은 이르면 내년 초에야 재개될 전망임. 삼성생명이 미국 등 대체자산 운용사 지분 추가 인수를 검토 중이어서 해외 운용사와의 협력 접점이 넓어지고 있음.",
+ "korea": "국민연금이 11월 10일 JP모간자산운용과 주식·채권·대체투자 등 전 자산군 전략적 MOU를 체결해 글로벌 운용사와의 협력 범위를 넓힘. 세컨더리·인프라 펀드 모집이 활발해 국내 기관의 신규 약정 검토 때 참고할 만함.",
  "refs": {
-  "gajwawv": {
-   "t": "Blackstone, 부동산 세컨더리 펀드로 30억 달러 모집 추진",
-   "s": "The Real Deal",
-   "u": "https://therealdeal.com/national/2026/11/12/blackstone-seeks-3b-for-real-estate-secondaries-fund/",
+  "gbwaiil": {
+   "t": "Brookfield, 첫 아시아·태평양 부동산 사이드카 펀드로 18억 달러 모집",
+   "s": "VCCircle",
+   "u": "https://www.vccircle.com/brookfieldraises-1-8-bn-for-debut-asia-pacific-real-estate-sidecar-fund",
+   "d": "2026-11-13"
+  },
+  "gzo2yw8": {
+   "t": "TPG’s US residential credit fund secures 20억 달러 in first close",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/tpgs-us-residential-credit-fund-secures-2bn-in-first-close/10139352.article",
+   "d": "2026-11-13"
+  },
+  "g22rec9": {
+   "t": "ICG, 120억 유로 규모 Europe IX 펀드 클로징으로 수수료 수취 AUM 900억 달러·수수료 관련 이익 18% 증가",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/icg-lifted-fee-earning-aum-to-90-billion-and-fee-related-earnings-18-as-the-e12-billion-europe-ix-fund-closed.html",
    "d": "2026-11-12"
   },
   "g1b3yrdp": {
@@ -72,28 +86,28 @@
    "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46T1J0:0-ares-raises-3-6-billion-in-its-biggest-credit-continuation-fund-bloomberg-news/",
    "d": "2026-11-12"
   },
-  "g22rec9": {
-   "t": "ICG, 120억 유로 규모 Europe IX 펀드 클로징으로 수수료 수취 AUM 900억 달러·수수료 관련 이익 18% 증가",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/icg-lifted-fee-earning-aum-to-90-billion-and-fee-related-earnings-18-as-the-e12-billion-europe-ix-fund-closed.html",
+  "g17i8mqu": {
+   "t": "Blackstone 부동산 부문, 이익 감소 속 경영진 교체",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/blackstone-real-estate-faces-leadership-changes-amid-declining-earnings/",
+   "d": "2026-11-13"
+  },
+  "g1m4h2tv": {
+   "t": "Brookfield, 대표 인프라 전략에 260억 달러 확보…수주 내 첫 클로징 전망",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/brookfield-obtains-26b-for-flagship-infrastructure-strategy-anticipates-first-close-in-coming-weeks/",
+   "d": "2026-11-13"
+  },
+  "gx1py0r": {
+   "t": "Pfizer, Blackstone과의 계약으로 GLP-1 신약 임상시험 자금 최대 15억 달러 확보",
+   "s": "MedCity News",
+   "u": "https://medcitynews.com/2026/11/pfizer-blackstone-life-sciences-long-acting-glp-1-berobenatide-metabolic-obesity-weight-management-pfe/",
    "d": "2026-11-12"
   },
-  "g1aefy9w": {
-   "t": "Warburg Pincus, 두 번째 Capital Solutions 펀드에 50억 달러 목표 - Bloomberg",
-   "s": "Investing.com",
-   "u": "https://www.investing.com/news/stock-market-news/warburg-pincus-targets-5-billion-for-second-capital-solutions-fund--bloomberg-93CH-5019900",
-   "d": "2026-11-11"
-  },
-  "g1ogyj1t": {
-   "t": "Infranity, 4호 유럽 인프라 대출 전략 펀드에 15억 유로 조달",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/infranity-raises-15bn-for-fourth-european-infrastructure-debt-strategy/10139349.article",
-   "d": "2026-11-12"
-  },
-  "gz7bsvp": {
-   "t": "HUK-Coburg, Aukera 부동산 대출 펀드 출자액 두 배 증액",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/huk-coburg-doubles-commitment-to-aukera-real-estate-debt-fund/10139351.article",
+  "g1vvesdo": {
+   "t": "Ares, 사모대출 최대 규모 세컨더리 펀드 중 하나로 36억 달러 모집",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/ares-pulls-in-3-6b-for-one-of-private-credit-s-biggest-secondaries-funds",
    "d": "2026-11-12"
   }
  },

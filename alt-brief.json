@@ -1,95 +1,88 @@
 {
- "date": "2026-11-14",
- "generatedAt": "2026-11-13T21:42:48.846Z",
+ "date": "2026-11-15",
+ "generatedAt": "2026-11-14T21:39:22.577Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "대형 운용사 대체투자 펀드레이징 지속, 세컨더리·인프라 강세 속 Blackstone 부동산은 부진",
+ "headline": "Brookfield 등 대형 운용사 펀드레이징 호조, 인프라·사모대출 자금 쏠림",
  "points": [
   {
-   "text": "Ares Management가 사상 최대 규모 크레딧 세컨더리(컨티뉴에이션) 펀드로 33억 유로(36억 달러)를 모집했으며, Coller EQT가 주도했다고 보도됨.",
-   "ids": [
-    "g1pyksqu",
-    "g16zbwyc",
-    "g1vvesdo"
-   ]
-  },
-  {
-   "text": "Pantheon이 Pantheon Global Secondaries Fund VIII 등을 합쳐 총 60억 달러 약정으로 최종 클로징했으며, 회사 역대 최대 규모임. Blackstone Strategic Partners는 직전 26억 달러를 넘어 최소 30억 달러 목표로 부동산 세컨더리 펀드를 마케팅 중임.",
-   "ids": [
-    "g1b3yrdp",
-    "gku9z5f"
-   ]
-  },
-  {
-   "text": "Brookfield Asset Management는 Brookfield Infrastructure Fund VI에 260억 달러 약정을 확보해 수주 내 첫 클로징을 앞두고 있음. 또 첫 아시아·태평양 부동산 사이드카 펀드로 목표 10억 달러를 넘는 18억 달러를 모집함.",
+   "text": "Brookfield Infrastructure Fund VI가 260억 달러 약정을 확보했으며 수주 내 첫 클로징을 앞두고 있음. 2027년 초까지 300억 달러 목표임.",
    "ids": [
     "g1m4h2tv",
-    "gbwaiil"
+    "g8bpb1g"
    ]
   },
   {
-   "text": "TPG는 TPG Essential Housing Fund IV 1차 클로징으로 20억 달러를 모집했고, ICG는 Europe IX 펀드를 120억 유로로 최종 클로징함.",
+   "text": "Brookfield의 첫 아태지역 부동산 펀드가 18억 달러로 마감되어 목표치를 80% 상회함. ICG Europe IX는 역대 최대인 120억 유로로 마감함.",
    "ids": [
-    "gzo2yw8",
-    "g22rec9"
+    "g1ifi09e",
+    "gxpvfmk"
    ]
   },
   {
-   "text": "Blackstone 부동산 부문은 이익 감소와 투자수익 약화, 임원 이탈 속에 경영진 교체를 진행 중이라고 Bloomberg가 보도함. 한편 Blackstone Life Sciences는 Pfizer의 berobenatide 개발비를 2028년까지 최대 15억 달러 규모로 지원하기로 함.",
+   "text": "CD&R은 260억 달러 목표의 바이아웃 펀드에 200억 달러를 모집함. Warburg Pincus는 첫 펀드 수익률 55%를 바탕으로 50억 달러를 추가 모집함.",
    "ids": [
-    "g17i8mqu",
-    "gx1py0r"
+    "g1pxz7ru",
+    "g1pnnxq5"
+   ]
+  },
+  {
+   "text": "Ares는 사모대출 최대 규모 세컨더리 펀드 중 하나로 36억 달러를 모집함. Saudi Venture Capital은 Jadwa의 사모대출 펀드에 투자함.",
+   "ids": [
+    "g1vvesdo",
+    "g2016u"
+   ]
+  },
+  {
+   "text": "인프라 M&A가 활발함. KKR은 Sempra Infrastructure Partners 지분 45% 인수를 완료했고 PSP Investments는 Brookfield로부터 Enercare 지분 50%를 16억 달러에 인수하기로 함.",
+   "ids": [
+    "g1gbmdzz",
+    "g1bvesck"
    ]
   }
  ],
- "korea": "국민연금이 11월 10일 JP모간자산운용과 주식·채권·대체투자 등 전 자산군 전략적 MOU를 체결해 글로벌 운용사와의 협력 범위를 넓힘. 세컨더리·인프라 펀드 모집이 활발해 국내 기관의 신규 약정 검토 때 참고할 만함.",
+ "korea": "Brookfield Infrastructure Fund VI의 첫 클로징이 수주 내 전망되고 Ares·ICG 등 대형 펀드 모집이 이어져, 국내 기관투자자의 인프라·사모대출 출자 검토 시 참고할 만함.",
  "refs": {
-  "gbwaiil": {
-   "t": "Brookfield, 첫 아시아·태평양 부동산 사이드카 펀드로 18억 달러 모집",
-   "s": "VCCircle",
-   "u": "https://www.vccircle.com/brookfieldraises-1-8-bn-for-debut-asia-pacific-real-estate-sidecar-fund",
+  "g1ifi09e": {
+   "t": "Brookfield, 첫 아태지역 부동산 펀드 18억 달러로 마감… 목표치 80% 상회",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/brookfield-closes-debut-asia-pacific-property-fund-at-1-8b-80-above-target",
+   "d": "2026-11-14"
+  },
+  "gxpvfmk": {
+   "t": "ICG (LSE:ICG), Europe IX 펀드 역대 최대 규모인 120억 유로로 마감",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/icg-lse-icg-closes-europe-031040137.html",
+   "d": "2026-11-14"
+  },
+  "g8bpb1g": {
+   "t": "Brookfield, Fund VI로 260억 달러 모집…2027년 초까지 300억 달러 목표",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/brookfield-gathers-26b-for-fund-vi-eyes-30b-by-early-2027",
    "d": "2026-11-13"
   },
-  "gzo2yw8": {
-   "t": "TPG’s US residential credit fund secures 20억 달러 in first close",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/tpgs-us-residential-credit-fund-secures-2bn-in-first-close/10139352.article",
+  "g1pxz7ru": {
+   "t": "CD&R, 260억 달러 규모 대형 바이아웃 펀드 목표로 200억 달러 모집",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/cd-r-gathers-20b-toward-26b-flagship-buyout-fund",
    "d": "2026-11-13"
   },
-  "g22rec9": {
-   "t": "ICG, 120억 유로 규모 Europe IX 펀드 클로징으로 수수료 수취 AUM 900억 달러·수수료 관련 이익 18% 증가",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/icg-lifted-fee-earning-aum-to-90-billion-and-fee-related-earnings-18-as-the-e12-billion-europe-ix-fund-closed.html",
-   "d": "2026-11-12"
-  },
-  "g1b3yrdp": {
-   "t": "Morgan Lewis, Pantheon의 60억 달러 규모 글로벌 PE 세컨더리 펀드 Fund VIII 최종 클로징 자문",
-   "s": "Morgan Lewis",
-   "u": "https://www.morganlewis.com/news/2026/11/morgan-lewis-advises-pantheon-on-6-billion-final-close-of-global-pe-secondaries-fund-viii",
-   "d": "2026-11-12"
-  },
-  "gku9z5f": {
-   "t": "Blackstone, 부동산 펀드 지분 매입용 30억 달러 펀드 조성 추진",
-   "s": "CRE Daily",
-   "u": "https://www.credaily.com/briefs/blackstone-targets-3b-fund-to-buy-real-estate-fund-stakes/",
-   "d": "2026-11-12"
-  },
-  "g1pyksqu": {
-   "t": "Ares Management, 크레딧 세컨더리 펀드로 36억 달러 모금 - 보도 (ARES:NYSE)",
-   "s": "Seeking Alpha",
-   "u": "https://seekingalpha.com/news/4671622-ares-management-raises-3_6b-for-credit-secondaries-fund-report",
-   "d": "2026-11-12"
-  },
-  "g16zbwyc": {
-   "t": "Ares, 사상 최대 규모 크레딧 컨티뉴에이션 펀드로 36억 달러 모금 - Bloomberg News",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46T1J0:0-ares-raises-3-6-billion-in-its-biggest-credit-continuation-fund-bloomberg-news/",
-   "d": "2026-11-12"
-  },
-  "g17i8mqu": {
-   "t": "Blackstone 부동산 부문, 이익 감소 속 경영진 교체",
+  "g1bvesck": {
+   "t": "PSP Investments, Brookfield로부터 캐나다 주택 인프라 플랫폼 지분 16억 달러에 인수",
    "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/blackstone-real-estate-faces-leadership-changes-amid-declining-earnings/",
+   "u": "https://irei.com/news/psp-investments-snaps-up-stake-in-canadian-home-infra-platform-from-brookfield-for-1-6b/",
+   "d": "2026-11-13"
+  },
+  "g1gbmdzz": {
+   "t": "Sempra: Sempra Infrastructure Partners 지분 45% KKR 주도 컨소시엄에 매각 완료",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/sempra-sale-of-45-stake-in-sempra-infrastructure-partners-to-kkr-led-consortium-completed/",
+   "d": "2026-11-14"
+  },
+  "g1pnnxq5": {
+   "t": "Warburg Pincus, 첫 펀드서 55% 수익... 이번엔 50억 달러 더 모은다",
+   "s": "Benzinga",
+   "u": "https://www.benzinga.com/markets/private-markets/26/11/63261048/warburg-pincus-made-55-on-its-first-fund-now-it-wants-5-billion-more",
    "d": "2026-11-13"
   },
   "g1m4h2tv": {
@@ -98,17 +91,17 @@
    "u": "https://irei.com/news/brookfield-obtains-26b-for-flagship-infrastructure-strategy-anticipates-first-close-in-coming-weeks/",
    "d": "2026-11-13"
   },
-  "gx1py0r": {
-   "t": "Pfizer, Blackstone과의 계약으로 GLP-1 신약 임상시험 자금 최대 15억 달러 확보",
-   "s": "MedCity News",
-   "u": "https://medcitynews.com/2026/11/pfizer-blackstone-life-sciences-long-acting-glp-1-berobenatide-metabolic-obesity-weight-management-pfe/",
-   "d": "2026-11-12"
-  },
   "g1vvesdo": {
    "t": "Ares, 사모대출 최대 규모 세컨더리 펀드 중 하나로 36억 달러 모집",
    "s": "Dealroom",
    "u": "https://app.dealroom.co/news/note/ares-pulls-in-3-6b-for-one-of-private-credit-s-biggest-secondaries-funds",
-   "d": "2026-11-12"
+   "d": "2026-11-13"
+  },
+  "g2016u": {
+   "t": "사우디 벤처 캐피탈, Jadwa의 사모대출 펀드에 투자",
+   "s": "CairoScene",
+   "u": "https://cairoscene.com/Business/Saudi-Venture-Capital-Invests-in-Jadwa-s-Private-Credit-Fund",
+   "d": "2026-11-14"
   }
  },
  "droppedSentences": 0

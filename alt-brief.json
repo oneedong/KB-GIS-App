@@ -1,121 +1,128 @@
 {
- "date": "2026-11-16",
- "generatedAt": "2026-11-15T21:58:43.165Z",
+ "date": "2026-11-17",
+ "generatedAt": "2026-11-16T21:13:29.167Z",
  "via": "claude:claude-sonnet-5-5",
- "hours": 72,
- "headline": "Brookfield 대형 펀드 조성·딜 공세, 국민연금은 JP모간과 전 자산군 제휴",
+ "hours": 30,
+ "headline": "Blackstone, Amazon 데이터센터 50억 달러 인수…인프라·AI 자금 쏠림 지속",
  "points": [
   {
-   "text": "Brookfield가 Fund VI로 260억 달러를 모집했고 2027년 초까지 300억 달러를 목표로 함. 인프라 대표 전략 Brookfield Infrastructure Fund VI는 수주 내 첫 클로징이 전망됨.",
+   "text": "Blackstone Digital Infrastructure Trust(BXDC)가 Amazon Web Services와의 합작법인 2곳 지분 75.1%를 50억 달러에 인수하기로 함. 데이터센터 13개 동이 대상이며 첫 투자로, IPO 조달금 19억 달러와 비소구 모기지 대출 약 25억 달러를 활용하고 AWS에 최소 12년 임대하는 구조임.",
    "ids": [
-    "g8bpb1g",
-    "g1m4h2tv"
+    "gi921p4",
+    "g1o5z9m2",
+    "g1ptqdyr"
    ]
   },
   {
-   "text": "Brookfield가 첫 아태지역 부동산 사이드카 펀드를 18억 달러로 마감함. 목표 10억 달러를 상회했고 지역 부동산 사업 확장 의지를 보임.",
+   "text": "KKR 주도 컨소시엄이 Sempra Infrastructure Partners 지분 과반을 현금 100억 달러에 인수함. GIP는 300억 달러 AI 펀드 목표의 2/3를 달성했고, Copenhagen Infrastructure Partners는 10억 달러 목표의 크레딧 펀드를 출범시킴.",
    "ids": [
-    "gbwaiil",
-    "g1ifi09e"
+    "g10cugxr",
+    "g10qlf2b",
+    "g12x51zw"
    ]
   },
   {
-   "text": "ICG Europe IX가 역대 최대 규모인 120억 유로로 마감함. CD&R는 260억 달러 목표 바이아웃 펀드에 200억 달러를 모집했고 Ares는 사모대출 세컨더리 펀드로 36억 달러를 모집함.",
+   "text": "Apollo가 Focus Financial Partners에 25억 달러를 투자하며 기업가치는 부채 포함 약 210억 달러로 평가됨. Centerbridge와 Mubadala는 Canaccord Genuity 영국 자산관리 부문을 16억 달러에 인수하기로 합의함.",
    "ids": [
-    "gxpvfmk",
-    "g1pxz7ru",
-    "g1vvesdo"
+    "g1rnnibh",
+    "g1oku4u4"
    ]
   },
   {
-   "text": "Brookfield·CPPIB 컨소시엄이 독일 Uniper 매각 절차의 다음 단계에 진출함. 독일 정부는 보유 지분 99.12%를 거부권 행사 가능한 소수 지분 수준으로 낮추려 하며, KKR·RWE 컨소시엄 등도 입찰자로 거론됨.",
+   "text": "펀드레이징이 호조임. Brookfield는 아시아태평양 부동산 전략으로 목표(10억 달러)를 80% 웃도는 18억 달러를 모집했고, Gemspring Capital은 네 번째 바이아웃 펀드를 35억 달러 하드캡으로 마감했으며, Plural은 10억 유로를 모집함.",
    "ids": [
-    "g1c8me3l",
-    "g1odu6q1"
+    "g10stq1s",
+    "g13z0gfx",
+    "g46zgom"
    ]
   },
   {
-   "text": "KKR이 Sempra Infrastructure Partners 지분 45% 인수를 완료했으며 CPPIB가 간접 공동투자자로 참여함. Brookfield와 KKR은 Eyewa 인수를 놓고 약 7억 달러 가치로 경쟁 중이며, Blackstone은 Pfizer 비만 신약 파이프라인에 15억 달러를 투자함.",
+   "text": "BlackRock이 사모자산 15% 한도를 넘길 수 있는 상장 인터벌 펀드(ETIF)를 SEC에 신청했고, SEI와 Carlyle는 프라이빗 마켓 인터벌펀드를 출시함. 사모자산 접근 상품의 evergreen·리테일 확장 흐름이 이어짐.",
    "ids": [
-    "g1gbmdzz",
-    "gthru2i",
-    "gdnahdu"
+    "g1xh5swx",
+    "gpzwlpx"
    ]
   }
  ],
- "korea": "국민연금이 JP모간자산운용과 주식·채권·멀티에셋·대체투자 전 자산군 MOU를 체결해 글로벌 운용사와의 협력이 위탁운용을 넘어 정보 교류·리서치로 확대되는 흐름임. 해외 대체투자 운용사 접점 확대 시 리서치·정보 협력 역량이 영업 포인트가 될 수 있음.",
+ "korea": "국민연금이 JP모간과 전 자산군 전략적 협력체계를 구축했고, Premier Partners는 Korea Fund Partners 인수용 공동투자 펀드를 추진 중임. 해외 대체투자 파트너십 확대 흐름이어서 인프라·AI 전략 펀드 공동투자 제안에 활용할 만함.",
  "refs": {
-  "gthru2i": {
-   "t": "Brookfield와 KKR, Eyewa 지분 7억 달러 가치에 인수 논의 중",
-   "s": "FWDStart",
-   "u": "https://www.fwdstart.me/p/brookfield-and-kkr-in-talks-for-majority-stake-in-eyewa-at-700m-valuation",
-   "d": "2026-11-15"
+  "gpzwlpx": {
+   "t": "SEI, Carlyle와 함께 프라이빗 마켓 인터벌펀드 출시",
+   "s": "https://www.connectmoney.com/",
+   "u": "https://news.google.com/rss/articles/CBMijwFBVV95cUxObGFFdzZUd01SQlFETEtqeDR5WlpWWVJWNUxyNkQzWjZnUXFlaWhLZ1FBV0pRMWFuYWxTRHRDVWU1cU5zN3ZrTF9zTmRNYnNVMlpuWEZqa2tSdkpmNjVpMmRNYk5YQ1h2bXYyMFlReHFjNEVXNl9MU3MyZGRROXNFVUVVemNYOVJSRmVrV2d0OA?oc=5",
+   "d": "2026-11-16"
   },
-  "g1c8me3l": {
-   "t": "독일, Uniper 지분 축소 추진…Brookfield·CPPIB 매각 절차 다음 단계 진출 - 로이터",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/stock-market-news/article-2176090",
-   "d": "2026-11-15"
-  },
-  "g1ifi09e": {
-   "t": "Brookfield, 첫 아태지역 부동산 펀드 18억 달러로 마감… 목표치 80% 상회",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/brookfield-closes-debut-asia-pacific-property-fund-at-1-8b-80-above-target",
-   "d": "2026-11-14"
-  },
-  "gxpvfmk": {
-   "t": "ICG (LSE:ICG), Europe IX 펀드 역대 최대 규모인 120억 유로로 마감",
-   "s": "Yahoo Finance",
-   "u": "https://finance.yahoo.com/markets/stocks/articles/icg-lse-icg-closes-europe-031040137.html",
-   "d": "2026-11-14"
-  },
-  "g8bpb1g": {
-   "t": "Brookfield, Fund VI로 260억 달러 모집…2027년 초까지 300억 달러 목표",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/brookfield-gathers-26b-for-fund-vi-eyes-30b-by-early-2027",
-   "d": "2026-11-13"
-  },
-  "g1pxz7ru": {
-   "t": "CD&R, 260억 달러 규모 대형 바이아웃 펀드 목표로 200억 달러 모집",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/cd-r-gathers-20b-toward-26b-flagship-buyout-fund",
-   "d": "2026-11-13"
-  },
-  "g1odu6q1": {
-   "t": "브룩필드·CPPIB 컨소시엄, 유니퍼 매각 절차 다음 단계 진입... 소식통",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L3N46U1XI:0/",
-   "d": "2026-11-13"
-  },
-  "gdnahdu": {
-   "t": "Blackstone, Pfizer 비만 신약 파이프라인에 15억 달러 투자",
-   "s": "BioXconomy",
-   "u": "https://www.bioxconomy.com/investment/blackstone-commits-1-5bn-to-back-pfizer-s-obesity-pipeline",
-   "d": "2026-11-13"
-  },
-  "gbwaiil": {
-   "t": "Brookfield, 아시아태평양 부동산 첫 사이드카 펀드로 18억 달러 조달",
-   "s": "VCCircle",
-   "u": "https://www.vccircle.com/brookfieldraises-1-8-bn-for-debut-asia-pacific-real-estate-sidecar-fund",
-   "d": "2026-11-13"
-  },
-  "g1gbmdzz": {
-   "t": "Sempra: Sempra Infrastructure Partners 지분 45% KKR 주도 컨소시엄에 매각 완료",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/sempra-sale-of-45-stake-in-sempra-infrastructure-partners-to-kkr-led-consortium-completed/",
-   "d": "2026-11-14"
-  },
-  "g1m4h2tv": {
-   "t": "Brookfield, 대표 인프라 전략에 260억 달러 확보…수주 내 첫 클로징 전망",
+  "g10cugxr": {
+   "t": "KKR 주도 컨소시엄, Sempra Infrastructure Partners 지분 과반을 현금 100억 달러에 인수",
    "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/brookfield-obtains-26b-for-flagship-infrastructure-strategy-anticipates-first-close-in-coming-weeks/",
-   "d": "2026-11-13"
+   "u": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNNnk1SjBDNUpOYmRreHQ5NUJfbkZNQXJLRFcyOW0yVnIxbFhwRjlFU0drclF5WFR1bDRwRDRPMDFGajcyNUtNWF92dTc3dTdUZm5lVkYxSVhXdXJrR0FXWTd6cFdTYmxIT1g1UWJYMXpkdUtWUDJjVnlEc0FjTDE5eTY3eS04UmdmZHllV0hnQ01nREVWVHpLanh1czBxVlhvZFdINmNLc2NTLWpqcG5vSw?oc=5",
+   "d": "2026-11-16"
   },
-  "g1vvesdo": {
-   "t": "Ares, 사모대출 최대 규모 세컨더리 펀드 중 하나로 36억 달러 모집",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/ares-pulls-in-3-6b-for-one-of-private-credit-s-biggest-secondaries-funds",
-   "d": "2026-11-13"
+  "g1rnnibh": {
+   "t": "아폴로, 포커스 파이낸셜에 25억 달러 투자…기업가치 210억 달러",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2178044",
+   "d": "2026-11-16"
+  },
+  "g10stq1s": {
+   "t": "Brookfield, 아시아태평양 부동산 전략으로 18억 달러 모집",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/brookfield-raises-1-8b-for-asia-pacific-real-estate-strategy/",
+   "d": "2026-11-16"
+  },
+  "gi921p4": {
+   "t": "블랙스톤 디지털 인프라스트럭처 트러스트, 50억 달러 규모 아마존 데이터센터 합작법인 지분 75.1% 인수 계약",
+   "s": "데이터투자",
+   "u": "https://www.datatooza.com/article/20261116204845677052ef376114_80",
+   "d": "2026-11-16"
+  },
+  "g10qlf2b": {
+   "t": "GIP 300억 달러 AI 펀드 목표 달성의 2/3 – 독점",
+   "s": "Infrastructure Investor",
+   "u": "https://www.infrastructureinvestor.com/gip-two-thirds-of-the-way-to-30bn-ai-fund-target-exclusive/",
+   "d": "2026-11-16"
+  },
+  "g12x51zw": {
+   "t": "Copenhagen Infrastructure Partners, 크레딧 펀드 목표액 10억 달러로 설정",
+   "s": "Securities.io",
+   "u": "https://www.securities.io/copenhagen-infrastructure-partners-sets-1-billion-credit-fund-target/",
+   "d": "2026-11-16"
+  },
+  "g46zgom": {
+   "t": "Plural, 유럽 딥테크용 10억 유로 모집… 후속 투자 전용 비히클도 출범",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/europe-by-region/western-europe-europe-by-region/plural-picks-up-e1bn-for-european-deep-tech-launches-dedicated-follow-on-investment-vehicle.html",
+   "d": "2026-11-16"
+  },
+  "g13z0gfx": {
+   "t": "Gemspring Capital, 3개월도 안 돼 바이아웃 펀드 규모 2배 넘게 키워 35억 달러 하드캡 클로징",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/gemspring-capital-more-than-doubles-buyout-fund-size-with-3-5bn-hard-cap-close-in-under-three-months.html",
+   "d": "2026-11-16"
+  },
+  "g1o5z9m2": {
+   "t": "Blackstone의 신규 AI 인프라 리츠, 50억 달러 규모 AWS 거래 체결",
+   "s": "Bisnow",
+   "u": "https://www.bisnow.com/news/national/data-center/blackstone-s-data-center-reit-makes-first-investment-with-5b-deal-with-aws",
+   "d": "2026-11-16"
+  },
+  "g1xh5swx": {
+   "t": "BlackRock, 사모자산 15% 한도를 넘길 수 있는 상장 인터벌 펀드 신청",
+   "s": "Crypto Briefing",
+   "u": "https://cryptobriefing.com/blackrock-files-exchange-traded-interval-fund/",
+   "d": "2026-11-16"
+  },
+  "g1oku4u4": {
+   "t": "Centerbridge와 Mubadala, Canaccord Genuity의 영국 자산관리 부문 16억 달러에 인수 합의",
+   "s": "PEI Private Equity",
+   "u": "https://www.privateequityinternational.com/centerbridge-and-mubadala-strike-1-6bn-deal-for-canaccord-genuitys-uk-wealth-arm/",
+   "d": "2026-11-16"
+  },
+  "g1ptqdyr": {
+   "t": "Blackstone의 신규 데이터센터 리츠, 50억 달러 규모 AWS 거래로 출발",
+   "s": "Finimize",
+   "u": "https://finimize.com/content/blackstones-new-data-center-reit-starts-with-a-5-billion-aws-deal",
+   "d": "2026-11-16"
   }
  },
  "droppedSentences": 0

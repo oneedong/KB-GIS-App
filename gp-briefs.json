@@ -1,406 +1,406 @@
 {
- "updatedAt": "2026-11-09",
+ "updatedAt": "2026-11-16",
  "via": "claude:claude-sonnet-5-5",
  "days": 14,
  "gps": {
   "Brookfield": {
-   "summary": "Brookfield는 3분기 250억 달러(연초 이후 1,230억 달러)을 조달하며 인프라·크레딧 중심으로 펀드레이징 성장세를 이어갔고, 경영진은 2026년 펀드레이징이 사상 최대일 것으로 전망함. Fund VI는 260억 달러 모금 후 2027년 초 최종 클로징을 목표로 하며, Qai(QIA)와의 200억 달러 AI 인프라 벤처의 첫 투자로 영국 Drax 데이터센터 캠퍼스가 거론됨. 한편 AI 데이터센터 투자에서 지역사회 동의를 필수 조건으로 제시하고 KB가 주선하는 80억 달러 한국 AI 인프라 대출 건이 있어 미팅 시 참고할 필요가 있음.",
+   "summary": "Brookfield는 Infrastructure Fund VI로 260억 달러 약정을 확보하고 첫 클로징을 앞두고 있으며, 첫 아태 부동산 사이드카 펀드를 18억 달러로 마감함. 딜 측면에서는 Uniper 매각 절차의 다음 단계에 CPPIB와 함께 진출했고 Eyewa 인수 경쟁에도 참여 중이며, 시드니 물류·산업시설 인수와 Enercare 지분 매각도 병행함.",
    "points": [
     {
-     "text": "3분기 펀드레이징 250억 달러(크레딧 120억 달러 포함)을 기록해 연초 이후 누적 1,230억 달러에 도달했으며 FRE·DE가 15% 증가함.",
+     "text": "Brookfield Infrastructure Fund VI는 260억 달러 약정을 확보했으며 수주 내 첫 클로징이 전망되고, 2027년 초까지 300억 달러 규모 모집을 목표로 함.",
      "ids": [
-      "g19pop7m",
-      "g1j55zsc"
+      "g1m4h2tv",
+      "g8bpb1g"
      ]
     },
     {
-     "text": "Fund VI는 260억 달러 모금을 마쳤으며 '2027년 초' 최종 클로징을 목표로 함.",
+     "text": "첫 아태 부동산 사이드카 펀드를 18억 달러로 마감하여 10억 달러 목표를 상회했으며, 플래그십 opportunistic real estate 전략의 아태 확장 사례임.",
      "ids": [
-      "ge8u4o"
+      "gbwaiil",
+      "g1ifi09e"
      ]
     },
     {
-     "text": "Brookfield와 Qai(QIA)의 200억 달러 AI 인프라 벤처 첫 투자로 North Yorkshire Drax 데이터센터 캠퍼스가 제시됨.",
+     "text": "CPPIB와의 컨소시엄이 독일 정부의 Uniper(정부 지분 99.12%) 지분 축소 매각 절차에서 다음 단계 입찰자로 진출함.",
      "ids": [
-      "g1v8p938",
-      "gqev6jh"
+      "g1c8me3l",
+      "g1odu6q1"
      ]
     },
     {
-     "text": "미국 내 데이터센터 반대 확산 속에 주민 동의 없는 AI 데이터센터 투자는 하지 않겠다는 입장을 밝혔고, 경영진은 AI 인프라 병목을 자본이 아닌 시공 인력으로 진단함.",
+     "text": "KKR와 함께 걸프 지역 안경 유통업체 Eyewa의 지배지분을 약 7억 달러 가치로 인수하기 위해 경쟁 중임.",
      "ids": [
-      "g1a510ao",
-      "g1tkq9l0"
+      "gthru2i"
      ]
     }
    ],
-   "n": 148,
-   "asOf": "2026-11-09"
+   "n": 68,
+   "asOf": "2026-11-16"
   },
   "Blackstone": {
-   "summary": "Blackstone은 최근 2주간 Blackstone European Senior Direct Lending Fund IV를 투자 가능 자금 약 130억 유로 규모로 파이널 클로즈하고, 87억달러 규모 에너지 전환 펀드 모집도 마감하며 펀드레이징 모멘텀을 이어감. Blackstone Life Sciences는 Boston Scientific과 4억 5500만 달러 규모 심장 펌프 공동 개발에 나섰고, Blackstone Real Estate Debt Strategies는 7억 6000만 달러 상업용 부동산 대출 포트폴리오를 Prime Finance에 매각함. 국민연금 김성주 이사장과 John Gray 사장이 전주에서 세 번째로 만나는 등 국내 기관투자자와의 교류도 지속됨.",
+   "summary": "Blackstone은 최근 2주간 한국 리테일 대체투자 시장 진출을 위한 프라이빗웰스 조직 신설, 부동산 세컨더리 펀드 30억 달러 모집 착수 등 자금 모집 채널과 상품을 확장하는 한편, Pfizer 비만 신약 파이프라인 15억 달러 투자, 인도 IIFL 파이낸스 지분 인수, 미 북동부 가스 파이프라인 인수 등 다양한 딜을 진행함. 부동산 부문은 이익 감소와 경영진 교체 국면에 있어 모니터링이 필요함.",
    "points": [
     {
-     "text": "Blackstone European Senior Direct Lending Fund IV를 파이널 클로즈하였으며, 관련 유럽 직접대출 비히클 전체로 레버리지 포함 투자 가능 자금 약 130억 유로를 확보함.",
+     "text": "한국 리테일(HNW) 대체투자 시장을 겨냥해 '프라이빗 웰스' 전담 조직을 신설하여 기관 중심 자금 모집 창구를 리테일로 확장 중임.",
      "ids": [
-      "giakz8i",
-      "g39quo9"
+      "gr4ck7e"
      ]
     },
     {
-     "text": "Blackstone Energy Transition Partners V의 모집을 87억달러 규모로 마감하였으며, 회사는 직전 펀드 대비 50% 이상 큰 규모라고 설명함.",
+     "text": "Blackstone Real Estate Secondaries 8호 펀드로 최소 30억 달러 모집을 추진 중이며, 부동산 펀드 지분 매입이 투자 대상임.",
      "ids": [
-      "g17tyauz"
+      "gajwawv",
+      "gtnehu8"
      ]
     },
     {
-     "text": "Blackstone Life Sciences가 Boston Scientific과 VITALYST 소형 심장 펌프 프로그램 개발 자금을 공동 지원하는 4억 5500만 달러 규모 협력을 발표하였으며, 마일스톤 지급과 순매출 로열티를 수취할 수 있음.",
+     "text": "Blackstone Life Sciences가 Pfizer의 월 1회 GLP-1 비만 신약 berobenatide 개발에 2028년까지 최대 15억 달러를 투입하고, 승인 연계 마일스톤 지급 자격을 확보함.",
      "ids": [
-      "g1vvzqb",
-      "g1uk6dtw"
+      "gdnahdu",
+      "gx1py0r"
      ]
     },
     {
-     "text": "Blackstone Real Estate Debt Strategies가 오피스·멀티패밀리 담보 8건, 5개 주로 구성된 7억 6000만 달러 규모 우량 상업용 부동산 대출 포트폴리오를 Prime Finance에 매각함.",
+     "text": "부동산 부문은 이익 감소, 투자 수익률 약화, 고위 임원 이탈로 경영진 교체가 진행 중이며, 인도에서는 IIFL 파이낸스 지분 약 16%를 5억3200만 달러에 인수하고 ASK 관련 2억 달러 리파이낸싱을 주선함.",
      "ids": [
-      "g17kv71n",
-      "giybw2r"
+      "g17i8mqu",
+      "g19t054h"
      ]
     }
    ],
-   "n": 84,
-   "asOf": "2026-11-09"
+   "n": 135,
+   "asOf": "2026-11-16"
   },
   "BlackRock": {
-   "summary": "BlackRock은 최근 2주간 운용 펀드·계정을 통한 크레딧 제공(Titan OS 4,600만 달러)과 음악 저작권 인수 지원 등 사모 투자 활동을 이어가는 한편, 영국 DC형 연금 대상 보호형 주식 펀드를 출시함. 반면 BDC인 BlackRock TCP Capital은 3분기 순손실 6,675만 달러로 적자 전환했으며, Bowman Consulting Group 지분 매각(Bernhard Capital Partners 인수 완료)도 확인됨.",
+   "summary": "BlackRock은 최근 2주간 Humana의 CenterWell 클리닉 지분 28억 달러 투자와 Madison Dearborn CV 공동 주도 등 헬스케어·세컨더리 부문에서 딜 활동을 이어갔으며, GIP 보유 조지아주 가스발전소 지분 65%는 Harbert 계열사에 매각됨. ADB가 BlackRock 아시아 인프라 펀드에 3천만 달러를 승인했고, 영국 연금 대상 ESG 주식 펀드를 출시하는 등 상품 라인업도 확대함. 한편 BlackRock TCP Capital은 Fitch 신용등급이 하향 조정됨.",
    "points": [
     {
-     "text": "BlackRock 운용 펀드·계정이 Titan OS에 크레딧 한도를 제공해 총 4,600만 달러 조달 건에 참여함(Highland Europe·Mangrove Capital Partners 지분 투자와 병행).",
+     "text": "BlackRock이 Humana의 CenterWell 클리닉 약 150곳을 보유한 JV 지분 과반을 28억 달러에 인수함(WCAS 대체, Humana는 2028년부터 재매입 가능).",
      "ids": [
-      "gvzzz2a",
-      "g1x6lkkk"
+      "g17520zi"
      ]
     },
     {
-     "text": "BlackRock TCP Capital(TCPC)은 3분기 순자산이 6,675만 달러 감소해 적자 전환했고 NAV는 주당 5.61달러로 하락했으며, 포트폴리오 매각 손실 6,370만 달러가 반영됨.",
+     "text": "Adams Street, HarbourVest와 함께 Madison Dearborn의 은퇴 서비스 업체 컨티뉴에이션 비히클을 공동 주도함.",
      "ids": [
-      "g1r14m7e"
+      "gu8tjlq"
      ]
     },
     {
-     "text": "영국 DC형 연금의 은퇴 시점 순서 리스크(sequencing risk) 대응을 위해 글로벌 주식과 옵션 기반 보호 전략을 결합한 신규 펀드를 출시함.",
+     "text": "산하 GIP가 조지아주 가스발전소 지분 65%를 Harbert 계열사에 매각함.",
      "ids": [
-      "gjaxsw4"
+      "g1qed5fy"
      ]
     },
     {
-     "text": "Bernhard Capital Partners가 BlackRock 등으로부터 Bowman Consulting Group Ltd. 인수를 완료했으며, 음악 저작권 대형 인수에도 BlackRock 운용 펀드가 지원한 것으로 보도됨.",
+     "text": "ADB가 필리핀 등 아시아 시장을 겨냥한 BlackRock 인프라 펀드에 3천만 달러를 승인함.",
      "ids": [
-      "g1wzx1cf",
-      "gcdmlhv"
-     ]
-    }
-   ],
-   "n": 26,
-   "asOf": "2026-11-09"
-  },
-  "Ares": {
-   "summary": "Ares는 3분기 총 310억 달러 이상을 조달하고 AUM 6,910억 달러를 기록했으며, RBC는 사상 최대 펀드레이징 해가 될 것으로 전망함. 플래그십 크레딧 펀드(Ares Senior Direct Lending Fund IV)가 80억 달러 1차 클로즈를 마쳤고 인프라 세컨더리 펀드 결성도 추진 중임. NBIM과의 15억 유로 유럽 물류 파트너십, Equinox 성장 투자 지원 등 실물자산·크레딧 딜도 이어짐.",
-   "points": [
-    {
-     "text": "3분기 AUM이 전년 대비 16% 증가한 6,910억 달러, 수수료 창출 AUM은 13% 증가한 4,160억 달러를 기록했으며 총자금 310억 달러 조달·350억 달러 집행을 달성함.",
-     "ids": [
-      "g1nrxkbu",
-      "g11yhpf3"
-     ]
-    },
-    {
-     "text": "RBC Capital Markets는 Ares가 사상 최대 펀드레이징 해를 기록할 추세이며 실물자산 부문이 유입을 주도하고 있다고 평가함.",
-     "ids": [
-      "gjt5fvg",
-      "g17mkfue"
-     ]
-    },
-    {
-     "text": "Ares Senior Direct Lending Fund IV가 1차 클로즈로 80억 달러를 확보했으며, 올해 11월 중 60억 달러 이상 규모의 부채 펀드 최종 클로즈도 예상됨.",
-     "ids": [
-      "gqalfag"
-     ]
-    },
-    {
-     "text": "GP 주도 세컨더리를 타깃으로 하는 인프라 세컨더리 펀드 결성을 추진하며, 3분기 미국 사모대출 약정은 55건·약 63억 달러를 기록함.",
-     "ids": [
-      "g1ar37ax",
-      "gj935ln"
-     ]
-    }
-   ],
-   "n": 33,
-   "asOf": "2026-11-09"
-  },
-  "TPG": {
-   "summary": "TPG는 최근 2주간 TPG Rise Climate II를 104억 달러 규모로 최종 클로징하고 기회추구형 부동산 펀드 TPG Real Estate Partners V의 1차 클로징(50억 달러)을 발표하는 등 펀드레이징 성과가 두드러졌으며, 연간 펀드레이징 전망치도 550억 달러 이상으로 상향함. 한편 Lotte Rental 인수 후 잔여 지분 공개매수와 Arka Fincap 투자 등 딜 활동을 이어갔고, 카카오모빌리티와는 ADR 상장 문제로 국제중재를 신청하며 분쟁이 법적 단계로 진전됨.",
-   "points": [
-    {
-     "text": "TPG Rise Climate II가 최종 클로징되어 Global South Initiative fund 등 연계 차량 포함 총 104억 달러를 조달했으며, 1호 기후펀드(73억 달러) 대비 약 44% 증가한 규모임.",
-     "ids": [
-      "go7tb0t",
-      "g1r7dekv"
-     ]
-    },
-    {
-     "text": "기회추구형 부동산 펀드(TPG Real Estate Partners V)가 공동투자 차량 포함 50억 달러 규모로 1차 클로징했으며, CEO Jon Winkelried가 3분기 실적 발표에서 밝혔음.",
-     "ids": [
-      "g1qp8b4i"
-     ]
-    },
-    {
-     "text": "연간 펀드레이징 전망치를 550억 달러 이상으로 상향했으며, 대형 기관투자자들이 소수의 대형 운용사로 자금을 집중하는 흐름의 수혜를 입고 있음.",
-     "ids": [
-      "gqmsz4o",
-      "g1q9mk9m"
-     ]
-    },
-    {
-     "text": "Lotte Rental 인수 후 잔여 지분 38.83%에 대해 인수금융 기반 공개매수를 추진 중이며, 상장폐지를 목표로 함.",
-     "ids": [
-      "g12k96u3",
-      "gm7nj8n"
-     ]
-    }
-   ],
-   "n": 40,
-   "asOf": "2026-11-09"
-  },
-  "KKR": {
-   "summary": "KKR은 최근 2주간 첫 프라이빗 크레딧 컨티뉴에이션 비히클을 약 4억 6000만 달러 규모로 클로즈했으며, STT GDC India 매각(55억 달러 이상 밸류에이션 추진)과 Alexandria Campus Point 4억 7500만 달러 투자 등 딜 활동이 활발했음. RWE와 함께 독일 Uniper 인수 의향이 확인되었고, Enbridge JV·CIRCOR의 Green Silence Group 인수 합의 등 인프라·산업재 영역의 딜도 이어짐.",
-   "points": [
-    {
-     "text": "KKR, Singtel, Tata Communications이 STT Global Data Centres India 지분 매각을 추진 중이며 밸류에이션은 55억 달러 이상임.",
-     "ids": [
-      "gmey54e",
-      "gzv9x7h"
-     ]
-    },
-    {
-     "text": "RWE CEO가 KKR과 함께 독일 국유 Uniper 인수에 관심이 있음을 사실상 확인함.",
-     "ids": [
-      "g1m1x1fo",
-      "g10iotqy"
-     ]
-    },
-    {
-     "text": "Alexandria의 샌디에이고 Campus Point 생명과학 캠퍼스에 4억 7500만 달러 JV 투자를 단행했으며, Enbridge와는 27억 달러 규모 JV를 설립해 Westcoast 가스 파이프라인 증설 자금을 조달함.",
-     "ids": [
-      "g6qd10j",
-      "gfrv3z8"
+      "g14swwif"
      ]
     }
    ],
    "n": 25,
-   "asOf": "2026-11-09"
+   "asOf": "2026-11-16"
   },
-  "Apollo": {
-   "summary": "Apollo는 2026년 3분기 신규 자산 발굴 1,140억 달러로 분기 기준 역대 최대를 기록했고 운용자산은 1조 700억 달러에 도달함. 11월 2일에는 유럽에서 100억 유로 규모 사모 신용 플랫폼을 출범했으며, 3분기 순손실 10억 5,700만 달러(은퇴 서비스 부문 평가손실)와 조정 순이익 12억 9,300만 달러가 병기됨. 10월 말에는 Mubadala Capital 지분 10% 인수 등 아부다비와의 협력 확대도 보도됨.",
+  "Ares": {
+   "summary": "Ares는 최근 2주간 약 36억 달러 규모의 크레딧 세컨더리(컨티뉴에이션) 펀드 결성이 보도되며 펀드레이징 모멘텀을 이어갔고, Ares Capital의 MidCap Financial 인수(26억 달러) 등 대형 거래도 이어짐. 한편 베트남 물류 플랫폼(SLP)을 CTP에 약 5억 달러에 매각하고, NBIM과 15억 유로 규모 유럽 물류 파트너십을 체결하는 등 부동산·인프라 부문에서도 활발한 딜 활동을 보임.",
    "points": [
     {
-     "text": "3분기 신규 자산 발굴(origination) 1,140억 달러로 분기 기준 역대 최고치이며, 전 분기 대비 54% 증가함.",
+     "text": "크레딧 세컨더리 펀드로 36억 달러(약 33억 유로)를 모집, 크레딧 세컨더리 시장 최대 규모 거래 중 하나로 보도됨.",
+     "ids": [
+      "g12y47ip",
+      "g16zbwyc"
+     ]
+    },
+    {
+     "text": "Ares Capital이 Apollo 계열 MidCap Financial Investment Corporation을 주식·현금 혼합 26억 달러에 인수하기로 하며 중견기업 직접대출 포트폴리오를 확대함.",
+     "ids": [
+      "gcc9u9r",
+      "g19i3enj"
+     ]
+    },
+    {
+     "text": "SLP Vietnam 물류 포트폴리오 및 운영 플랫폼 100%를 CTP에 약 5억 달러에 매각하기로 합의함.",
+     "ids": [
+      "g1kt6efs",
+      "g1n5h3ma"
+     ]
+    },
+    {
+     "text": "NBIM이 Ares Real Estate와 유럽 물류창고 파트너십에 15억 유로를 투입(지분 96% 보유)하고, Equinox에는 10억 달러 넘는 성장 투자 계획을 지원하는 자본을 제공함.",
+     "ids": [
+      "g1rgzm6o",
+      "gmdcsnd"
+     ]
+    }
+   ],
+   "n": 21,
+   "asOf": "2026-11-16"
+  },
+  "TPG": {
+   "summary": "TPG는 최근 2주간 TPG Essential Housing Fund IV 1차 클로즈(20억 달러)와 TPG Real Estate Partners V 1차 클로즈(50억 달러)를 발표하며 펀드레이징을 이어갔고, 기후 펀드 TPG Rise Climate II도 100억 달러 규모로 마감함. 딜 측면에서는 Lotte Rental 인수 후 잔여 지분 공개매수를 추진하고, The Rise Funds를 통해 Arka Fincap에 투자하는 등 한국·인도 투자를 확대함. Danone의 Made (Aust) 인수와 카카오모빌리티 상장 관련 국제중재 이슈도 확인됨.",
+   "points": [
+    {
+     "text": "TPG Essential Housing Fund IV가 2026년 3분기 실적발표에서 1차 클로즈 20억 달러를 공개함.",
+     "ids": [
+      "gzo2yw8"
+     ]
+    },
+    {
+     "text": "TPG Rise Climate II가 투자자 자금 100억 달러를 확보하며 두 번째 기후 펀드 모집을 마감함.",
+     "ids": [
+      "gor22nf"
+     ]
+    },
+    {
+     "text": "Lotte Rental 인수 후 부채 기반 공개매수를 개시했으며, VIP자산운용이 보유 주식 전량을 응모하기로 하는 등 상장폐지 수순을 밟고 있음.",
+     "ids": [
+      "g1n5feng",
+      "g1gdu1s5"
+     ]
+    },
+    {
+     "text": "The Rise Funds가 인도 Arka Fincap에 최대 Rs 800 crore를 2개 트랜치로 투자하는 계약을 체결함(1차 525 crore 루피).",
+     "ids": [
+      "geeh7ax",
+      "g19xk37d"
+     ]
+    }
+   ],
+   "n": 23,
+   "asOf": "2026-11-16"
+  },
+  "KKR": {
+   "summary": "KKR은 최근 2주간 인프라 부문에서 Sempra Infrastructure Partners 지분 45% 인수를 완료하고, RWE와 영국 해상풍력 2개 프로젝트 파이낸셜 클로즈 및 Diamondback과 Deep Blue Midland Basin 인수를 발표하는 등 딜 활동이 두드러졌음. 삼성화재의 Canopius 인수에 공동투자자로 참여했으며, Arctos와 함께 첫 GP-led 세컨더리 전략 출시 계획을 확인함.",
+   "points": [
+    {
+     "text": "Sempra Infrastructure Partners 지분 45%를 KKR 주도 컨소시엄이 인수 완료했으며, CPP Investments가 간접 공동투자자로 참여함.",
+     "ids": [
+      "g1gbmdzz",
+      "g16g43ib"
+     ]
+    },
+    {
+     "text": "RWE와 50대 50 합작으로 영국 Vanguard West·East 해상풍력(합산 2.8GW)에 11십억 파운드 이상 투자하기로 했으며, 파이낸셜 클로즈를 발표함.",
+     "ids": [
+      "g1p7so6",
+      "gotygri"
+     ]
+    },
+    {
+     "text": "Diamondback Energy와 공동으로 Five Point Infrastructure의 Deep Blue Midland Basin 지분 70% 인수에 합의했으며, 거래 규모는 약 21억 달러로 보도됨.",
+     "ids": [
+      "gjbvpsc",
+      "gsn32v5"
+     ]
+    },
+    {
+     "text": "삼성화재의 Canopius 인수에 KIC와 함께 공동투자자로 참여했으며, 삼성화재가 지분 약 80.6%를 확보하는 구조임.",
+     "ids": [
+      "g53ybhc"
+     ]
+    }
+   ],
+   "n": 64,
+   "asOf": "2026-11-16"
+  },
+  "Apollo": {
+   "summary": "Apollo는 3분기 신규 거래액 1,140억 달러(분기 역대 최대)와 운용자산 1조 700억 달러를 기록했으며, 유럽에서 100억 유로 규모 사모 신용 플랫폼을 출범함. easyJet 인수안이 주주 승인을 받아 거래가 진전되었고, 6억 달러 후순위채 발행과 EMEA 인적자본 헤드 선임도 있었음.",
+   "points": [
+    {
+     "text": "3분기 신규 자산 발굴(origination) 1,140억 달러로 분기 역대 최대를 기록했으며, 운용자산은 1조 700억 달러, 분기 자금 유입은 530억 달러임.",
      "ids": [
       "g1cm3vd7",
-      "g14xall1"
+      "g13dz3k7"
      ]
     },
     {
-     "text": "운용자산(AUM) 1조 700억 달러, 지난 12개월간 2,700억 달러 자금 유입을 기록했으며 주당 0.5625달러 배당을 선언함.",
-     "ids": [
-      "g1cm3vd7",
-      "g140dpxn"
-     ]
-    },
-    {
-     "text": "3분기 순손실 10억 5,700만 달러로 적자 전환했으나(은퇴 서비스 부문 평가손실), 조정 순이익은 12억 9,300만 달러, 스프레드 관련 이익은 분기 최대인 9억 900만 달러임.",
-     "ids": [
-      "g1peip3i"
-     ]
-    },
-    {
-     "text": "유럽 국방·에너지·인프라 부문의 비은행 금융 수요 확대를 겨냥해 100억 유로 규모 유럽 신용 플랫폼을 11월 2일 출범함.",
+     "text": "유럽 국방·에너지·인프라 분야의 비은행 금융 수요를 겨냥해 100억 유로 규모 유럽 사모 신용 플랫폼을 출범함.",
      "ids": [
       "g1cbmxiq",
       "glzl5me"
      ]
+    },
+    {
+     "text": "easyJet 인수(약 57억 파운드, 지분 최대 49.9%)가 주주 투표에서 97.07% 찬성으로 승인되었으며, 법원 인가·규제 승인 후 2027년 1분기 완료 예정임.",
+     "ids": [
+      "gfleso2",
+      "gjjmsxi"
+     ]
+    },
+    {
+     "text": "2056년 만기 7.550% 고정금리 리셋형 후순위채 6억 달러 발행을 완료했으며, EMEA 인적자본 헤드로 Christiana Voskarides를 임명함.",
+     "ids": [
+      "gvfuky4",
+      "gl9gx5h"
+     ]
     }
    ],
-   "n": 28,
-   "asOf": "2026-11-09"
+   "n": 20,
+   "asOf": "2026-11-16"
   },
   "Partners Group": {
-   "summary": "Partners Group은 미국 evergreen PE 펀드의 3분기 환매 요청이 순자산의 15%인 22억 달러에 달하자 유럽 펀드와 flagship evergreen 펀드의 분기별 환매 한도를 축소하는 등 유동성 관리에 나섬. 한편 유럽 인프라 팀 인력을 보강하고 프랑스 주거용 부동산 전략(3억 유로)을 출시하는 등 확장 행보를 이어가고 있으며, Next Generation Infrastructure Fund와 로열티 펀드의 온체인 토큰화 상품이 출시됨.",
+   "summary": "Partners Group은 최근 2주간 Société Générale과 프랑스 리테일 대상 프라이빗 인프라 펀드(Partners Group Infrastructures Privées)를 출시하고 모집을 시작함. 유럽 직접 인프라 팀에 Philip Butcher, Timm Degenhardt, Sarah Johnson을 영입해 전략 확대에 나섰으며, 프랑스 주거용 부동산 전략(약 3억 유로)도 신규 출시함. 포트폴리오 측면에서는 Cloudflight가 paiqo 인수 및 통합을 완료함.",
    "points": [
     {
-     "text": "미국 flagship PE master fund에 3분기 22억 달러(순자산의 15%) 환매 요청이 몰렸으며, 이는 직전 분기의 2배 이상 규모임.",
+     "text": "Société Générale Assurances, Société Générale Private Banking과 Partners Group Infrastructures Privées 펀드를 출시, 그룹 보험 자회사의 생명보험 계약 전용으로 판매함.",
      "ids": [
-      "gsa4xoh",
-      "gcqhgcl"
+      "gifk1qd"
      ]
     },
     {
-     "text": "유럽 펀드와 flagship evergreen 펀드의 분기별 환매 한도를 축소(halve)하는 방침이 보도됨.",
+     "text": "유럽 직접 인프라 팀에 Philip Butcher(런던 기반 Managing Director), Timm Degenhardt, Sarah Johnson을 선임해 유럽 인프라 전략 확대를 추진함.",
      "ids": [
-      "gsr809m",
-      "gezh4tv"
+      "g16590b1",
+      "g1tei4yj"
      ]
     },
     {
-     "text": "Philip Butcher, Timm Degenhardt, Sarah Johnson을 영입해 유럽 인프라 팀을 보강하고 유럽 인프라 전략을 추가 확대할 계획임.",
-     "ids": [
-      "g1tei4yj",
-      "g1uin0py"
-     ]
-    },
-    {
-     "text": "프랑스 주거용 부동산 전략을 신규 출시했으며, 약 2,000 세대 임대 아파트, GAV 3억 유로 규모의 포트폴리오를 목표로 함.",
+     "text": "프랑스 주거용 부동산 투자 전략을 신규 출시했으며, 임대 아파트 약 2,000채, 총자산가치 3억 유로(약 3.46억 달러) 규모 포트폴리오를 목표로 함.",
      "ids": [
       "gf4dwxr"
+     ]
+    },
+    {
+     "text": "포트폴리오사 Cloudflight가 paiqo 인수 및 통합을 완료함.",
+     "ids": [
+      "g1wvo4pj"
+     ]
+    }
+   ],
+   "n": 9,
+   "asOf": "2026-11-16"
+  },
+  "Macquarie": {
+   "summary": "Macquarie는 최근 2주간 가비아·KINX 동시 인수 추진, 필리핀 지열에너지 지분 처분 검토 등 딜 활동이 활발했고, Euroclear FundsPlace에 인프라 전략을 추가하며 프라이빗 웰스 채널을 넓힘. 또한 Macquarie Group 신임 CEO 선임이 보도되었으며, 한국 사모펀드 브랜드평판에서 맥쿼리자산운용이 3위(11.59% 상승)를 기록함.",
+   "points": [
+    {
+     "text": "가비아 공개매수를 재추진하며 KINX까지 인수 대상을 확대, 가비아·KINX 동시 인수를 추진 중임.",
+     "ids": [
+      "g1jk3gjr"
+     ]
+    },
+    {
+     "text": "Macquarie Asset Management가 싱가포르 국부펀드와 함께 필리핀 지열에너지 업체 지분 처분 방안을 검토 중이라는 시장 소문이 있음.",
+     "ids": [
+      "gtqcumi"
+     ]
+    },
+    {
+     "text": "Euroclear FundsPlace에 Macquarie Asset Management가 추가되어 유럽·아시아·중동 자산가 대상 프라이빗 인프라 접근성이 확대됨.",
+     "ids": [
+      "g17775on",
+      "g1wo8e92"
+     ]
+    },
+    {
+     "text": "Macquarie Group이 신임 CEO를 선임했다고 보도됨.",
+     "ids": [
+      "g1fevm2d"
+     ]
+    }
+   ],
+   "n": 25,
+   "asOf": "2026-11-16"
+  },
+  "EQT": {
+   "summary": "EQT는 최근 2주간 호주 Pickles를 10억2천만 달러 이상에 인수하고, Speedcast 지상국 사업부(약 3억 달러)와 Qiagen(약 108억 유로 평가) 인수 등 대형 딜을 이어감. 동시에 Icon Cancer Care 매각 자문사를 선임하고 Kakaku.com 공개매수 가격을 상향하는 등 엑시트와 일본 테이크프라이빗을 병행함. 산하 Coller EQT가 IMM PE의 AirFirst 컨티뉴에이션 펀드 해외 리드 투자자로 선정되는 등 세컨더리 부문 활동도 확대됨.",
+   "points": [
+    {
+     "text": "호주 Pickles를 10억2천만 달러 이상에 인수하기로 함.",
+     "ids": [
+      "g1m3zszy"
+     ]
+    },
+    {
+     "text": "EQT Infrastructure VI 및 SatPort를 통해 Speedcast의 위성 지상국(teleport) 인프라 사업을 약 3억 달러에 인수함.",
+     "ids": [
+      "g8b83i1",
+      "gw4bkb"
+     ]
+    },
+    {
+     "text": "Qiagen을 약 108억 유로 평가로 전액 현금 인수하는 최종 계약을 10월 22일 체결했으며, 3분기 실적 발표와 함께 거래 향방에 관심이 집중됨.",
+     "ids": [
+      "g12j71u1",
+      "g1og2668"
+     ]
+    },
+    {
+     "text": "Kakaku.com 공개매수 가격을 주당 3,683엔에서 3,700엔으로 상향하고 마감일을 11월 26일로 연장함.",
+     "ids": [
+      "g1ki2se6"
      ]
     }
    ],
    "n": 14,
-   "asOf": "2026-11-09"
-  },
-  "Macquarie": {
-   "summary": "Macquarie는 최근 2주간 Wellington Management와 협력한 venture growth fund 런칭, 인프라 CRE 부문 10억 달러 목표 설정 등 신규 전략·펀드 확장에 나섬. 국내에서는 가비아 공개매수를 가격 인상(주당 4만8000원→5만3000원)과 KINX 포함으로 재추진해 얼라인파트너스 등 주요 주주와 합의했으며, 글로벌 웰스 플랫폼 강화를 위해 Marcella Sivilotti를 COO로 선임함.",
-   "points": [
-    {
-     "text": "Macquarie Group이 Wellington Management와 파트너십을 맺고 venture growth fund를 런칭하며 호주 자산가 고객에 후기 단계 벤처 투자를 개방함.",
-     "ids": [
-      "gz87vyx",
-      "g1b8esbk"
-     ]
-    },
-    {
-     "text": "확대 개편한 인프라 CRE 부문 위해 10억 달러 조성을 목표로 함.",
-     "ids": [
-      "g1awhzpd"
-     ]
-    },
-    {
-     "text": "가비아 공개매수를 재추진하며 주당 매수가를 4만8000원에서 5만3000원으로 10.4% 인상하고 상장 자회사 KINX(주당 19만원)까지 인수 대상에 포함함.",
-     "ids": [
-      "g1x2a9k1",
-      "gi0xjgt"
-     ]
-    },
-    {
-     "text": "Marcella Sivilotti를 Macquarie Asset Management의 Global Wealth COO로 선임해 글로벌 웰스 플랫폼 확장에 대응함.",
-     "ids": [
-      "gwjlow0",
-      "gyjh125"
-     ]
-    }
-   ],
-   "n": 27,
-   "asOf": "2026-11-09"
-  },
-  "EQT": {
-   "summary": "EQT는 최근 2주간 EQT Infrastructure 투자사 SatPort를 통한 Speedcast 텔레포트 사업 인수 완료, Qiagen 인수 관련 일정, 중동 국부펀드와의 AI·데이터센터 공동투자 논의 등 인프라·헬스케어 중심의 활동을 이어감. 세컨더리 부문 Coller EQT는 IMM PE의 AirFirst 컨티뉴에이션 펀드 해외 리드 투자자로 선정됨. 같은 기간 펀드레이징 기록은 없음.",
-   "points": [
-    {
-     "text": "EQT Infrastructure 투자사 SatPort가 Speedcast의 텔레포트 인프라 사업(11개국·5개 대륙 12개 사이트) 인수를 완료함.",
-     "ids": [
-      "gxn3sme",
-      "gxo7lji"
-     ]
-    },
-    {
-     "text": "Coller EQT가 IMM PE의 AirFirst 컨티뉴에이션 펀드 해외 리드 인베스터로 선정되었으며, AirFirst 전체 지분 가치는 4조 2000억원으로 평가됨.",
-     "ids": [
-      "gzdmipl",
-      "gj8abbc"
-     ]
-    },
-    {
-     "text": "EQT는 UAE·사우디 국부펀드와 AI 및 인프라(데이터센터) 공동투자 기회를 논의 중임.",
-     "ids": [
-      "g1owssyv",
-      "gj5sinr"
-     ]
-    },
-    {
-     "text": "Qiagen 인수(약 108억 유로 평가, 전액 현금)는 10월 22일 최종 계약이 체결되었으며, 3분기 실적 발표와 함께 거래 향방에 관심이 집중됨.",
-     "ids": [
-      "g12j71u1"
-     ]
-    }
-   ],
-   "n": 24,
-   "asOf": "2026-11-09"
+   "asOf": "2026-11-16"
   },
   "Stonepeak": {
-   "summary": "Stonepeak이 11월 2일 bp로부터 Castrol 지분 65% 인수를 완료하며 최근 2주간 가장 큰 딜을 마무리함. 이와 함께 Estia Health(호주 노인요양)와 Anwim(폴란드 주유소·연료) 인수도 종결했고, BMO의 미국 운송·벤더 파이낸스 사업 인수로 Longview Capital Solutions를 출범시킴. 국내에서는 한국투자증권이 Stonepeak 인프라 펀드를 판매하는 것으로 보도됨.",
+   "summary": "Stonepeak은 11월 2일 bp로부터 Castrol 지분 65% 인수를 완료했으며, 2025년 12월 합의 당시 기준 기업가치는 약 100억 달러 수준임. 호주에서는 Estia Health 인수(25억 달러 규모, 97개 노인요양시설)를 마무리했고, 폴란드 Anwim S.A. 인수도 종결함. Stonepeak Infrastructure Fund V의 서브스크립션 라인이 AA 등급을 획득했으며, 국내에서는 한국증권이 Stonepeak 인프라 펀드를 판매하는 것으로 알려짐.",
    "points": [
     {
-     "text": "11월 2일 bp로부터 Castrol 지분 65% 인수를 완료했으며, bp는 35% 지분을 유지하고 bp 세후 매각대금은 60억 달러임.",
-     "ids": [
-      "g1y1tsvp",
-      "g1nelygc"
-     ]
-    },
-    {
-     "text": "2025년 12월 합의 당시 Castrol 기업가치는 약 100억 달러였으며, 매각 절차는 bp가 2025년 2월 전략 검토로 개시한 것임.",
+     "text": "Castrol 지분 65% 인수를 11월 2일 완료했으며, bp는 35%를 유지함(2025년 12월 합의 당시 기업가치 약 100억 달러).",
      "ids": [
       "g1pewfu6",
       "g1y1tsvp"
      ]
     },
     {
-     "text": "Stonepeak Infrastructure Fund V가 Motion JVCo Limited를 통해 거래를 수행했고, 이에 따라 Castrol India 경영권을 간접 확보하여 인도 공개매수가 촉발됨.",
+     "text": "호주 노인요양업체 Estia Health 인수를 완료했으며 규모는 25억 달러, 97개 요양시설을 포함하고 Axight Capital이 소수 공동투자자로 참여함.",
      "ids": [
-      "g1uhkqkp",
-      "g6w0wzo"
+      "gy695zu",
+      "gb7jtnl"
      ]
     },
     {
-     "text": "Castrol 인수 완료와 함께 Shell 출신 van Beurden을 이사회 의장으로 임명함.",
+     "text": "EEP와 함께 폴란드 연료업체 Anwim S.A.를 Enterprise Investors로부터 인수하는 거래(2026년 6월 발표)를 종결함.",
      "ids": [
-      "gpb4238"
+      "g11akllz"
+     ]
+    },
+    {
+     "text": "Stonepeak Infrastructure Fund V의 서브스크립션 라인이 AA 등급을 획득함.",
+     "ids": [
+      "g15tz1oh"
      ]
     }
    ],
-   "n": 30,
-   "asOf": "2026-11-09"
+   "n": 8,
+   "asOf": "2026-11-16"
   },
   "CVC": {
-   "summary": "CVC는 첫 크레딧 세컨더리 펀드(CVC Secondaries Debt Fund I)를 5억 유로 이상으로 파이널 클로즈했고, 3분기 기준 크레딧 FPAUM이 Marathon 인수 효과로 전년 대비 55% 증가함. 딜 측면에서는 IFF 식품소재 사업 인수금융(약 24억 달러)이 준비되고 Recordati 지분이 확대되었으며, CVC DIF의 Cernaval 인수도 마무리됨. 차기 플래그십 바이아웃 펀드는 FPAUM 최소 260억 유로 달성에 자신감을 보임.",
+   "summary": "CVC는 최근 2주간 Recordati 상장폐지 인수를 본격 진행하며 컨소시엄 지분을 80.723%까지 확대했고 사상 최대 규모(75억 8000만 유로 상당)의 인수금융이 조달됨. 데뷔 크레딧 세컨더리 펀드(CVC Secondaries Debt Fund I)는 5억 유로 이상으로 클로즈했으며, RAC 단일 자산 CV(10억 달러 이상 예상), IFF 식품원료 사업 인수금융(24억 달러) 등 딜도 활발함. 인프라(CVC DIF)는 Cernaval 인수 완료, BauWatch·Eco Eridania 인수에 대한 EU 승인이 이어졌고, CTO 임명 인사도 있었음.",
    "points": [
     {
-     "text": "CVC Secondaries Debt Fund I이 목표 5억 달러를 넘어 5억 유로 이상으로 파이널 클로즈함(3억 3000만 유로 규모 Octo 관련 약정 포함).",
+     "text": "Recordati 상장폐지 인수를 주도 중이며, CVC Investor의 컨소시엄 합산 지분이 80.723%로 확대됨.",
+     "ids": [
+      "gk7qbg3"
+     ]
+    },
+    {
+     "text": "Recordati 인수에 사상 최대 규모인 75억 8000만 유로(상당)의 금융이 조달됨(White & Case 자문).",
+     "ids": [
+      "g1ek9pg2"
+     ]
+    },
+    {
+     "text": "첫 신용 세컨더리 펀드 CVC Secondaries Debt Fund I이 목표를 넘어 5억 유로 이상으로 클로즈했으며, 이 중 3억 3000만 유로 약정이 포함됨.",
      "ids": [
       "gpq0s4r",
       "g1sb8dm7"
      ]
     },
     {
-     "text": "크레딧 부문 FPAUM이 Marathon Asset Management 인수 및 지속적 투자 집행에 힘입어 전년 대비 55% 증가함.",
+     "text": "영국 RAC 단일 자산 continuation vehicle을 추진 중이며 규모는 10억 달러 이상으로 예상되고, JPMorgan·BofA는 IFF 식품원료 인수용 약 24억 달러 레버리지드론을 준비함.",
      "ids": [
-      "g1qrf5wq"
-     ]
-    },
-    {
-     "text": "차기 플래그십 유럽·미주 바이아웃 펀드가 직전 펀드를 넘어 FPAUM 최소 260억 유로에 도달할 것으로 자신하며, 자산은 25% 증가함.",
-     "ids": [
-      "g11yxo0z"
-     ]
-    },
-    {
-     "text": "JPMorgan·BofA가 CVC의 IFF 식품소재 사업 인수를 뒷받침할 약 24억 달러 레버리지론 마케팅을 준비 중임.",
-     "ids": [
+      "g1r3l94x",
       "g128zcbp"
      ]
     }
    ],
-   "n": 15,
-   "asOf": "2026-11-09"
+   "n": 16,
+   "asOf": "2026-11-16"
   },
   "Blue Owl": {
    "summary": "Blue Owl은 2026년 3분기 실적 발표에서 AUM 약 3,300억 달러, 12개월 펀드레이징 488억 달러, 3분기 조달 102억 달러로 역대 최고 기관 투자 분기를 기록함. 주력 사모대출 펀드의 환매 요청은 2개 분기 연속 감소했으나, 주가는 연초 대비 약 35% 하락했고 FRE 성장 일부는 비반복적 딜 수수료에 기인했다는 평가가 있음. GP Stakes VI 클로징은 2027년 1분기로 지연될 수 있으며, 크레딧 세컨더리 펀드는 첫 번째 클로징이 임박함.",
@@ -436,105 +436,106 @@
    "asOf": "2026-11-09"
   },
   "Goldman Sachs": {
-   "summary": "최근 2주간 Goldman Sachs는 Apollo와 함께 SpaceX에 리스되는 AI 칩·서버 장비 관련 약 400억 달러 규모 금융 딜의 투자자 모집(마케팅)에 나선 것이 가장 큰 이슈임. 국내에서는 SK스퀘어가 보유한 티맵모빌리티 경영권 인수를 협의 중이며 연내 협상 마무리가 목표로 알려짐. 한편 Goldman Sachs Alternatives는 프라이빗 크레딧 운용사 간 성과 격차가 뚜렷해지고 있다고 진단함.",
+   "summary": "Goldman Sachs는 Apollo와 함께 SpaceX의 AI 칩·서버 임대 관련 약 400억 달러 규모 금융 딜의 투자자 모집에 나섰고, HSBC·Fortress와 사우디아라비아 사모대출 딜(1억5천만 달러)에도 참여함. 자체 설문에서 사모대출 유동성 제약이 2027년 이후까지 이어질 것으로 전망했으며, 자산담보금융을 사모대출의 차세대 기회로 제시함. Goldman Sachs Alternatives는 사이버보안 스타트업 Daylight의 8,000만 달러 Series B를 주도함.",
    "points": [
     {
-     "text": "Goldman Sachs와 Apollo가 SpaceX에 리스되는 AI 칩·서버 장비 관련 약 400억 달러 규모 금융 딜의 일부를 매각하기 위해 투자자와 협의 중임.",
+     "text": "Goldman Sachs·Apollo가 SpaceX에 임대되는 AI 칩·서버 장비 관련 약 400억 달러 규모 금융 딜의 일부를 매각하기 위해 투자자와 협의 중임.",
      "ids": [
       "gu4tq7u",
       "gt64vm3"
      ]
     },
     {
-     "text": "해당 딜은 SpaceX가 Apollo 운용 법인으로부터 AI 칩 등 데이터센터 하드웨어를 리스하는 구조로, 원금 지급 총액이 약 400억 달러 규모임.",
+     "text": "Goldman Sachs·HSBC·Fortress가 1억5천만 달러 규모 사우디아라비아 사모대출 거래에 공동 참여함.",
      "ids": [
-      "gt64vm3"
+      "ghp3gex",
+      "g1ezhyhv"
      ]
     },
     {
-     "text": "Goldman Sachs가 SK스퀘어(지분 63.23%) 등과 티맵모빌리티 경영권 인수를 협의 중이며, 최대 8천억원 규모가 거론되고 연내 협상 마무리를 목표로 함.",
+     "text": "Goldman Sachs 설문에서 사모대출 GP들은 유동성 제약이 2027년 이후까지 지속될 것으로 보았고, 투자자들은 배분 확대를 계획하면서도 부실 및 밸류에이션 우려를 나타냄.",
      "ids": [
-      "g1fmwc2l",
-      "gsd0vj4"
+      "g7e7vg4",
+      "gcyp5nd"
      ]
     },
     {
-     "text": "티맵모빌리티 인수가 성사되면 2016년 카버코리아·해피콜 투자 이후 약 10년 만의 국내 직접 바이아웃으로, 대규모 펀드 조성과 조직 개편이 마무리된 시점이라 국내 투자 확대 여부가 주목됨.",
+     "text": "Goldman Sachs Alternatives 성장지분 팀이 AI 기반 사이버보안 스타트업 Daylight의 8,000만 달러 Series B를 주도했으며 누적 조달액은 1억2,000만 달러임.",
      "ids": [
-      "g1enwqa8"
+      "g6wp2q4",
+      "g1usxoeg"
      ]
     }
    ],
-   "n": 18,
-   "asOf": "2026-11-09"
+   "n": 19,
+   "asOf": "2026-11-16"
   },
   "I Squared": {
-   "summary": "I Squared Capital은 11월 3일 두 번째 인프라 크레딧 펀드(ISQ Global Infrastructure Credit Fund II)를 24억 달러 이상으로 파이널 클로징했으며, 공동투자 약정을 포함하면 총 30억 달러 규모임. 같은 기간 ADIA·Avolon과 14억 달러 규모 항공기 리스 플랫폼 Constellation Aviation을 출범시켰고, 10월 말에는 F-35 부품 공급업체 Orizon을 약 20억 달러에 인수하기로 한 것으로 보도됨.",
+   "summary": "I Squared는 11월 3일 두 번째 인프라 크레딧 펀드(ISQ Global Infrastructure Credit Fund II)를 24억 달러 이상으로 파이널 클로즈했으며, 공동투자 약정을 포함하면 총 30억 달러 규모임. 11월 9일에는 Avolon·ADIA와 항공기 리스 인프라 투자 플랫폼(Constellation Aviation) 출범을 발표했으며, 자회사 Hexa는 신재생에너지 프로젝트 자금 조달을 위해 유력 투자자를 유치함.",
    "points": [
     {
-     "text": "ISQ Global Infrastructure Credit Fund II가 24억 달러 이상으로 파이널 클로징되어 전작 대비 4배 이상 규모로 커졌음.",
+     "text": "ISQ Global Infrastructure Credit Fund II를 24억 달러 이상으로 파이널 클로즈했으며, 이는 전작 대비 4배 이상 규모임.",
      "ids": [
       "g11qxjes",
       "g1qfkn7z"
      ]
     },
     {
-     "text": "공동투자 비히클 약정 6억 달러 이상을 합산해 총 30억 달러를 모집하였으며, 일부 보도에서는 초기 목표액의 2배로 소개됨.",
+     "text": "공동투자 비히클 약정 및 예정 약정 6억 달러 이상을 합산한 총 약정액은 30억 달러이며, 일부 보도에서는 펀드레이징 목표액의 2배 달성으로 전해짐.",
      "ids": [
       "gpk800u",
       "ga1b2ck"
      ]
     },
     {
-     "text": "Avolon 및 ADIA 자회사와 합작해 항공기 리스·인프라 투자 플랫폼 Constellation Aviation을 설립하였으며, Avolon으로부터 14억 달러 규모의 최신 항공기 포트폴리오(초기 22대)를 인수할 예정임.",
+     "text": "Avolon이 I Squared Capital 및 ADIA 자회사와의 합작으로 항공기 리스 인프라 투자 플랫폼 Constellation Aviation을 설립하기로 합의함.",
      "ids": [
-      "giqmfwd",
-      "g1gg6re8"
+      "gxnsj4c"
      ]
     },
     {
-     "text": "I Squared 산하 Hexa가 하이브리드·저장설비 연계 신재생에너지 프로젝트의 자금 조달을 위해 유력 투자자를 유치하였음.",
+     "text": "I Squared 투자 자회사 Hexa가 하이브리드·저장설비 연계 신재생에너지 프로젝트 자금 조달을 위해 유력 투자자를 유치함.",
      "ids": [
       "g16v04wo"
      ]
     }
    ],
-   "n": 27,
-   "asOf": "2026-11-09"
+   "n": 13,
+   "asOf": "2026-11-16"
   },
   "Carlyle": {
-   "summary": "Carlyle는 11월 5일 발표한 2026년 3분기 실적에서 엑시트 호조로 distributable earnings가 시장 예상치를 상회했으나 fee-related earnings는 감소했고, 주가는 1년여 만에 최대 낙폭을 기록함. 3분기 글로벌 사모펀드 회수금은 57억 달러였고, Theramex(Cinven 매각 합의)·Vantive 혈액투석 사업(Rockwell Medical 매각 합의) 등 포트폴리오 엑시트가 이어짐. 경영진은 2026년 600억 달러 펀드레이징 목표를 제시했고, LP에 240억 달러를 반환했다고 밝힘.",
+   "summary": "Carlyle는 11월 10~11일 SEI Investments와 함께 US wealth 투자자 대상 멀티전략 사모시장 인터벌 펀드 SEI Carlyle Private Markets Fund(PRVTX)를 출시함. 11월 13일에는 Disguise를 Yamaha에 매각하기로 합의했으며, 앞서 3분기 실적이 펀드 엑싯에 힘입어 시장 예상치를 상회함. 한편 Jason Thomas는 Fed의 12월 0.5%p 금리 인상 가능성과 AI 인프라 금융 리스크를 언급함.",
    "points": [
     {
-     "text": "3분기 after-tax distributable earnings는 17% 증가한 주당 1.12달러로 예상치를 상회했으나 fee-related earnings는 6% 감소했고, 수수료 발생 자산 감소 우려로 주가는 1년여 만에 최대 폭 하락함.",
+     "text": "SEI와 공동으로 closed-end interval fund인 SEI Carlyle Private Markets Fund(PRVTX)를 출시하여 private equity, secondaries, private credit, real estate에 대한 단일 상품 접근을 제공함",
      "ids": [
-      "g1xnnefb",
-      "g1jl98ka"
+      "g1v21dd7",
+      "g1ii67ey"
      ]
     },
     {
-     "text": "3분기 Global Private Equity 실현 회수금은 57억 달러로, 일본 Rigaku 지분 7.2억 달러 매각 등 주요 엑시트가 기여함.",
+     "text": "PRVTX는 최소 가입금액 1,000달러로 고액 자산가·리테일 투자자를 겨냥하며, Carlyle의 wealth 채널 확대 전략의 일환임",
      "ids": [
-      "g1xjkxeu"
+      "g1otjwfg",
+      "g14l7h0m"
      ]
     },
     {
-     "text": "2026년 펀드레이징 목표는 600억 달러이며, 펀드레이징 슈퍼사이클에 앞서 PE 투자자에게 240억 달러를 반환했다고 밝힘.",
+     "text": "매출을 3배 이상 키운 Disguise를 Yamaha에 매각하기로 합의했으며, 3분기에는 Rigaku 등 주요 엑싯으로 private equity proceeds가 $5.7b에 달함",
      "ids": [
-      "g1y1oahs",
-      "g1kugw50"
+      "ghwk85e"
      ]
     },
     {
-     "text": "Carlyle·PAI Partners가 여성건강 전문 제약사 Theramex를 Cinven에 매각하기로 합의했고, Carlyle 투자 기업 Vantive는 혈액투석 사업을 Rockwell Medical에 매각하기로 합의함.",
+     "text": "Jason Thomas 글로벌 리서치 책임자는 Fed가 12월 0.5%p 인상할 수 있다고 전망했고, 긴축이 AI 인프라 투자를 제약할 수 있다고 경고함",
      "ids": [
-      "g1temmzh",
-      "g9cm7fr"
+      "ggndz90",
+      "g1fcw199"
      ]
     }
    ],
-   "n": 26,
-   "asOf": "2026-11-09"
+   "n": 39,
+   "asOf": "2026-11-16"
   },
   "Pantheon": {
    "summary": "Pantheon은 Pantheon Global Secondaries Fund VIII(PGSF VIII) 및 관련 비히클을 목표 35억 달러 대비 71% 초과한 60억 달러로 최종 마감함. 해당 펀드는 Pantheon 역대 최대 규모의 PE 세컨더리 펀드이며, 아시아·중동 신규 투자자 참여가 두드러짐. 차기 플래그십은 기존과 동일한 미드마켓 딜에 더 큰 투자 집행 규모로 접근할 계획임.",
@@ -564,37 +565,36 @@
    "asOf": "2026-11-03"
   },
   "StepStone": {
-   "summary": "StepStone은 최근 12개월 펀드레이징 430억 달러로 사상 최고를 기록했고 AUM은 전년 대비 25% 증가한 2,610억 달러에 이름. Real Estate 부문은 GID와 9억 8,500만 달러 규모 물류 포트폴리오 JV·세컨더리 거래를 클로징했으며, Kroll과 사모대출 벤치마크에 PIK 지표 3종을 추가함. 서울 ASK 2026 콘퍼런스에서는 부동산 유동성 공급 전략을 소개함.",
+   "summary": "StepStone은 최근 분기 AUM이 2,610억 달러(전년 동기 대비 25% 증가)로 늘었고, 최근 12개월 펀드레이징이 430억 달러로 사상 최고를 기록함. 신규 빈티지 세컨더리 펀드 등을 통해 약 110억 달러를 모집했으며, 부동산 부문에서 GID와의 9억 8,500만 달러 규모 운용사 주도 세컨더리 거래와 Mizner Park 인수 참여가 확인됨. 청정에너지 부문에서는 5억5천만 달러 투자가 집행됨.",
    "points": [
     {
-     "text": "최근 12개월 펀드레이징이 430억 달러로 사상 최고를 기록함.",
-     "ids": [
-      "gschpe0"
-     ]
-    },
-    {
-     "text": "AUM이 2,610억 달러로 전년 동기(2,091억 달러) 대비 25% 증가했으며, SMA와 commingled fund 성장이 주도함.",
+     "text": "최근 분기 AUM이 2,610억 달러로 전년 동기(2,091억 달러) 대비 25% 증가했으며, SMA 및 commingled fund 성장이 주도함.",
      "ids": [
       "g234xjx"
      ]
     },
     {
-     "text": "StepStone Real Estate가 GID와 신규 JV를 구성하고 800만 평방피트 물류 포트폴리오 대상 9억 8,500만 달러 규모 운용사 주도 세컨더리 거래를 클로징함(Latham 자문).",
+     "text": "최근 12개월 펀드레이징 430억 달러로 사상 최고 기록을 경신함.",
      "ids": [
-      "gf35g55",
-      "g9dilmx"
+      "gschpe0"
      ]
     },
     {
-     "text": "Kroll과 함께 Kroll StepStone Private Credit Benchmark에 PIK 지표 3종을 신규 론칭해 사모대출 내 비현금 이자 활용의 투명성을 높임.",
+     "text": "세컨더리 펀드들이 잇따라 가세하며 신규 빈티지로 약 110억 달러를 모집함.",
      "ids": [
-      "gzbqmlj",
-      "gmyjiq"
+      "g1a5lihc"
+     ]
+    },
+    {
+     "text": "StepStone Real Estate가 GID와 합작법인(JV)을 설립하고 9억 8,500만 달러 규모 운용사 주도 세컨더리 거래를 완료했으며, CP Group·Georgetown Company·ACRE와 함께 Mizner Park 인수에도 참여함.",
+     "ids": [
+      "gf35g55",
+      "g13jx961"
      ]
     }
    ],
-   "n": 12,
-   "asOf": "2026-11-09"
+   "n": 7,
+   "asOf": "2026-11-16"
   },
   "CD&R": {
    "summary": "CD&R은 최근 2주간 GTCR과 함께 약 400억 달러 규모의 Global Payments 상장폐지(take-private) 인수를 검토 중인 것으로 보도되었으며, 성사 시 역대 3번째 규모의 LBO가 될 수 있음. 플래그십 Fund XIII는 목표 260억 달러 중 200억 달러를 모집했고, McKesson과 공동 추진하는 Option Care Health 인수에는 31억 달러 규모 부채 조달이 진행 중임.",
@@ -631,36 +631,37 @@
    "asOf": "2026-11-09"
   },
   "Bain Capital": {
-   "summary": "Bain Capital은 세 번째 아시아 특수상황 펀드(Asia Special Situations Fund III)를 18억 달러 이상으로 파이널 클로즈하며 펀드레이징을 마무리함. 이와 함께 CPPIB 지원 RMZ에 5억 달러 금융 제공을 협상 중이며, 독일 Everllence 인수를 앞두고 해당 회사가 신임 CFO를 선임하는 등 딜 활동이 이어지고 있음.",
+   "summary": "Bain Capital은 11월 초 세 번째 아시아 특수상황 펀드 모집을 18억 달러 이상으로 마무리했고, 11월 12일에는 Gong Cha 인수(약 9,000억 원 규모)를 완료함. 크레딧 부문에서는 아시아를 사모대출의 차기 성장 무대로 지목했으며, 컨티뉴에이션 비히클(CV)에 대해서도 장기 수단으로 평가하는 등 전략 관련 발언이 이어짐.",
    "points": [
     {
-     "text": "Bain Capital Asia Special Situations Fund III가 2026-11-02 18억 달러 이상으로 파이널 클로즈됨.",
+     "text": "세 번째 아시아 특수상황 펀드 모집을 18억 1000만 달러로 마감함(11/2~11/3 보도), 해당 지역 특수상황 투자 사업 확대 기반을 확보함.",
      "ids": [
       "gnginba",
       "g1fhj0s7"
      ]
     },
     {
-     "text": "해당 펀드는 중국 산업단지, 인도 등에 투자해 온 Bain Capital의 아시아 특수상황 투자 사업을 확대하는 역할을 함.",
+     "text": "글로벌 버블티 프랜차이즈 Gong Cha 인수를 완료함(약 9,000억 원 규모 바이아웃).",
      "ids": [
-      "gnginba"
+      "grp7703"
      ]
     },
     {
-     "text": "Bain Capital이 CPPIB가 지원하는 RMZ에 5억 달러 규모 금융 제공을 협상 중임.",
+     "text": "Bain Capital Credit는 아시아를 사모대출의 차기 성장 무대로 제시함, 2025년 미국 차입자 관련 부실 사례로 사모대출 점검이 강화된 배경이 언급됨.",
      "ids": [
-      "g1f8ugel"
+      "gzswnza"
      ]
     },
     {
-     "text": "독일 선박용 엔진 제조사 Everllence가 Bain Capital로의 소유권 변경을 앞두고 Fabian Kley를 CFO로 선임함(2026-11-01 발효).",
+     "text": "Gordon은 컨티뉴에이션 비히클을 사모시장의 '유효한 장기 수단'으로 평가함, Bain Capital Specialty Finance는 Amrit Kanwal을 이사회 이사로 선임함.",
      "ids": [
-      "gk16ks4"
+      "g5dfhzy",
+      "g3gi1jz"
      ]
     }
    ],
-   "n": 5,
-   "asOf": "2026-11-09"
+   "n": 8,
+   "asOf": "2026-11-16"
   },
   "Advent": {
    "summary": "Advent International은 2026-10-27 발표를 통해 글로벌 펀드 전체로 총 300억 달러를 조성했으며, 이 가운데 11th flagship fund(GPE XI)는 nearly 270억 달러로 260억 달러 목표를 상회하며 파이널 클로즈함. 신규 mid-market fund로도 30억 달러 이상을 모집했고, 아태지역 LP들의 참여가 두드러졌다는 보도가 나옴.",
@@ -696,124 +697,136 @@
    "asOf": "2026-11-09"
   },
   "PGIM": {
-   "summary": "",
+   "summary": "최근 2주간 PGIM은 Greenman 펀드로부터 독일 소매 포트폴리오를 인수한 것이 확인되며, 유럽 리테일 부동산 투자를 이어가는 모습임. 펀드레이징 기록은 없으며, PGIM India의 Ganesh Consumer Products 지분 확대 및 Jennison 뮤추얼 펀드 관련 기사가 있으나 대체투자 미팅과의 연관성은 제한적임.",
    "points": [
     {
-     "text": "PGIM과 LGT Capital Partners가 미국 중소형(lower middle market) 대출 포트폴리오 중심의 6억 8000만 달러 사모대출 컨티뉴에이션 비히클 공동 리드 투자자로 참여해 클로징함.",
+     "text": "PGIM이 Greenman 펀드로부터 독일 소매 포트폴리오를 인수함(2026-11-12).",
      "ids": [
-      "g183x8c8",
-      "g1rz9whb"
+      "g1afgxzn"
      ]
     },
     {
-     "text": "Tree Line Capital Partners는 샌프란시스코 소재 미국 중소형 시장 직접대출 운용사로, 이번 클로징은 10월 28일 발표됨.",
+     "text": "해당 건은 딜 기록상 인수 거래로 분류되며, 독일 리테일 자산에 대한 PGIM의 투자 의지를 시사함.",
      "ids": [
-      "g183x8c8"
+      "g1afgxzn"
      ]
     },
     {
-     "text": "PGIM India는 최신 지분 공시 기준 Ganesh Consumer Products 지분 1.57%를 보유하며 11월 4일 대량거래에서 지분을 확대함.",
+     "text": "PGIM India는 Ganesh Consumer Products 지분을 확대하여 최신 지분 공시 기준 1.57%를 보유함.",
      "ids": [
       "g7go9s2"
+     ]
+    },
+    {
+     "text": "최근 2주간 확인된 펀드레이징 기록은 없으며, Jennison 계열 뮤추얼 펀드 기사는 리테일 펀드 소개 성격으로 본 건 미팅과의 관련성은 낮음.",
+     "ids": [
+      "gzaiw80",
+      "g14x004t"
      ]
     }
    ],
    "n": 4,
-   "asOf": "2026-11-09"
+   "asOf": "2026-11-16"
   },
   "Nuveen": {
-   "summary": "Nuveen은 11월 초 Nuveen Real Estate를 통해 미국 서부 식료품점 앵커 리테일 13개 포트폴리오를 약 4.46억 달러에 인수했고, 같은 시기 글로벌 자연 기반 솔루션 펀드를 론칭하며 TIAA가 1억 달러로 앵커 투자자로 참여함. Nuveen Churchill Direct Lending은 2026년 3분기 EPS가 시장 예상치를 하회했으며, 농지 펀드는 멀티패밀리오피스로부터 1,350만 달러 출자 약정을 확보함.",
+   "summary": "",
    "points": [
     {
-     "text": "Nuveen Real Estate가 캘리포니아·콜로라도·워싱턴 소재 식료품점 앵커 오픈에어 리테일 13개(약 189만 sq ft)를 4억 4,550만 달러에 인수함.",
+     "text": "Nuveen Natural Capital이 글로벌 자연기반해법 투자전략 신규 펀드를 출범시켰으며, 모집 규모는 1억 달러로 기록됨.",
      "ids": [
-      "g1hfoz1y",
-      "gwozhvd"
-     ]
-    },
-    {
-     "text": "Nuveen Natural Capital의 신규 자연 기반 펀드에 TIAA가 1억 달러를 약정하며 앵커 투자자로 참여함.",
-     "ids": [
-      "gufgk99",
+      "g13pes1f",
       "gw7mlqi"
      ]
     },
     {
-     "text": "Nuveen Real Estate는 헬스케어 최선호 의견에 이어 다수 시장의 식료품점 앵커 리테일도 유망하다고 평가함.",
+     "text": "TIAA가 신규 자연 펀드에 1억 달러 앵커 투자를 단행함.",
+     "ids": [
+      "gldu298"
+     ]
+    },
+    {
+     "text": "Nuveen Real Estate와 Senior Resource Group이 Illinois주 Lincolnwood 소재 The Carrington at Lincolnwood(383세대 시니어 주거단지)를 2억1,200만 달러에 인수함.",
+     "ids": [
+      "gclkwj0",
+      "gfwlx02"
+     ]
+    },
+    {
+     "text": "Nuveen Real Estate는 헬스케어 최선호에 이어 다수 시장의 식료품점 앵커 리테일도 유망하다고 평가함.",
      "ids": [
       "g17399cz"
-     ]
-    },
-    {
-     "text": "Nuveen Churchill Direct Lending은 2026년 3분기 EPS가 시장 예상치를 하회했으며, 농지 펀드는 1,350만 달러 출자 약정을 확보함.",
-     "ids": [
-      "gtgd6mk",
-      "gwlvta6"
-     ]
-    }
-   ],
-   "n": 17,
-   "asOf": "2026-11-09"
-  },
-  "Hines": {
-   "summary": "Hines는 11월 초 유럽 개인 투자자 대상 개방형 부동산 ELTIF인 Hines Global Real Estate Opportunities(HGRO)의 출시 승인을 받고 프라이빗 웰스 플랫폼을 확대함. 같은 시기 Hines European Core Fund(HECF)와 Hines European Real Estate Partners III(HEREP III)를 통해 이탈리아 물류 자산 두 건에 투자해 약 213,000㎡ 규모로 포트폴리오를 늘림.",
-   "points": [
-    {
-     "text": "HGRO는 유럽 장기투자펀드(ELTIF) 구조의 개방형(open-end) 에버그린 부동산 전략으로 규제 승인을 받아 출시됨.",
-     "ids": [
-      "gtak5hi",
-      "gb76gr0"
-     ]
-    },
-    {
-     "text": "HGRO는 유럽 개인 투자자 및 자산가를 겨냥한 상품이며 현재 모집 중임.",
-     "ids": [
-      "g5xkbil",
-      "gb76gr0"
-     ]
-    },
-    {
-     "text": "Bloomberg는 Hines가 유럽 부유층 시장을 공략하는 다수의 사모 운용사 대열에 합류했다고 보도함.",
-     "ids": [
-      "g5xkbil",
-      "g1mwyrgo"
-     ]
-    },
-    {
-     "text": "HECF와 HEREP III를 통해 이탈리아 물류 자산 두 건에 투자했으며 합계 규모는 약 213,000㎡(230만 sq ft)임.",
-     "ids": [
-      "gmtgone"
-     ]
-    }
-   ],
-   "n": 7,
-   "asOf": "2026-11-09"
-  },
-  "Hamilton Lane": {
-   "summary": "Hamilton Lane은 최신 플래그십 펀드 1차 클로징과 함께 첫 GP-led 전문 펀드를 출시했으며, Secondary 6호 펀드는 50억 달러 규모로 클로즈됨. 2027 회계연도 2분기 기준 총 자산 규모는 약 1.1조 달러로 전년 대비 7% 증가했고, 에버그린 플랫폼 운용자산은 210억 달러를 돌파함. 연간 배당 목표를 11% 상향하는 등 주주환원도 확대함.",
-   "points": [
-    {
-     "text": "최신 플래그십 펀드 1차 클로징과 함께 첫 GP-led 전문 펀드를 출시함.",
-     "ids": [
-      "g13mws9f"
-     ]
-    },
-    {
-     "text": "2027 회계연도 2분기 총 자산 규모는 약 1.1조 달러로 전년 대비 7% 증가했고, AUM은 4% 늘어 1,510억 달러를 기록했으며 수수료 발생 AUM은 12% 증가함.",
-     "ids": [
-      "gennxxu"
-     ]
-    },
-    {
-     "text": "에버그린 플랫폼 운용자산이 210억 달러를 돌파했고, 연간 배당 목표를 11% 상향함.",
-     "ids": [
-      "g1ijqdi1",
-      "g1yofwjs"
      ]
     }
    ],
    "n": 6,
-   "asOf": "2026-11-09"
+   "asOf": "2026-11-16"
+  },
+  "Hines": {
+   "summary": "Hines는 11월 2일 개인 투자자 대상 유럽 개방형 펀드 Hines Global Real Estate Opportunities(ELTIF)를 출시하며 프라이빗 웰스 플랫폼을 확대함. 11월 5일에는 HECF와 HEREP III를 통해 이탈리아 물류 자산 두 건(약 213,000㎡)을 편입했으며, 11월 12일에는 댈러스 업타운 Maple Terrace Residences를 Broe Real Estate Group에 매각함.",
+   "points": [
+    {
+     "text": "Hines Global Real Estate Opportunities는 유럽 장기투자펀드(ELTIF) 구조의 개방형(evergreen) 펀드로 규제 승인을 받아 출시되었으며, 현재 모집 중임.",
+     "ids": [
+      "gb76gr0",
+      "gzyckj5"
+     ]
+    },
+    {
+     "text": "유럽 개인 투자자 공략은 Hines Global Income Trust(총자산가치 약 73억 달러, 약 15년 운용 이력)의 프라이빗 웰스 트랙레코드를 기반으로 한 상품군 확대임.",
+     "ids": [
+      "gzyckj5",
+      "g5xkbil"
+     ]
+    },
+    {
+     "text": "Hines European Core Fund(HECF)와 Hines European Real Estate Partners III(HEREP III)를 통해 이탈리아 물류 투자 두 건(약 213,000㎡)을 집행하여 유럽 물류 포트폴리오를 확대함.",
+     "ids": [
+      "gmtgone"
+     ]
+    },
+    {
+     "text": "댈러스 업타운의 345세대 Maple Terrace Residences(3003 Maple Avenue)를 Broe Real Estate Group에 매각함(Broe의 첫 댈러스 투자).",
+     "ids": [
+      "g8skigi"
+     ]
+    }
+   ],
+   "n": 6,
+   "asOf": "2026-11-16"
+  },
+  "Hamilton Lane": {
+   "summary": "Hamilton Lane은 최근 2주간 글로벌 인프라·실물자산 팀에 북미와 유럽 기반 시니어 임원 3명을 영입해 인프라 플랫폼을 강화함. 이에 앞서 최신 플래그십 펀드의 1차 클로징을 완료하고 첫 GP-led 전문 펀드를 출시했으며, 세컨더리 전략에 대한 시각도 공개됨.",
+   "points": [
+    {
+     "text": "Tara Speers, Lucas May, Colin Mooney 등 3명의 시니어 인력을 글로벌 인프라·실물자산 투자 팀에 영입함.",
+     "ids": [
+      "geslwfp",
+      "gd7ommy"
+     ]
+    },
+    {
+     "text": "신규 인력은 캐나다·미국·영국 사무소에 배치되며, 이 중 Speers는 토론토에서 상품(product) 팀 managing director로 합류함.",
+     "ids": [
+      "guno9ce",
+      "geslwfp"
+     ]
+    },
+    {
+     "text": "회사 측은 이번 인력 확충이 지속적인 플랫폼 성장에 발맞춘 글로벌 인프라 팀 강화 조치라고 밝힘.",
+     "ids": [
+      "g1ggxlu2",
+      "ghzv3xu"
+     ]
+    },
+    {
+     "text": "최신 플래그십 펀드의 1차 클로징을 완료하고 첫 GP-led 전문 펀드를 출시함.",
+     "ids": [
+      "g13mws9f"
+     ]
+    }
+   ],
+   "n": 9,
+   "asOf": "2026-11-16"
   },
   "PIMCO": {
    "summary": "최근 2주간 PIMCO 관련 동향은 Arini 헤지펀드의 고수익 부채 지분 매각 과정에서 Pimco와 Oaktree가 입찰 참여자로 거론된 점과, PIMCO 상장 펀드(PDI, PDX, PAXS) 관련 내부자 거래 및 투자의견이 중심임. 펀드레이징 기록은 없으며, PDI 이사의 지분 매수와 Saba Capital의 PDX 지분 소폭 매각이 확인됨.",
@@ -842,18 +855,25 @@
    "asOf": "2026-11-03"
   },
   "Warburg Pincus": {
-   "summary": "최근 2주간 Warburg Pincus는 펀드레이징 기록은 없으나 딜 관련 뉴스가 이어짐. Ingenia Communities에 대한 인수 제안가를 주당 5.50 호주달러로 상향했고, Calumet과는 Montana Renewables 관련 거래 구조를 재편했으며, 스페인 Boost Air 지원 딜은 브뤼셀의 승인을 받음.",
+   "summary": "Warburg Pincus가 첫 Capital Solutions 펀드(40억 달러)의 호실적을 바탕으로 50억 달러 규모 두 번째 펀드 모집에 나선 것으로 보도됨. 딜 측면에서는 Pricol Autotech 38.51% 지분 인수(최대 ₹1,663.07 crore)가 가장 큰 건이며, Ingenia Communities 인수는 비독점 입찰 방식으로 전환됨. Calumet과의 Montana Renewables 거래 구조도 재편됨.",
    "points": [
     {
-     "text": "Ingenia Communities 인수 제안가를 주당 5.50 호주달러로 상향했으며, 이에 주가가 10개월 고점까지 상승함.",
+     "text": "Capital Solutions Fund II 목표액을 50억 달러로 설정함(Bloomberg 보도), 선행 펀드 규모는 40억 달러였음.",
      "ids": [
-      "gu2aarc"
+      "g1ggt41l",
+      "g1pnnxq5"
      ]
     },
     {
-     "text": "Calumet이 Montana Renewables 자회사 관련 2건의 거래를 발표하고 Warburg Pincus와의 기존 합의를 수정함.",
+     "text": "Pricol Autotech 창업주 지분 38.51% 전량을 최대 ₹1,663.07 crore에 인수해 경영권을 확보함, Pricol은 차량 전장 사업을 분할할 계획임.",
      "ids": [
-      "g1evsgbf"
+      "gw9g93r"
+     ]
+    },
+    {
+     "text": "Ingenia Communities Group 인수 제안은 가격 변경 없이 비독점 프로세스로 전환함, Avid Property Group 등 잠재 인수자의 구속력 있는 입찰 마감은 12월 8일임.",
+     "ids": [
+      "gb00y5p"
      ]
     },
     {
@@ -863,33 +883,40 @@
      ]
     }
    ],
-   "n": 3,
-   "asOf": "2026-11-09"
+   "n": 6,
+   "asOf": "2026-11-16"
   },
   "Oaktree": {
-   "summary": "Oaktree는 최근 2주간 Oaktree Strategic Credit Fund가 상시형 구조로 최대 50억 달러 규모의 주식 공모를 SEC에 제출하며 개인·기관 대상 크레딧 수탁고 확대를 추진함. 한편 A-Cap 보험사 인수 건은 기존 거래가 무산되어 새로운 협상이 시작된 것으로 보도됨. 그 외 기사는 펀드 재무 추정치 페이지 위주로 신규 전략·인사 관련 시사점은 제한적임.",
+   "summary": "Oaktree는 최근 2주간 Mutares로부터 Guascor Energy를 7,400만 유로에 인수하기로 합의했으며, 거래는 규제 승인을 조건으로 함. 또한 Oaktree 지원을 받는 Pure Data Centres가 사모대출로 7억 8,000만 달러를 조달해 유럽·중동 확장에 나섬. 별도 펀드레이징 관련 구체 수치는 확인되지 않음.",
    "points": [
     {
-     "text": "Oaktree Strategic Credit Fund가 상시형(evergreen) 구조로 최대 50억 달러 규모 주식 공모를 위한 SEC 제출 서류를 공시함.",
+     "text": "Oaktree Power Opportunities를 통해 Mutares의 Guascor를 7,400만 유로에 인수하기로 합의함(완료는 규제 승인 조건).",
      "ids": [
-      "ghwvgww"
+      "g1i75uo",
+      "gt3p91r"
      ]
     },
     {
-     "text": "Oaktree Asset-Backed Income Fund(OABIX) 등 자산담보 인컴 펀드의 실적 추정치 자료가 업데이트되어 해당 전략에 대한 시장 관심이 지속됨.",
+     "text": "인수 대상은 Guascor Energy 지분 100%와 미국 자매회사 Guascor Power를 포함하며, Oaktree 측 자문은 Gómez-Acebo & Pombo(GA_P)가 담당함.",
      "ids": [
-      "g1a1ljrg"
+      "gsdop7c"
      ]
     },
     {
-     "text": "Oaktree Diversified Income Fund(ODIDX) 클래스 D 추정치도 갱신되어 인컴형 상품 라인업 전반에 대한 모니터링이 필요함.",
+     "text": "Oaktree 지원을 받는 Pure Data Centres가 유럽 및 중동 공략을 위해 사모대출로 7억 8,000만 달러를 조달함.",
      "ids": [
-      "grvtc5g"
+      "g1i8nf8h"
+     ]
+    },
+    {
+     "text": "Oaktree Capital Management 펀드레이징 관련 기사가 게재되었으나 세부 내용은 제공되지 않아, 미팅 시 현 펀드 조달 현황 확인이 필요함.",
+     "ids": [
+      "g1q8lks3"
      ]
     }
    ],
-   "n": 5,
-   "asOf": "2026-11-03"
+   "n": 6,
+   "asOf": "2026-11-16"
   },
   "PAG": {
    "summary": "PAG가 최근 2주간 중국 Evergrande의 자회사 Evergrande Property Services 지분 51%를 약 5억 1,400만 달러에 인수하기로 하며 중국 부동산 딜에서 가시적 움직임을 보였음. 또한 PAG Infrastructure가 호주 Akaysha Energy 인수를 추진 중이며, 신임 재생에너지 인프라 헤드 Charlie Reid의 첫 대형 거래로 규모가 30억 달러 이상으로 보도됨. 같은 기간 펀드레이징 기록은 없었음.",
@@ -948,65 +975,64 @@
    "asOf": "2026-11-09"
   },
   "Silver Lake": {
-   "summary": "Silver Lake가 사우디 PIF와 함께 게임엔진 업체 Unity 인수를 타진 중이라는 보도가 11월 6일 일제히 나왔으며, 거래 규모는 약 250억 달러로 거론됨. 올해 초 550억 달러 규모 Electronic Arts 인수에 이은 후속 딜 가능성으로 해석되며, 최근 2주간 펀드레이징 및 확정된 딜 기록은 없음.",
+   "summary": "Silver Lake가 사우디 PIF와 함께 게임 소프트웨어 기업 Unity 인수를 위한 논의를 진행 중인 것으로 Reuters 등을 통해 보도됨. 거래 밸류에이션은 약 250억 달러 수준이며, 이는 두 기관이 올해 초 550억 달러 규모로 Electronic Arts를 인수한 직후의 후속 딜임. 확정된 발표는 아니며 논의 단계에 있는 것으로 전해짐.",
    "points": [
     {
-     "text": "Silver Lake와 사우디 PIF가 Unity 인수를 위해 접촉·협상한 것으로 보도되었으며, 평가 규모는 약 250억 달러임.",
+     "text": "Silver Lake와 PIF가 Unity Software 인수를 논의한 것으로 Reuters가 보도함.",
      "ids": [
-      "g1bdgdic",
+      "gd5su99",
+      "g17v35j8"
+     ]
+    },
+    {
+     "text": "거래 밸류에이션은 약 250억 달러 수준으로 거론되며, Unity는 투자은행과 함께 다음 행보를 검토 중인 것으로 알려짐.",
+     "ids": [
+      "g137r5tt",
       "g3prntt"
      ]
     },
     {
-     "text": "해당 컨소시엄은 올해 초 550억 달러 규모 Electronic Arts 인수를 완료한 바 있어, 게임 분야 투자 확대의 연장선으로 평가됨.",
+     "text": "Silver Lake는 이미 Unity 지분 약 8%를 보유 중인 것으로 보도됨.",
      "ids": [
-      "gmb06o3",
-      "ghdduj4"
+      "g137r5tt"
      ]
     },
     {
-     "text": "성사 시 Unity의 비상장 전환(take-private) 딜이 될 수 있으며, 레버리지 인수에 따른 업계 통합 및 Unity 부채 부담 우려도 제기됨.",
+     "text": "동일 컨소시엄이 올해 초 550억 달러 규모 Electronic Arts 인수에 참여한 바 있어, 게이밍 부문 대형 딜 연속 추진으로 해석됨.",
      "ids": [
-      "g1ptkybc",
-      "gg42vz6"
+      "g11zivsu",
+      "g12r30ow"
      ]
     }
    ],
-   "n": 17,
-   "asOf": "2026-11-09"
+   "n": 23,
+   "asOf": "2026-11-16"
   },
   "Cinven": {
-   "summary": "Cinven이 11월 3일 여성 건강 전문 제약사 Theramex를 Carlyle·PAI Partners로부터 약 26억 유로에 인수하기로 합의했으며, 매도자 측은 4년 전 인수가(14억 유로)의 약 2배 수준에 엑시트함. 인수금융으로 약 15억 유로 규모 부채 조달이 추진 중임. 한편 Cinven이 보유했던 Burger King 운영사 RBE는 Gregorio Jiménez가 23억 유로에 되찾는 것으로 보도됨.",
+   "summary": "Cinven은 최근 2주간 Theramex 인수(약 26억 유로)를 합의하며 여성 헬스케어 분야 딜을 진행함. 같은 기간 Burger King 운영사 RBE를 Gregorio Jiménez에 매각(약 23억 유로)하며 엑시트 성과를 확인함. 펀드레이징 기록은 확인되지 않음.",
    "points": [
     {
-     "text": "Cinven이 Carlyle·PAI Partners로부터 Theramex를 약 26억 유로(약 30억 달러)에 인수하기로 합의함.",
+     "text": "Cinven이 Carlyle·PAI Partners로부터 Theramex를 약 26억 유로에 인수하기로 합의함.",
      "ids": [
-      "gbrijkm",
-      "gq2t91v"
+      "gbrijkm"
      ]
     },
     {
-     "text": "Theramex는 여성 건강에만 특화된 전문 제약사로, 거래가는 매도자들의 4년 전 인수가 14억 유로의 약 2배 수준임.",
+     "text": "Theramex 인수가는 매도자들이 4년 전 지불한 14억 유로의 약 2배 수준임.",
      "ids": [
-      "gbrijkm",
-      "gqrgeor"
+      "gbrijkm"
      ]
     },
     {
-     "text": "Cinven은 Theramex 인수를 위해 약 15억 유로 규모 부채 조달을 추진 중이며, Jefferies가 Cinven 자문을 맡음.",
+     "text": "Burger King 운영사 RBE를 Gregorio Jiménez가 23억 유로에 Cinven으로부터 되찾는 거래가 진행되었으며, Clifford Chance가 Cinven 측 자문을 주도함.",
      "ids": [
-      "g1z0myms"
-     ]
-    },
-    {
-     "text": "Gregorio Jiménez가 Cinven으로부터 Burger King 운영사 RBE를 23억 유로에 되찾는 것으로 보도되어 포트폴리오 엑시트가 병행됨.",
-     "ids": [
-      "g1112qkp"
+      "g1112qkp",
+      "g6hlchf"
      ]
     }
    ],
-   "n": 9,
-   "asOf": "2026-11-09"
+   "n": 3,
+   "asOf": "2026-11-16"
   },
   "Thoma Bravo": {
    "summary": "최근 2주간 Thoma Bravo는 Varonis를 약 63억 달러에 인수하는 딜을 성사시켰으며, 이사회가 당초 주당 54달러를 요구했으나 Thoma Bravo의 최종안 제시로 49.75달러에 합의한 경위가 공개됨. 신원보안(identity security)이 PE 딜이 활발한 서브섹터로 부각되며 Thoma Bravo가 Vista Equity Partners와 함께 해당 영역에 투자하는 흐름이 확인됨. 한편 Explore Fund 공동 리드 Carl Press가 사이버보안의 가치 부각에 대해 견해를 밝힘.",
@@ -1069,128 +1095,171 @@
    ],
    "n": 4,
    "asOf": "2026-11-09"
+  },
+  "Ardian": {
+   "summary": "Ardian이 2026-11-09 반도체 밸류체인 전용 PE 플랫폼 Ardian Semiconductor로 10억 유로 조성을 발표함. 약 7억 유로의 펀드 약정에 공동투자 등이 더해진 구조이며 출자자의 41%가 MENA 투자자로 중동 수요가 두드러짐. 같은 기간 EU 집행위원회가 Ardian의 Technology & Strategy SAS 인수를 승인함.",
+   "points": [
+    {
+     "text": "Ardian Semiconductor가 10억 유로를 조성했으며 반도체 밸류체인 전용 PE 전략 중 최초 수준의 플랫폼으로 소개됨.",
+     "ids": [
+      "g2bkokq",
+      "gfu3k3c"
+     ]
+    },
+    {
+     "text": "조성액은 약 7억 유로의 펀드 약정과 추가 공동투자 등으로 구성됨.",
+     "ids": [
+      "gz04a9a",
+      "gfu3k3c"
+     ]
+    },
+    {
+     "text": "출자자 중 MENA 투자자 비중이 41%로 중동 자금 유입이 두드러지며, AI 확산에 따른 데이터센터 프로세서 수요가 배경으로 언급됨.",
+     "ids": [
+      "g1sd3ll5",
+      "g1vebl76"
+     ]
+    },
+    {
+     "text": "투자 대상은 유럽·북미·아시아의 반도체 기업이며, AI 발전에 따른 칩 수요와 각국의 자국 생산 지원 정책 수혜를 노림.",
+     "ids": [
+      "g13vf1hb"
+     ]
+    }
+   ],
+   "n": 17,
+   "asOf": "2026-11-16"
+  },
+  "ICG": {
+   "summary": "ICG는 대표 펀드 Europe IX를 역대 최대 규모인 120억 유로로 최종 클로징했음. 이에 힘입어 2026 회계연도 상반기(H1 FY27) 수수료 수취 AUM이 900억 달러(+9%)로 늘었고 수수료 관련 이익은 18% 증가했음.",
+   "points": [
+    {
+     "text": "Europe IX 펀드가 120억 유로로 최종 클로징되어 ICG 역대 최대 규모 펀드 기록을 세움.",
+     "ids": [
+      "gxpvfmk",
+      "g22rec9"
+     ]
+    },
+    {
+     "text": "9월 30일 기준 수수료 수취 AUM이 900억 달러로 고정환율 기준 최근 12개월간 9% 증가함.",
+     "ids": [
+      "g22rec9",
+      "g7d3czu"
+     ]
+    },
+    {
+     "text": "상반기 수수료 관련 이익이 18% 증가했으며 수수료 증가세가 가속화되고 있음.",
+     "ids": [
+      "g22rec9",
+      "g1vt6x9u"
+     ]
+    },
+    {
+     "text": "회계연도 상반기 중 투자자로부터 76억 달러를 유치했으며 Europe IX 클로징이 이를 뒷받침했음.",
+     "ids": [
+      "g1waeufd"
+     ]
+    }
+   ],
+   "n": 5,
+   "asOf": "2026-11-16"
+  },
+  "Clearlake": {
+   "summary": "Clearlake는 최근 2주간 프라이빗 웰스 플랫폼 Clearlake Private Wealth를 출범하고 closed-end interval fund 설정 계획을 밝혀 개인·자문사 채널로 영업 범위를 확대함. 공동창업자 Jose E. Feliciano는 AI를 도입하는 고유 섹터 우위 기업을 딜 대상으로 보는 시각을 밝힘. 펀드레이징 기록상 Clearlake Private Markets Fund는 모집 중임.",
+   "points": [
+    {
+     "text": "Clearlake Private Wealth를 출범하여 financial advisor, RIA 및 개인투자자 대상 사모시장 접근성 확대에 나섬.",
+     "ids": [
+      "g59fw3o",
+      "g1hb8hi1"
+     ]
+    },
+    {
+     "text": "프라이빗 웰스 투자자 대상 closed-end interval fund 출시를 계획 중임.",
+     "ids": [
+      "g1jpug6k",
+      "g1hb8hi1"
+     ]
+    },
+    {
+     "text": "Jose E. Feliciano(co-founder, managing partner)는 고유한 섹터 우위를 지니면서 AI를 적극 도입하는 기업을 'sweet spot'으로 지목함.",
+     "ids": [
+      "g1ehlqzx"
+     ]
+    }
+   ],
+   "n": 5,
+   "asOf": "2026-11-16"
+  },
+  "Bridgepoint": {
+   "summary": "Bridgepoint는 최근 2주간 10억 유로 규모 방산 전략을 출범하며 전직 영국 공군 참모총장을 영입했고, 산하 ECP를 통해 Harvestone을 9억 1500만 달러에 매각하기로 합의함. 딜 기록상 IK Partners로부터 Batisanté 과반 지분 인수 합의도 확인되며, Blue Owl Capital의 Bridgepoint Group 지분은 9.03%에서 4.6%로 하락함.",
+   "points": [
+    {
+     "text": "10억 유로 규모 방산 전략을 출범하면서 전직 영국 공군 참모총장을 영입함.",
+     "ids": [
+      "gmug5s"
+     ]
+    },
+    {
+     "text": "Bridgepoint 산하 인프라 플랫폼 ECP가 미국 저탄소 에탄올 생산업체 Harvestone Low Carbon Partners를 Andersons에 9억 1500만 달러에 매각하기로 합의함.",
+     "ids": [
+      "gxqx1m5"
+     ]
+    },
+    {
+     "text": "Blue Owl Capital이 11월 2일 기준 Bridgepoint Group 지분 4.6%를 보고했으며, 직전 9.03%에서 하락함.",
+     "ids": [
+      "g174riua"
+     ]
+    }
+   ],
+   "n": 4,
+   "asOf": "2026-11-16"
+  },
+  "Affinity Equity Partners": {
+   "summary": "Affinity Equity Partners는 최근 2주간 포트폴리오사 락앤락의 흑자 전환을 바탕으로 약 1000억원 규모 리캡을 추진 중이며, 2024년 상장폐지 당시 투입한 약 1150억원 일부 회수를 노리는 것으로 파악됨. 한편 올 초까지 한국 총괄대표였던 민병철 대표가 독립해 신생 PEF 운용사 아르테미스파트너스를 설립, 인력 이탈 이슈가 확인됨. 같은 기간 펀드레이징·딜 기록은 없음.",
+   "points": [
+    {
+     "text": "락앤락 흑자 전환을 바탕으로 약 1000억원 규모 자본재조정(리캡)을 추진 중임.",
+     "ids": [
+      "g1cc42sl"
+     ]
+    },
+    {
+     "text": "리캡은 2024년 락앤락 자진 상장폐지 과정에서 투입한 약 1150억원을 일부 회수하려는 목적임.",
+     "ids": [
+      "g1cc42sl"
+     ]
+    },
+    {
+     "text": "올 초까지 한국 총괄대표를 역임한 민병철 대표가 독립하여 신생 PEF 운용사 아르테미스파트너스를 창업함.",
+     "ids": [
+      "g1mbfg8x"
+     ]
+    },
+    {
+     "text": "아르테미스파트너스는 중견기업 바이아웃 시장을 공략할 계획이며 연내 라이선스를 확보해 내년 초부터 활동 예정임.",
+     "ids": [
+      "g1mbfg8x"
+     ]
+    }
+   ],
+   "n": 3,
+   "asOf": "2026-11-16"
   }
  },
  "refs": {
-  "g11yhpf3": {
-   "t": "Ares Management, 부동산 및 인프라 펀드 자금 유치 힘입어 3분기에 310억 달러 펀드레이징",
-   "s": "Prop News Time",
-   "u": "https://propnewstime.com/latestnewsstories/MzkzNDA=/ares-management-raises-usd-31-billion-in-q3-as-real-estate-and-infrastructure-funds-attract-capital",
-   "d": "2026-11-02"
-  },
-  "gj935ln": {
-   "t": "Ares, 3분기/26년에 63억 달러 규모 미국 사모대출 약정금 확보",
-   "s": "ABF Journal",
-   "u": "https://www.abfjournal.com/ares-closes-6-3b-in-u-s-direct-lending-commitments-in-q3-26/",
-   "d": "2026-11-02"
-  },
-  "g1ar37ax": {
-   "t": "Ares, GP 주도 세컨더리 타깃 인프라 세컨더리 펀드 결성 추진",
-   "s": "PEI Secondaries Investor",
-   "u": "https://www.pei-secondariesinvestor.com/ares-to-launch-infra-secondaries-fund-focused-on-gp-leds/",
-   "d": "2026-11-02"
-  },
-  "go7tb0t": {
-   "t": "TPG, Rise Climate II 및 글로벌 사우스 이니셔티브 등 연계 차량 통해 104억 달러 조달",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/tpg-raises-10-4-billion-across-rise-climate-ii-global-south-initiative-and-affiliated-vehicles/",
-   "d": "2026-11-02"
-  },
-  "g1r7dekv": {
-   "t": "AI 전력수요 급증에 기후펀드 15조원 몰렸다…TPG, 역대 최대 모집",
-   "s": "임팩트온",
-   "u": "https://www.impacton.net/news/articleView.html?idxno=30494",
-   "d": "2026-11-02"
-  },
-  "g10iotqy": {
-   "t": "RWE, KKR과 국유 경쟁사 Uniper 인수 제안 사실 확인",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/stock-market-news/article-93CH-2154234",
-   "d": "2026-11-02"
-  },
-  "gmey54e": {
-   "t": "KKR·Singtel·Tata Communications, 55억 달러 이상의 밸류에이션으로 STT Global Data Centres India 매각 추진",
-   "s": "Venture Intelligence News",
-   "u": "https://news.ventureintelligence.com/private-equity/kkr,-singtel,-tata-communications-to-sell-stt-global-data-centres-india-at-over-$5.5-b-valuation",
-   "d": "2026-11-02"
-  },
-  "g6qd10j": {
-   "t": "Gibson Dunn, Proskauer advise on KKR's $475 million Alexandria real estate JV investment",
-   "s": "ETLegalWorld.com",
-   "u": "https://legal.economictimes.indiatimes.com/news/international/gibson-dunn-proskauer-advise-on-kkrs-475-million-alexandria-real-estate-jv-investment/135294025",
-   "d": "2026-10-30"
-  },
   "glzl5me": {
    "t": "아폴로, 100억 유로 규모의 유럽 신용 플랫폼 출범",
    "s": "TradingView",
    "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L3N46J0R8:0/",
    "d": "2026-11-02"
   },
-  "gcqhgcl": {
-   "t": "투자자들, Partners Group의 미국 PE 펀드에서 22억 달러 인출 요청",
-   "s": "Citywire",
-   "u": "https://citywire.com/pro-buyer/news/investors-ask-to-pull-2-2bn-from-partners-group-s-us-pe-fund/a2502252",
-   "d": "2026-10-29"
-  },
-  "gezh4tv": {
-   "t": "Partners Group halves redemption allowance on flagship evergreen fund",
-   "s": "Citywire",
-   "u": "https://citywire.com/asia/news/partners-group-halves-redemption-allowance-on-flagship-evergreen-fund/a2502328",
-   "d": "2026-10-30"
-  },
-  "gsr809m": {
-   "t": "Partners Group, 유럽 펀드의 분기별 환매 한도 축소 방침",
-   "s": "www.marketscreener.com",
-   "u": "https://www.marketscreener.com/news/partners-group-said-to-trim-quarterly-redemption-limit-at-european-fund-ce785fdbde8ff720",
-   "d": "2026-10-30"
-  },
-  "g1x2a9k1": {
-   "t": "맥쿼리, 가비아 공개매수 재추진…KINX까지 인수 대상 확대",
-   "s": "테크월드",
-   "u": "https://www.epnc.co.kr/news/articleView.html?idxno=409132",
-   "d": "2026-11-02"
-  },
-  "g1nelygc": {
-   "t": "bp, Stonepeak에 Castrol 지분 65% 매각을 60억 달러에 완료",
-   "s": "Trend News Agency",
-   "u": "https://www.trend.az/world/us/4241823.html",
-   "d": "2026-11-02"
-  },
-  "gpb4238": {
-   "t": "Stonepeak, Castrol 인수 완료 및 이사회 의장에 van Beurden 임명",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/stonepeak-completes-castrol-acquisition-and-appoints-van-beurden-as-chair/",
-   "d": "2026-11-02"
-  },
-  "g1uhkqkp": {
-   "t": "Stonepeak, 51% 지분 인수를 통해 Castrol India 경영권 확보",
-   "s": "Autocar Professional",
-   "u": "https://www.autocarpro.in/news/stonepeak-takes-control-of-castrol-india-through-51-percent-stake-deal-135646",
-   "d": "2026-11-02"
-  },
-  "g6w0wzo": {
-   "t": "Stonepeak, 101억 달러 규모의 Castrol 바이아웃 완료로 인도 공개매수 촉발",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/stonepeak-closes-10-1b-castrol-buyout-triggering-india-open-offer",
-   "d": "2026-11-02"
-  },
-  "g1qrf5wq": {
-   "t": "Marathon 인수로 성장세 탄 CVC, 크레딧 자산 55% 급증",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/10/29/cvc-credit-assets-jump-55-as-marathon-acquisition-boosts-growth/",
-   "d": "2026-10-29"
-  },
   "gpq0s4r": {
    "t": "CVC의 데뷔 크레딧 세컨더리 펀드, 5억 달러 목표 넘어 5억 유로 돌파",
    "s": "HedgeCo.Net",
    "u": "https://hedgeco.net/news/11/2026/cvcs-debut-credit-secondaries-fund-passed-e500-million-ahead-of-its-500-million-target.html",
    "d": "2026-11-02"
-  },
-  "g11yxo0z": {
-   "t": "CVC, 차기 바이아웃 펀드가 직전 펀드 규모 넘어설 수도… 자산 25% 증가",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L6N46F0E0:0-cvc-says-next-buyout-fund-might-surpass-latest-assets-jump-one-fourth/",
-   "d": "2026-10-29"
   },
   "glozaaj": {
    "t": "AUM이 3,299억 달러에 도달하면서 Blue Owl 수수료 관련 수익이 14% 증가했다.",
@@ -1228,24 +1297,6 @@
    "u": "https://www.privateequityinternational.com/blue-owls-latest-gp-stakes-fund-close-may-slip-to-q1-2027/",
    "d": "2026-10-29"
   },
-  "gsd0vj4": {
-   "t": "SK스퀘어, 골드만삭스에 티맵모빌리티 매각 협상중",
-   "s": "인베스트조선",
-   "u": "https://www.investchosun.com/site/data/html_dir/2026/10/29/2026102980153.html",
-   "d": "2026-10-29"
-  },
-  "g1enwqa8": {
-   "t": "티맵 인수 나선 골드만삭스, 10년만에 국내 바이아웃 기지개",
-   "s": "인베스트조선",
-   "u": "https://www.investchosun.com/site/data/html_dir/2026/10/30/2026103080088.html",
-   "d": "2026-10-30"
-  },
-  "g1gg6re8": {
-   "t": "Avolon, I Squared, ADIA, 14억 달러 가치의 기단(fleet)을 갖춘 Constellation Aviation 설립",
-   "s": "Aviacionline",
-   "u": "https://www.aviacionline.com/english/commercial-aviation/avolon-i-squared-and-adia-create-constellation-aviation-with-a-fleet-valued-at-usd-1-4-billion_a6ae88fa99b2d9a633cf1f85b",
-   "d": "2026-11-02"
-  },
   "g1e3yd22": {
    "t": "Pantheon, 목표치보다 71% 높은 60억 달러로 제8차 글로벌 사모펀드 세컨더리 펀드 최종 마감",
    "s": "HedgeCo.Net",
@@ -1274,24 +1325,6 @@
    "t": "Pantheon의 Hassanally: 최신 플래그십 펀드, 더 큰 투자 집행 규모로 기존 미드마켓 딜에 투자",
    "s": "PEI Secondaries Investor",
    "u": "https://www.pei-secondariesinvestor.com/pantheons-hassanally-latest-flagship-will-back-same-mid-market-deals-with-larger-checks/",
-   "d": "2026-10-30"
-  },
-  "g9dilmx": {
-   "t": "GID Industrial과 StepStone Real Estate, 800만 평방피트 물류 포트폴리오를 위해 9억 8,500만 달러 거래 클로징",
-   "s": "citybiz",
-   "u": "https://www.citybiz.co/article/924425/gid-industrial-and-stepstone-real-estate-close-985m-transaction-for-8-msf-industrial-portfolio/",
-   "d": "2026-10-26"
-  },
-  "gzbqmlj": {
-   "t": "Kroll·StepStone, 사모대출 벤치마크에 PIK 지표 추가",
-   "s": "ABF Journal",
-   "u": "https://www.abfjournal.com/kroll-stepstone-add-pik-indicators-to-private-credit-benchmarks/",
-   "d": "2026-11-02"
-  },
-  "gmyjiq": {
-   "t": "Kroll과 StepStone, 사모대출 PIK 지표 론칭",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/10/30/kroll-and-stepstone-launch-private-credit-pik-indicators/",
    "d": "2026-10-30"
   },
   "gmno990": {
@@ -1324,46 +1357,16 @@
    "u": "https://app.dealroom.co/news/note/bain-capital-closes-third-asia-special-situations-fund-above-1-8b",
    "d": "2026-11-02"
   },
-  "g1f8ugel": {
-   "t": "Bain Capital, CPPIB가 지원하는 RMZ에 5억 달러 금융지원 협상 중",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/bain-capital-in-talks-to-provide-500m-financing-to-cppib-backed-rmz/",
-   "d": "2026-10-29"
-  },
   "gw969q0": {
    "t": "아태지역 LP들, Advent International의 380억 달러 플래그십 펀드로 몰려",
    "s": "AFR",
    "u": "https://www.afr.com/street-talk/apac-investors-pile-into-advent-international-s-38b-flagship-fund-20261028-p619dp",
    "d": "2026-10-28"
   },
-  "g183x8c8": {
-   "t": "Tree Line, PGIM과 LGT Capital Partners가 공동 주도한 6억 8000만 달러 규모의 사모대출 컨티뉴에이션 비히클 클로징",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/10/2026/tree-line-closed-a-680-million-private-credit-continuation-vehicle-co-led-by-pgim-and-lgt-capital-partners.html",
-   "d": "2026-10-29"
-  },
-  "g1rz9whb": {
-   "t": "PGIM, LGT Capital Partners 및 Tree Line Capital, 6억 8000만 달러 규모 사모대출 컨티뉴에이션 비히클 조성 완료",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/pgim-lgt-capital-partners-and-tree-line-capital-close-680-million-private-credit-continuation-vehicle/",
-   "d": "2026-10-29"
-  },
   "gw7mlqi": {
    "t": "Nuveen, 글로벌 자연 기반 솔루션 펀드 론칭",
    "s": "AMWatch",
    "u": "https://amwatch.com/AMNews/Fund_Management/article19790490.ece",
-   "d": "2026-11-02"
-  },
-  "gwlvta6": {
-   "t": "Nuveen 농지 펀드, 1,350만 달러 출자 약정 확보",
-   "s": "Agri Investor",
-   "u": "https://www.agriinvestor.com/nuveen-farmland-fund-secures-multifamily-office-commitment/",
-   "d": "2026-10-27"
-  },
-  "gwozhvd": {
-   "t": "JLL, Nuveen Real Estate의 4억 4,550만 달러 규모 미국 서부 지역 13개 리테일 포트폴리오 인수 자문",
-   "s": "JLL",
-   "u": "https://www.jll.com/en-us/newsroom/jll-advises-nuveen-on-acquisition-of-western-retail-portfolio",
    "d": "2026-11-02"
   },
   "gb76gr0": {
@@ -1402,24 +1405,6 @@
    "u": "https://seekingalpha.com/article/4956595-paxs-decent-income-fund-from-pimco-for-long-term-13-percent-yield",
    "d": "2026-10-25"
   },
-  "ghwvgww": {
-   "t": "Oaktree Strategic Credit Fund, 상시형 구조로 최대 50억 달러 규모 주식 공모 진행 — SEC 제출 서류",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46C1AO:0-oaktree-strategic-credit-fund-offering-up-to-5-billion-in-shares-on-continuous-basis-sec-filing/",
-   "d": "2026-10-26"
-  },
-  "g1a1ljrg": {
-   "t": "Oaktree Asset-Backed Income Fund Inc. - Class I 추정치 – NASDAQ:OABIX",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/symbols/NASDAQ-OABIX/financials-estimates/",
-   "d": "2026-10-24"
-  },
-  "grvtc5g": {
-   "t": "Oaktree Diversified Income Fund Inc 클래스 D 추정 – NASDAQ:ODIDX",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/symbols/NASDAQ-ODIDX/financials-estimates/",
-   "d": "2026-10-29"
-  },
   "g1t2njo5": {
    "t": "사모펀드 운용사 PAG, 채권자들의 드문 승리 속 헝다물업 지분 51% 인수",
    "s": "streamlinefeed.co.ke",
@@ -1432,144 +1417,6 @@
    "u": "https://www.afr.com/street-talk/pag-infrastructure-gets-a-good-reid-on-3b-plus-akaysha-energy-20261025-p618dl",
    "d": "2026-10-25"
   },
-  "g19pop7m": {
-   "t": "Brookfield, 3분기 신용 부문에서 120억 달러 조달",
-   "s": "Alternative Credit Investor",
-   "u": "https://alternativecreditinvestor.com/2026/11/06/brookfield-raises-12bn-for-credit-in-q3/",
-   "d": "2026-11-06"
-  },
-  "g1j55zsc": {
-   "t": "브룩필드자산운용(BAM) 2026년 3분기 실적 발표 콘퍼런스콜: FRE 및 DE 15% 증가",
-   "s": "TradingKey",
-   "u": "https://www.tradingkey.com/kr/news/transcripts/262293100-",
-   "d": "2026-11-06"
-  },
-  "ge8u4o": {
-   "t": "Brookfield, Fund VI 260억 달러 모금 후 '2027년 초' 최종 클로징 목표",
-   "s": "Infrastructure Investor",
-   "u": "https://www.infrastructureinvestor.com/brookfield-eyes-early-2027-final-close-after-raising-26bn-for-fund-vi/",
-   "d": "2026-11-06"
-  },
-  "g1v8p938": {
-   "t": "Drax 데이터센터 캠퍼스, Brookfield와 카타르 200억 달러 규모 AI 벤처의 첫 투자",
-   "s": "MLQ.ai",
-   "u": "https://mlq.ai/news/drax-data-center-campus-is-first-deal-for-brookfield-and-qatars-20-billion-ai-venture/",
-   "d": "2026-11-07"
-  },
-  "gqev6jh": {
-   "t": "Brookfield, 요크셔 200억 파운드 규모 AI 데이터센터 프로젝트 지원",
-   "s": "CoStar",
-   "u": "https://www.costar.com/article/1818359392/brookfield-backs-20-billion-ai-data-centre-project-in-yorkshire",
-   "d": "2026-11-06"
-  },
-  "g1a510ao": {
-   "t": "브룩필드 \"주민 동의 없는 AI 데이터센터 투자 안 한다\"",
-   "s": "글로벌이코노믹",
-   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/2026110722060064209a1f309431_1",
-   "d": "2026-11-07"
-  },
-  "g1tkq9l0": {
-   "t": "Brookfield \"AI 인프라 병목은 자본이 아니라 시공 인력\"",
-   "s": "Alternatives Watch",
-   "u": "https://www.alternativeswatch.com/2026/11/06/brookfield-ai-infrastructure-bottleneck-q3-2026/",
-   "d": "2026-11-06"
-  },
-  "giakz8i": {
-   "t": "Blackstone : 130억 유로 규모 가투자 자산 확보하며 제4호 기관용 유럽 직접대출 펀드 클로징",
-   "s": "www.marketscreener.com",
-   "u": "https://www.marketscreener.com/news/blackstone-closes-fourth-institutional-european-direct-lending-fund-with-a-13-billion-in-investab-ce785fdfd98bf722",
-   "d": "2026-11-04"
-  },
-  "g39quo9": {
-   "t": "Blackstone, 투자 가능 자본 130억 유로 규모의 4번째 유럽 기관투자자 대상 직접대출 펀드 클로징",
-   "s": "Capital-Riesgo.es",
-   "u": "https://capital-riesgo.es/en/articles/blackstone-closes-fourth-institutional-european-direct-lending-fund-with-13-billion-in-investable-capital-/",
-   "d": "2026-11-05"
-  },
-  "g17tyauz": {
-   "t": "블랙스톤, 87억달러 에너지 전환 펀드 모집 마감",
-   "s": "토큰포스트",
-   "u": "https://www.tokenpost.kr/news/economy/434317",
-   "d": "2026-11-06"
-  },
-  "g1vvzqb": {
-   "t": "Blackstone Life Sciences, Boston Scientific과 소형 심장 펌프 개발 공동 투자",
-   "s": "Today's Medical Developments",
-   "u": "https://www.todaysmedicaldevelopments.com/news/blackstone-life-sciences-boston-scientific-co-fund-development-miniature-heart-pump/",
-   "d": "2026-11-06"
-  },
-  "g1uk6dtw": {
-   "t": "Boston Scientific·Blackstone, 심장 펌프 개발 공동 자금 지원 위해 4억 5,500만 달러 규모 계약",
-   "s": "MedTech Dive",
-   "u": "https://www.medtechdive.com/news/boston-scientific-blackstone-agree-to-455m-deal-to-co-fund-heart-pump-dev/873686/",
-   "d": "2026-11-05"
-  },
-  "g17kv71n": {
-   "t": "Blackstone, 7억 6천만 달러 규모 미국 상업용 부동산 대출 포트폴리오를 Prime Finance에 매각",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/blackstone-sells-760m-commercial-us-real-estate-loan-portfolio-to-prime-finance/10139243.article",
-   "d": "2026-11-06"
-  },
-  "giybw2r": {
-   "t": "Prime Finance, Blackstone으로부터 7억 6,000만 달러 규모 상업용 부동산 대출 포트폴리오 인수",
-   "s": "citybiz",
-   "u": "https://www.citybiz.co/article/929962/prime-finance-acquires-760-million-commercial-real-estate-loan-portfolio-from-blackstone/",
-   "d": "2026-11-05"
-  },
-  "g1qp8b4i": {
-   "t": "TPG, 최신 기회추구형 부동산 펀드 50억 달러 규모 1차 클로징",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/tpg-reaches-5bn-first-close-on-latest-opportunistic-real-estate-fund/10139238.article",
-   "d": "2026-11-05"
-  },
-  "gqmsz4o": {
-   "t": "TPG, 연간 펀드레이징 전망치 550억 달러 이상으로 상향",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/tpg-lifts-annual-fundraising-forecast-above-55bn/",
-   "d": "2026-11-02"
-  },
-  "g1q9mk9m": {
-   "t": "TPG, 기관 LP들이 대형 운용사로 쏠리는 가운데 104억 달러 규모 기후 펀드 조성",
-   "s": "ImpactAlpha",
-   "u": "https://impactalpha.com/tpg-raises-a-10-4-billion-climate-fund-as-institutional-lps-gravitate-to-bigger-managers/",
-   "d": "2026-11-04"
-  },
-  "g12k96u3": {
-   "t": "TPG, 지분 중심의 자금 조달을 통해 롯데렌탈 인수 완료하고 잔여 지분에 대한 공개매수 추진",
-   "s": "헤럴드경제",
-   "u": "https://mbiz.heraldcorp.com/article/10923103",
-   "d": "2026-11-02"
-  },
-  "gm7nj8n": {
-   "t": "글로벌 사모펀드(PEF) 운용사 Texas Pacific Group(TPG), 공개매수 추진..",
-   "s": "매일경제",
-   "u": "https://www.mk.co.kr/en/stock/12199335",
-   "d": "2026-11-05"
-  },
-  "g1nrxkbu": {
-   "t": "아레스 매니지먼트(ARES) 2026년 3분기 실적 발표 콘퍼런스 콜: 운용자산(AUM) 6,910억 달러 달성",
-   "s": "TradingKey",
-   "u": "https://www.tradingkey.com/kr/news/transcripts/262253843-tradingkey",
-   "d": "2026-10-29"
-  },
-  "gjt5fvg": {
-   "t": "Ares의 펀드레이징, 사상 최대 실적 달성 추세",
-   "s": "Finimize",
-   "u": "https://finimize.com/content/ares-fundraising-is-on-pace-for-a-record-year",
-   "d": "2026-10-30"
-  },
-  "g17mkfue": {
-   "t": "Ares, 3분기 310억 달러 조달 힘입어 사상 최대 펀드레이징 해 기록 전망",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/ares-eyes-record-fundraising-year-after-31bn-third-quarter-haul/",
-   "d": "2026-10-30"
-  },
-  "gqalfag": {
-   "t": "파이프라인: Ares, 60억 달러 이상 규모 클로징 예상, Dexus 인프라 펀드 매각 추진, La Caisse의 17억 달러 타워 투자",
-   "s": "Infrastructure Investor",
-   "u": "https://www.infrastructureinvestor.com/the-pipeline-ares-expects-6bn-close-dexus-to-sell-infra-funds-la-caisses-1-7bn-towers-play/",
-   "d": "2026-11-02"
-  },
   "g1y1tsvp": {
    "t": "Stonepeak, bp와의 역사적인 딜을 통해 Castrol 지분 65% 인수",
    "s": "Energy Digital Magazine",
@@ -1580,7 +1427,7 @@
    "t": "Castrol Stonepeak: 대담한 100억 달러 딜이자 bp의 현명한 승리",
    "s": "Global Brands Magazine",
    "u": "https://www.globalbrandsmagazine.com/castrol-stonepeak-deal/",
-   "d": "2026-11-04"
+   "d": "2026-11-13"
   },
   "g1cm3vd7": {
    "t": "아폴로 글로벌 매니지먼트, 3분기 신규 자산 발굴 1140억 달러 역대 최고…주당 0.5625달러 배당 선언",
@@ -1588,64 +1435,10 @@
    "u": "https://www.datatooza.com/article/20261103220956934952ef3aca07_80",
    "d": "2026-11-03"
   },
-  "g14xall1": {
-   "t": "1140억달러 역대 최대…아폴로 3분기 신규 거래",
-   "s": "토큰포스트",
-   "u": "https://www.tokenpost.kr/amp/news/market/431986",
-   "d": "2026-11-03"
-  },
-  "g140dpxn": {
-   "t": "Apollo Global Management, 대체투자 수요에 힘입어 운용자산 1조 700억 달러로 증가",
-   "s": "Prop News Time",
-   "u": "https://propnewstime.com/latestnewsstories/Mzk3MDM=/apollo-global-management-assets-under-management-rise-to-usd-1-07-trillion-on-alternative-investment-demand",
-   "d": "2026-11-05"
-  },
-  "g1peip3i": {
-   "t": "아폴로 글로벌, 3분기 10억 5700만 달러 순손실로 적자 전환…은퇴 서비스 부문 평가손실",
-   "s": "데이터투자",
-   "u": "https://www.datatooza.com/article/20261103221107331552ef383631_80",
-   "d": "2026-11-03"
-  },
   "g1cbmxiq": {
    "t": "아폴로, 유럽에서 100억 유로 규모의 사모 대출 플랫폼 출시.",
    "s": "Vietnam.vn",
    "u": "https://www.vietnam.vn/ko/apollo-ra-mat-nen-tang-tin-dung-tu-nhan-tri-gia-10-ty-euro-tai-chau-au",
-   "d": "2026-11-03"
-  },
-  "gz87vyx": {
-   "t": "Macquarie Group, Wellington Management와 파트너십 맺고 벤처 성장 펀드 런칭",
-   "s": "marketscreener.com",
-   "u": "https://www.marketscreener.com/news/macquarie-group-partners-with-wellington-management-on-venture-growth-fund-launch-ce785fd9dd8af425",
-   "d": "2026-11-02"
-  },
-  "g1b8esbk": {
-   "t": "Macquarie, 호주 자산가 고객에 후기 단계 벤처 투자 개방",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/macquarie-opens-late-stage-venture-to-australian-wealth-clients",
-   "d": "2026-11-03"
-  },
-  "g1awhzpd": {
-   "t": "Macquarie, 확대 개편한 인프라 CRE 부문 위해 10억 달러 목표",
-   "s": "Green Street News",
-   "u": "https://greenstreetnews.com/article/macquarie-targeting-1b-for-newly-expanded-infrastructure-cre-unit/",
-   "d": "2026-11-06"
-  },
-  "gi0xjgt": {
-   "t": "[가비아 M&A] 재수 도전에 6000억 추가…판 돈 키운 맥쿼리",
-   "s": "딜사이트",
-   "u": "https://dealsite.co.kr/articles/171707",
-   "d": "2026-11-01"
-  },
-  "gwjlow0": {
-   "t": "Marcella Sivilotti, Macquarie Asset Management 글로벌 웰스 COO 선임",
-   "s": "Elets BFSI",
-   "u": "https://bfsi.eletsonline.com/marcella-sivilotti-appointed-global-wealth-coo-at-macquarie-asset/",
-   "d": "2026-11-03"
-  },
-  "gyjh125": {
-   "t": "Macquarie, 前 PGIM 임원을 글로벌 웰스 플랫폼 COO로 선임",
-   "s": "Alternatives Watch",
-   "u": "https://www.alternativeswatch.com/2026/11/03/macquarie-names-former-pgim-executive-coo-of-global-wealth-platform/",
    "d": "2026-11-03"
   },
   "g11qxjes": {
@@ -1672,149 +1465,11 @@
    "u": "https://www.citybiz.co/article/929015/i-squared-capital-closes-3-billion-infrastructure-credit-strategy-doubling-fundraising-target/",
    "d": "2026-11-03"
   },
-  "giqmfwd": {
-   "t": "ADIA·I Squared Capital, Avolon과 항공기 리스 플랫폼 구축",
-   "s": "Zawya",
-   "u": "https://www.zawya.com/en/business/adia-i-squared-capital-partner-with-avolon-on-aircraft-leasing-platform-1943788",
-   "d": "2026-11-04"
-  },
   "g16v04wo": {
    "t": "I Squared의 Hexa, 하이브리드·저장설비 연계 신재생에너지 프로젝트 자금 조달 위해 유력 투자자 유치",
    "s": "VCCircle",
    "u": "https://www.vccircle.com/isquared-s-hexa-taps-marquee-backer-to-fund-hybrid-storage-backed-renewable-projects",
    "d": "2026-11-06"
-  },
-  "gvzzz2a": {
-   "t": "Titan OS, 지분 투자와 BlackRock 운용 크레딧 한도로 4,600만 달러 조달",
-   "s": "Broadband TV News",
-   "u": "https://www.broadbandtvnews.com/2026/11/05/titan-os-raises-46m-through-equity-and-blackrock-managed-credit-facility/",
-   "d": "2026-11-05"
-  },
-  "g1x6lkkk": {
-   "t": "Titan OS, 4,600만 달러 추가 조달…BlackRock과 신용공여 계약 체결",
-   "s": "Telecompaper",
-   "u": "https://www.telecompaper.com/news/titan-os-raises-another-usd-46-mln-and-inks-credit-line-with-blackrock--1587901",
-   "d": "2026-11-05"
-  },
-  "g1r14m7e": {
-   "t": "블랙록 TCP 캐피털, 3분기 순손실 6675만 달러로 적자 전환…NAV 주당 5.61달러로 하락",
-   "s": "데이터투자",
-   "u": "https://www.datatooza.com/article/20261105220904871952ef333922_80",
-   "d": "2026-11-05"
-  },
-  "gjaxsw4": {
-   "t": "BlackRock, 보호형 주식 펀드로 DC형 퇴직연금 리스크 대응 나선다",
-   "s": "Investment & Pensions Europe",
-   "u": "https://www.ipe.com/news/blackrock-targets-dc-retirement-risk-with-protected-equity-fund/10139201.article",
-   "d": "2026-11-03"
-  },
-  "g1wzx1cf": {
-   "t": "Bernhard Capital Partners Management, LP, BlackRock, Inc 등으로부터 Bowman Consulting Group Ltd. 인수 완료",
-   "s": "marketscreener.com",
-   "u": "https://www.marketscreener.com/news/bernhard-capital-partners-management-lp-completed-the-acquisition-of-bowman-consulting-group-ltd-f-ce785fd2dd8dff2d",
-   "d": "2026-11-06"
-  },
-  "gcdmlhv": {
-   "t": "BlackRock(BLK), 운용 펀드를 통해 대형 음악 저작권 인수 지원",
-   "s": "Yahoo Finance",
-   "u": "https://finance.yahoo.com/media-advertising/articles/blackrock-blk-backed-major-music-221246496.html",
-   "d": "2026-11-06"
-  },
-  "g1xnnefb": {
-   "t": "Carlyle(CG), 펀드 엑시트 덕에 3분기 이익 예상치 상회",
-   "s": "Value The Markets",
-   "u": "https://www.valuethemarkets.com/news/carlyle-nasdaq-cg-beats-profit-estimates-on-deal-exits",
-   "d": "2026-11-05"
-  },
-  "g1jl98ka": {
-   "t": "Carlyle, 엑시트 호조로 수수료 관련 수익 감소분 만회하며 예상 상회",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-05/carlyle-beats-as-deal-exits-mitigate-dip-in-fee-related-earnings",
-   "d": "2026-11-05"
-  },
-  "g1xjkxeu": {
-   "t": "Carlyle, 3분기 사모펀드 회수금 57억 달러…Rigaku 등 주요 엑시트 영향",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/carlyles-q3-pe-proceeds-500310",
-   "d": "2026-11-05"
-  },
-  "g1y1oahs": {
-   "t": "Carlyle Group, 유입 자금 늘며 2026년 600억 달러 펀드레이징 목표",
-   "s": "Benzinga",
-   "u": "https://www.benzinga.com/markets/large-cap/26/11/62943219/carlyle-group-targets-60-billion-fundraising-in-2026-as-inflows-rise",
-   "d": "2026-11-05"
-  },
-  "g1kugw50": {
-   "t": "Carlyle, 펀드레이징 슈퍼사이클 앞두고 PE 투자자에 240억 달러 반환",
-   "s": "Benzinga",
-   "u": "https://www.benzinga.com/markets/private-markets/26/11/62941056/carlyle-returns-24b-investors-fundraising-supercycle",
-   "d": "2026-11-05"
-  },
-  "g1temmzh": {
-   "t": "Carlyle·PAI Partners, Theramex를 Cinven에 매각 합의",
-   "s": "PEI Private Equity",
-   "u": "https://www.privateequityinternational.com/carlyle-and-pai-partners-agree-to-sell-theramex-to-cinven/",
-   "d": "2026-11-03"
-  },
-  "g9cm7fr": {
-   "t": "Carlyle가 투자한 Vantive, 혈액투석 사업을 Rockwell Medical에 매각 합의",
-   "s": "Private Equity International",
-   "u": "https://www.privateequityinternational.com/carlyle-backed-vantive-agrees-hemodialysis-business-sale-to-rockwell-medical/",
-   "d": "2026-11-04"
-  },
-  "gzv9x7h": {
-   "t": "KKR, 싱텔, 타타 커뮤니케이션즈, 데이터센터 기업 STT GDC 인디아를 55억 달러 이상에 매각에 나서 - 이코노믹 타임즈",
-   "s": "TradingView",
-   "u": "https://fr.tradingview.com/news/reuters.com,2026:newsml_L3N46J07G:0/",
-   "d": "2026-11-01"
-  },
-  "g1m1x1fo": {
-   "t": "RWE와 KKR, Uniper 거래에 인수 의향 표명",
-   "s": "Finimize",
-   "u": "https://finimize.com/content/rwe-and-kkr-signal-interest-in-uniper-deal",
-   "d": "2026-11-02"
-  },
-  "gfrv3z8": {
-   "t": "천연가스 파이프라인 증설: Enbridge·KKR, 27억 달러 규모 JV 설립해 Westcoast 가스 파이프라인 증설 자금 조달",
-   "s": "EnergyNow",
-   "u": "https://energynow.ca/2026/08/new-joint-venture-enbridge-kkr-form-1-95-billion-jv-to-fund-westcoast-gas-pipeline-expansions/",
-   "d": "2026-11-03"
-  },
-  "gxn3sme": {
-   "t": "EQT 투자사 SatPort, Speedcast 텔레포트 인프라 네트워크 인수",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/eqt-backed-satport-acquires-speedcast-teleport-infrastructure-network/10139205.article",
-   "d": "2026-11-03"
-  },
-  "gxo7lji": {
-   "t": "EQT Infrastructure 투자사 SatPort, Speedcast의 텔레포트 사업 인수…12개 사이트 확보",
-   "s": "PEI Private Equity",
-   "u": "https://www.pehub.com/eqt-infrastructure-backed-satport-acquires-speedcasts-teleport-business-adding-12-sites/",
-   "d": "2026-11-03"
-  },
-  "gzdmipl": {
-   "t": "IMM PE의 AirFirst 컨티뉴에이션 펀드, EQT의 Coller Capital을 해외 리드 투자자로 유치",
-   "s": "BigGo Finance",
-   "u": "https://finance.biggo.com/news/011d235e-ba7e-4391-99ed-adcbe6e9d580",
-   "d": "2026-11-05"
-  },
-  "gj8abbc": {
-   "t": "IMM PE 에어퍼스트 컨티뉴펀드에 유럽 최대 사모펀드 EQT 그룹 투자 받는다",
-   "s": "매일경제",
-   "u": "https://www.mk.co.kr/news/stock/12198805",
-   "d": "2026-11-05"
-  },
-  "g1owssyv": {
-   "t": "EQT, 사우디·UAE 국부펀드와 AI·데이터센터 공동 투자 모색",
-   "s": "The National",
-   "u": "https://www.thenationalnews.com/business/markets/2026/11/03/exclusive-eqt-joint-deals-saudi-uae-sovereign-investors/",
-   "d": "2026-11-03"
-  },
-  "gj5sinr": {
-   "t": "EQT, 사우디 및 UAE 국부펀드와 공동 AI 및 데이터센터 투자 모색",
-   "s": "The National",
-   "u": "https://www.thenationalnews.com/business/markets/2026/11/03/eqt-seeks-joint-ai-and-data-centre-deal-with-saudi-and-uae-sovereign-investors/",
-   "d": "2026-11-03"
   },
   "g12j71u1": {
    "t": "퀴아젠 실적 발표 주목…108억 달러 규모 EQT 인수 거래 임박",
@@ -1834,71 +1489,17 @@
    "u": "https://ca.finance.yahoo.com/news/market-chatter-goldman-sachs-apollo-122044595.html",
    "d": "2026-11-05"
   },
-  "g1fmwc2l": {
-   "t": "골드만삭스, 티맵모빌리티 경영권 인수 추진…최대 8천억원 거론",
-   "s": "매일일보",
-   "u": "https://www.m-i.kr/news/articleView.html?idxno=2012163",
-   "d": "2026-10-29"
-  },
-  "g1bdgdic": {
-   "t": "Silver Lake·사우디 PIF, 250억 달러 규모 Unity 인수 가능성 타진",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/silver-lake-saudi-s-pif-approach-unity-in-potential-25b-gaming-buyout",
-   "d": "2026-11-06"
-  },
   "g3prntt": {
    "t": "사우디 국부펀드 PIF와 Silver Lake, Unity를 250억 달러에 인수 위해 협상 중이라고 보도",
    "s": "Tech4Gamers",
    "u": "https://tech4gamers.com/pif-silver-lake-discussions-acquire-unity/",
    "d": "2026-11-06"
   },
-  "gmb06o3": {
-   "t": "보도: Silver Lake와 PIF, 250억 달러 규모 Unity 인수 타진",
-   "s": "PocketGamer.biz",
-   "u": "https://www.pocketgamer.biz/silver-lake-and-pif-explore-25bn-deal-to-acquire-unity/",
-   "d": "2026-11-06"
-  },
-  "ghdduj4": {
-   "t": "Unity 인수 협상: 사우디 PIF·Silver Lake, 250억 달러 딜 추진",
-   "s": "Tbreak UAE",
-   "u": "https://tbreak.com/unity-takeover-saudi-pif-silver-lake/",
-   "d": "2026-11-06"
-  },
-  "g1ptkybc": {
-   "t": "Unity, 사우디 PIF·Silver Lake와 250억 달러 규모 딜로 비상장 전환 가능성",
-   "s": "SavePoint Gaming",
-   "u": "https://savepointgaming.co/games/unity-pif-silver-lake-acquisition/",
-   "d": "2026-11-06"
-  },
-  "gg42vz6": {
-   "t": "사우디 PIF와 Silver Lake, 250억 달러 가치로 Unity 인수 논의했다고 새 보도 전해",
-   "s": "Wolf's Gaming Blog",
-   "u": "https://wolfsgamingblog.com/2026/11/06/saudi-pif-and-silver-lake-held-talks-to-buy-unity-at-25-billion-valuation-says-new-report/",
-   "d": "2026-11-06"
-  },
-  "g1hfoz1y": {
-   "t": "Nuveen Real Estate, 미국 서부 소매 부동산 13개 포트폴리오를 4억 4,600만 달러에 인수",
-   "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/nuveen-real-estate-acquires-13-property-western-u-s-retail-portfolio-for-446m/",
-   "d": "2026-11-03"
-  },
-  "gufgk99": {
-   "t": "간추린 소식: TIAA, Nuveen의 신규 자연 펀드 앵커 투자자로 참여",
-   "s": "New Private Markets",
-   "u": "https://www.newprivatemarkets.com/in-brief-tiaa-anchors-nuveens-new-nature-fund/",
-   "d": "2026-11-03"
-  },
   "g17399cz": {
    "t": "Nuveen Real Estate, 헬스케어 최선호에 이어 다수 시장의 식료품점 앵커 리테일도 유망하다고 평가",
    "s": "The Edge Singapore",
    "u": "https://www.theedgesingapore.com/cityandcountry/property/besides-healthcare-top-pick-nuveen-real-estate-touts-grocery-anchored-retail",
    "d": "2026-11-06"
-  },
-  "gtgd6mk": {
-   "t": "실적발표 컨퍼런스 콜: Nuveen Churchill Direct Lending, 2026년 3분기 EPS 시장 예상치 하회",
-   "s": "Investing.com Canada",
-   "u": "https://ca.investing.com/news/stock-market-news/earnings-call-transcript-nuveen-churchill-direct-lending-misses-q3-2026-eps-view-93CH-4926336",
-   "d": "2026-11-03"
   },
   "glasvoq": {
    "t": "사모펀드 CD&R, Global Payments 상장폐지 인수 타진…400억 달러 규모 가능성",
@@ -1930,23 +1531,11 @@
    "u": "https://www.privateequitywire.co.uk/jpmorgan-and-bofa-prepare-2-4bn-financing-for-cvcs-iff-acquisition/",
    "d": "2026-11-05"
   },
-  "gsa4xoh": {
-   "t": "Partners Group US evergreen fund faces $2.2bn withdrawal requests",
-   "s": "Private Equity Wire",
-   "u": "https://www.privateequitywire.co.uk/partners-group-us-evergreen-fund-faces-2-2bn-withdrawal-requests",
-   "d": "2026-10-30"
-  },
   "g1tei4yj": {
    "t": "Partners Group, 유럽 인프라 팀 확대",
    "s": "finews.com",
    "u": "https://www.finews.com/news/english-news/74366-partners-group-expands-infrastructure-team-europe",
    "d": "2026-11-06"
-  },
-  "g1uin0py": {
-   "t": "QUICK SPARK: Partners Group, 데이터센터·통신·인프라 베테랑 영입해 신규 투자 강화",
-   "s": "Benzinga",
-   "u": "https://www.benzinga.com/markets/private-markets/26/11/62936902/quick-spark-partners-group-brings-in-data-center-telecom-infrastructure-veterans-to-drive-new-investments",
-   "d": "2026-11-05"
   },
   "gf4dwxr": {
    "t": "Partners Group, 3억 유로 규모 프랑스 주거용 부동산 전략 출시",
@@ -1978,41 +1567,11 @@
    "u": "https://www.privateequitywire.co.uk/cinven-acquires-theramex-for-e2-6bn-as-carlyle-and-pai-secure-exit/",
    "d": "2026-11-05"
   },
-  "gq2t91v": {
-   "t": "Cinven, 여성 건강 제약사 Theramex 인수…30억 달러 규모 거래로 알려져",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/cinven-buys-women-s-health-drugmaker-theramex-in-reported-3b-deal",
-   "d": "2026-11-03"
-  },
-  "gqrgeor": {
-   "t": "Cinven, Theramex 인수: 2018년 인수가의 4배 가치 플랫폼에 22억 파운드 거래",
-   "s": "Tech Times",
-   "u": "https://www.techtimes.com/articles/330045/20261104/cinven-theramex-acquisition-gbp22-billion-deal-platform-worth-four-times-its-2018-price.htm",
-   "d": "2026-11-04"
-  },
-  "g1z0myms": {
-   "t": "Cinven, Theramex 인수 위해 15억 유로 규모 부채 조달 추진",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-03/cinven-set-to-back-theramex-acquisition-with-1-5-billion-debt",
-   "d": "2026-11-03"
-  },
   "g1112qkp": {
    "t": "Gregorio Jiménez, Cinven으로부터 Burger King 운영사 RBE 23억 유로에 되찾는다",
    "s": "Dealroom",
    "u": "https://app.dealroom.co/news/note/gregorio-jimenez-retakes-burger-king-operator-rbe-from-cinven-in-2-3b-buyout",
    "d": "2026-11-06"
-  },
-  "gtak5hi": {
-   "t": "Hines, 신규 글로벌 부동산 ELTIF로 프라이빗 웰스 플랫폼 확대",
-   "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/hines-expands-private-wealth-platform-with-new-global-real-estate-eltif/",
-   "d": "2026-11-04"
-  },
-  "g1mwyrgo": {
-   "t": "미국 부동산 거물 Hines, 신규 펀드로 유럽 자산가 공략",
-   "s": "The Business Times",
-   "u": "https://www.businesstimes.com.sg/property/us-property-titan-hines-targets-europes-wealthy-new-fund",
-   "d": "2026-11-02"
   },
   "gmtgone": {
    "t": "Hines, 두 건의 투자로 이탈리아 물류 포트폴리오 확대",
@@ -2044,34 +1603,10 @@
    "u": "https://www.pei-secondariesinvestor.com/hamilton-lane-reaches-first-close-on-latest-flagship-launches-debut-gp-led-focused-vehicle/",
    "d": "2026-11-04"
   },
-  "gennxxu": {
-   "t": "Hamilton Lane(HLNE) 2027 회계연도 2분기 실적 컨퍼런스콜: 수수료 발생 AUM 12% 증가",
-   "s": "TradingKey",
-   "u": "https://www.tradingkey.com/es/news/transcripts/262269925-",
-   "d": "2026-11-03"
-  },
-  "g1ijqdi1": {
-   "t": "Hamilton Lane의 에버그린 플랫폼, 운용자산 210억 달러 돌파",
-   "s": "Citywire",
-   "u": "https://citywire.com/middle-east/news/hamilton-lane-s-evergreen-platform-hits-21bn-in-aum/a2502551",
-   "d": "2026-11-04"
-  },
-  "g1yofwjs": {
-   "t": "Hamilton Lane, 연간 배당 목표를 11% 상향",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L2N46K0J1:0-hamilton-lane-raises-full-year-dividend-target-by-11/",
-   "d": "2026-11-03"
-  },
   "gnginba": {
    "t": "Bain Capital, 세 번째 아시아 특수상황 펀드로 18억 달러 모집",
    "s": "Mingtiandi",
    "u": "https://www.mingtiandi.com/real-estate/finance/bain-capital-raises-1-8b-for-third-asia-special-situations-fund/",
-   "d": "2026-11-03"
-  },
-  "gk16ks4": {
-   "t": "Everllence, Bain Capital 딜을 앞두고 Fabian Kley를 CFO로 선임",
-   "s": "Maritime Gateway",
-   "u": "https://www.maritimegateway.com/everllence-names-fabian-kley-cfo-ahead-of-bain-capital-deal/",
    "d": "2026-11-03"
   },
   "gdt27k0": {
@@ -2134,23 +1669,809 @@
    "u": "https://www.moneycontrol.com/news/business/markets/mukul-agrawal-exits-ajmera-realty-pgim-india-raises-stake-in-ganesh-consumer-products-14069920.html",
    "d": "2026-11-04"
   },
-  "gu2aarc": {
-   "t": "Warburg Pincus raises Ingenia Communities bid to 5.50 호주달러 per share, lifting stock to 10-month high",
-   "s": "Prop News Time",
-   "u": "https://propnewstime.com/latestnewsstories/MzkxODI=/warburg-pincus-raises-ingenia-communities-bid-to-aud-5-50-per-share-lifting-stock-to-10-month-high",
-   "d": "2026-11-01"
-  },
-  "g1evsgbf": {
-   "t": "Calumet, Warburg Pincus와의 Montana Renewables 거래 구조 재편",
-   "s": "StreetInsider",
-   "u": "https://www.streetinsider.com/Corporate+News/Calumet+restructures+Montana+Renewables+deal+with+Warburg+Pincus/27295482.html",
-   "d": "2026-11-05"
-  },
   "g3dmf1z": {
    "t": "브뤼셀, Warburg Pincus가 지원하는 스페인 Boost Air의 2억 8000만 유로 규모 딜 승인",
    "s": "Dealroom",
    "u": "https://app.dealroom.co/news/note/brussels-clears-warburg-pincus-backed-deal-for-spain-s-280m-boost-air",
    "d": "2026-11-08"
+  },
+  "gr4ck7e": {
+   "t": "[단독] 블랙스톤, 韓 리테일 대체투자 시장 진출…'프라이빗웰스' 조직 신설",
+   "s": "블로터",
+   "u": "https://www.bloter.net/news/articleView.html?idxno=678547",
+   "d": "2026-11-15"
+  },
+  "gajwawv": {
+   "t": "Blackstone, 부동산 세컨더리 펀드로 30억 달러 모집 추진",
+   "s": "The Real Deal",
+   "u": "https://therealdeal.com/national/2026/11/12/blackstone-seeks-3b-for-real-estate-secondaries-fund/",
+   "d": "2026-11-12"
+  },
+  "gtnehu8": {
+   "t": "Blackstone, 부동산 펀드 지분 매입용 30억 달러 펀드 조성 추진",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/real-estate/articles/blackstone-targets-3b-fund-buy-171259803.html",
+   "d": "2026-11-12"
+  },
+  "gdnahdu": {
+   "t": "Blackstone, Pfizer 비만 신약 파이프라인에 15억 달러 투자",
+   "s": "BioXconomy",
+   "u": "https://www.bioxconomy.com/investment/blackstone-commits-1-5bn-to-back-pfizer-s-obesity-pipeline",
+   "d": "2026-11-13"
+  },
+  "gx1py0r": {
+   "t": "Pfizer, Blackstone과의 계약으로 GLP-1 신약 임상시험 자금 최대 15억 달러 확보",
+   "s": "MedCity News",
+   "u": "https://medcitynews.com/2026/11/pfizer-blackstone-life-sciences-long-acting-glp-1-berobenatide-metabolic-obesity-weight-management-pfe/",
+   "d": "2026-11-12"
+  },
+  "g17i8mqu": {
+   "t": "Blackstone 부동산 부문, 이익 감소 속 경영진 교체",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/blackstone-real-estate-faces-leadership-changes-amid-declining-earnings/",
+   "d": "2026-11-13"
+  },
+  "g19t054h": {
+   "t": "블랙스톤, 5억3200만 달러로 인도 금 담보대출 업체 IIFL 파이낸스 지분 인수",
+   "s": "Martin Cid Magazine",
+   "u": "https://ko.martincid.com/business-ko/%EB%B8%94%EB%9E%99%EC%8A%A4%ED%86%A4-5%EC%96%B53200%EB%A7%8C-%EB%8B%AC%EB%9F%AC%EB%A1%9C-%EC%9D%B8%EB%8F%84-%EA%B8%88-%EB%8B%B4%EB%B3%B4%EB%8C%80%EC%B6%9C-%EC%97%85%EC%B2%B4-iifl/",
+   "d": "2026-11-13"
+  },
+  "g1m4h2tv": {
+   "t": "Brookfield, 대표 인프라 전략에 260억 달러 확보…수주 내 첫 클로징 전망",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/brookfield-obtains-26b-for-flagship-infrastructure-strategy-anticipates-first-close-in-coming-weeks/",
+   "d": "2026-11-13"
+  },
+  "g8bpb1g": {
+   "t": "Brookfield, Fund VI로 260억 달러 모집…2027년 초까지 300억 달러 목표",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/brookfield-gathers-26b-for-fund-vi-eyes-30b-by-early-2027",
+   "d": "2026-11-13"
+  },
+  "gbwaiil": {
+   "t": "Brookfield, 아시아태평양 부동산 첫 사이드카 펀드로 18억 달러 조달",
+   "s": "VCCircle",
+   "u": "https://www.vccircle.com/brookfieldraises-1-8-bn-for-debut-asia-pacific-real-estate-sidecar-fund",
+   "d": "2026-11-13"
+  },
+  "g1ifi09e": {
+   "t": "Brookfield, 첫 아태지역 부동산 펀드 18억 달러로 마감… 목표치 80% 상회",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/brookfield-closes-debut-asia-pacific-property-fund-at-1-8b-80-above-target",
+   "d": "2026-11-14"
+  },
+  "g1c8me3l": {
+   "t": "독일, Uniper 지분 축소 추진…Brookfield·CPPIB 매각 절차 다음 단계 진출 - 로이터",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2176090",
+   "d": "2026-11-15"
+  },
+  "g1odu6q1": {
+   "t": "브룩필드·CPPIB 컨소시엄, 유니퍼 매각 절차 다음 단계 진입... 소식통",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L3N46U1XI:0/",
+   "d": "2026-11-13"
+  },
+  "gthru2i": {
+   "t": "Brookfield와 KKR, Eyewa 지분 7억 달러 가치에 인수 논의 중",
+   "s": "FWDStart",
+   "u": "https://www.fwdstart.me/p/brookfield-and-kkr-in-talks-for-majority-stake-in-eyewa-at-700m-valuation",
+   "d": "2026-11-15"
+  },
+  "g1gbmdzz": {
+   "t": "Sempra: Sempra Infrastructure Partners 지분 45% KKR 주도 컨소시엄에 매각 완료",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/sempra-sale-of-45-stake-in-sempra-infrastructure-partners-to-kkr-led-consortium-completed/",
+   "d": "2026-11-14"
+  },
+  "g16g43ib": {
+   "t": "Sempra, KKR에 100억 달러 규모 인프라 지분 매각 마무리",
+   "s": "Crypto Briefing",
+   "u": "https://cryptobriefing.com/sempra-deal-si-partners-stake-sale-closes-2026-11/",
+   "d": "2026-11-12"
+  },
+  "g1p7so6": {
+   "t": "RWE, KKR, 영국 해상풍력에 150억 달러 투자 약속",
+   "s": "Energy Intelligence",
+   "u": "https://www.energyintel.com/000001a1-cab6-d909-a7f9-eeb72d350000",
+   "d": "2026-11-11"
+  },
+  "gotygri": {
+   "t": "[종목 브리핑] KKR, 영국 해상풍력단지 2곳 지분 인수 완료",
+   "s": "비건뉴스",
+   "u": "https://www.vegannews.co.kr/news/article.html?no=403724",
+   "d": "2026-11-11"
+  },
+  "gjbvpsc": {
+   "t": "KKR, 다이아몬드백에 합류해 Five Point의 Deep Blue 지분을 21억 달러에 인수",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/global-by-region/kkr-joins-diamondback-in-reported-2-1bn-acquisition-of-five-points-deep-blue-stake.html",
+   "d": "2026-11-11"
+  },
+  "gsn32v5": {
+   "t": "다이아몬드백에너지·KKR, 딥블루 지분 인수 합의",
+   "s": "비건뉴스",
+   "u": "https://www.vegannews.co.kr/news/article.html?no=403917",
+   "d": "2026-11-11"
+  },
+  "g53ybhc": {
+   "t": "[삼성화재의 글로벌 확장③] KKR·KIC와 캐노피우스 공동 인수…글로벌 투자 역량 더한다",
+   "s": "팝콘뉴스",
+   "u": "http://www.popcornnews.net/news/articleViewAmp.html?idxno=139749",
+   "d": "2026-11-12"
+  },
+  "g1v21dd7": {
+   "t": "SEI·Carlyle, 자산가 대상 사모시장 펀드 출시",
+   "s": "CFOtech Australia",
+   "u": "https://cfotech.com.au/story/sei-carlyle-launch-private-markets-fund-for-wealth",
+   "d": "2026-11-11"
+  },
+  "g1ii67ey": {
+   "t": "Carlyle과 SEI, 미국 자산 투자자를 대상으로 하는 다중 전략 사모시장 펀드 출시",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/carlyle-sei-launch-multi-strategy-private-markets-fund-targeting-us-wealth-investors.html",
+   "d": "2026-11-11"
+  },
+  "g1otjwfg": {
+   "t": "Carlyle과 SEI, 고액 자산가 위해 최소 가입금액 1,000달러인 사모시장 펀드 출시",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/carlyle-and-sei-debut-private-markets-fund-with-1-000-minimum-for-wealthy-investors",
+   "d": "2026-11-11"
+  },
+  "g14l7h0m": {
+   "t": "Carlyle·SEI, 첫 사모시장 펀드 출시",
+   "s": "Wealth Management",
+   "u": "https://www.wealthmanagement.com/alternative-investments/carlyle-sei-investments-debut-retail-private-markets-fund",
+   "d": "2026-11-10"
+  },
+  "ghwk85e": {
+   "t": "Carlyle, 매출 3배 이상 키운 Disguise를 Yamaha에 매각하기로 합의",
+   "s": "PEI Private Equity",
+   "u": "https://www.privateequityinternational.com/carlyle-agrees-sale-of-disguise-to-yamaha-after-more-than-tripling-revenue/",
+   "d": "2026-11-13"
+  },
+  "ggndz90": {
+   "t": "칼라일 연준, 12월 금리 0.5%p 인상할 수도",
+   "s": "SBS Biz",
+   "u": "https://biz.sbs.co.kr/amp/article/20000345566",
+   "d": "2026-11-10"
+  },
+  "g1fcw199": {
+   "t": "Carlyle의 Thomas, AI 인프라 금융 리스크 경고",
+   "s": "marketscreener.com",
+   "u": "https://www.marketscreener.com/news/carlyle-s-thomas-warns-about-ai-infrastructure-financing-risks-ce785edade8af422",
+   "d": "2026-11-10"
+  },
+  "g17520zi": {
+   "t": "Humana의 28억 달러 BlackRock 거래, 2028년부터 CenterWell 클리닉 재매입 가능",
+   "s": "MarketScale",
+   "u": "https://www.marketscale.com/industries/healthcare/humanas-28b-blackrock-deal-lets-it-buy-back-centerwell-clinics-starting-in-2028",
+   "d": "2026-11-13"
+  },
+  "gu8tjlq": {
+   "t": "HarbourVest·Adams Street, Madison Dearborn의 은퇴 서비스 업체 컨티뉴에이션 비히클 공동 주도",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/harbourvest-and-adams-street-co-led-madison-dearborns-cv-for-retirement-services-provider/",
+   "d": "2026-11-12"
+  },
+  "g1qed5fy": {
+   "t": "Harbert 계열사, BlackRock 산하 GIP로부터 조지아주 가스발전소 지분 65% 인수",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/harbert-affiliate-buys-65-of-georgia-gas-plant-from-blackrock-s-gip",
+   "d": "2026-11-12"
+  },
+  "g14swwif": {
+   "t": "ADB, 필리핀 등 아시아 시장 겨냥한 BlackRock 인프라 펀드에 3천만 달러 승인",
+   "s": "Manila Bulletin",
+   "u": "https://mb.com.ph/2026/11/09/adb-approves-30-million-for-blackrock-infrastructure-fund-targeting-philippines-other-asian-markets",
+   "d": "2026-11-09"
+  },
+  "g1jk3gjr": {
+   "t": "맥쿼리, 가비아·KINX 동시 인수 추진",
+   "s": "이투데이",
+   "u": "https://m.etoday.co.kr/view_photo.php?idxno=2640979",
+   "d": "2026-11-07"
+  },
+  "gtqcumi": {
+   "t": "시장 소문: Macquarie Group 산하 Macquarie Asset Management와 싱가포르 국부펀드, 필리핀 지열에너지 업체 지분 처분 방안 검토",
+   "s": "Moomoo",
+   "u": "https://www.moomoo.com/news/post/1004087986/market-chatter-macquarie-group-s-macquarie-asset-management-singaporean-sovereign",
+   "d": "2026-11-10"
+  },
+  "g17775on": {
+   "t": "Euroclear FundsPlace, Macquarie Asset Management가 협력하여 민간 인프라 전략에 대한 접근성 확대",
+   "s": "FX News Group",
+   "u": "https://fxnewsgroup.com/forex-news/institutional/euroclear-fundsplace-macquarie-asset-management-collaborate-to-broaden-access-to-private-infrastructure-strategies/",
+   "d": "2026-11-10"
+  },
+  "g1wo8e92": {
+   "t": "사모 인프라, 자산가 고객에 확산… Euroclear, Macquarie 추가",
+   "s": "FinanceX Magazine",
+   "u": "https://www.financexmagazine.com/post/private-infrastructure-reaches-wealth-clients-as-euroclear-adds-macquarie",
+   "d": "2026-11-11"
+  },
+  "g1fevm2d": {
+   "t": "Macquarie Group, 신임 CEO 선임",
+   "s": "marketscreener.com",
+   "u": "https://www.marketscreener.com/news/macquarie-group-appoints-ceo-ce785fd3d988f423",
+   "d": "2026-11-09"
+  },
+  "gzo2yw8": {
+   "t": "TPG’s US residential credit fund secures 20억 달러 in first close",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/tpgs-us-residential-credit-fund-secures-2bn-in-first-close/10139352.article",
+   "d": "2026-11-13"
+  },
+  "gor22nf": {
+   "t": "TPG, 두 번째 기후 펀드를 위해 100억 달러 확보",
+   "s": "scanx.trade",
+   "u": "https://scanx.trade/stock-market-news/startups/tpg-secures-10-billion-second-climate-fund/52428630",
+   "d": "2026-11-08"
+  },
+  "g1n5feng": {
+   "t": "TPG finances Lotte Rental buyout in Korea with debt-backed tender offer",
+   "s": "Chosunbiz",
+   "u": "https://biz.chosun.com/en/en-finance/2026/11/06/ZVCPIY5COFAEXIQOOSBNFCYK5A/",
+   "d": "2026-11-06"
+  },
+  "g1gdu1s5": {
+   "t": "VIP자산운용, TPG의 롯데렌탈 인수 제안 환영, 소액주주들의 공정한 퇴출 촉구",
+   "s": "머니투데이",
+   "u": "https://www.mt.co.kr/en/stock/2026/11/12/2026111214412746560",
+   "d": "2026-11-12"
+  },
+  "geeh7ax": {
+   "t": "Arka Fincap, TPG 산하 The Rise Funds와 5억 2,500만 루피 투자 계약 체결",
+   "s": "Moneycontrol.com",
+   "u": "https://www.moneycontrol.com/news/india/arka-fincap-signs-rs-525-crore-investment-deal-with-tpg-s-the-rise-funds-14074339.html",
+   "d": "2026-11-07"
+  },
+  "g19xk37d": {
+   "t": "Kirloskar Oil Engines arm Arka Fincap signs ₹800 crore investment deal with TPG",
+   "s": "CNBC TV18",
+   "u": "https://www.cnbctv18.com/market/kirloskar-oil-engines-arm-arka-fincap-signs-rs-800-crore-investment-deal-with-tpg-20029489.htm",
+   "d": "2026-11-07"
+  },
+  "gd5su99": {
+   "t": "보도: Silver Lake와 사우디아라비아 PIF, Unity 인수를 위한 논의 진행",
+   "s": "Game Developer",
+   "u": "https://www.gamedeveloper.com/business/silver-lake-and-the-saudi-arabia-pif-hold-talks-with-unity-to-explore-acquisition",
+   "d": "2026-11-07"
+  },
+  "g17v35j8": {
+   "t": "(Reuters): PIF와 Silver Lake, 게이밍 소프트웨어 기업 Unity 인수 검토",
+   "s": "صحيفة مال",
+   "u": "https://maaal.com/en/news/details/reuters-pif-and-silver/",
+   "d": "2026-11-06"
+  },
+  "g137r5tt": {
+   "t": "Silver Lake·PIF, 250억 달러 규모 Unity 인수 협상",
+   "s": "games.gg",
+   "u": "https://games.gg/news/unity-reportedly-emerges-as-an-acquisition-target/",
+   "d": "2026-11-06"
+  },
+  "g11zivsu": {
+   "t": "Silver Lake와 PIF, 250억 달러 밸류에이션으로 Unity 인수 논의",
+   "s": "Beinsure",
+   "u": "https://beinsure.com/news/silver-lake-and-pif-discuss-unity-acquisition/",
+   "d": "2026-11-06"
+  },
+  "g12r30ow": {
+   "t": "EA를 삼킨 사우디와 사모펀드 Silver Lake, 이번엔 Unity 인수 추진 보도",
+   "s": "Eurogamer.net",
+   "u": "https://www.eurogamer.net/unity-game-engine-saudi-arabia-silver-lake",
+   "d": "2026-11-06"
+  },
+  "g12y47ip": {
+   "t": "Ares Management, 크레딧 세컨더리 펀드로 36억 달러 모집 - 보도",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/seekingalpha:47afc25eb094b:0-ares-management-raises-3-6b-for-credit-secondaries-fund-report/",
+   "d": "2026-11-12"
+  },
+  "g16zbwyc": {
+   "t": "Ares, 사상 최대 규모 크레딧 컨티뉴에이션 펀드로 36억 달러 모금 - Bloomberg News",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46T1J0:0-ares-raises-3-6-billion-in-its-biggest-credit-continuation-fund-bloomberg-news/",
+   "d": "2026-11-12"
+  },
+  "gcc9u9r": {
+   "t": "Ares Capital, Apollo의 MidCap Financial을 26억 달러에 인수",
+   "s": "https://www.connectmoney.com/",
+   "u": "https://www.connectmoney.com/stories/ares-capital-to-purchase-apollos-midcap-financial-in-2-6b-deal/",
+   "d": "2026-11-09"
+  },
+  "g19i3enj": {
+   "t": "Ares Capital to acquire MidCap Financial, boosting middle-market presence with a 25% discount deal.",
+   "s": "Pluang",
+   "u": "https://pluang.com/en/news-feed/ares-capital-akuisisi-midcap-financial-perkuat-posisi-pasar",
+   "d": "2026-11-04"
+  },
+  "g1kt6efs": {
+   "t": "CTP, Ares로부터 5억 달러 규모 베트남 물류 포트폴리오 인수",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/ctp-to-acquire-500m-vietnam-logistics-portfolio-from-ares/",
+   "d": "2026-11-09"
+  },
+  "g1n5h3ma": {
+   "t": "CTP, Ares의 SLP Vietnam 물류 플랫폼 5억 달러에 인수",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/ctp-buys-ares-slp-vietnam-logistics-platform-for-500m",
+   "d": "2026-11-15"
+  },
+  "g1rgzm6o": {
+   "t": "연기금의 물류 투자 확대 속 NBIM, Ares와 15억 유로 규모 거래",
+   "s": "Global SWF",
+   "u": "https://globalswf.com/news/nbim-s-1-5-billion-ares-deal-comes-as-pension-funds-increase-logistics-investment",
+   "d": "2026-11-06"
+  },
+  "gmdcsnd": {
+   "t": "Ares, Equinox에 자본 제공…10억 달러 넘는 성장 투자 계획 자금 지원",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/eqs:c02f4cd28094b:0-ares-provides-capital-to-equinox-to-help-fund-more-than-1-billion-in-planned-growth-investments/",
+   "d": "2026-11-06"
+  },
+  "g13dz3k7": {
+   "t": "대체 투자 수요에 힘입어 아폴로 자산 규모, 1조 700억 달러 달성",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L3N46K0V7:0/",
+   "d": "2026-11-03"
+  },
+  "gfleso2": {
+   "t": "이지젯 주주들, 아폴로 인수 승인…2027년 1분기 완료 예정",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2170600",
+   "d": "2026-11-11"
+  },
+  "gjjmsxi": {
+   "t": "美 아폴로, 英 ‘이지젯’ 인수 결정",
+   "s": "카고뉴스",
+   "u": "https://www.cargonews.co.kr/news/articleView.html?idxno=61222",
+   "d": "2026-11-12"
+  },
+  "gvfuky4": {
+   "t": "아폴로 글로벌 매니지먼트, 6억 달러 규모 후순위채 발행 완료",
+   "s": "데이터투자",
+   "u": "https://www.datatooza.com/article/202611141014066252ef395cbd_80",
+   "d": "2026-11-14"
+  },
+  "gl9gx5h": {
+   "t": "Apollo Global Management, EMEA 지역 인적자본 헤드로 Christiana Voskarides 임명",
+   "s": "https://hrtoday.in/",
+   "u": "https://hrtoday.in/apollo-global-management-appoints-christiana-voskarides-as-head-of-human-capital-emea/",
+   "d": "2026-11-14"
+  },
+  "ghp3gex": {
+   "t": "Goldman Sachs·HSBC·Fortress, 1억5천만 달러 규모 사우디아라비아 사모대출 거래에 공동 참여",
+   "s": "marketscreener.com",
+   "u": "https://www.marketscreener.com/news/goldman-sachs-hsbc-fortress-team-up-on-150-million-saudi-private-credit-deal-ce785edbdf80f42c",
+   "d": "2026-11-11"
+  },
+  "g1ezhyhv": {
+   "t": "시장 소문: Goldman Sachs, HSBC, Fortress, 1억 5,000만 달러 규모 사모대출 딜 위해 손잡아",
+   "s": "Moomoo",
+   "u": "https://www.moomoo.com/news/post/1004311176/market-chatter-goldman-sachs-hsbc-fortress-team-up-on-150",
+   "d": "2026-11-11"
+  },
+  "g7e7vg4": {
+   "t": "Goldman Sachs: 사모대출 GP들, 2027~28년에 유동성 완화 기대",
+   "s": "Alternatives Watch",
+   "u": "https://www.alternativeswatch.com/2026/11/12/goldman-sachs-private-credit-survey-liquidity/",
+   "d": "2026-11-12"
+  },
+  "gcyp5nd": {
+   "t": "Goldman Sachs 설문조사 결과, 사모대출 투자자들 부실 우려 커져",
+   "s": "Benzinga",
+   "u": "https://www.benzinga.com/markets/private-markets/26/11/63216673/private-credit-investors-are-getting-nervous-about-defaults-goldman-sachs-survey-finds",
+   "d": "2026-11-12"
+  },
+  "g6wp2q4": {
+   "t": "AI 위협 급증 속 Daylight, Goldman Sachs Alternatives 주도로 8,000만 달러 조달",
+   "s": "The Globe and Mail",
+   "u": "https://www.theglobeandmail.com/investing/markets/markets-news/ACCESS%20Newswire/8761978/as-ai-threats-surge-daylight-raises-80m-led-by-goldman-sachs-alternatives/",
+   "d": "2026-11-10"
+  },
+  "g1usxoeg": {
+   "t": "이스라엘 창업 보안 스타트업 Daylight, Goldman Sachs 주도 펀딩 라운드에서 8,000만 달러 조달",
+   "s": "Ynetnews",
+   "u": "https://www.ynetnews.com/business/article/rk7be5gcze",
+   "d": "2026-11-10"
+  },
+  "g2bkokq": {
+   "t": "Ardian, 반도체 밸류체인 전문 사모펀드 플랫폼 중 선두 주자로 10억 유로 조달",
+   "s": "Capital-Riesgo.es",
+   "u": "https://capital-riesgo.es/en/articles/ardian-raises-1-billion-for-one-of-the-first-private-equity-platforms-dedicated-to-the-semiconductor-value-chain-/",
+   "d": "2026-11-09"
+  },
+  "gfu3k3c": {
+   "t": "Ardian, 반도체 플랫폼용 10억 유로 조성…칩 기업 성장 지원",
+   "s": "Unite.AI",
+   "u": "https://www.unite.ai/ardian-raises-1b-for-semiconductor-platform-to-scale-chip-companies/",
+   "d": "2026-11-09"
+  },
+  "gz04a9a": {
+   "t": "Ardian, 10억 유로 규모 반도체 펀드 조성",
+   "s": "Briefs Finance",
+   "u": "https://www.briefs.co/news/ardian-lines-up-1-billion-for-first-chip-focused-fund-as-ai/",
+   "d": "2026-11-09"
+  },
+  "g1sd3ll5": {
+   "t": "Ardian, 10억 유로 규모 반도체 플랫폼 조성…MENA 투자자가 41% 출자",
+   "s": "FourWeekMBA",
+   "u": "https://fourweekmba.com/ai-ardian-raises-1b-chip-platform-mena-investors-put-up-41/",
+   "d": "2026-11-09"
+  },
+  "g1vebl76": {
+   "t": "Ardian, 중동 자금 끌어와 10억 유로 반도체 펀드 조성",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-09/ardian-raises-1-billion-europe-semiconductor-fund-with-middle-east-backing",
+   "d": "2026-11-09"
+  },
+  "g13vf1hb": {
+   "t": "프랑스 Ardian, 반도체 제조사 투자용으로 10억 달러 이상 모집",
+   "s": "ET Manufacturing",
+   "u": "https://manufacturing.economictimes.indiatimes.com/news/hi-tech/french-ardian-raises-over-1-billion-to-invest-in-semiconductor-makers/135713638",
+   "d": "2026-11-10"
+  },
+  "gk7qbg3": {
+   "t": "CVC Investor, Recordati 지분(Concert-Party) 확대",
+   "s": "TipRanks",
+   "u": "https://www.tipranks.com/news/company-announcements/cvc-investor-raises-concert-party-stake-in-recordati",
+   "d": "2026-11-04"
+  },
+  "g1ek9pg2": {
+   "t": "White & Case, CVC Capital Partners 주도 컨소시엄의 Recordati 상장폐지 인수를 위한 사상 최대 75억 8,000만 유로(상당) 금융 자문",
+   "s": "White & Case LLP",
+   "u": "https://www.whitecase.com/news/press-release/white-case-advises-record-breaking-eur758-billion-equivalent-financing-take",
+   "d": "2026-11-06"
+  },
+  "g1r3l94x": {
+   "t": "장기전 대비: CVC의 RAC 단일 자산 딜 뒷이야기",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/in-for-the-long-haul-behind-cvcs-single-asset-deal-for-rac/",
+   "d": "2026-11-11"
+  },
+  "g1m3zszy": {
+   "t": "EQT, 호주 Pickles를 10억2천만 달러 이상에 인수",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/eqt-to-buy-australia-s-pickles-in-1-02b-plus-deal",
+   "d": "2026-11-13"
+  },
+  "g8b83i1": {
+   "t": "EQT, 스피드캐스트의 지상국 사업부 3억 달러에 인수 - 블룸버그 뉴스",
+   "s": "TradingView",
+   "u": "https://es.tradingview.com/news/reuters.com,2026:newsml_L3N46K15H:0/",
+   "d": "2026-11-03"
+  },
+  "gw4bkb": {
+   "t": "Speedcast, 위성 지상국 인프라 EQT에 매각",
+   "s": "Data Center Dynamics",
+   "u": "https://www.datacenterdynamics.com/en/news/speedcast-sells-satellite-ground-station-infrastructure-to-eqt/",
+   "d": "2026-11-04"
+  },
+  "g1og2668": {
+   "t": "Qiagen, 3분기 경영진 예상 상회…가이던스 중단, EQT 거래에 시선 집중",
+   "s": "marketscreener.com",
+   "u": "https://www.marketscreener.com/news/qiagen-q3-beat-managementa-s-expectations-guidance-suspended-eqt-deal-in-focus-ce785fd3dc8afe25",
+   "d": "2026-11-09"
+  },
+  "g1ki2se6": {
+   "t": "EQT, Kakaku.com 공개매수 가격을 주당 3,700엔으로 상향, 마감일 11월 26일로 연장",
+   "s": "BigGo Finance",
+   "u": "https://finance.biggo.com/news/0d55d2ce-f662-430d-85fb-faeae230ba4b",
+   "d": "2026-11-11"
+  },
+  "gxnsj4c": {
+   "t": "Avolon·I Squared Capital·ADIA, 항공기 리스·인프라 투자 플랫폼 출범",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/avolon-i-squared-capital-and-adia-launch-aircraft-leasing-and-infrastructure-investment-platform/",
+   "d": "2026-11-09"
+  },
+  "geslwfp": {
+   "t": "피플 무브: Hamilton Lane, 글로벌 실물자산 팀에 시니어 인력 3명 영입",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/people-moves-hamilton-lane-adds-three-senior-hires-to-global-real-assets-team/10139274.article",
+   "d": "2026-11-12"
+  },
+  "gd7ommy": {
+   "t": "Hamilton Lane이 글로벌 인프라 팀을 강화하다",
+   "s": "Wealth Briefing",
+   "u": "https://www.wealthbriefing.com/html/article.php/hamilton-lane-bolsters-global-infrastructure-team",
+   "d": "2026-11-12"
+  },
+  "guno9ce": {
+   "t": "Hamilton Lane, 캐나다·미국·영국 사무소에 인프라 임원 3명 영입",
+   "s": "Alternatives Watch",
+   "u": "https://www.alternativeswatch.com/2026/11/11/hamilton-lane-adds-three-infrastructure-executives/",
+   "d": "2026-11-11"
+  },
+  "g1ggxlu2": {
+   "t": "Hamilton Lane, 지속적인 플랫폼 성장에 발맞춰 시니어 임원 3명을 영입하며 글로벌 인프라 팀 강화",
+   "s": "Yahoo! Finance Canada",
+   "u": "https://ca.finance.yahoo.com/news/hamilton-lane-strengthens-global-infrastructure-120000399.html",
+   "d": "2026-11-11"
+  },
+  "ghzv3xu": {
+   "t": "Hamilton Lane은 인프라 팀에 3명의 고위 직원을 추가한다.",
+   "s": "StreetInsider",
+   "u": "https://www.streetinsider.com/Corporate+News/Hamilton+Lane+adds+three+senior+hires+to+its+infrastructure+team/27326222.html",
+   "d": "2026-11-11"
+  },
+  "gifk1qd": {
+   "t": "생명보험: Société Générale과 Partners Group, 프라이빗 인프라 펀드 출시",
+   "s": "Idéal Investisseur",
+   "u": "https://www.ideal-investisseur.fr/en/stock-news/life-insurance-societe-generale-and-partners-group-launch-a-private-infrastructure-fund/29082.html",
+   "d": "2026-11-10"
+  },
+  "g16590b1": {
+   "t": "Partners Group, 신규 채용으로 유럽 인프라 팀 강화",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/partners-group-bolsters-european-infrastructure-team-with-new-hires/",
+   "d": "2026-11-10"
+  },
+  "g1wvo4pj": {
+   "t": "Partners Group의 Cloudflight, paiqo 인수 및 통합 완료",
+   "s": "PEI Private Equity",
+   "u": "https://www.privateequityinternational.com/partners-groups-cloudflight-completes-acquisition-and-integration-of-paiqo/",
+   "d": "2026-11-10"
+  },
+  "gy695zu": {
+   "t": "Stonepeak, 25억 달러 규모의 Estia Health 인수 완료",
+   "s": "The Weekly Source",
+   "u": "https://www.theweeklysource.com.au/stonepeak-completes-estia-health-acquisition/",
+   "d": "2026-11-11"
+  },
+  "gb7jtnl": {
+   "t": "Stonepeak, Estia Health 인수 완료…호주 노인요양 포트폴리오 확대",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/stonepeak-completes-acquisition-of-estia-health-expanding-australian-aged-care-portfolio/",
+   "d": "2026-11-05"
+  },
+  "g11akllz": {
+   "t": "Akin, EEP·Stonepeak의 Enterprise Investors 보유 Anwim 인수 완료 자문",
+   "s": "Akin Gump Strauss Hauer & Feld LLP",
+   "u": "https://www.akingump.com/en/insights/press-releases/akin-advises-eep-and-stonepeak-on-completion-of-acquisition-of-anwim-from-enterprise-investors",
+   "d": "2026-11-04"
+  },
+  "g15tz1oh": {
+   "t": "Stonepeak Infrastructure Fund V 서브스크립션 라인, AA 등급 획득",
+   "s": "Traders Union",
+   "u": "https://tradersunion.com/news/institutions/show/4186175-stonepeak-infrastructure-aa-rating/",
+   "d": "2026-11-10"
+  },
+  "grp7703": {
+   "t": "Bain Capital, 9,000억 원 규모 공차 바이아웃 완료",
+   "s": "Seoul Economic Daily",
+   "u": "https://en.sedaily.com/news/2026/11/12/bain-capital-completes-900-billion-won-gong-cha-buyout",
+   "d": "2026-11-12"
+  },
+  "gzswnza": {
+   "t": "Bain Capital Credit \"아시아, 사모대출의 차기 성장 무대로 부상\"",
+   "s": "KED Global",
+   "u": "https://www.kedglobal.com/private-debt/newsView/ked202611100006",
+   "d": "2026-11-10"
+  },
+  "g5dfhzy": {
+   "t": "Bain의 Gordon: 컨티뉴에이션 비히클은 사모시장의 '유효한 장기 수단'",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/bains-gordon-cvs-are-valid-long-term-tools-in-private-markets/",
+   "d": "2026-11-11"
+  },
+  "g3gi1jz": {
+   "t": "Bain Capital Specialty Finance, Amrit Kanwal을 이사회 이사로 선임",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/bain-capital-specialty-finance-appoints-220700672.html",
+   "d": "2026-11-09"
+  },
+  "g1a5lihc": {
+   "t": "세컨더리 펀드 잇따라 가세…StepStone, 신규 빈티지로 약 110억 달러 모집 (업데이트)",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/raft-of-secondaries-funds-contribute-to-stepstones-11bn-raise-for-new-vintages/",
+   "d": "2026-11-09"
+  },
+  "g13jx961": {
+   "t": "Latham, StepStone의 Mizner Park 인수 자문",
+   "s": "Legal Desire",
+   "u": "https://legaldesire.com/latham-advises-stepstone-in-acquisition-of-mizner-park/",
+   "d": "2026-11-09"
+  },
+  "g1i75uo": {
+   "t": "Cuatrecasas, Mutares의 Guascor 매각 자문… Oaktree 펀드에 7,400만 유로에 매각",
+   "s": "Capital-Riesgo.es",
+   "u": "https://capital-riesgo.es/en/articles/cuatrecasas-advises-mutares-on-the-agreement-to-sell-guascor-to-oaktree-fund-for-74-millon/",
+   "d": "2026-11-15"
+  },
+  "gt3p91r": {
+   "t": "Mutares, Guascor Energy를 Oaktree에 7,400만 유로 매각 합의",
+   "s": "PEI Private Equity",
+   "u": "https://www.privateequityinternational.com/mutares-agrees-e74m-sale-of-guascor-energy-to-oaktree/",
+   "d": "2026-11-12"
+  },
+  "gsdop7c": {
+   "t": "GA_P는 Oaktree에 Guascor Energy 인수에 대해 7400만 유로에 대한 조언을 제공한다.",
+   "s": "Iberian Lawyer",
+   "u": "https://iberianlawyer.com/gomez-acebo-pombo-oaktree-guascor-energy-acquisition/",
+   "d": "2026-11-13"
+  },
+  "g1i8nf8h": {
+   "t": "Oaktree 지원 받는 Pure Data Centres, 유럽 및 중동 공략 위해 사모대출로 7억 8000만 달러 조달",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/oaktree-backed-pure-data-centres-raises-780m-in-debt-for-europe-middle-east-push",
+   "d": "2026-11-04"
+  },
+  "g1q8lks3": {
+   "t": "Oaktree Capital Management 펀드레이징 — 조달 자산 및 펀딩 라운드",
+   "s": "CryptoRank",
+   "u": "https://cryptorank.io/funds/oaktree-capital/fundraising",
+   "d": "2026-11-10"
+  },
+  "g1ggt41l": {
+   "t": "Warburg Pincus, 두 번째 Capital Solutions 펀드로 50억 달러 목표 - Bloomberg",
+   "s": "Investing.com Canada",
+   "u": "https://ca.investing.com/news/stock-market-news/warburg-pincus-targets-5-billion-for-second-capital-solutions-fund--bloomberg-93CH-4950994",
+   "d": "2026-11-11"
+  },
+  "g1pnnxq5": {
+   "t": "Warburg Pincus, 첫 펀드서 55% 수익… 이제 50억 달러 더 모은다",
+   "s": "Benzinga",
+   "u": "https://www.benzinga.com/markets/private-markets/26/11/63261048/warburg-pincus-made-55-on-its-first-fund-now-it-wants-5-billion-more",
+   "d": "2026-11-13"
+  },
+  "gw9g93r": {
+   "t": "Pricol Autotech딜: Warburg Pincus, 38.51% 지분 인수",
+   "s": "Urban Acres",
+   "u": "https://urbanacres.in/warburg-pincus-takes-control-of-pricol-autotech-in-%E2%82%B91663-crore-deal/",
+   "d": "2026-11-14"
+  },
+  "gb00y5p": {
+   "t": "Warburg Pincus, Ingenia 딜 협상에서 한발 물러서",
+   "s": "Finimize",
+   "u": "https://finimize.com/content/warburg-pincus-loosens-its-grip-on-ingenia-deal-talks",
+   "d": "2026-11-13"
+  },
+  "g13pes1f": {
+   "t": "Nuveen, 신규 자연기반해법 펀드 출시",
+   "s": "ESG Today",
+   "u": "https://www.esgtoday.com/nuveen-launches-new-nature-based-solutions-fund/",
+   "d": "2026-11-12"
+  },
+  "gldu298": {
+   "t": "Nuveen, TIAA의 1억 달러 앵커 투자로 자연 펀드 출범",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/nuveen-opens-nature-fund-with-100m-anchor-from-tiaa",
+   "d": "2026-11-12"
+  },
+  "gclkwj0": {
+   "t": "Senior Resource Group·Nuveen Real Estate, 일리노이주 시니어 주거단지 2억1,200만 달러에 인수",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/senior-resource-group-nuveen-real-estate-acquire-senior-living-community-in-illinois-for-212m/",
+   "d": "2026-11-10"
+  },
+  "gfwlx02": {
+   "t": "Nuveen Real Estate와 SRG, 일리노이주 링컨우드의 시니어 하우징 커뮤니티를 2억 1,200만 달러에 인수",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/nuveen-real-estate-srg-pay-212m-for-senior-living-community-in-lincolnwood-ill/",
+   "d": "2026-11-10"
+  },
+  "gzyckj5": {
+   "t": "Hines, 신규 글로벌 부동산 ELTIF로 프라이빗 웰스 플랫폼 확대",
+   "s": "Hines",
+   "u": "https://www.hines.com/news/hines-expands-private-wealth-platform-with-new-global-real-estate-eltif",
+   "d": "2026-11-02"
+  },
+  "g8skigi": {
+   "t": "Hines, 댈러스 업타운 럭셔리 아파트 매각… Broe Group의 첫 댈러스 투자",
+   "s": "The Real Deal",
+   "u": "https://therealdeal.com/texas/2026/11/12/hines-sells-uptown-dallas-apartments-to-broe-group/",
+   "d": "2026-11-12"
+  },
+  "gxpvfmk": {
+   "t": "ICG (LSE:ICG), Europe IX 펀드 역대 최대 규모인 120억 유로로 마감",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/icg-lse-icg-closes-europe-031040137.html",
+   "d": "2026-11-14"
+  },
+  "g22rec9": {
+   "t": "ICG, 120억 유로 규모 Europe IX 펀드 클로징으로 수수료 수취 AUM 900억 달러·수수료 관련 이익 18% 증가",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/icg-lifted-fee-earning-aum-to-90-billion-and-fee-related-earnings-18-as-the-e12-billion-europe-ix-fund-closed.html",
+   "d": "2026-11-12"
+  },
+  "g7d3czu": {
+   "t": "ICG H1 FY27 슬라이드: 수수료 증가가 가속화되고 AUM이 900억 달러에 도달",
+   "s": "Investing.com",
+   "u": "https://www.investing.com/news/company-news/icg-h1-fy27-slides-fee-growth-accelerates-aum-hits-90bn-93CH-5018202",
+   "d": "2026-11-11"
+  },
+  "g1vt6x9u": {
+   "t": "ICG, 수수료 창출 AUM 9% 증가에 힘입어 상반기 수수료 이익 18% 확대",
+   "s": "Investing.com India",
+   "u": "https://in.investing.com/news/earnings/icg-lifts-firsthalf-fee-earnings-18-as-feeearning-aum-grows-9-5696034",
+   "d": "2026-11-11"
+  },
+  "g1waeufd": {
+   "t": "ICG, 대표 펀드 역대 최대 120억 유로로 마감…76억 달러 아닌 76억 달러 유치",
+   "s": "Alternative Credit Investor",
+   "u": "https://alternativecreditinvestor.com/2026/11/11/icg-pulls-in-7-6bn-as-flagship-fund-closes-at-record-e12bn/",
+   "d": "2026-11-11"
+  },
+  "g59fw3o": {
+   "t": "Clearlake, 프라이빗 웰스 플랫폼 출범…인터벌 펀드 설정 계획",
+   "s": "https://www.connectmoney.com/",
+   "u": "https://www.connectmoney.com/stories/clearlake-launches-private-wealth-platform-plans-interval-fund/",
+   "d": "2026-11-10"
+  },
+  "g1hb8hi1": {
+   "t": "Clearlake Capital, Clearlake Private Wealth 출범 및 프라이빗 웰스 투자자 대상 사모펀드 접근성 확대를 위한 인터벌 펀드 출시 예고",
+   "s": "Institutional Real Estate, Inc.",
+   "u": "https://irei.com/news/clearlake-capital-launches-clearlake-private-wealth-and-announces-upcoming-interval-fund-to-expand-access-to-private-equity-for-private-wealth-investors/",
+   "d": "2026-11-06"
+  },
+  "g1jpug6k": {
+   "t": "Clearlake Capital, 프라이빗 웰스 플랫폼 출범…인터벌 펀드 출시 계획",
+   "s": "Alternatives Watch",
+   "u": "https://www.alternativeswatch.com/2026/11/04/clearlake-capital-private-wealth-platform-interval-fund/",
+   "d": "2026-11-04"
+  },
+  "g1ehlqzx": {
+   "t": "Clearlake 공동창업자 Jose E. Feliciano, AI '중간 지대'에서 딜 물색",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/newsletters/2026-11-11/clearlake-co-founder-jose-feliciano-hunts-for-deals-in-ai-s-middle-ground",
+   "d": "2026-11-11"
+  },
+  "gmug5s": {
+   "t": "Bridgepoint, 10억 유로 규모 방산 전략 출범과 함께 전직 영국 공군 참모총장 영입",
+   "s": "PEI Private Equity",
+   "u": "https://www.privateequityinternational.com/bridgepoint-taps-former-raf-chief-in-e1bn-defense-strategy-launch/",
+   "d": "2026-11-10"
+  },
+  "gxqx1m5": {
+   "t": "Bridgepoint 산하 ECP, Harvestone을 9억 1,500만 달러에 Andersons에 매각",
+   "s": "Private Equity Wire",
+   "u": "https://www.privateequitywire.co.uk/bridgepoints-ecp-to-sell-harvestone-to-andersons-for-915m/",
+   "d": "2026-11-05"
+  },
+  "g174riua": {
+   "t": "주간 리캡: 애널리스트 목표주가 상향, Bridgepoint 지분 하락",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/tradingview:924d05be10fa6:0-weekly-recap-analysts-raise-price-targets-and-bridgepoint-stake-falls/",
+   "d": "2026-11-09"
+  },
+  "g1afgxzn": {
+   "t": "PGIM, Greenman 펀드로부터 독일 소매 포트폴리오 인수",
+   "s": "Green Street News",
+   "u": "https://greenstreetnews.com/article/pgim-acquires-german-retail-portfolio-from-greenman-fund/",
+   "d": "2026-11-12"
+  },
+  "gzaiw80": {
+   "t": "Is PGIM Jennison Growth Z (PJFZX) a Strong Mutual Fund Pick Right Now?",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/pgim-jennison-growth-z-pjfzx-110002710.html",
+   "d": "2026-11-10"
+  },
+  "g14x004t": {
+   "t": "Is PGIM Jennison Focused Growth A (SPFAX) a Strong Mutual Fund Pick Right Now?",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/pgim-jennison-focused-growth-spfax-110002326.html",
+   "d": "2026-11-09"
+  },
+  "g6hlchf": {
+   "t": "Clifford Chance, Leads on Cinven's 25억 달러 Fast Food Deal Involving Burger King",
+   "s": "Law.com",
+   "u": "https://www.law.com/international-edition/2026/11/12/clifford-chance-leads-on-cinvens-25b-fast-food-deal-involving-burger-king/",
+   "d": "2026-11-12"
+  },
+  "g1cc42sl": {
+   "t": "어피니티, 흑자낸 락앤락 리캡…메리츠 800억 상환",
+   "s": "딜사이트",
+   "u": "https://dealsite.co.kr/articles/171593",
+   "d": "2026-11-03"
+  },
+  "g1mbfg8x": {
+   "t": "어피니티서 독립한 민병철…AI 접목 바이아웃 전략 시동 : 네이버 블로그",
+   "s": "Naver Blog",
+   "u": "https://blog.naver.com/PostView.naver?blogId=dealsite&logNo=224472245598&redirect=Dlog",
+   "d": "2026-11-10"
   }
  }
 }

@@ -1,0 +1,17 @@
+{
+ "day": "2026-11-16",
+ "job": "lp",
+ "cost": 0.000337,
+ "calls": 3,
+ "skipped": 0,
+ "tokens": {
+  "in": 2895,
+  "out": 96,
+  "cacheRead": 0,
+  "cacheWrite": 0
+ },
+ "byModel": {
+  "claude-haiku-5-5": 0.000337
+ },
+ "updatedAt": "2026-11-16T02:16:20.396Z"
+}

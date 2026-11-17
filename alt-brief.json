@@ -1,128 +1,135 @@
 {
- "date": "2026-11-17",
- "generatedAt": "2026-11-16T21:13:29.167Z",
+ "date": "2026-11-18",
+ "generatedAt": "2026-11-17T21:59:56.552Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "Blackstone, Amazon 데이터센터 50억 달러 인수…인프라·AI 자금 쏠림 지속",
+ "headline": "TPG·KKR·Blackstone 등 대형 딜 잇따르고 MBK는 SS 3호 펀드레이징 착수",
  "points": [
   {
-   "text": "Blackstone Digital Infrastructure Trust(BXDC)가 Amazon Web Services와의 합작법인 2곳 지분 75.1%를 50억 달러에 인수하기로 함. 데이터센터 13개 동이 대상이며 첫 투자로, IPO 조달금 19억 달러와 비소구 모기지 대출 약 25억 달러를 활용하고 AWS에 최소 12년 임대하는 구조임.",
+   "text": "TPG가 결제 자동화 업체 Bill Holdings 상장폐지 인수(take-private)에 근접했다고 FT가 보도함. 며칠 내 프리미엄 인수가 합의될 수 있으나 협상이 무산되거나 일정이 바뀔 수 있으며, BILL 주가는 12% 급등해 21개월 만의 최고가를 기록함.",
    "ids": [
-    "gi921p4",
-    "g1o5z9m2",
-    "g1ptqdyr"
+    "gwb3odb",
+    "gn72go4",
+    "gka9tsu"
    ]
   },
   {
-   "text": "KKR 주도 컨소시엄이 Sempra Infrastructure Partners 지분 과반을 현금 100억 달러에 인수함. GIP는 300억 달러 AI 펀드 목표의 2/3를 달성했고, Copenhagen Infrastructure Partners는 10억 달러 목표의 크레딧 펀드를 출범시킴.",
+   "text": "Blackstone의 데이터센터 리츠 BXDC가 AWS와의 합작사업 2건 지분 75%를 약 50억 달러에 인수함. 상장 후 첫 투자이며 초기 캡레이트는 7.0% 수준임.",
    "ids": [
-    "g10cugxr",
-    "g10qlf2b",
-    "g12x51zw"
+    "g1whzfpy",
+    "gt6n9wj",
+    "g1a3fmes"
    ]
   },
   {
-   "text": "Apollo가 Focus Financial Partners에 25억 달러를 투자하며 기업가치는 부채 포함 약 210억 달러로 평가됨. Centerbridge와 Mubadala는 Canaccord Genuity 영국 자산관리 부문을 16억 달러에 인수하기로 합의함.",
+   "text": "KKR이 57억 달러(기업가치)에 Integer Holdings 인수를 완료하고 주당 127달러를 현금 지급함. 또한 KKR 주도 컨소시엄이 CPP Investments를 간접 공동투자자로 두고 Sempra Infrastructure Partners 지분 45%를 인수함.",
    "ids": [
-    "g1rnnibh",
-    "g1oku4u4"
+    "gs7b06h",
+    "g10cugxr"
    ]
   },
   {
-   "text": "펀드레이징이 호조임. Brookfield는 아시아태평양 부동산 전략으로 목표(10억 달러)를 80% 웃도는 18억 달러를 모집했고, Gemspring Capital은 네 번째 바이아웃 펀드를 35억 달러 하드캡으로 마감했으며, Plural은 10억 유로를 모집함.",
+   "text": "CVC가 Advent와의 약 30억 유로 규모 IRCA 인수 거래에서 철수할 계획이며 법적 분쟁 가능성이 거론됨. 한편 CVC는 Cary Group 지분을 캐나다 연기금 2곳과 Nordic Capital에 매각하는 것으로 알려짐.",
    "ids": [
-    "g10stq1s",
-    "g13z0gfx",
-    "g46zgom"
+    "gyqbj9y",
+    "g176qkgg",
+    "g1dj98cy"
    ]
   },
   {
-   "text": "BlackRock이 사모자산 15% 한도를 넘길 수 있는 상장 인터벌 펀드(ETIF)를 SEC에 신청했고, SEI와 Carlyle는 프라이빗 마켓 인터벌펀드를 출시함. 사모자산 접근 상품의 evergreen·리테일 확장 흐름이 이어짐.",
+   "text": "펀드레이징에서는 Lexington Partners가 CV 중심 펀드 목표액 30억 달러를 달성하고, Gemspring Capital이 4호 바이아웃 펀드를 35억 달러로 클로징함. MetLife Investment Management는 기회추구형 부동산 대출 펀드를 3억7천만 달러로 마감함.",
    "ids": [
-    "g1xh5swx",
-    "gpzwlpx"
+    "g155u683",
+    "g12wn6kt",
+    "gb8t4zx"
    ]
   }
  ],
- "korea": "국민연금이 JP모간과 전 자산군 전략적 협력체계를 구축했고, Premier Partners는 Korea Fund Partners 인수용 공동투자 펀드를 추진 중임. 해외 대체투자 파트너십 확대 흐름이어서 인프라·AI 전략 펀드 공동투자 제안에 활용할 만함.",
+ "korea": "MBK파트너스가 홈플러스 사태 이후 6년 만에 SS 3호 펀드 조성에 나서 국내 LP의 반응이 관건이며, 브룩필드가 BSREP V 자금으로 경산 물류센터를 2145억원에 인수해 국내 대체투자 자산에 대한 글로벌 운용사의 관심이 이어지고 있음.",
  "refs": {
-  "gpzwlpx": {
-   "t": "SEI, Carlyle와 함께 프라이빗 마켓 인터벌펀드 출시",
-   "s": "https://www.connectmoney.com/",
-   "u": "https://news.google.com/rss/articles/CBMijwFBVV95cUxObGFFdzZUd01SQlFETEtqeDR5WlpWWVJWNUxyNkQzWjZnUXFlaWhLZ1FBV0pRMWFuYWxTRHRDVWU1cU5zN3ZrTF9zTmRNYnNVMlpuWEZqa2tSdkpmNjVpMmRNYk5YQ1h2bXYyMFlReHFjNEVXNl9MU3MyZGRROXNFVUVVemNYOVJSRmVrV2d0OA?oc=5",
+  "g155u683": {
+   "t": "Lexington Partners, CV 중심 펀드 목표액 30억 달러 달성…당초 기대치 상회",
+   "s": "PEI Secondaries Investor",
+   "u": "https://www.pei-secondariesinvestor.com/lexington-partners-reaches-3bn-target-for-cv-focused-fund-surpassing-its-initial-expectations/",
+   "d": "2026-11-17"
+  },
+  "gwb3odb": {
+   "t": "TPG, 결제 업체 Bill Holdings 상장폐지 인수 임박",
+   "s": "Financial Times",
+   "u": "https://www.ft.com/content/629eb12c-f200-486d-8c63-32e2ebf3d97e?syn-25a6b1a6=1",
+   "d": "2026-11-17"
+  },
+  "gs7b06h": {
+   "t": "KKR, 57억 달러에 Integer Holdings 인수 완료 By Investing.com",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/company-news/article-93CH-2179821",
+   "d": "2026-11-17"
+  },
+  "g1dj98cy": {
+   "t": "CVC, Cary Group 지분 매각…30억 유로 규모 거래로 캐나다 연기금·Nordic Capital에 넘겨",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/binance_news:6152488c1094b:0-cvc-sells-cary-group-stake-in-3-billion-deal-to-canadian-pension-funds-nordic-capital/",
+   "d": "2026-11-17"
+  },
+  "gt6n9wj": {
+   "t": "블랙스톤 디지털인프라리츠, AWS 데이터센터 지분 75% 인수…초기 캡레이트 7%",
+   "s": "딜북뉴스",
+   "u": "https://www.dealbook.co.kr/beulraegseuton-dijiteolinpeurariceu-aws-deiteosenteo-jibun-75-insu-georae-gyumo-50eogdalreo/",
+   "d": "2026-11-17"
+  },
+  "gyqbj9y": {
+   "t": "CVC, Advent와의 30억 유로 안팎 IRCA 인수 거래서 철수",
+   "s": "Global Banking & Finance Review",
+   "u": "https://www.globalbankingandfinance.com/cvc-plans-pull-out-near--3-billion-irca-deal-ft/",
+   "d": "2026-11-16"
+  },
+  "g176qkgg": {
+   "t": "CVC, Advent와의 이탈리아 거래서 철회 계획…법적 분쟁 가능성 - FT",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN46X1S2:0-cvc-plans-to-back-out-of-italian-deal-with-advent-triggering-potential-legal-clash-ft/",
+   "d": "2026-11-16"
+  },
+  "g1whzfpy": {
+   "t": "블랙스톤의 데이터센터 리츠 BXDC, AWS 데이터센터 인수로 상장 후 첫 투자 外 - SPI",
+   "s": "SPI - 상업용 부동산 콘텐츠 & 데이터 애널리틱스",
+   "u": "https://seoulpi.io/article/00619024233796767744",
+   "d": "2026-11-16"
+  },
+  "g1a3fmes": {
+   "t": "Amazon, 데이터센터를 Blackstone에 매각…50억 달러 규모 거래",
+   "s": "PYMNTS.com",
+   "u": "https://www.pymnts.com/news/acquiring/2026/amazon-sells-data-centers-to-blackstone-in-5-billion-deal/",
    "d": "2026-11-16"
   },
   "g10cugxr": {
    "t": "KKR 주도 컨소시엄, Sempra Infrastructure Partners 지분 과반을 현금 100억 달러에 인수",
    "s": "Institutional Real Estate, Inc.",
-   "u": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNNnk1SjBDNUpOYmRreHQ5NUJfbkZNQXJLRFcyOW0yVnIxbFhwRjlFU0drclF5WFR1bDRwRDRPMDFGajcyNUtNWF92dTc3dTdUZm5lVkYxSVhXdXJrR0FXWTd6cFdTYmxIT1g1UWJYMXpkdUtWUDJjVnlEc0FjTDE5eTY3eS04UmdmZHllV0hnQ01nREVWVHpLanh1czBxVlhvZFdINmNLc2NTLWpqcG5vSw?oc=5",
+   "u": "https://irei.com/news/kkr-led-consortium-pays-10b-in-cash-for-majority-stake-in-sempra-infrastructure-partners/",
    "d": "2026-11-16"
   },
-  "g1rnnibh": {
-   "t": "아폴로, 포커스 파이낸셜에 25억 달러 투자…기업가치 210억 달러",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/stock-market-news/article-2178044",
-   "d": "2026-11-16"
+  "g12wn6kt": {
+   "t": "Sidley, Gemspring Capital의 35억 달러 규모 4호 바이아웃 펀드 클로징 자문",
+   "s": "Legal Desire",
+   "u": "https://legaldesire.com/sidley-represents-gemspring-capital-in-us3-5-billion-closing-of-fourth-buyout-fund/",
+   "d": "2026-11-17"
   },
-  "g10stq1s": {
-   "t": "Brookfield, 아시아태평양 부동산 전략으로 18억 달러 모집",
+  "gb8t4zx": {
+   "t": "MetLife Investment Management, 3억7000만 달러 규모 기회추구형 부동산 대출 펀드 클로징",
    "s": "Institutional Real Estate, Inc.",
-   "u": "https://irei.com/news/brookfield-raises-1-8b-for-asia-pacific-real-estate-strategy/",
-   "d": "2026-11-16"
+   "u": "https://irei.com/news/metlife-investment-management-closes-370m-opportunistic-real-estate-debt-fund/",
+   "d": "2026-11-17"
   },
-  "gi921p4": {
-   "t": "블랙스톤 디지털 인프라스트럭처 트러스트, 50억 달러 규모 아마존 데이터센터 합작법인 지분 75.1% 인수 계약",
-   "s": "데이터투자",
-   "u": "https://www.datatooza.com/article/20261116204845677052ef376114_80",
-   "d": "2026-11-16"
+  "gka9tsu": {
+   "t": "BILL 주가 12% 급등…TPG, 결제업체 상장폐지 인수(take-private) 근접",
+   "s": "BigGo Finance",
+   "u": "https://finance.biggo.com/news/0dd51d5d-2784-4ddd-aee5-4cfa8bf7067b",
+   "d": "2026-11-17"
   },
-  "g10qlf2b": {
-   "t": "GIP 300억 달러 AI 펀드 목표 달성의 2/3 – 독점",
-   "s": "Infrastructure Investor",
-   "u": "https://www.infrastructureinvestor.com/gip-two-thirds-of-the-way-to-30bn-ai-fund-target-exclusive/",
-   "d": "2026-11-16"
-  },
-  "g12x51zw": {
-   "t": "Copenhagen Infrastructure Partners, 크레딧 펀드 목표액 10억 달러로 설정",
-   "s": "Securities.io",
-   "u": "https://www.securities.io/copenhagen-infrastructure-partners-sets-1-billion-credit-fund-target/",
-   "d": "2026-11-16"
-  },
-  "g46zgom": {
-   "t": "Plural, 유럽 딥테크용 10억 유로 모집… 후속 투자 전용 비히클도 출범",
-   "s": "AltAssets Private Equity News",
-   "u": "https://www.altassets.net/private-equity-news/by-region/europe-by-region/western-europe-europe-by-region/plural-picks-up-e1bn-for-european-deep-tech-launches-dedicated-follow-on-investment-vehicle.html",
-   "d": "2026-11-16"
-  },
-  "g13z0gfx": {
-   "t": "Gemspring Capital, 3개월도 안 돼 바이아웃 펀드 규모 2배 넘게 키워 35억 달러 하드캡 클로징",
-   "s": "AltAssets Private Equity News",
-   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/gemspring-capital-more-than-doubles-buyout-fund-size-with-3-5bn-hard-cap-close-in-under-three-months.html",
-   "d": "2026-11-16"
-  },
-  "g1o5z9m2": {
-   "t": "Blackstone의 신규 AI 인프라 리츠, 50억 달러 규모 AWS 거래 체결",
-   "s": "Bisnow",
-   "u": "https://www.bisnow.com/news/national/data-center/blackstone-s-data-center-reit-makes-first-investment-with-5b-deal-with-aws",
-   "d": "2026-11-16"
-  },
-  "g1xh5swx": {
-   "t": "BlackRock, 사모자산 15% 한도를 넘길 수 있는 상장 인터벌 펀드 신청",
-   "s": "Crypto Briefing",
-   "u": "https://cryptobriefing.com/blackrock-files-exchange-traded-interval-fund/",
-   "d": "2026-11-16"
-  },
-  "g1oku4u4": {
-   "t": "Centerbridge와 Mubadala, Canaccord Genuity의 영국 자산관리 부문 16억 달러에 인수 합의",
-   "s": "PEI Private Equity",
-   "u": "https://www.privateequityinternational.com/centerbridge-and-mubadala-strike-1-6bn-deal-for-canaccord-genuitys-uk-wealth-arm/",
-   "d": "2026-11-16"
-  },
-  "g1ptqdyr": {
-   "t": "Blackstone의 신규 데이터센터 리츠, 50억 달러 규모 AWS 거래로 출발",
-   "s": "Finimize",
-   "u": "https://finimize.com/content/blackstones-new-data-center-reit-starts-with-a-5-billion-aws-deal",
-   "d": "2026-11-16"
+  "gn72go4": {
+   "t": "BILL 주가, TPG의 상장폐지 인수 근접 보도에 21개월 만의 최고가 경신",
+   "s": "Stocktwits",
+   "u": "https://stocktwits.com/news-articles/markets/equity/bill-stock-hits-fresh-21-month-high-on-report-of-tpg-nearing-take-private-deal/cNbOP7LR9h9",
+   "d": "2026-11-17"
   }
  },
  "droppedSentences": 0

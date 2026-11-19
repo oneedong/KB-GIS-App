@@ -1,114 +1,114 @@
 {
- "date": "2026-11-19",
- "generatedAt": "2026-11-18T21:33:23.879Z",
+ "date": "2026-11-20",
+ "generatedAt": "2026-11-19T21:55:30.542Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "글로벌 대형 운용사 M&A·대규모 펀드레이징 활발, 국내 연기금 인사·운용 변화도 부각",
+ "headline": "세컨더리·인프라 자금 결집 속 국내 연기금 AI전력·해외 대체투자 확대",
  "points": [
   {
-   "text": "BlackRock 산하 HPS가 신규 직대출 펀드(Specialty Loan Fund VII)를 마케팅 중이며 초기 약정 목표액은 95억 달러, 3년간 목표 수익률은 10%로 보도됨.",
+   "text": "Lexington Partners가 첫 단일자산 컨티뉴에이션 비히클 펀드로 목표액 30억 달러를 달성했으며 하드캡은 50억 달러임. Pantheon은 Mirova의 범유럽 재생에너지 포트폴리오 대상 5억 4,800만 유로 세컨더리 딜을 체결함.",
    "ids": [
-    "g1xzwgiz",
-    "g16r9bbk"
+    "g1hpqw3c",
+    "gvaavv4"
    ]
   },
   {
-   "text": "KKR이 의료기기업체 Integer를 57억 달러에 상장폐지 인수 완료함. Permira와 Freeman Spogli는 Brunt Workwear를 8억 달러에 인수하기로 함.",
+   "text": "Infranity가 4호 시니어 인프라 부채 펀드를 목표 수준인 15억 유로로 최종 클로징함. BlackRock 산하 HPS는 95억 달러 모집을 추진하고, ADB는 BlackRock 인프라 크레딧 펀드에 최대 5,750만 달러를 지원함.",
+   "ids": [
+    "g1rtmnbw",
+    "g1hi7xht",
+    "g1s0ix4"
+   ]
+  },
+  {
+   "text": "KKR이 57억 달러 규모 Integer 인수를 완료하고 Gentari의 인도 재생에너지 플랫폼 소수 지분을 인수함. Carlyle은 Orlen과 유럽 에너지 투자 기회를 공동 발굴하기로 MOU를 체결함.",
    "ids": [
     "g11x9c4l",
-    "g110trs7"
+    "gktfxrr",
+    "g9bzvgk"
    ]
   },
   {
-   "text": "TPG가 핀테크 BILL Holdings 상장폐지 인수를 수일 내 확정할 전망임. 주가는 2021년 기업가치 340억 달러 정점 대비 80% 넘게 하락한 상태임.",
+   "text": "SK그룹이 산업부 요청에 따라 KKR에 대한 2조4000억원 규모 RCPS 현물상환 통보를 보류하고, 내년 1월 말까지 상환 방안을 추가 협의하기로 함.",
    "ids": [
-    "g7nvxp7",
-    "grnhi2g"
+    "g1tckvif"
    ]
   },
   {
-   "text": "Blackstone이 Amazon Web Services의 데이터센터 JV 2곳(13개 센터) 지분 75.1%를 50억 달러 규모로 인수하기로 함. EQT는 Hull Street Energy로부터 미국 배터리 저장업체 Flatiron Energy를 인수하기로 계약함.",
+   "text": "MBK Partners가 내년 3호 스페셜 시추에이션 펀드 펀드레이징에 착수할 계획이며 해당 전략으로는 6년 만임. Blackstone의 John Gray는 AI 인프라 공급이 수요를 따라가지 못한다며 거품론을 반박함.",
    "ids": [
-    "g64vz7c",
-    "g1rq5de3"
-   ]
-  },
-  {
-   "text": "펀드 클로징이 이어짐. Lexington Partners는 CV 중심 펀드를 30억 달러로 마감했고, Blue Sea Capital은 헬스케어 Fund IV를 8억 달러로 마감했으며 MetLife는 부동산 대출 펀드를 3억 7,000만 달러로 마감함.",
-   "ids": [
-    "g155u683",
-    "g141q2g2",
-    "g9jbzbx"
+    "g16naxt3",
+    "g6ql8ym"
    ]
   }
  ],
- "korea": "KIC가 신임 CIO에 신민식 전 한화생명 CIO를, COO에 신용선 대체투자본부장을 내정했으며 공식 인사는 다음주 초 발표 예정임. 국민연금도 신임 부동산투자실장에 한성희를 선임해 4개월 공백을 해소했고, SK도시가스 매각 협상 연장 등 KKR 관련 국내 이슈도 이어지고 있어 영업 시 참고할 만함.",
+ "korea": "국민연금이 AI·전력 인프라를, KIC가 해외자본의 국내 유치를 각각 언급했고 교직원공제회는 해외투자 비중 59.3%에 뉴욕사무소 설립을 추진함. 세컨더리·인프라 부채 등 해외 대체투자 펀드를 소개할 접점이 넓어지는 국면임.",
  "refs": {
+  "gvaavv4": {
+   "t": "Pantheon, Mirova 에너지 전환 포트폴리오 대상 5억 4,800만 유로 규모 세컨더리 딜 체결",
+   "s": "IPE Real Assets",
+   "u": "https://realassets.ipe.com/news/pantheon-enters-548m-secondary-deal-in-mirova-energy-transition-portfolio/10139445.article",
+   "d": "2026-11-19"
+  },
+  "g1hpqw3c": {
+   "t": "Lexington Partners, 첫 단일자산 컨티뉴에이션 비히클 펀드 목표액 30억 달러 달성…당초 목표의 두 배",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/lexington-partners-reached-its-3-billion-target-for-a-debut-single-asset-continuation-vehicle-fund-double-its-original-goal.html",
+   "d": "2026-11-19"
+  },
+  "g16naxt3": {
+   "t": "MBK Partners, 내년 3호 스페셜 시추에이션 펀드 펀드레이징 착수 계획…해당 전략으로는 6년 만",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/mbk-partners-plans-to-begin-raising-its-third-special-situations-fund-next-year-its-first-in-the-strategy-in-six-years.html",
+   "d": "2026-11-19"
+  },
+  "gktfxrr": {
+   "t": "KKR, 말레이시아 Gentari의 인도 재생에너지 플랫폼 지분 인수",
+   "s": "DealStreetAsia",
+   "u": "https://www.dealstreetasia.com/stories/kkr-gentaris-india-renewables-platform-501564",
+   "d": "2026-11-19"
+  },
+  "g1tckvif": {
+   "t": "산업부 요청에 SK도시가스 매각 급선회…KKR 협상 연장 : 네이버 블로그",
+   "s": "Naver Blog",
+   "u": "https://blog.naver.com/PostView.naver?blogId=dealsite&logNo=224483300274&redirect=Dlog",
+   "d": "2026-11-19"
+  },
+  "g1s0ix4": {
+   "t": "ADB, BlackRock 아시아 인프라 펀드 지원",
+   "s": "TNGlobal",
+   "u": "https://technode.global/2026/11/19/adb-blackrock-asia-infrastructure-credit-fund/",
+   "d": "2026-11-19"
+  },
+  "g1hi7xht": {
+   "t": "BlackRock 산하 HPS, 95억 달러 모집 추진… 신규 펀드로 사모대출 투자자 공략",
+   "s": "Yahoo Finance",
+   "u": "https://finance.yahoo.com/markets/stocks/articles/blackrocks-hps-seeks-9-5-212654757.html",
+   "d": "2026-11-18"
+  },
   "g11x9c4l": {
    "t": "KKR, 의료기기 제조업체 Integer 57억 달러 상장폐지 인수 완료",
    "s": "PEI Private Equity",
    "u": "https://www.privateequityinternational.com/kkr-completes-5-7bn-take-private-of-medical-device-manufacturer-integer/",
    "d": "2026-11-18"
   },
-  "g110trs7": {
-   "t": "Permira와 Freeman Spogli, 8억 달러에 Brunt Workwear 인수",
-   "s": "Global Banking & Finance Review",
-   "u": "https://www.globalbankingandfinance.com/permira-freeman-spogli-acquire-boot-apparel-brand-brunt/",
-   "d": "2026-11-18"
+  "g1rtmnbw": {
+   "t": "Infranity, 4호 시니어 인프라 부채 펀드로 15억 유로 조달",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/infranity-raises-e1-5-billion-for-fourth-senior-infrastructure-debt-vintage/",
+   "d": "2026-11-19"
   },
-  "g1xzwgiz": {
-   "t": "BlackRock의 HPS, 직대출 펀드레이징 위해 95억 달러 목표 설정",
-   "s": "https://streamlinefeed.co.ke/",
-   "u": "https://streamlinefeed.co.ke/news/blackrocks-hps-seeks-95-billion-for-direct-lending-fund",
-   "d": "2026-11-18"
+  "g9bzvgk": {
+   "t": "Carlyle과 Orlen, 유럽 전역 에너지 딜 발굴 위해 손잡아",
+   "s": "Crude Oil Prices Today | OilPrice.com",
+   "u": "https://oilprice.com/Latest-Energy-News/World-News/Carlyle-and-Orlen-Team-Up-to-Hunt-for-Energy-Deals-Across-Europe.html",
+   "d": "2026-11-19"
   },
-  "g16r9bbk": {
-   "t": "BlackRock 산하 HPS, 95억 달러 규모 사모대출 펀드 마케팅 나서",
-   "s": "Finimize",
-   "u": "https://finimize.com/content/blackrocks-hps-pitches-a-95-billion-direct-lending-fund",
-   "d": "2026-11-18"
-  },
-  "g64vz7c": {
-   "t": "Blackstone, 50억 달러 규모 딜로 Amazon Web Services로부터 데이터센터 포트폴리오 지분 과반 인수",
-   "s": "BeBeez International",
-   "u": "https://bebeez.eu/2026/11/18/blackstone-acquires-the-majority-of-a-data-centers-portfolio-from-amazon-web-services-with-a-5-billion-us-dollars-deal/",
-   "d": "2026-11-18"
-  },
-  "g7nvxp7": {
-   "t": "TPG, 수일 내 BILL Holdings 상장폐지 인수 추진",
-   "s": "PYMNTS.com",
-   "u": "https://www.pymnts.com/news/acquiring/2026/tpg-eyes-take-private-deal-bill-holdings-within-days/",
-   "d": "2026-11-17"
-  },
-  "g1rq5de3": {
-   "t": "EQT, 플랫아이언 에너지 인수 계약 체결",
-   "s": "비건뉴스",
-   "u": "https://www.vegannews.co.kr/news/article.html?no=406846",
-   "d": "2026-11-17"
-  },
-  "grnhi2g": {
-   "t": "TPG, BILL Holdings 테이크프라이빗 거래 임박…주가 8% 상승",
-   "s": "KuCoin",
-   "u": "https://www.kucoin.com/news/flash/tpg-near-take-private-deal-for-bill-holdings-as-shares-rise-8",
-   "d": "2026-11-17"
-  },
-  "g155u683": {
-   "t": "Lexington Partners, CV 중심 펀드 목표액 30억 달러 달성…당초 기대치 상회",
-   "s": "PEI Secondaries Investor",
-   "u": "https://www.pei-secondariesinvestor.com/lexington-partners-reaches-3bn-target-for-cv-focused-fund-surpassing-its-initial-expectations/",
-   "d": "2026-11-17"
-  },
-  "g141q2g2": {
-   "t": "Blue Sea Capital, 8억 달러 규모의 헬스케어 전용 Fund IV 클로징하며 하드캡 조기 돌파",
-   "s": "AltAssets Private Equity News",
-   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/blue-sea-capital-beats-original-hard-cap-with-800m-healthcare-only-fund-iv-close.html",
-   "d": "2026-11-18"
-  },
-  "g9jbzbx": {
-   "t": "MetLife Investment Management, 3억 7천만 달러 규모 기회추구형 부동산 대출 펀드 클로징",
-   "s": "citybiz",
-   "u": "https://www.citybiz.co/article/935212/metlife-investment-management-closes-370-million-opportunistic-real-estate-debt-fund/",
-   "d": "2026-11-17"
+  "g6ql8ym": {
+   "t": "블랙스톤 그레이, AI 거품론 반박…인프라 공급 부족 강조",
+   "s": "글로벌이코노믹",
+   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/2026111921484685089a1f309431_1",
+   "d": "2026-11-19"
   }
  },
  "droppedSentences": 0

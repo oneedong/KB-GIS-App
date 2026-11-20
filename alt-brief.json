@@ -1,54 +1,81 @@
 {
- "date": "2026-11-20",
- "generatedAt": "2026-11-19T21:55:30.542Z",
+ "date": "2026-11-21",
+ "generatedAt": "2026-11-20T21:37:38.915Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "세컨더리·인프라 자금 결집 속 국내 연기금 AI전력·해외 대체투자 확대",
+ "headline": "TPG·Corpay의 BILL 60억 달러 인수 속 KKR 대형 딜 잇따르고 국민연금은 AI 인프라 강조",
  "points": [
   {
-   "text": "Lexington Partners가 첫 단일자산 컨티뉴에이션 비히클 펀드로 목표액 30억 달러를 달성했으며 하드캡은 50억 달러임. Pantheon은 Mirova의 범유럽 재생에너지 포트폴리오 대상 5억 4,800만 유로 세컨더리 딜을 체결함.",
+   "text": "TPG가 Corpay와 함께 BILL Holdings를 약 60억 달러 전액 현금 비공개 전환 방식으로 인수하기로 합의함. 주당 63.25달러이며, Corpay는 11억 달러를 투자해 지분 약 3분의 1을 확보하고 2030년 잔여 지분 인수 옵션을 가짐.",
+   "ids": [
+    "g3mwrmi",
+    "g1fc8ro2",
+    "gewwb3z"
+   ]
+  },
+  {
+   "text": "KKR이 Partners Group 산하 EdgeCore 인수를 위해 80억~100억 달러 규모로 협상 중임. 별도로 Logoplaste를 부채 포함 12억 유로 이상 가치로 인수하는 계약을 체결했으며 Integer Holdings는 57억 달러 전액 현금 거래로 인수함.",
+   "ids": [
+    "g1h1tnhf",
+    "g1ufo2qw",
+    "g10agvd0"
+   ]
+  },
+  {
+   "text": "Apollo와 Goldman Sachs가 SpaceX의 GPU 등 장비 구매 자금 조달을 위해 약 440억 달러 규모 선순위·후순위 채권 가격을 확정함. Brookfield는 네이버 AI 팩토리 계약에서 인프라 자금을 대며 네이버 본사로부터 6년 사용료 보증을 받음.",
+   "ids": [
+    "g19ka6i7",
+    "g10rjadj"
+   ]
+  },
+  {
+   "text": "펀드레이징 소식으로 Lexington Partners가 첫 단일자산 컨티뉴에이션 펀드 목표액 30억 달러를 달성했고 Infranity는 4호 시니어 인프라 부채 펀드로 15억 유로를 조달함. EnCap Flatrock은 6호 미드스트림 펀드로 15억 달러를 목표로 함.",
    "ids": [
     "g1hpqw3c",
-    "gvaavv4"
-   ]
-  },
-  {
-   "text": "Infranity가 4호 시니어 인프라 부채 펀드를 목표 수준인 15억 유로로 최종 클로징함. BlackRock 산하 HPS는 95억 달러 모집을 추진하고, ADB는 BlackRock 인프라 크레딧 펀드에 최대 5,750만 달러를 지원함.",
-   "ids": [
     "g1rtmnbw",
-    "g1hi7xht",
-    "g1s0ix4"
+    "g1svbykg"
    ]
   },
   {
-   "text": "KKR이 57억 달러 규모 Integer 인수를 완료하고 Gentari의 인도 재생에너지 플랫폼 소수 지분을 인수함. Carlyle은 Orlen과 유럽 에너지 투자 기회를 공동 발굴하기로 MOU를 체결함.",
+   "text": "EQT가 Apax로부터 호주 경매 마켓플레이스 Pickles 인수에 합의했으며 거래 조건은 비공개임. Partners Group은 Rawlings 지분 과반을 인수하고 Permira·Freeman Spogli는 Brunt Workwear를 8억 달러 이상 가치로 인수함.",
    "ids": [
-    "g11x9c4l",
-    "gktfxrr",
-    "g9bzvgk"
-   ]
-  },
-  {
-   "text": "SK그룹이 산업부 요청에 따라 KKR에 대한 2조4000억원 규모 RCPS 현물상환 통보를 보류하고, 내년 1월 말까지 상환 방안을 추가 협의하기로 함.",
-   "ids": [
-    "g1tckvif"
-   ]
-  },
-  {
-   "text": "MBK Partners가 내년 3호 스페셜 시추에이션 펀드 펀드레이징에 착수할 계획이며 해당 전략으로는 6년 만임. Blackstone의 John Gray는 AI 인프라 공급이 수요를 따라가지 못한다며 거품론을 반박함.",
-   "ids": [
-    "g16naxt3",
-    "g6ql8ym"
+    "g18z9i00",
+    "gsh06lu",
+    "g1j9wtdn"
    ]
   }
  ],
- "korea": "국민연금이 AI·전력 인프라를, KIC가 해외자본의 국내 유치를 각각 언급했고 교직원공제회는 해외투자 비중 59.3%에 뉴욕사무소 설립을 추진함. 세컨더리·인프라 부채 등 해외 대체투자 펀드를 소개할 접점이 넓어지는 국면임.",
+ "korea": "국민연금이 AI 관련 실물자산 중심으로 대체투자 전략을 재정비하고 블랙록도 실물자산 비중 확대를 언급해, AI 전력·인프라 및 실물자산 펀드 제안의 접점이 커짐. 국민연금 부동산실장 교체와 증권사의 전주 거점 확대로 국민연금 대상 영업 경쟁도 심화됨.",
  "refs": {
-  "gvaavv4": {
-   "t": "Pantheon, Mirova 에너지 전환 포트폴리오 대상 5억 4,800만 유로 규모 세컨더리 딜 체결",
-   "s": "IPE Real Assets",
-   "u": "https://realassets.ipe.com/news/pantheon-enters-548m-secondary-deal-in-mirova-energy-transition-portfolio/10139445.article",
-   "d": "2026-11-19"
+  "g3mwrmi": {
+   "t": "BILL, TPG·Corpay에 60억 달러 규모 비공개 전환(take-private) 인수에 합의",
+   "s": "Pulse 2.0",
+   "u": "https://pulse2.com/bill-agrees-to-6-billion-take-private-acquisition-by-tpg-and-corpay/",
+   "d": "2026-11-20"
+  },
+  "g1h1tnhf": {
+   "t": "KKR, 파트너스 그룹의 EdgeCore 인수 위해 80억~100억 달러 협상 중",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2185763",
+   "d": "2026-11-20"
+  },
+  "g1ufo2qw": {
+   "t": "KKR, 포르투갈 포장재 기업 Logoplaste 지분 인수 추진",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2185747",
+   "d": "2026-11-20"
+  },
+  "g10agvd0": {
+   "t": "KKR, 57억 달러 규모의 전액 현금 거래로 Integer Holdings 인수",
+   "s": "Digital Health News",
+   "u": "https://www.digitalhealthnews.com/kkr-acquires-integer-holdings-in-5-7-bn-all-cash-deal",
+   "d": "2026-11-20"
+  },
+  "g18z9i00": {
+   "t": "EQT, Apax로부터 호주 디지털 경매 마켓플레이스 Pickles 인수",
+   "s": "DealStreetAsia",
+   "u": "https://www.dealstreetasia.com/stories/eqt-to-acquire-pickles-501707",
+   "d": "2026-11-20"
   },
   "g1hpqw3c": {
    "t": "Lexington Partners, 첫 단일자산 컨티뉴에이션 비히클 펀드 목표액 30억 달러 달성…당초 목표의 두 배",
@@ -56,41 +83,17 @@
    "u": "https://hedgeco.net/news/11/2026/lexington-partners-reached-its-3-billion-target-for-a-debut-single-asset-continuation-vehicle-fund-double-its-original-goal.html",
    "d": "2026-11-19"
   },
-  "g16naxt3": {
-   "t": "MBK Partners, 내년 3호 스페셜 시추에이션 펀드 펀드레이징 착수 계획…해당 전략으로는 6년 만",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/mbk-partners-plans-to-begin-raising-its-third-special-situations-fund-next-year-its-first-in-the-strategy-in-six-years.html",
+  "g1j9wtdn": {
+   "t": "Permira와 Freeman Spogli, 8억 달러 이상 가치의 Brunt Workwear 지배지분 인수",
+   "s": "WWD",
+   "u": "https://wwd.com/footwear-news/shoe-industry-news/brunt-workwear-800-million-valuation-acquisition-1239427199/",
    "d": "2026-11-19"
   },
-  "gktfxrr": {
-   "t": "KKR, 말레이시아 Gentari의 인도 재생에너지 플랫폼 지분 인수",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/kkr-gentaris-india-renewables-platform-501564",
-   "d": "2026-11-19"
-  },
-  "g1tckvif": {
-   "t": "산업부 요청에 SK도시가스 매각 급선회…KKR 협상 연장 : 네이버 블로그",
-   "s": "Naver Blog",
-   "u": "https://blog.naver.com/PostView.naver?blogId=dealsite&logNo=224483300274&redirect=Dlog",
-   "d": "2026-11-19"
-  },
-  "g1s0ix4": {
-   "t": "ADB, BlackRock 아시아 인프라 펀드 지원",
-   "s": "TNGlobal",
-   "u": "https://technode.global/2026/11/19/adb-blackrock-asia-infrastructure-credit-fund/",
-   "d": "2026-11-19"
-  },
-  "g1hi7xht": {
-   "t": "BlackRock 산하 HPS, 95억 달러 모집 추진… 신규 펀드로 사모대출 투자자 공략",
-   "s": "Yahoo Finance",
-   "u": "https://finance.yahoo.com/markets/stocks/articles/blackrocks-hps-seeks-9-5-212654757.html",
-   "d": "2026-11-18"
-  },
-  "g11x9c4l": {
-   "t": "KKR, 의료기기 제조업체 Integer 57억 달러 상장폐지 인수 완료",
+  "g1svbykg": {
+   "t": "EnCap Flatrock, 6호 미드스트림 펀드 15억 달러 목표",
    "s": "PEI Private Equity",
-   "u": "https://www.privateequityinternational.com/kkr-completes-5-7bn-take-private-of-medical-device-manufacturer-integer/",
-   "d": "2026-11-18"
+   "u": "https://www.privateequityinternational.com/encap-flatrock-targets-1-5bn-for-sixth-midstream-fund/",
+   "d": "2026-11-19"
   },
   "g1rtmnbw": {
    "t": "Infranity, 4호 시니어 인프라 부채 펀드로 15억 유로 조달",
@@ -98,17 +101,35 @@
    "u": "https://pulse2.com/infranity-raises-e1-5-billion-for-fourth-senior-infrastructure-debt-vintage/",
    "d": "2026-11-19"
   },
-  "g9bzvgk": {
-   "t": "Carlyle과 Orlen, 유럽 전역 에너지 딜 발굴 위해 손잡아",
-   "s": "Crude Oil Prices Today | OilPrice.com",
-   "u": "https://oilprice.com/Latest-Energy-News/World-News/Carlyle-and-Orlen-Team-Up-to-Hunt-for-Energy-Deals-Across-Europe.html",
-   "d": "2026-11-19"
+  "g1fc8ro2": {
+   "t": "BILL, TPG·Corpay와 60억 달러 규모 인수 거래로 비상장 전환",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/zacks:7e905b060094b:0-bill-to-go-private-in-6-billion-acquisition-deal-with-tpg-and-corpay/",
+   "d": "2026-11-20"
   },
-  "g6ql8ym": {
-   "t": "블랙스톤 그레이, AI 거품론 반박…인프라 공급 부족 강조",
-   "s": "글로벌이코노믹",
-   "u": "https://www.g-enews.com/article/Global-Biz/2026/11/2026111921484685089a1f309431_1",
-   "d": "2026-11-19"
+  "g19ka6i7": {
+   "t": "Apollo와 Goldman Sachs, NVIDIA Vera Rubin AI 인프라용 440억 달러 규모 SpaceX GPU 금융 가격 확정",
+   "s": "citybiz",
+   "u": "https://www.citybiz.co/article/937031/apollo-and-goldman-sachs-price-44-billion-spacex-gpu-financing-for-nvidia-vera-rubin-ai-infrastructure/",
+   "d": "2026-11-20"
+  },
+  "gsh06lu": {
+   "t": "Latham & Watkins, Rawlings Sporting Goods 인수에서 Partners Group 자문",
+   "s": "Legal Desire",
+   "u": "https://legaldesire.com/latham-watkins-advises-partners-group-in-acquisition-of-rawlings-sporting-goods/",
+   "d": "2026-11-20"
+  },
+  "g10rjadj": {
+   "t": "최수연이 내세운 ‘2조 AI 수주’...브룩필드는 첫 고객 계약보다 긴 네이버 보증을 받았다",
+   "s": "인사이트",
+   "u": "https://www.insight.co.kr/news/582939",
+   "d": "2026-11-20"
+  },
+  "gewwb3z": {
+   "t": "Corpay, TPG의 BILL 비상장화 거래에 11억 달러 투자",
+   "s": "Securities.io",
+   "u": "https://www.securities.io/corpay-commits-1-1-billion-to-bill-take-private-deal-with-tpg/",
+   "d": "2026-11-20"
   }
  },
  "droppedSentences": 0

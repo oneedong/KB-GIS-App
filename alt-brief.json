@@ -1,52 +1,55 @@
 {
- "date": "2026-11-21",
- "generatedAt": "2026-11-20T21:37:38.915Z",
+ "date": "2026-11-22",
+ "generatedAt": "2026-11-21T21:05:21.257Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "TPG·Corpay의 BILL 60억 달러 인수 속 KKR 대형 딜 잇따르고 국민연금은 AI 인프라 강조",
+ "headline": "KKR의 EdgeCore 협상 등 대형 바이아웃과 AI 인프라 자금조달 확대",
  "points": [
   {
-   "text": "TPG가 Corpay와 함께 BILL Holdings를 약 60억 달러 전액 현금 비공개 전환 방식으로 인수하기로 합의함. 주당 63.25달러이며, Corpay는 11억 달러를 투자해 지분 약 3분의 1을 확보하고 2030년 잔여 지분 인수 옵션을 가짐.",
+   "text": "KKR이 신설 AI 투자 법인 Helix Digital Infrastructure를 통해 Partners Group 보유 EdgeCore Digital Infrastructure의 과반 지분 인수를 협상 중이며, 기업가치는 80억~100억 달러로 평가될 수 있음.",
+   "ids": [
+    "g1g2eew5",
+    "g1h1tnhf",
+    "gdrjyfk"
+   ]
+  },
+  {
+   "text": "TPG가 Corpay와 함께 BILL을 60억 달러에 비공개 전환하기로 합의함. TPG Capital이 과반을 인수하고 Corpay는 11억 달러를 투자해 지분 약 3분의 1을 확보하며 2030년까지 잔여 지분 인수 옵션을 가짐.",
    "ids": [
     "g3mwrmi",
-    "g1fc8ro2",
-    "gewwb3z"
+    "gmhbcjq"
    ]
   },
   {
-   "text": "KKR이 Partners Group 산하 EdgeCore 인수를 위해 80억~100억 달러 규모로 협상 중임. 별도로 Logoplaste를 부채 포함 12억 유로 이상 가치로 인수하는 계약을 체결했으며 Integer Holdings는 57억 달러 전액 현금 거래로 인수함.",
+   "text": "KKR이 포르투갈 포장재 기업 Logoplaste를 부채 포함 12억 유로 이상으로 인수하는 계약을 체결함. 경쟁 입찰자 Apax Partners는 9월에 철수했고 수일 내 서명이 예상됨.",
    "ids": [
-    "g1h1tnhf",
     "g1ufo2qw",
-    "g10agvd0"
+    "gbhirc3"
    ]
   },
   {
-   "text": "Apollo와 Goldman Sachs가 SpaceX의 GPU 등 장비 구매 자금 조달을 위해 약 440억 달러 규모 선순위·후순위 채권 가격을 확정함. Brookfield는 네이버 AI 팩토리 계약에서 인프라 자금을 대며 네이버 본사로부터 6년 사용료 보증을 받음.",
+   "text": "GTCR이 최대주주로 있는 Global Payments에 대해 500억 달러 규모 바이아웃을 검토 중임이 알려지며 주가가 10% 넘게 급등함. 역대 최대 수준의 LBO가 될 수 있음.",
+   "ids": [
+    "g1ny6hzh",
+    "g14e1plp"
+   ]
+  },
+  {
+   "text": "Apollo와 Goldman Sachs가 SpaceX의 GPU 등 장비 구매를 위한 약 440억 달러 선순위·후순위 채권 가격을 확정함. 한편 사모펀드 투자 기업들은 2028~2029년 약 3000억 달러 규모 부채를 재융資해야 하며 금리 부담이 커질 수 있음.",
    "ids": [
     "g19ka6i7",
-    "g10rjadj"
-   ]
-  },
-  {
-   "text": "펀드레이징 소식으로 Lexington Partners가 첫 단일자산 컨티뉴에이션 펀드 목표액 30억 달러를 달성했고 Infranity는 4호 시니어 인프라 부채 펀드로 15억 유로를 조달함. EnCap Flatrock은 6호 미드스트림 펀드로 15억 달러를 목표로 함.",
-   "ids": [
-    "g1hpqw3c",
-    "g1rtmnbw",
-    "g1svbykg"
-   ]
-  },
-  {
-   "text": "EQT가 Apax로부터 호주 경매 마켓플레이스 Pickles 인수에 합의했으며 거래 조건은 비공개임. Partners Group은 Rawlings 지분 과반을 인수하고 Permira·Freeman Spogli는 Brunt Workwear를 8억 달러 이상 가치로 인수함.",
-   "ids": [
-    "g18z9i00",
-    "gsh06lu",
-    "g1j9wtdn"
+    "g1174kkm"
    ]
   }
  ],
- "korea": "국민연금이 AI 관련 실물자산 중심으로 대체투자 전략을 재정비하고 블랙록도 실물자산 비중 확대를 언급해, AI 전력·인프라 및 실물자산 펀드 제안의 접점이 커짐. 국민연금 부동산실장 교체와 증권사의 전주 거점 확대로 국민연금 대상 영업 경쟁도 심화됨.",
+ "korea": "MBK Partners의 Wacom 인수(1조 원 이상)에 Samsung Electronics가 참여할 계획이며, 산업은행 자회사 산은인프라자산운용이 전주사무소를 신설해 국민연금과의 대체투자 협력을 강화함. 국민연금은 다음 달 1일 리밸런싱을 재개하며, 국내주식 비중이 목표(20.8%)를 약 9%포인트 웃도는 것으로 추정되어 대체투자 배분에 영향을 줄 수 있음.",
  "refs": {
+  "g1g2eew5": {
+   "t": "KKR의 Helix, 최대 100억 달러 기업가치로 EdgeCore 지분 인수 협상",
+   "s": "BigGo Finance",
+   "u": "https://finance.biggo.com/news/3ad876e7-e302-4577-a6df-d4cae1a85c9b",
+   "d": "2026-11-20"
+  },
   "g3mwrmi": {
    "t": "BILL, TPG·Corpay에 60억 달러 규모 비공개 전환(take-private) 인수에 합의",
    "s": "Pulse 2.0",
@@ -59,52 +62,22 @@
    "u": "https://kr.investing.com/news/stock-market-news/article-2185763",
    "d": "2026-11-20"
   },
+  "gdrjyfk": {
+   "t": "KKR, EdgeCore 인수 협상 중…기업가치 최소 80억 달러 - Bloomberg News",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN47102R:0-kkr-in-talks-to-buy-edgecore-at-valuation-of-at-least-8-billion-bloomberg-news/",
+   "d": "2026-11-20"
+  },
   "g1ufo2qw": {
    "t": "KKR, 포르투갈 포장재 기업 Logoplaste 지분 인수 추진",
    "s": "Investing.com 한국어",
    "u": "https://kr.investing.com/news/stock-market-news/article-2185747",
    "d": "2026-11-20"
   },
-  "g10agvd0": {
-   "t": "KKR, 57억 달러 규모의 전액 현금 거래로 Integer Holdings 인수",
-   "s": "Digital Health News",
-   "u": "https://www.digitalhealthnews.com/kkr-acquires-integer-holdings-in-5-7-bn-all-cash-deal",
-   "d": "2026-11-20"
-  },
-  "g18z9i00": {
-   "t": "EQT, Apax로부터 호주 디지털 경매 마켓플레이스 Pickles 인수",
-   "s": "DealStreetAsia",
-   "u": "https://www.dealstreetasia.com/stories/eqt-to-acquire-pickles-501707",
-   "d": "2026-11-20"
-  },
-  "g1hpqw3c": {
-   "t": "Lexington Partners, 첫 단일자산 컨티뉴에이션 비히클 펀드 목표액 30억 달러 달성…당초 목표의 두 배",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/lexington-partners-reached-its-3-billion-target-for-a-debut-single-asset-continuation-vehicle-fund-double-its-original-goal.html",
-   "d": "2026-11-19"
-  },
-  "g1j9wtdn": {
-   "t": "Permira와 Freeman Spogli, 8억 달러 이상 가치의 Brunt Workwear 지배지분 인수",
-   "s": "WWD",
-   "u": "https://wwd.com/footwear-news/shoe-industry-news/brunt-workwear-800-million-valuation-acquisition-1239427199/",
-   "d": "2026-11-19"
-  },
-  "g1svbykg": {
-   "t": "EnCap Flatrock, 6호 미드스트림 펀드 15억 달러 목표",
-   "s": "PEI Private Equity",
-   "u": "https://www.privateequityinternational.com/encap-flatrock-targets-1-5bn-for-sixth-midstream-fund/",
-   "d": "2026-11-19"
-  },
-  "g1rtmnbw": {
-   "t": "Infranity, 4호 시니어 인프라 부채 펀드로 15억 유로 조달",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/infranity-raises-e1-5-billion-for-fourth-senior-infrastructure-debt-vintage/",
-   "d": "2026-11-19"
-  },
-  "g1fc8ro2": {
-   "t": "BILL, TPG·Corpay와 60억 달러 규모 인수 거래로 비상장 전환",
+  "gbhirc3": {
+   "t": "KKR, 포르투갈의 로고플라스테 인수 계약 체결한 것으로 전해져 - 블룸버그 뉴스",
    "s": "TradingView",
-   "u": "https://www.tradingview.com/news/zacks:7e905b060094b:0-bill-to-go-private-in-6-billion-acquisition-deal-with-tpg-and-corpay/",
+   "u": "https://es.tradingview.com/news/reuters.com,2026:newsml_L3N4711C7:0/",
    "d": "2026-11-20"
   },
   "g19ka6i7": {
@@ -113,22 +86,28 @@
    "u": "https://www.citybiz.co/article/937031/apollo-and-goldman-sachs-price-44-billion-spacex-gpu-financing-for-nvidia-vera-rubin-ai-infrastructure/",
    "d": "2026-11-20"
   },
-  "gsh06lu": {
-   "t": "Latham & Watkins, Rawlings Sporting Goods 인수에서 Partners Group 자문",
-   "s": "Legal Desire",
-   "u": "https://legaldesire.com/latham-watkins-advises-partners-group-in-acquisition-of-rawlings-sporting-goods/",
+  "gmhbcjq": {
+   "t": "TPG·Corpay, 60억 달러에 BILL 비공개 전환",
+   "s": "Finovate",
+   "u": "https://finovate.com/tpg-and-corpay-to-take-bill-private-in-6-billion-deal/",
    "d": "2026-11-20"
   },
-  "g10rjadj": {
-   "t": "최수연이 내세운 ‘2조 AI 수주’...브룩필드는 첫 고객 계약보다 긴 네이버 보증을 받았다",
-   "s": "인사이트",
-   "u": "https://www.insight.co.kr/news/582939",
-   "d": "2026-11-20"
+  "g1174kkm": {
+   "t": "사모펀드 포트폴리오 기업들, 3000억 달러 규모 리파이낸싱 필요 — Fortune",
+   "s": "UA.NEWS",
+   "u": "https://ua.news/en/dovkolo-svitu/kompaniiam-fondiv-priamikh-investitsii-nalezhit-refinansuvati-300-mlrd-fortune",
+   "d": "2026-11-21"
   },
-  "gewwb3z": {
-   "t": "Corpay, TPG의 BILL 비상장화 거래에 11억 달러 투자",
-   "s": "Securities.io",
-   "u": "https://www.securities.io/corpay-commits-1-1-billion-to-bill-take-private-deal-with-tpg/",
+  "g14e1plp": {
+   "t": "GTCR, 500억 달러 규모의 Global Payments 바이아웃 저울질",
+   "s": "Crain's Chicago Business",
+   "u": "https://www.chicagobusiness.com/banking-finance/ccb-gtcr-global-payments-buyout-20261120/",
+   "d": "2026-11-21"
+  },
+  "g1ny6hzh": {
+   "t": "Global Payments, 최대주주 GTCR의 500억 달러 규모 바이아웃 검토 소식에 10% 급등",
+   "s": "BigGo Finance",
+   "u": "https://finance.biggo.com/news/38051972-b0a9-43b9-b885-307db6a86767",
    "d": "2026-11-20"
   }
  },

@@ -3,7 +3,7 @@
  "job": "collect",
  "cost": 1.696634,
  "calls": 129,
- "skipped": 43,
+ "skipped": 67,
  "tokens": {
   "in": 286867,
   "out": 112290,
@@ -13,5 +13,5 @@
  "byModel": {
   "claude-sonnet-5-5": 1.696634
  },
- "updatedAt": "2026-11-22T09:48:22.294Z"
+ "updatedAt": "2026-11-22T13:44:46.074Z"
 }

@@ -1,114 +1,121 @@
 {
- "date": "2026-11-23",
- "generatedAt": "2026-11-22T21:14:10.262Z",
+ "date": "2026-11-24",
+ "generatedAt": "2026-11-23T21:39:16.877Z",
  "via": "claude:claude-sonnet-5-5",
- "hours": 72,
- "headline": "KKR의 EdgeCore 인수 협상 등 AI 데이터센터·대형 바이아웃 딜 이어짐",
+ "hours": 30,
+ "headline": "Brookfield의 PGP Glass 17억 달러 인수 등 PE 딜 활발, KIC는 CIO·COO 인선 마무리",
  "points": [
   {
-   "text": "KKR이 신설 AI 투자 법인 Helix Digital Infrastructure를 통해 Partners Group 보유 EdgeCore Digital Infrastructure 과반 지분 인수를 협상 중이며 기업가치는 80억~100억 달러로 거론됨.",
+   "text": "KIC가 신임 CIO에 신민식 전 한화생명보험 투자부문 CIO를, COO에 신용선 대체투자본부장을 선임함. 임기는 23일부터 3년이며, 지난해 8월 임기가 끝난 이훈 전 CIO의 후임 인선이 마무리됨.",
    "ids": [
-    "g1g2eew5",
-    "gs8kbbg",
-    "gdrjyfk"
+    "g1vxdcrr",
+    "g12dye4r",
+    "ghlkpta"
    ]
   },
   {
-   "text": "TPG가 Corpay와 함께 BILL을 60억 달러에 인수(take-private)하기로 합의함. Corpay는 11억 달러를 투자해 지분 약 3분의 1을 확보하고 2030년 잔여 지분 인수 옵션을 가짐.",
+   "text": "KIC 전략투자 계정 신설 법안은 연내 국회 통과가 불투명한 상황임. KIC의 국내 전략산업 투자 전문성과 위험관리 체계가 시험대에 올랐음.",
    "ids": [
-    "g3mwrmi",
-    "gc6xwlm"
+    "g101okkw"
    ]
   },
   {
-   "text": "MBK Partners가 일본 Wacom을 1조 원 이상 규모로 인수·상장폐지 추진 중이며, 삼성전자는 거래 후에도 6.3% 지분을 유지할 계획임.",
+   "text": "Brookfield Asset Management가 Blackstone 운용 사모펀드로부터 인도 특수유리 포장업체 PGP Glass를 17억 달러에 인수하기로 합의함. 2027년 1분기 종결 예정이며 Brookfield Capital Partners 전략으로 자금을 조달함.",
    "ids": [
-    "gatz4p4",
-    "g43906g"
+    "gwlz95q",
+    "g1r3ysbp",
+    "gcnv8ha"
    ]
   },
   {
-   "text": "KKR이 포르투갈 포장재 기업 Logoplaste를 부채 포함 12억 유로 이상 가치로 인수하는 계약을 체결한 것으로 전해짐. 경쟁 입찰자 Apax Partners는 9월에 철수함.",
+   "text": "TPG가 Corpay와 함께 BILL을 약 60억 달러 전액 현금으로 인수하기로 함. Corpay는 11억 달러를 투자해 약 3분의 1 지분을 확보함.",
    "ids": [
-    "g1ufo2qw",
-    "gezixj2"
+    "gsjy190",
+    "g1a18f6k"
    ]
   },
   {
-   "text": "Lexington Partners는 첫 단일자산 컨티뉴에이션 비히클 펀드로 목표액 30억 달러를 달성했으며 하드캡은 50억 달러임. Infranity는 4호 시니어 인프라 부채 펀드로 15억 유로를 조달함.",
+   "text": "Partners Group이 Morgan Stanley Infrastructure Partners로부터 뉴질랜드 운송·페리 사업자 StraitNZ를 인수하기로 함. MBK Partners는 Wacom 상장폐지 바이아웃을 주당 1,030엔(49.93% 프리미엄), 기업가치 약 1,370억 엔으로 추진함.",
    "ids": [
-    "g1hpqw3c",
-    "g1rtmnbw"
+    "g9l1gfg",
+    "g1k0pkgn",
+    "g1wfsgf1"
    ]
   }
  ],
- "korea": "국민연금은 AI 전력·인프라 중심으로 대체투자 전략을 재정비하겠다고 밝혔고 대체투자 규모가 240조원에 이르러, 데이터센터·인프라 펀드 제안의 접점이 커질 것으로 보임. 한편 SK의 KKR 대상 2조4000억원 RCPS 상환 방식이 산업부 요청으로 보류되고 내년 1월 말까지 협의가 연장되어 국내 거래 변수로 주시할 필요가 있음.",
+ "korea": "KIC가 신민식 CIO·신용선 COO를 선임해 1년 3개월의 CIO 대행 체제를 끝내고 부사장 3인 체제를 재정비함. 국민연금도 부동산 부문 책임자를 교체해, 후속 인사 이후 두 기관의 해외 대체투자 기조 변화 여부를 점검할 필요가 있음.",
  "refs": {
-  "gatz4p4": {
-   "t": "MBK Partners, 1조 원 규모의 거래로 일본 Wacom 인수 합의",
-   "s": "Chosunbiz",
-   "u": "https://biz.chosun.com/en/en-international/2026/11/21/ARGP75AUBRFRJOU4M7PGDQTPOI/",
-   "d": "2026-11-21"
+  "g1a18f6k": {
+   "t": "TPG·Corpay, BILL을 60억 달러에 인수",
+   "s": "CPA Practice Advisor",
+   "u": "https://www.cpapracticeadvisor.com/2026/11/23/bill-to-be-bought-by-tpg-corpay-in-6-billion-deal/194558/",
+   "d": "2026-11-23"
   },
-  "gs8kbbg": {
-   "t": "KKR의 Helix, Partners Group이 보유한 EdgeCore 경영권 지분을 80억~100억 달러 밸류에이션으로 인수 협상 중",
+  "gwlz95q": {
+   "t": "브룩필드 에셋 매니지먼트, 특수 유리 용기 업체 PGP 글래스 17억 달러에 인수",
+   "s": "www.datatooza.com",
+   "u": "https://www.datatooza.com/article/20261123200653811252ef31851e_80",
+   "d": "2026-11-23"
+  },
+  "gcnv8ha": {
+   "t": "Brookfield Asset Management, Blackstone Private Equity로부터 PGP Glass 인수",
+   "s": "TipRanks",
+   "u": "https://www.tipranks.com/news/the-fly/brookfield-asset-management-to-acquire-pgp-glass-from-blackstone-private-equity-thefly-news",
+   "d": "2026-11-23"
+  },
+  "g1r3ysbp": {
+   "t": "Brookfield, AI 주도 성장 계획과 함께 17억 달러 규모 거래로 Blackstone으로부터 PGP Glass 인수",
+   "s": "Kotak Neo",
+   "u": "https://www.kotakneo.com/news/global-markets/brookfield-to-acquire-pgp-glass-from-blackstone-for-1-7-billion-with-ai-growth-plans/",
+   "d": "2026-11-23"
+  },
+  "g1wfsgf1": {
+   "t": "MBK Partners, 주당 1,030엔에 Wacom 상장폐지 바이아웃 추진…기업가치 약 1,370억 엔",
+   "s": "MLQ.ai",
+   "u": "https://mlq.ai/news/mbk-partners-backs-a-1030-a-share-buyout-to-take-wacom-private-valuing-the-pen-maker-at-about-137-billion/",
+   "d": "2026-11-23"
+  },
+  "gsjy190": {
+   "t": "TPG, 60억 달러에 BILL 인수",
+   "s": "Wisevoter",
+   "u": "https://wisevoter.com/world/us/ca/san-jose/2026/11/23/tpg-acquire-bill-6-billion-corpay-stake",
+   "d": "2026-11-23"
+  },
+  "g1k0pkgn": {
+   "t": "Partners Group, 뉴질랜드 페리 운영사 StraitNZ 인수…엑시트 규모 약 12억 뉴질랜드달러",
    "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/kkr-s-helix-in-talks-to-buy-a-majority-of-edgecore-from-partners-group-at-an-8b-to-10b-valuation",
-   "d": "2026-11-21"
-  },
-  "g1g2eew5": {
-   "t": "KKR의 Helix, 최대 100억 달러 기업가치로 EdgeCore 지분 인수 협상",
-   "s": "BigGo Finance",
-   "u": "https://finance.biggo.com/news/3ad876e7-e302-4577-a6df-d4cae1a85c9b",
-   "d": "2026-11-20"
-  },
-  "g3mwrmi": {
-   "t": "BILL, TPG·Corpay에 60억 달러 규모 비공개 전환(take-private) 인수에 합의",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/bill-agrees-to-6-billion-take-private-acquisition-by-tpg-and-corpay/",
-   "d": "2026-11-20"
-  },
-  "gezixj2": {
-   "t": "KKR, 포르투갈 Logoplaste를 12억 유로 넘는 규모에 인수한다",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/kkr-to-buy-portugal-s-logoplaste-in-deal-worth-over-1-2b",
-   "d": "2026-11-20"
-  },
-  "gdrjyfk": {
-   "t": "KKR, EdgeCore 인수 협상 중…기업가치 최소 80억 달러 - Bloomberg News",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_FWN47102R:0-kkr-in-talks-to-buy-edgecore-at-valuation-of-at-least-8-billion-bloomberg-news/",
-   "d": "2026-11-20"
-  },
-  "g1ufo2qw": {
-   "t": "KKR, 포르투갈 포장재 기업 Logoplaste 지분 인수 추진",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/stock-market-news/article-2185747",
-   "d": "2026-11-20"
-  },
-  "gc6xwlm": {
-   "t": "TPG와 Corpay, 60억 달러 규모의 거래로 BILL 인수 합의",
-   "s": "PYMNTS.com",
-   "u": "https://www.pymnts.com/news/acquiring/2026/tpg-and-corpay-agree-to-buy-bill-in-6-billion-deal/",
-   "d": "2026-11-20"
-  },
-  "g1hpqw3c": {
-   "t": "Lexington Partners, 첫 단일자산 컨티뉴에이션 비히클 펀드 목표액 30억 달러 달성…당초 목표의 두 배",
-   "s": "HedgeCo.Net",
-   "u": "https://hedgeco.net/news/11/2026/lexington-partners-reached-its-3-billion-target-for-a-debut-single-asset-continuation-vehicle-fund-double-its-original-goal.html",
-   "d": "2026-11-19"
-  },
-  "g1rtmnbw": {
-   "t": "Infranity, 4호 시니어 인프라 부채 펀드로 15억 유로 조달",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/infranity-raises-e1-5-billion-for-fourth-senior-infrastructure-debt-vintage/",
-   "d": "2026-11-19"
-  },
-  "g43906g": {
-   "t": "MBK, 삼성 지원 받아 일본 와콤 9억 달러 규모 비공개 전환 추진",
-   "s": "KED Global",
-   "u": "https://www.kedglobal.com/mergers-acquisitions/newsView/ked202611220002",
+   "u": "https://app.dealroom.co/news/note/partners-group-buys-new-zealand-ferry-operator-straitnz-in-nz-1-2b-exit",
    "d": "2026-11-22"
+  },
+  "g9l1gfg": {
+   "t": "Morgan Stanley Infrastructure Partners, StraitNZ를 Partners Group에 매각하기로 합의",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/binance_news:d4b5e6610094b:0-morgan-stanley-infrastructure-partners-agrees-to-sell-straitnz-to-partners-group/",
+   "d": "2026-11-22"
+  },
+  "g101okkw": {
+   "t": "KIC 전략투자 계정 신설법, 연내 통과 '안갯속'…국내 투자 전문성 시험대",
+   "s": "마켓인",
+   "u": "https://marketin.edaily.co.kr/News/Read?newsId=03247206645648672",
+   "d": "2026-11-23"
+  },
+  "g1vxdcrr": {
+   "t": "KIC, CIO 신민식·COO 신용선 선임…\"부사장 3인 체계 재정비\"",
+   "s": "파이낸셜뉴스",
+   "u": "https://www.fnnews.com/news/202611231411524606",
+   "d": "2026-11-23"
+  },
+  "g12dye4r": {
+   "t": "‘대행 체제’ 1년 3개월 끝… KIC, 한화생명 출신 신민식 CIO 선임",
+   "s": "Chosunbiz",
+   "u": "https://biz.chosun.com/stock/stock_general/2026/11/23/UE6JKRXYVREQRGJ4SCZ2BLAJJQ/",
+   "d": "2026-11-23"
+  },
+  "ghlkpta": {
+   "t": "KIC CIO에 신민식·COO 신용선 선임…부사장 3인 진용 재정비",
+   "s": "연합인포맥스",
+   "u": "https://news.einfomax.co.kr/news/articleView.html?idxno=4446040",
+   "d": "2026-11-23"
   }
  },
  "droppedSentences": 0

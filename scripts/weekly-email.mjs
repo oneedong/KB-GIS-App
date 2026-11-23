@@ -94,6 +94,58 @@ export function shape(rep) {
   };
 }
 
+// ── 메일 금액 표기: 외화는 mil·bil 로 통일 ─────────────────────────
+// 보고서 문장은 "60억 달러", "3억 8천만 달러", 펀드 표는 "$6bn"·"€548m" 처럼 섞여 있다. 메일에서는
+// 외화 금액을 "$6 bil"·"$380 mil"·"€548 mil" 로 맞춘다(원화 "2,145억 원"은 국내 관행대로 그대로 둔다).
+// 바꾼 금액 바로 뒤 조사는 '빌·밀'(받침 ㄹ)에 맞춘다: 달러를→bil을, 달러가→bil이, 엔으로→bil로.
+const CUR_KO = { 달러: '$', 유로: '€', 파운드: '£', 엔: '¥', 위안: 'CNY ' };
+const CUR_PREFIX = { 호주: 'A', 캐나다: 'C', 싱가포르: 'S', 홍콩: 'HK', 뉴질랜드: 'NZ', 미: '', 미국: '' };
+const KN = String.raw`(?:\d[\d,]*(?:\.\d+)?\s?조\s?)?(?:\d[\d,]*(?:\.\d+)?\s?억\s?)?(?:\d[\d,]*(?:\.\d+)?\s?(?:천만|백만|만)\s?)?`;
+const KO_AMT = new RegExp(String.raw`(A|C|S|HK|NZ|US)?(?<![\d.,])(${KN})(?:\s?[~∼]\s?(${KN}))?\s?(?:(호주|캐나다|싱가포르|홍콩|뉴질랜드|미국|미)\s?)?(달러|유로|파운드|엔(?!비디)|위안)(으로|를|가(?![치량격])|는|와|였)?`, 'g');
+const koVal = (t) => {
+  const g = (re) => { const m = String(t).match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
+  const cheonman = g(/(\d[\d,]*(?:\.\d+)?)\s?천만/), baekman = g(/(\d[\d,]*(?:\.\d+)?)\s?백만/);
+  const man = cheonman || baekman ? 0 : g(/(\d[\d,]*(?:\.\d+)?)\s?만/);
+  return g(/(\d[\d,]*(?:\.\d+)?)\s?조/) * 1e12 + g(/(\d[\d,]*(?:\.\d+)?)\s?억/) * 1e8 + cheonman * 1e7 + baekman * 1e6 + man * 1e4;
+};
+const mbNum = (x) => Number(x.toFixed(2)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const mbFmt = (v, sym) => (v >= 1e9 ? `${sym}${mbNum(v / 1e9)} bil` : `${sym}${mbNum(v / 1e6)} mil`);
+export function toMB(text) {
+  let s = String(text ?? '');
+  // ① 기호·영문 단위: "$6bn" "€548m" "¥60bn" "A$1.2 billion" → "$6 bil" "€548 mil" ...
+  s = s.replace(/((?:A|C|S|HK|NZ|US)?[$€£¥₩])\s?(\d[\d,]*(?:\.\d+)?)\s?(billion|bn|b|million|mn|m)\b/gi,
+    (m, c, n, u) => `${c === 'US$' ? '$' : c}${n} ${/^b/i.test(u) ? 'bil' : 'mil'}`);
+  // ② 한글 단위 + 외화: "60억 달러" "3억 8천만 달러" "80억~100억 달러" "약 2조엔" → "$6 bil" "$380 mil" "$8~10 bil" "약 ¥2,000 bil"
+  s = s.replace(KO_AMT, (m, pre, a, b, land, cur, josa) => {
+    if (!/[조억만]/.test(a) || (b && !/[조억만]/.test(b))) return m;   // 단위 없는 숫자("63.25달러")는 그대로
+    const sym = (pre && pre !== 'US' ? pre : CUR_PREFIX[land] || '') + CUR_KO[cur];
+    const va = koVal(a), vb = b ? koVal(b) : 0;
+    let out;
+    if (!b) out = mbFmt(va, sym);
+    else if ((va >= 1e9) === (vb >= 1e9)) out = `${sym}${mbNum(va / (vb >= 1e9 ? 1e9 : 1e6))}~${mbFmt(vb, '')}`;
+    else out = `${mbFmt(va, sym)}~${mbFmt(vb, sym)}`;
+    const J = { 를: '을', 가: '이', 는: '은', 와: '과', 였: '이었', 으로: '로' };
+    return out + (josa ? J[josa] : '');
+  });
+  return s;
+}
+// 메일에 쓰는 문장 전체에 금액 표기 적용(웹 페이지는 그대로)
+function mailShape(M) {
+  const t = toMB;
+  return {
+    ...M, headline: t(M.headline), korea: t(M.korea),
+    assets: M.assets.map((a) => ({
+      ...a, summary: t(a.summary), status: t(a.status), korea: t(a.korea),
+      gp: a.gp.map((g) => ({ ...g, text: t(g.text) })),
+      trends: a.trends.map((x) => ({ ...x, trend: t(x.trend), why: t(x.why) })),
+      funds: a.funds.map((f) => ({ ...f, size: t(f.size) })),
+      kr: a.kr.map((d) => ({ ...d, amount: t(d.amount) })),
+    })),
+  };
+}
+// 긴 단락은 문장마다 줄을 나눠 훑어보기 쉽게("~함. ~음." 단위, 숫자의 소수점·영문 약어는 나누지 않음)
+export const sentences = (t) => String(t || '').replace(/([가-힣)\]%])\.\s+(?=\S)/g, '$1.\n').split('\n').map((x) => x.trim()).filter(Boolean);
+
 const DISC = '본 메일은 KB증권 GIS를 위해 자동 생성된 주간 시장현황입니다. KB GIS 앱이 한 주간 수집한 공개 언론 보도를 집계·요약한 것으로 투자자문이 아니며, 원문 확인 후 활용하시기 바랍니다. 요약 문장 중 수집 자료에 없는 숫자가 들어간 문장은 자동으로 제외됩니다.';
 
 // ── 첨부 HTML (독립 문서) ────────────────────────────────────────
@@ -177,10 +229,23 @@ const dChip = (cur, prev) => {
   return `<span style="color:${p > 0 ? UP : p < 0 ? DOWN : MUT};font-weight:bold">${p > 0 ? '▲' : p < 0 ? '▼' : '–'}${Math.abs(p)}%</span>`;
 };
 const label = (t) => ROW(`<span style="color:${Y}">■</span> ${E(t)}`, `${X(13.5, 1.4, GR)}font-weight:bold;padding:16px 16px 6px`);
-const para = (t, st = '') => ROW(E(t), `${X(15, 1.7)}padding:0 16px 4px;${st}`);
+// 금액 강조 — 외화(mil·bil)와 원화(억·조 원) 금액을 굵게
+const AMT_RE = /((?:A|C|S|HK|NZ)?[$€£¥]|CNY )\d[\d,]*(?:\.\d+)?(?:~\d[\d,]*(?:\.\d+)?)?\s(?:bil|mil)\b|\d[\d,]*(?:\.\d+)?\s?조(?:\s?\d[\d,]*\s?억)?\s?원|\d[\d,]*(?:\.\d+)?\s?억\s?원/g;
+const R_ = (t) => E(t).replace(AMT_RE, (m) => `<b style="color:${INK};white-space:nowrap">${m}</b>`);   // 금액이 줄 끝에서 '$606 / mil' 로 갈라지지 않게
+const para = (t, st = '') => ROW(R_(t), `${X(15, 1.7)}padding:0 16px 4px;${st}`);
+// 문장이 둘 이상이면 문장마다 한 줄(짧은 대시 글머리) — 한 덩어리 단락보다 훑어보기 쉽다
+const prose = (t) => {
+  const ss = sentences(t);
+  if (ss.length < 2) return para(t);
+  return ROW(`${TB}>${ss.map((x) => `<tr><td width="14" valign="top" style="font-size:15px;line-height:1.7;color:${GOLD}">–</td><td style="${X(15, 1.7)}padding-bottom:6px">${R_(x)}</td></tr>`).join('')}</table>`, 'padding:0 16px 4px');
+};
 const src = (s) => s.length ? ` <a href="${E(s[0].u)}" style="color:${GOLD};font-size:12.5px;text-decoration:underline">${E(s[0].m)}</a>` : '';
 // 글머리표 목록 — 표 한 개(Outlook 에서도 들여쓰기 유지)
-const bullets = (items) => !items.length ? '' : ROW(`${TB}>${items.map((h) => `<tr><td width="16" valign="top" style="${X(15, 1.7, Y)}font-weight:bold">•</td><td style="${X(15, 1.7)}padding-bottom:9px">${h}</td></tr>`).join('')}</table>`, 'padding:0 16px 2px');
+const bullets = (items) => !items.length ? '' : ROW(`${TB}>${items.map((h) => `<tr><td width="16" valign="top" style="font-size:15px;line-height:1.7;color:${Y};font-weight:bold">•</td><td style="${X(15, 1.7)}padding-bottom:9px">${h}</td></tr>`).join('')}</table>`, 'padding:0 16px 2px');
+// 자산군 바로가기 — 메일 안 앵커(#a-PE 등)로 이동. Outlook(PC)·Gmail(웹)·Apple Mail 에서 동작하고,
+// 일부 휴대폰 메일 앱은 메일 안 이동을 지원하지 않는다(그때는 '웹에서 보기'의 같은 목차를 쓰면 된다).
+const anchorTo = (id) => `<a name="${id}" id="${id}" style="font-size:0;line-height:0">&nbsp;</a>`;
+const navChip = (a) => `<a href="#a-${a.k}" style="display:inline-block;margin:0 6px 8px 0;padding:8px 12px;border:1px solid ${LN};border-radius:3px;background:#FFFFFF;${FT}font-size:14px;line-height:1.3;color:${INK};font-weight:bold;text-decoration:none;white-space:nowrap">${E(a.label)} <span style="color:${GOLD};font-weight:normal">${num(a.stats.articles)}</span></a>`;
 
 function emailBody(M, withPage) {
   const WEB = withPage ? M.page : APP;
@@ -188,41 +253,44 @@ function emailBody(M, withPage) {
   const R = [];
   R.push(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background:#FFFFFF;word-break:keep-all">`);
   // 헤더 — 전폭 노란 띠
-  R.push(ROW(`<span style="${X(12, 1.4)}font-weight:bold;letter-spacing:1px">KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</span>`, 'padding:18px 16px 2px', Y));
+  R.push(ROW(`${anchorTo('top')}<span style="${X(12, 1.4)}font-weight:bold;letter-spacing:1px">KB증권 GIS · GLOBAL ALTERNATIVES WEEKLY</span>`, 'padding:18px 16px 2px', Y));
   R.push(ROW(TITLE, `${X(24, 1.35)}font-weight:bold;padding:2px 16px 2px`, Y));
   R.push(ROW(`<b>${E(M.period)}</b> 주간 · 분석 ${E(M.via)}`, `${X(14, 1.5)}padding:2px 16px 14px`, Y));
   R.push(ROW(`<a href="${WEB}" style="color:${INK};font-weight:bold;text-decoration:underline">${withPage ? '웹에서 보기 (휴대폰 화면에 맞춤)' : 'KB GIS 앱에서 보기'} &#8250;</a>`, `${X(13.5, 1.4)}padding:0 16px 16px`, Y));
   // 핵심 수치 3칸
   const kpi = (n, l, extra) => `<td width="33%" valign="top" style="${X(12.5, 1.5, MUT)}padding:14px 6px 14px 16px"><span style="${X(26, 1.2)}font-weight:bold">${n}</span><br>${l}${extra ? ` ${extra}` : ''}</td>`;
   R.push(`<tr><td bgcolor="${CH}" style="background:${CH}">${TB}><tr>${kpi(num(M.totals.articles), '관련 보도', dChip(M.totals.articles, M.totals.prev))}${kpi(num(M.totals.deals), '딜·펀드 기록')}${kpi(num(fin), '파이널 클로즈')}</tr></table></td></tr>`);
+  // 자산군 바로가기(누르면 메일 안 해당 자산군으로 이동)
+  R.push(ROW(`${anchorTo('nav')}자산군 바로가기 <span style="font-weight:normal;color:${MUT};letter-spacing:0">· 숫자는 이번 주 보도 건수</span>`, `${X(13, 1.4, GR)}font-weight:bold;letter-spacing:1px;padding:16px 16px 8px`));
+  R.push(ROW(M.assets.map(navChip).join(''), 'padding:0 10px 6px 16px'));
   // 이번 주 한 줄
   if (M.headline) {
     R.push(ROW('이번 주 한 줄', `${X(13, 1.4, GR)}font-weight:bold;letter-spacing:1px;padding:18px 16px 4px`));
-    R.push(ROW(E(M.headline), `${X(18, 1.6)}font-weight:bold;padding:0 16px 6px`));
+    R.push(ROW(R_(M.headline), `${X(18, 1.6)}font-weight:bold;padding:0 16px 6px`));
   }
   // 한국 투자자 동향
-  if (M.korea) { R.push(label('한국 투자자 동향')); R.push(para(M.korea)); }
+  if (M.korea) { R.push(label('한국 투자자 동향')); R.push(prose(M.korea)); }
   if (M.krShare.length) R.push(ROW(M.krShare.map((x) => `${E(x.label)} <b>${x.articles}</b>건${x.deals ? `·딜 <b>${x.deals}</b>` : ''}`).join(' &nbsp;|&nbsp; '), `${X(13, 1.6, MUT)}padding:4px 16px 4px`));
   // 자산군별 한 줄
   R.push(label('자산군별 한 줄'));
-  R.push(bullets(M.assets.map((a) => `<b>${E(a.label)}</b> <span style="color:${MUT};font-size:13px">${num(a.stats.articles)}건 ${dChip(a.stats.articles, a.stats.prev)}</span><br>${E(a.summary || '—')}`)));
+  R.push(bullets(M.assets.map((a) => `<a href="#a-${a.k}" style="color:${INK};font-weight:bold;text-decoration:none">${E(a.label)} &#8250;</a> <span style="color:${MUT};font-size:13px">${num(a.stats.articles)}건 ${dChip(a.stats.articles, a.stats.prev)}</span><br>${R_(a.summary || '—')}`)));
   // 자산군별 상세 — 진한 띠로 구획
   for (const a of M.assets) {
-    R.push(ROW('&nbsp;', 'font-size:8px;line-height:8px'));
+    R.push(ROW(`${anchorTo('a-' + a.k)}`, 'font-size:14px;line-height:14px'));
     R.push(ROW(`${E(a.label)}<br><span style="${X(13, 1.6, Y2)}font-weight:normal">보도 ${num(a.stats.articles)}건 ${a.stats.prev ? `(전주 ${num(a.stats.prev)}) ` : ''}· 딜 ${num(a.stats.deals)} · 파이널 클로즈 ${a.stats.finals}</span>`, `${X(19, 1.4, '#FFFFFF')}font-weight:bold;padding:12px 16px`, INK));
-    if (a.status) { R.push(label('시장 현황')); R.push(para(a.status)); }
+    if (a.status) { R.push(label('시장 현황')); R.push(prose(a.status)); }
     if (a.gp.length) {
       R.push(label('운용사별 이슈'));
-      R.push(bullets(a.gp.slice(0, 4).map((g) => `<b>${E(g.gp)}</b> ${E(g.text)}${src(g.src)}`)));
+      R.push(bullets(a.gp.slice(0, 4).map((g) => `<b>${E(g.gp)}</b> ${R_(g.text)}${src(g.src)}`)));
       if (a.gp.length > 4 && withPage) R.push(ROW(`외 ${a.gp.length - 4}건 — <a href="${E(M.page)}#a-${a.k}" style="color:${BL}">웹에서 보기</a>`, `${X(13, 1.5, MUT)}padding:0 16px 4px 32px`));
     }
     if (a.trends.length) {
       R.push(label('트렌드와 그 이유'));
-      R.push(bullets(a.trends.map((t) => `<b>${E(t.trend)}</b>${t.why ? `<br>${E(t.why)}` : ''}${src(t.src)}`)));
+      R.push(bullets(a.trends.map((t) => `<b>${R_(t.trend)}</b>${t.why ? `<br>${R_(t.why)}` : ''}${src(t.src)}`)));
     }
     if (a.korea || a.kr.length) {
       R.push(label('한국 투자자'));
-      if (a.korea) R.push(para(a.korea));
+      if (a.korea) R.push(prose(a.korea));
       if (a.kr.length) R.push(bullets(a.kr.slice(0, 3).map((d) => `<b>${E(d.inst)}</b> ${E(d.kind)}${d.amount ? ` <b>${E(d.amount)}</b>` : ''}${src(d.src)}`)));
     }
     const fins = a.funds.filter((f) => f.fin), rest = a.funds.length - fins.length;
@@ -231,6 +299,7 @@ function emailBody(M, withPage) {
       R.push(ROW(`${TB}>${fins.map((f, i) => `<tr><td style="${X(14.5, 1.5)}padding:7px 8px 7px 0;${i ? `border-top:1px solid ${LN}` : ''}">${E(f.fund || f.gp)}${f.fund && !f.fund.includes(f.gp) ? ` <span style="color:${MUT};font-size:12.5px">${E(f.gp)}</span>` : ''}</td><td align="right" valign="top" style="${X(14.5, 1.5)}font-weight:bold;white-space:nowrap;padding:7px 0;${i ? `border-top:1px solid ${LN}` : ''}">${E(f.size)}</td></tr>`).join('')}</table>`, 'padding:0 16px 4px'));
     }
     if (rest && withPage) R.push(ROW(`모집 개시·기타 클로즈 ${rest}건 — <a href="${E(M.page)}#a-${a.k}" style="color:${BL}">웹에서 표로 보기</a>`, `${X(13, 1.5, MUT)}padding:4px 16px 4px`));
+    R.push(ROW(`<a href="#nav" style="color:${GOLD};text-decoration:none">&#9650; 자산군 바로가기</a>`, `${X(12.5, 1.4, GOLD)}text-align:right;padding:10px 16px 6px`));
     R.push(ROW('&nbsp;', 'font-size:10px;line-height:10px'));
   }
   R.push(ROW('&nbsp;', 'font-size:8px;line-height:8px', CH));
@@ -266,7 +335,44 @@ export function check(html, label) {
   if (errs.length) throw new Error(`${label}: ${errs.join(', ')}`);
 }
 
+function selftest() {
+  const cases = [
+    ['Pantheon이 60억 달러 규모 세컨더리 펀드', 'Pantheon이 $6 bil 규모 세컨더리 펀드'],
+    ['약 3억 8천만 달러)를 출시함', '약 $380 mil)를 출시함'],
+    ['Pantheon·Mirova 5억 4,800만 유로 세컨더리', 'Pantheon·Mirova €548 mil 세컨더리'],
+    ['7억6천만 달러 상업용', '$760 mil 상업용'],
+    ['2억 1250만 달러에 인수함', '$212.5 mil에 인수함'],
+    ['6억 600만 달러 등', '$606 mil 등'],
+    ['1억 4,000만 유로에 인수함', '€140 mil에 인수함'],
+    ['5,750만 달러를 투자함', '$57.5 mil을 투자함'],
+    ['1,230억 달러를 기록함', '$123 bil을 기록함'],
+    ['36억 달러를 모집', '$3.6 bil을 모집'],
+    ['260억 달러가 몰림', '$26 bil이 몰림'],
+    ['45억 달러로 파이널 클로즈', '$4.5 bil로 파이널 클로즈'],
+    ['130억 유로에 이름', '€13 bil에 이름'],
+    ['50억 달러였음', '$5 bil이었음'],
+    ['80억~100억 달러 밸류에이션', '$8~10 bil 밸류에이션'],
+    ['5억~12억 유로', '€500 mil~€1.2 bil'],
+    ['A2억 350만 달러에 인수함', 'A$203.5 mil에 인수함'],
+    ['약 2조엔(JLL)으로', '약 ¥2,000 bil(JLL)으로'],
+    ['2500억엔으로 매각', '¥250 bil로 매각'],
+    ['5억 호주달러', 'A$500 mil'],
+    ['주당 63.25달러, 가치 1억 달러', '주당 63.25달러, 가치 $100 mil'],
+    ['2,145억 원을 완납', '2,145억 원을 완납'],
+    ['240조 원에 이른다', '240조 원에 이른다'],
+    ['달러 가치 하락, 엔비디아 1억 달러가치', '달러 가치 하락, 엔비디아 $100 mil가치'],
+    ['$6bn', '$6 bil'], ['$27.5m', '$27.5 mil'], ['€552m ($619m)', '€552 mil ($619 mil)'], ['¥60bn', '¥60 bil'],
+    ['£425m', '£425 mil'], ['A$1.2bn 이상', 'A$1.2 bil 이상'], ['Rs 6,200 crore', 'Rs 6,200 crore'], ['647MW·24GWh·$1.12', '647MW·24GWh·$1.12'],
+  ];
+  const bad = cases.filter(([a, b]) => toMB(a) !== b).map(([a, b]) => `  ${a} → ${toMB(a)} (기대: ${b})`);
+  const sx = sentences('국민연금은 6.0% 이상으로 높임. U.S. 시장에서 Inc. 가 늘었음. 마지막 문장(괄호)임.');
+  const okS = sx.length === 3 && sx[0].endsWith('높임.') && sx[1].includes('U.S. 시장에서 Inc. 가');
+  if (bad.length || !okS) { console.log('SELFTEST FAIL\n' + bad.join('\n') + (okS ? '' : `\n  문장 나누기: ${JSON.stringify(sx)}`)); process.exit(1); }
+  console.log(`금액 표기 ${cases.length}/${cases.length} ok · 문장 나누기 ok\nSELFTEST PASS`);
+}
+
 async function main() {
+  if (process.argv.includes('--selftest')) return selftest();
   const index = JSON.parse(await readFile(new URL('weekly/index.json', ROOT), 'utf8'));
   const want = arg('--date');
   const ent = want ? index.find((x) => x.date === want) : index.slice().sort((a, b) => (a.date < b.date ? 1 : -1))[0];
@@ -289,8 +395,12 @@ async function main() {
   }
   // 웹 페이지가 저장소에 올라가 있을 때만 '웹에서 보기'를 단다(없는 주소로 보내지 않게)
   const withPage = existsSync(pageFile);
-  const mail = emailBody(M, withPage), txt = plainText(M, withPage);
+  const MM = mailShape(M);                       // 메일은 외화 금액을 mil·bil 로(웹 페이지는 그대로)
+  const mail = emailBody(MM, withPage), txt = plainText(MM, withPage);
   check(mail, '본문');
+  // 메일 안 이동 링크(#…)마다 도착 지점이 있는지
+  const dead = [...mail.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]).filter((id) => !mail.includes(`name="${id}"`));
+  if (dead.length) throw new Error(`본문: 도착 지점 없는 이동 링크 ${[...new Set(dead)].join(', ')}`);
   const out = pathToFileURL(resolve(arg('--out') || 'mail-out') + '/');   // 상대·절대 경로 모두
   await mkdir(out, { recursive: true });
   await writeFile(new URL('email.html', out), mail);

@@ -1,121 +1,114 @@
 {
- "date": "2026-11-24",
- "generatedAt": "2026-11-23T21:39:16.877Z",
+ "date": "2026-11-25",
+ "generatedAt": "2026-11-24T21:29:36.648Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "Brookfield의 PGP Glass 17억 달러 인수 등 PE 딜 활발, KIC는 CIO·COO 인선 마무리",
+ "headline": "대형 PEF 거래·사모크레딧 펀드레이징 활발, 국민연금은 출자 공백 속 운용사 접점 확대",
  "points": [
   {
-   "text": "KIC가 신임 CIO에 신민식 전 한화생명보험 투자부문 CIO를, COO에 신용선 대체투자본부장을 선임함. 임기는 23일부터 3년이며, 지난해 8월 임기가 끝난 이훈 전 CIO의 후임 인선이 마무리됨.",
+   "text": "Blackstone·Warburg Pincus·Apollo가 GTCR의 약 500억 달러 규모 Global Payments 인수금융 지원을 논의 중이며, 사모펀드 간 공동 금융 협력이 대형 딜에서 이어짐.",
    "ids": [
-    "g1vxdcrr",
-    "g12dye4r",
-    "ghlkpta"
+    "g1rcu06l",
+    "g1q4vlaq"
    ]
   },
   {
-   "text": "KIC 전략투자 계정 신설 법안은 연내 국회 통과가 불투명한 상황임. KIC의 국내 전략산업 투자 전문성과 위험관리 체계가 시험대에 올랐음.",
+   "text": "TPG는 Corpay와 함께 BILL을 약 60억 달러 전액 현금으로 인수하기로 했고, Brookfield는 Blackstone 펀드로부터 PGP Glass를 17억 달러에 인수하기로 함.",
    "ids": [
-    "g101okkw"
+    "g1a18f6k",
+    "g17p6e1x"
    ]
   },
   {
-   "text": "Brookfield Asset Management가 Blackstone 운용 사모펀드로부터 인도 특수유리 포장업체 PGP Glass를 17억 달러에 인수하기로 합의함. 2027년 1분기 종결 예정이며 Brookfield Capital Partners 전략으로 자금을 조달함.",
+   "text": "KKR은 북미 펀드 XIII으로 2023년 18억 달러에 인수한 CIRCOR Aerospace를 Parker Hannifin에 25억5,000만 달러에 매각 완료함.",
    "ids": [
-    "gwlz95q",
-    "g1r3ysbp",
-    "gcnv8ha"
+    "gx3q3xt",
+    "g1gykr0b"
    ]
   },
   {
-   "text": "TPG가 Corpay와 함께 BILL을 약 60억 달러 전액 현금으로 인수하기로 함. Corpay는 11억 달러를 투자해 약 3분의 1 지분을 확보함.",
+   "text": "사모대출·인프라 펀드레이징이 이어짐. Blackstone Multi-Asset Credit Fund는 74개 투자자에 36억 1,000만 달러를 판매했고, CIP는 신규 Credit Opportunities Fund로 10억 달러 조성에 나서 1차 클로징을 마침. Deutsche AM은 20억 유로 규모 유럽 직접대출 펀드 첫 클로징을 앞둠.",
    "ids": [
-    "gsjy190",
-    "g1a18f6k"
+    "gupwxt",
+    "gjscdqz",
+    "g1dnvdso"
    ]
   },
   {
-   "text": "Partners Group이 Morgan Stanley Infrastructure Partners로부터 뉴질랜드 운송·페리 사업자 StraitNZ를 인수하기로 함. MBK Partners는 Wacom 상장폐지 바이아웃을 주당 1,030엔(49.93% 프리미엄), 기업가치 약 1,370억 엔으로 추진함.",
+   "text": "미국 대형 연기금이 Blackstone, Blue Owl 등의 사모대출 펀드 지분을 묶어 약 40억 달러를 조달하는 복합 금융을 검토 중임. CVC는 Fund X 목표를 260억 유로로 제시함.",
    "ids": [
-    "g9l1gfg",
-    "g1k0pkgn",
-    "g1wfsgf1"
+    "gl9bif8",
+    "geh1mnm"
    ]
   }
  ],
- "korea": "KIC가 신민식 CIO·신용선 COO를 선임해 1년 3개월의 CIO 대행 체제를 끝내고 부사장 3인 체제를 재정비함. 국민연금도 부동산 부문 책임자를 교체해, 후속 인사 이후 두 기관의 해외 대체투자 기조 변화 여부를 점검할 필요가 있음.",
+ "korea": "국민연금이 올해 PEF 출자사업을 2년 연속 중단한 가운데 운용사들이 전주 사무소를 열며 접점을 넓히고 있어, 해외 대체투자 펀드 영업도 연금 운용 수요를 상시 파악하는 채널 확보가 중요해짐. KIC는 CIO 직무대행 체제를 1년 3개월 만에 끝내고 신민식 CIO를 선임해, 대체자산 성과 개선 과제를 안은 새 지휘부와의 소통 창구가 열림.",
  "refs": {
+  "g1rcu06l": {
+   "t": "Blackstone·Warburg Pincus·Apollo, GTCR의 500억 달러 규모 Global Payments 인수 지원 논의 중…소식통",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L6N4750XF:0-blackstone-warburg-pincus-apollo-in-talks-to-back-gtcr-s-50-billion-global-payments-deal-sources-say/",
+   "d": "2026-11-24"
+  },
+  "g17p6e1x": {
+   "t": "Brookfield, 17억 달러에 PGP Glass 인수",
+   "s": "BeautyMatter",
+   "u": "https://beautymatter.com/articles/brookfield-to-acquire-pgp-glass-in-1-7-billion-deal",
+   "d": "2026-11-24"
+  },
+  "g1gykr0b": {
+   "t": "Parker Hannifin, KKR로부터 CIRCOR Aerospace 25억5,000만 달러 인수 완료",
+   "s": "Dealroom",
+   "u": "https://app.dealroom.co/news/note/parker-hannifin-closes-2-55b-buy-of-circor-aerospace-from-kkr",
+   "d": "2026-11-24"
+  },
+  "gx3q3xt": {
+   "t": "KKR, CIRCOR 항공우주 사업부 25억5,000만 달러에 매각 완료",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/company-news/article-93CH-2188768",
+   "d": "2026-11-24"
+  },
+  "gupwxt": {
+   "t": "Blackstone Multi-Asset Credit Fund, 74개 투자자에 36억 1,000만 달러어치 판매 보고... 1년 전의 거의 두 배",
+   "s": "Crowdfund Insider",
+   "u": "https://www.crowdfundinsider.com/filings/blackstone-multi-asset-credit-fund-3-6b-sold-reg-d-update/",
+   "d": "2026-11-24"
+  },
+  "geh1mnm": {
+   "t": "CVC: 600억 유로의 엑시트와 260억 유로 규모의 Fund X 목표가 성장 전망을 뒷받침",
+   "s": "TradingView",
+   "u": "https://www.tradingview.com/news/urn:summary_document_slides:quartr.com:4794627:0-cvc-60bn-of-realizations-and-a-26bn-fund-x-target-underpin-the-growth-outlook/",
+   "d": "2026-11-24"
+  },
   "g1a18f6k": {
    "t": "TPG·Corpay, BILL을 60억 달러에 인수",
    "s": "CPA Practice Advisor",
    "u": "https://www.cpapracticeadvisor.com/2026/11/23/bill-to-be-bought-by-tpg-corpay-in-6-billion-deal/194558/",
    "d": "2026-11-23"
   },
-  "gwlz95q": {
-   "t": "브룩필드 에셋 매니지먼트, 특수 유리 용기 업체 PGP 글래스 17억 달러에 인수",
-   "s": "www.datatooza.com",
-   "u": "https://www.datatooza.com/article/20261123200653811252ef31851e_80",
+  "g1dnvdso": {
+   "t": "Deutsche AM, 20억 유로 규모 직접대출 펀드 첫 클로징 임박",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-24/deutsche-am-nears-first-close-for-2-billion-direct-lending-fund",
+   "d": "2026-11-24"
+  },
+  "gjscdqz": {
+   "t": "Copenhagen Infrastructure Partners, 신규 크레딧 펀드로 10억 달러 조성 추진",
+   "s": "https://www.connectmoney.com/",
+   "u": "https://www.connectmoney.com/stories/copenhagen-infrastructure-partners-targets-1b-for-new-credit-fund/",
    "d": "2026-11-23"
   },
-  "gcnv8ha": {
-   "t": "Brookfield Asset Management, Blackstone Private Equity로부터 PGP Glass 인수",
-   "s": "TipRanks",
-   "u": "https://www.tipranks.com/news/the-fly/brookfield-asset-management-to-acquire-pgp-glass-from-blackstone-private-equity-thefly-news",
-   "d": "2026-11-23"
+  "g1q4vlaq": {
+   "t": "[단독] Blackstone·Warburg Pincus·Apollo, GTCR의 500억 달러 규모 Global Payments 인수 지원 논의 중…소식통",
+   "s": "Reuters",
+   "u": "https://www.reuters.com/legal/transactional/blackstone-warburg-pincus-apollo-talks-back-gtcrs-50-billion-global-payments-2026-11-24/",
+   "d": "2026-11-24"
   },
-  "g1r3ysbp": {
-   "t": "Brookfield, AI 주도 성장 계획과 함께 17억 달러 규모 거래로 Blackstone으로부터 PGP Glass 인수",
-   "s": "Kotak Neo",
-   "u": "https://www.kotakneo.com/news/global-markets/brookfield-to-acquire-pgp-glass-from-blackstone-for-1-7-billion-with-ai-growth-plans/",
-   "d": "2026-11-23"
-  },
-  "g1wfsgf1": {
-   "t": "MBK Partners, 주당 1,030엔에 Wacom 상장폐지 바이아웃 추진…기업가치 약 1,370억 엔",
-   "s": "MLQ.ai",
-   "u": "https://mlq.ai/news/mbk-partners-backs-a-1030-a-share-buyout-to-take-wacom-private-valuing-the-pen-maker-at-about-137-billion/",
-   "d": "2026-11-23"
-  },
-  "gsjy190": {
-   "t": "TPG, 60억 달러에 BILL 인수",
-   "s": "Wisevoter",
-   "u": "https://wisevoter.com/world/us/ca/san-jose/2026/11/23/tpg-acquire-bill-6-billion-corpay-stake",
-   "d": "2026-11-23"
-  },
-  "g1k0pkgn": {
-   "t": "Partners Group, 뉴질랜드 페리 운영사 StraitNZ 인수…엑시트 규모 약 12억 뉴질랜드달러",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/partners-group-buys-new-zealand-ferry-operator-straitnz-in-nz-1-2b-exit",
-   "d": "2026-11-22"
-  },
-  "g9l1gfg": {
-   "t": "Morgan Stanley Infrastructure Partners, StraitNZ를 Partners Group에 매각하기로 합의",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/binance_news:d4b5e6610094b:0-morgan-stanley-infrastructure-partners-agrees-to-sell-straitnz-to-partners-group/",
-   "d": "2026-11-22"
-  },
-  "g101okkw": {
-   "t": "KIC 전략투자 계정 신설법, 연내 통과 '안갯속'…국내 투자 전문성 시험대",
-   "s": "마켓인",
-   "u": "https://marketin.edaily.co.kr/News/Read?newsId=03247206645648672",
-   "d": "2026-11-23"
-  },
-  "g1vxdcrr": {
-   "t": "KIC, CIO 신민식·COO 신용선 선임…\"부사장 3인 체계 재정비\"",
-   "s": "파이낸셜뉴스",
-   "u": "https://www.fnnews.com/news/202611231411524606",
-   "d": "2026-11-23"
-  },
-  "g12dye4r": {
-   "t": "‘대행 체제’ 1년 3개월 끝… KIC, 한화생명 출신 신민식 CIO 선임",
-   "s": "Chosunbiz",
-   "u": "https://biz.chosun.com/stock/stock_general/2026/11/23/UE6JKRXYVREQRGJ4SCZ2BLAJJQ/",
-   "d": "2026-11-23"
-  },
-  "ghlkpta": {
-   "t": "KIC CIO에 신민식·COO 신용선 선임…부사장 3인 진용 재정비",
-   "s": "연합인포맥스",
-   "u": "https://news.einfomax.co.kr/news/articleView.html?idxno=4446040",
-   "d": "2026-11-23"
+  "gl9bif8": {
+   "t": "연기금, Blue Owl·Blackstone 펀드 지분 묶어 이례적 거래",
+   "s": "Bloomberg.com",
+   "u": "https://www.bloomberg.com/news/articles/2026-11-24/blue-owl-blackstone-fund-stakes-bundled-by-pension-in-rare-deal",
+   "d": "2026-11-24"
   }
  },
  "droppedSentences": 0

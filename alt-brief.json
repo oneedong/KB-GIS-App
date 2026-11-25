@@ -1,53 +1,86 @@
 {
- "date": "2026-11-25",
- "generatedAt": "2026-11-24T21:29:36.648Z",
+ "date": "2026-11-26",
+ "generatedAt": "2026-11-25T21:34:20.306Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "대형 PEF 거래·사모크레딧 펀드레이징 활발, 국민연금은 출자 공백 속 운용사 접점 확대",
+ "headline": "대형 운용사 대규모 딜·엑시트 이어지고, 사모대출·인프라 펀드레이징 활발",
  "points": [
   {
-   "text": "Blackstone·Warburg Pincus·Apollo가 GTCR의 약 500억 달러 규모 Global Payments 인수금융 지원을 논의 중이며, 사모펀드 간 공동 금융 협력이 대형 딜에서 이어짐.",
+   "text": "Brookfield가 Blackstone 운용 펀드로부터 인도 PGP Glass를 17억 달러에 인수하기로 합의함. Macquarie Asset Management는 Axiata의 EDOTCO 타워 거래를 주도하며 EDOTCO 가치는 RM11.8bn(29억 달러)로 평가됨.",
    "ids": [
-    "g1rcu06l",
-    "g1q4vlaq"
+    "g17p6e1x",
+    "glm9xeu",
+    "g5gdkzp"
    ]
   },
   {
-   "text": "TPG는 Corpay와 함께 BILL을 약 60억 달러 전액 현금으로 인수하기로 했고, Brookfield는 Blackstone 펀드로부터 PGP Glass를 17억 달러에 인수하기로 함.",
+   "text": "Blackstone·Warburg Pincus·Apollo가 GTCR의 약 500억 달러 규모 Global Payments 인수 금융 지원을 협의 중임. 별도로 BlackRock·IFM 컨소시엄은 시장 불확실성을 이유로 Stack Infrastructure 아시아태평양 데이터센터 인수 제안가 인하를 검토 중임.",
    "ids": [
-    "g1a18f6k",
-    "g17p6e1x"
+    "givcf42",
+    "g1c1o2ax",
+    "g11s0pfo"
    ]
   },
   {
-   "text": "KKR은 북미 펀드 XIII으로 2023년 18억 달러에 인수한 CIRCOR Aerospace를 Parker Hannifin에 25억5,000만 달러에 매각 완료함.",
+   "text": "Carlyle이 Piramal Pharma 지분 약 7%를 약 2,200크로르 루피 블록딜로 매각함. 6년 만의 첫 지분 희석이며 잔여 지분은 10% 이상임.",
    "ids": [
-    "gx3q3xt",
-    "g1gykr0b"
+    "gi71nkv",
+    "g14ktoyl"
    ]
   },
   {
-   "text": "사모대출·인프라 펀드레이징이 이어짐. Blackstone Multi-Asset Credit Fund는 74개 투자자에 36억 1,000만 달러를 판매했고, CIP는 신규 Credit Opportunities Fund로 10억 달러 조성에 나서 1차 클로징을 마침. Deutsche AM은 20억 유로 규모 유럽 직접대출 펀드 첫 클로징을 앞둠.",
+   "text": "Deutsche Asset Management가 목표 15억~20억 유로 규모의 EDLF II 유럽 직접대출 펀드의 1차 클로즈를 12월 예정함. Goldman Sachs는 15억 달러 규모 사모대출 세컨더리 딜을 마무리 단계로 진행 중임.",
    "ids": [
-    "gupwxt",
-    "gjscdqz",
-    "g1dnvdso"
+    "g1n9im3w",
+    "g17ayeoj",
+    "g1nyx0aw"
    ]
   },
   {
-   "text": "미국 대형 연기금이 Blackstone, Blue Owl 등의 사모대출 펀드 지분을 묶어 약 40억 달러를 조달하는 복합 금융을 검토 중임. CVC는 Fund X 목표를 260억 유로로 제시함.",
+   "text": "Nexent Capital이 AI·양자 인프라 및 첨단 에너지 대상 10억 달러 목표(하드캡 16억 달러)의 ADGM Fund I을 출시함. 전직 Brookfield 임원들의 Reinova Partners는 에너지 전환 인프라 데뷔 펀드로 4억 달러를 확보함.",
    "ids": [
-    "gl9bif8",
-    "geh1mnm"
+    "g14it6fg",
+    "gwdd68s",
+    "gcn2ld1"
    ]
   }
  ],
- "korea": "국민연금이 올해 PEF 출자사업을 2년 연속 중단한 가운데 운용사들이 전주 사무소를 열며 접점을 넓히고 있어, 해외 대체투자 펀드 영업도 연금 운용 수요를 상시 파악하는 채널 확보가 중요해짐. KIC는 CIO 직무대행 체제를 1년 3개월 만에 끝내고 신민식 CIO를 선임해, 대체자산 성과 개선 과제를 안은 새 지휘부와의 소통 창구가 열림.",
+ "korea": "국민연금 위탁운용사 선정 시 전주 거점 보유 운용사에 가점(1점)이 부여돼 한국투자신탁운용·KCGI자산운용이 전주사무소를 열었음. 해외 대체투자 펀드를 소개하는 입장에서는 국민연금 접점 확대를 위한 현지 대응 체계가 경쟁 요소가 될 수 있음.",
  "refs": {
-  "g1rcu06l": {
-   "t": "Blackstone·Warburg Pincus·Apollo, GTCR의 500억 달러 규모 Global Payments 인수 지원 논의 중…소식통",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/reuters.com,2026:newsml_L6N4750XF:0-blackstone-warburg-pincus-apollo-in-talks-to-back-gtcr-s-50-billion-global-payments-deal-sources-say/",
+  "givcf42": {
+   "t": "Blackstone·Warburg Pincus·Apollo, GTCR의 500억 달러 규모 Global Payments 인수 지원 협상 중",
+   "s": "Private Equity Wire",
+   "u": "https://privateequitywire.com/news/blackstone-warburg-pincus-and-apollo-in-talks-to-back-gtcrs-50bn-global-payments-bid",
+   "d": "2026-11-25"
+  },
+  "gcn2ld1": {
+   "t": "전직 Brookfield 경영진, 데뷔 에너지 전환 펀드 4억 달러 1차 클로즈 달성",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/north-america-by-region/united-states-north-america-by-region/ex-brookfield-executives-hit-400m-first-close-for-debut-energy-transition-fund.html",
+   "d": "2026-11-25"
+  },
+  "gi71nkv": {
+   "t": "Carlyle, 2,200크로르 루피 블록딜로 Piramal Pharma 지분 7% 매각: 보도",
+   "s": "Free Press Journal",
+   "u": "https://www.freepressjournal.in/business/carlyle-sells-7-stake-in-piramal-pharma-via-2200-crore-block-deal-report",
+   "d": "2026-11-25"
+  },
+  "g14ktoyl": {
+   "t": "Carlyle은 Rs 2,200-crore 블록 거래를 통해 Piramal Pharma의 지분 일부를 매각한다.",
+   "s": "FlipItMoney",
+   "u": "https://flipit.money/flips/carlyle-offloads-partial-stake-in-piramal-pharma-via-rs-2200-crore-block-deal",
+   "d": "2026-11-25"
+  },
+  "g11s0pfo": {
+   "t": "블랙록 주도 컨소시엄, 스택 인프라 아시아 인수 제안가 낮출 수도",
+   "s": "Investing.com 한국어",
+   "u": "https://kr.investing.com/news/stock-market-news/article-2189770",
+   "d": "2026-11-25"
+  },
+  "g1nyx0aw": {
+   "t": "Goldman Sachs, 15억 달러 규모 사모대출 세컨더리 딜 마무리 단계",
+   "s": "PitchBook",
+   "u": "https://pitchbook.com/news/articles/goldman-sachs-closing-on-1-5b-private-credit-secondary-deal",
    "d": "2026-11-24"
   },
   "g17p6e1x": {
@@ -56,58 +89,46 @@
    "u": "https://beautymatter.com/articles/brookfield-to-acquire-pgp-glass-in-1-7-billion-deal",
    "d": "2026-11-24"
   },
-  "g1gykr0b": {
-   "t": "Parker Hannifin, KKR로부터 CIRCOR Aerospace 25억5,000만 달러 인수 완료",
-   "s": "Dealroom",
-   "u": "https://app.dealroom.co/news/note/parker-hannifin-closes-2-55b-buy-of-circor-aerospace-from-kkr",
-   "d": "2026-11-24"
+  "g17ayeoj": {
+   "t": "Deutsche Asset Management, 12월 직접대출 펀드 클로징 예정",
+   "s": "Wisevoter",
+   "u": "https://wisevoter.com/world/2026/11/25/deutsche-asset-management-european-direct-lending-fund",
+   "d": "2026-11-25"
   },
-  "gx3q3xt": {
-   "t": "KKR, CIRCOR 항공우주 사업부 25억5,000만 달러에 매각 완료",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/company-news/article-93CH-2188768",
-   "d": "2026-11-24"
+  "g1n9im3w": {
+   "t": "Deutsche AM, 최대 20억 유로를 목표로 하는 유럽 다이렉트 렌딩 펀드의 1차 클로즈 임박",
+   "s": "Private Equity Wire",
+   "u": "https://privateequitywire.com/news/deutsche-am-nears-first-close-for-european-direct-lending-fund-targeting-up-to-2bn",
+   "d": "2026-11-25"
   },
-  "gupwxt": {
-   "t": "Blackstone Multi-Asset Credit Fund, 74개 투자자에 36억 1,000만 달러어치 판매 보고... 1년 전의 거의 두 배",
-   "s": "Crowdfund Insider",
-   "u": "https://www.crowdfundinsider.com/filings/blackstone-multi-asset-credit-fund-3-6b-sold-reg-d-update/",
-   "d": "2026-11-24"
+  "gwdd68s": {
+   "t": "넥센트 캐피탈, AI 및 양자 인프라를 위한 10억 달러 규모 펀드 출시",
+   "s": "Quantum Zeitgeist",
+   "u": "https://quantumzeitgeist.com/nexent-capital-quantum-1bn-fund-infrastructure/",
+   "d": "2026-11-25"
   },
-  "geh1mnm": {
-   "t": "CVC: 600억 유로의 엑시트와 260억 유로 규모의 Fund X 목표가 성장 전망을 뒷받침",
-   "s": "TradingView",
-   "u": "https://www.tradingview.com/news/urn:summary_document_slides:quartr.com:4794627:0-cvc-60bn-of-realizations-and-a-26bn-fund-x-target-underpin-the-growth-outlook/",
-   "d": "2026-11-24"
+  "g14it6fg": {
+   "t": "Nexent Capital IFSC, 10억 달러 규모의 양자 컴퓨팅 지원 AI 인프라 및 고급 에너지 펀드 출시",
+   "s": "The Quantum Insider",
+   "u": "https://thequantuminsider.com/2026/11/25/nexent-capital-launches-1-billion-ai-infrastructure-energy-fund/",
+   "d": "2026-11-25"
   },
-  "g1a18f6k": {
-   "t": "TPG·Corpay, BILL을 60억 달러에 인수",
-   "s": "CPA Practice Advisor",
-   "u": "https://www.cpapracticeadvisor.com/2026/11/23/bill-to-be-bought-by-tpg-corpay-in-6-billion-deal/194558/",
-   "d": "2026-11-23"
+  "g5gdkzp": {
+   "t": "Macquarie, APAC 5개 시장에서 EDOTCO 타워 거래 주도",
+   "s": "Telco Magazine",
+   "u": "https://telcomagazine.com/news/macquarie-spearheads-edotco-tower-deal-in-five-apac-markets",
+   "d": "2026-11-25"
   },
-  "g1dnvdso": {
-   "t": "Deutsche AM, 20억 유로 규모 직접대출 펀드 첫 클로징 임박",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-24/deutsche-am-nears-first-close-for-2-billion-direct-lending-fund",
-   "d": "2026-11-24"
+  "glm9xeu": {
+   "t": "거래 요약: Brookfield는 17억 달러 규모의 Blackstone 유리 포장 인수를 성사시켰다. Macquarie, 12억 달러 규모의 통신 타워 거래 주도",
+   "s": "AltAssets Private Equity News",
+   "u": "https://www.altassets.net/private-equity-news/by-region/global-by-region/deal-roundup-brookfield-strikes-1-7bn-blackstone-glass-packaging-buyout-macquarie-leads-1-2bn-telecoms-towers-deal.html",
+   "d": "2026-11-25"
   },
-  "gjscdqz": {
-   "t": "Copenhagen Infrastructure Partners, 신규 크레딧 펀드로 10억 달러 조성 추진",
-   "s": "https://www.connectmoney.com/",
-   "u": "https://www.connectmoney.com/stories/copenhagen-infrastructure-partners-targets-1b-for-new-credit-fund/",
-   "d": "2026-11-23"
-  },
-  "g1q4vlaq": {
-   "t": "[단독] Blackstone·Warburg Pincus·Apollo, GTCR의 500억 달러 규모 Global Payments 인수 지원 논의 중…소식통",
-   "s": "Reuters",
-   "u": "https://www.reuters.com/legal/transactional/blackstone-warburg-pincus-apollo-talks-back-gtcrs-50-billion-global-payments-2026-11-24/",
-   "d": "2026-11-24"
-  },
-  "gl9bif8": {
-   "t": "연기금, Blue Owl·Blackstone 펀드 지분 묶어 이례적 거래",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-24/blue-owl-blackstone-fund-stakes-bundled-by-pension-in-rare-deal",
+  "g1c1o2ax": {
+   "t": "Blackstone, Apollo Weigh Backing GTCR 거래",
+   "s": "Wisevoter",
+   "u": "https://wisevoter.com/world/us/2026/11/24/blackstone-apollo-talks-gtcr-global-payments-buyout",
    "d": "2026-11-24"
   }
  },

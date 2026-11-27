@@ -1,114 +1,135 @@
 {
- "date": "2026-11-27",
- "generatedAt": "2026-11-26T21:22:13.001Z",
+ "date": "2026-11-28",
+ "generatedAt": "2026-11-27T21:03:51.063Z",
  "via": "claude:claude-sonnet-5-5",
  "hours": 30,
- "headline": "대형 바이아웃 LBO 금융 확대와 인프라·부동산 펀드 클로징이 이어짐",
+ "headline": "국민연금 3분기 적립금 202조원 감소, 대체투자 마이너스 전환 속 Macquarie·EQT 딜 이어짐",
  "points": [
   {
-   "text": "은행들이 CVC Capital Partners에 Verisure 인수용으로 최대 110억 유로의 부채 조달을 제안했으며, CVC는 비공개 인수를 검토 중임.",
+   "text": "국민연금 9월 말 적립금은 1664조원으로 6월 말 대비 202조원(10.8%) 감소했고, 누적 수익률은 27.22%에서 13.28%로 13.94%p 하락함. 금리 상승과 원화 강세 영향이 컸음.",
    "ids": [
-    "gucz3da",
-    "g1rhmrvd"
+    "g1r1rpns",
+    "g1124vs1",
+    "gujy33r"
    ]
   },
   {
-   "text": "KKR의 Logoplaste 인수를 위해 은행들이 5억5천만 유로 규모 대출을 준비 중이며, Ares는 Cary Group 바이아웃에 13억 달러(약 130억 스웨덴 크로나) 규모 금융을 제공함.",
+   "text": "자산군별 수익률은 국내주식 66.38%, 해외주식 6.61%, 국내채권 -3.25%, 해외채권 -7.20%, 대체투자 -1.24%로 국내주식이 전체 수익률을 방어했고 대체투자는 손실로 돌아섬.",
    "ids": [
-    "gl7d1g8",
-    "g1uulhd0"
+    "guxn3ts",
+    "g1ynkyfm",
+    "glzg3pf"
    ]
   },
   {
-   "text": "Invesco가 5번째 아시아 밸류애드 부동산 펀드를 13억 5,000만 달러로 마감했으며, 국민연금이 4억 달러를 약정한 앵커 LP로 참여함.",
+   "text": "국민연금이 Invesco의 제5호 아시아 부동산 펀드에 앵커 투자자로 참여했으며, 약정액은 4억달러로 보도됨. 펀드는 13억5000만 달러로 결성돼 시리즈 역대 최대 규모이며 주거용 부동산과 데이터센터가 주요 투자처임.",
    "ids": [
-    "ghc4zrb",
-    "gq3anm5"
+    "g1qorvk4",
+    "g1klxqvq",
+    "g3xneq2"
    ]
   },
   {
-   "text": "인프라 부문에서는 Macquarie 주도 컨소시엄이 EDOTCO 타워 사업을 기업가치 약 12억 달러에 인수하기로 합의했고, Nest가 IFM 신규 인프라 에쿼티 펀드에 5억 파운드를 출자함. BlackRock·IFM 컨소시엄은 Stack Infrastructure APAC 인수가 인하를 검토 중임.",
+   "text": "Macquarie Asset Management가 PEF를 통해 화장품 ODM 기업 화성코스메틱·나우코스 지분 100% 인수를 완료함. 거래 규모는 3000억원대 중반으로 알려졌고 매도자 어펄마캐피탈은 약 2배의 투자금을 회수함.",
    "ids": [
-    "g1l5wwx6",
-    "g9buddc",
-    "g25jlb5"
+    "g1yfd55i",
+    "g1nlq97s",
+    "g1d5fz9x"
    ]
   },
   {
-   "text": "Blackstone은 Private Equity Strategies Fund로 약 5억7,300만 달러, Infrastructure Strategies로 약 4억500만 달러를 사모로 조달했다고 공시함.",
+   "text": "EQT는 EQT Healthcare Growth를 통해 Kelso Pharma 과반 지분 인수 계약을 체결함. 한편 SK그룹의 SK팜테코 소수지분 매각에는 Macquarie 등이 인수 후보로 거론되고 있음.",
    "ids": [
-    "ga1ytgy",
-    "g15by1as"
+    "gcdkltz",
+    "g9lffm2"
    ]
   }
  ],
- "korea": "국민연금이 Invesco 아시아 부동산 펀드의 앵커 LP로 4억 달러를 약정했고, PCCP가 국민연금 출신 IR 담당자를 영입하고 한투운용이 전주사무소를 여는 등 국민연금 접점 확대 경쟁이 가시화됨. 이에 따라 해외 운용사의 국내 기관 대상 영업 경쟁이 한층 치열해질 것으로 보임.",
+ "korea": "국민연금 대체투자 수익률이 -1.24%로 돌아섰음에도 Invesco 아시아 부동산 펀드에 앵커로 참여해 해외 대체투자 출자는 지속하는 모습임. Macquarie의 한국 ODM 인수와 SK팜테코 지분 매각 추진 등 국내 대상 딜에 해외 운용사 관심이 커 영업 접점으로 활용할 만함.",
  "refs": {
-  "gl7d1g8": {
-   "t": "KKR, Logoplaste 바이아웃 뒷받침할 5억5천만 유로 규모 부채 조달 준비",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-26/kkr-banks-line-up-550-million-of-debt-to-back-logoplaste-buyout",
+  "g1qorvk4": {
+   "t": "국민연금, 1.9조원 美 인베스코 아시아 부동산 펀드 앵커 출자",
+   "s": "한국신용신문",
+   "u": "https://www.creditnews.kr/news/articleView.html?idxno=32984",
+   "d": "2026-11-27"
+  },
+  "g1klxqvq": {
+   "t": "국민연금, 인베스코 '아시아부동산5호펀드'에 4억달러 약정…총 13억5000만달러 결성",
+   "s": "딜북뉴스",
+   "u": "https://www.dealbook.co.kr/gugminyeongeum-inbeseuko-asia-budongsan-5hoe-4eogdalreo-yagjeong-cong-13eog5000mandalreo-gyeolseong/",
+   "d": "2026-11-27"
+  },
+  "gcdkltz": {
+   "t": "EQT, 켈소파마 과반 지분 인수 계약",
+   "s": "비건뉴스",
+   "u": "https://www.vegannews.co.kr/news/article.html?no=412437",
+   "d": "2026-11-27"
+  },
+  "g1yfd55i": {
+   "t": "맥쿼리자산운용, 화장품 ODM 업체 화성코스메틱·나우코스 지분 전량 인수",
+   "s": "생생비즈플러스",
+   "u": "https://www.livebiz.today/news/articleView.html?idxno=206991",
+   "d": "2026-11-27"
+  },
+  "g1d5fz9x": {
+   "t": "맥쿼리, 화성코스메틱·나우코스 인수 완료…“글로벌 ODM 추진” [시그널]",
+   "s": "서울경제",
+   "u": "https://www.sedaily.com/article/20119901",
+   "d": "2026-11-27"
+  },
+  "g1nlq97s": {
+   "t": "맥쿼리, 화성코스메틱·나우코스 인수 완료… 어펄마는 투자금 2배 회수",
+   "s": "Chosunbiz",
+   "u": "https://biz.chosun.com/stock/stock_general/2026/11/27/MBLZEFLQENCR3NKPPQLO456P3Y/",
+   "d": "2026-11-27"
+  },
+  "g9lffm2": {
+   "t": "SK그룹, ‘SK팜테코’ 지분 매각 추진…맥쿼리·베인캐피탈·한앤컴 등 인수 후보 언급",
+   "s": "알파경제",
+   "u": "https://www.alphabiz.co.kr/news/articleView.html?idxno=200494",
    "d": "2026-11-26"
   },
-  "g1rhmrvd": {
-   "t": "CVC는 은행들이 최대 110억 유로의 부채를 지고 있기 때문에 Verisure의 비공개 인수에 무게를 두고 있다.",
-   "s": "Private Equity Wire",
-   "u": "https://privateequitywire.com/news/cvc-weighs-verisure-take-private-as-banks-pitch-up-to-11bn-in-debt",
+  "g3xneq2": {
+   "t": "Invesco Real Estate, 사이드카 자금 포함 13억5천만 달러 규모로 5호 아시아 밸류애드 펀드 최종 클로징... 역대 최대",
+   "s": "HedgeCo.Net",
+   "u": "https://hedgeco.net/news/11/2026/invesco-real-estate-closes-its-fifth-and-largest-asia-value-add-fund-at-1-35-billion-including-sidecar-capital.html",
    "d": "2026-11-26"
   },
-  "g25jlb5": {
-   "t": "[미국 특징주] 블랙록, 스택 인프라 아·태 데이터센터 인수가 낮추나",
+  "g1r1rpns": {
+   "t": "상반기 27% 벌었던 국민연금, 석 달 새 202조↓…수익률 13%대로",
+   "s": "조세일보",
+   "u": "https://m.joseilbo.com/news/view.htm?newsid=580636",
+   "d": "2026-11-27"
+  },
+  "gujy33r": {
+   "t": "3개월만에 202조원 사라진 국민연금 적립금…국내주식 하락률 가장 컸다",
+   "s": "매일경제 마켓",
+   "u": "https://stock.mk.co.kr/news/view/1207419",
+   "d": "2026-11-27"
+  },
+  "g1124vs1": {
+   "t": "국민연금 적립금 석 달 새 202조원 줄었다",
+   "s": "노컷뉴스",
+   "u": "https://www.nocutnews.co.kr/news/6614000",
+   "d": "2026-11-27"
+  },
+  "guxn3ts": {
+   "t": "국민연금 기금적립금, 올해 3분기까지 1664조원 쌓여",
+   "s": "데일리중앙",
+   "u": "http://www.dailiang.co.kr/news/articleView.html?idxno=237008",
+   "d": "2026-11-27"
+  },
+  "g1ynkyfm": {
+   "t": "국민연금, 반도체주 강세에 두 자릿수 운용수익률 달성",
    "s": "뉴스핌",
-   "u": "https://www.newspim.com/news/view/20261126000824",
-   "d": "2026-11-26"
+   "u": "https://www.newspim.com/news/view/20261127001357",
+   "d": "2026-11-27"
   },
-  "g15by1as": {
-   "t": "Blackstone Infrastructure Strategies, 사모 지분 매각으로 4억500만 달러 조달",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/sec-filings/article-93CH-2190851",
-   "d": "2026-11-25"
-  },
-  "gq3anm5": {
-   "t": "Invesco, 13억 5천만 달러로 5번째 아시아 부동산 펀드 마감: DealStreetAsia",
-   "s": "CryptoRank",
-   "u": "https://cryptorank.io/insights/deals/invescoprivatecap-lp-raise-2026-11-26",
-   "d": "2026-11-26"
-  },
-  "ghc4zrb": {
-   "t": "Invesco, 13억 5,000만 달러 규모 아시아 부동산 펀드 클로징",
-   "s": "Wisevoter",
-   "u": "https://wisevoter.com/world/2026/11/26/invesco-closes-asia-value-add-real-estate-fund",
-   "d": "2026-11-26"
-  },
-  "g1l5wwx6": {
-   "t": "Macquarie 주도 컨소시엄, 5개 시장 EDOTCO 타워 사업 12억 달러에 인수 합의",
-   "s": "Pulse 2.0",
-   "u": "https://pulse2.com/macquarie-led-consortium-strikes-1-2-billion-deal-for-edotco-tower-businesses-in-five-markets/",
-   "d": "2026-11-26"
-  },
-  "g1uulhd0": {
-   "t": "Ares는 앞유리 회사인 Cary를 인수하기 위해 13억 달러의 부채를 펀딩했다.",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-26/ares-funds-1-3-billion-debt-for-buyout-of-windshield-firm-cary",
-   "d": "2026-11-26"
-  },
-  "ga1ytgy": {
-   "t": "Blackstone Inc 사모펀드, 미등록 지분 약 5억7300만 달러 판매",
-   "s": "Investing.com 한국어",
-   "u": "https://kr.investing.com/news/sec-filings/article-93CH-2190934",
-   "d": "2026-11-25"
-  },
-  "gucz3da": {
-   "t": "은행들, CVC에 Verisure 인수 추진용 110억 유로 부채 조달 제안",
-   "s": "Bloomberg.com",
-   "u": "https://www.bloomberg.com/news/articles/2026-11-25/banks-pitch-cvc-11-billion-debt-for-possible-verisure-takeover",
-   "d": "2026-11-25"
-  },
-  "g9buddc": {
-   "t": "Nest, IFM의 신규 인프라 에쿼티 펀드에 5억 파운드 출자",
-   "s": "Markets Group",
-   "u": "https://www.marketsgroup.org/news/nest-commits-500m-to-new-ifm-infrastructure-equity-fund",
-   "d": "2026-11-26"
+  "glzg3pf": {
+   "t": "국민연금, 202조 줄고도 수익률 13%…국내주식이 버팀목 [fn마켓워치]",
+   "s": "파이낸셜뉴스",
+   "u": "https://www.fnnews.com/news/202611271813285297",
+   "d": "2026-11-27"
   }
  },
  "droppedSentences": 0
